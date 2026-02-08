@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-old-lace:     #FDF5E6;
+    --color-ballpark:     #1B4D3E;
+    --color-stitch-red:   #B22222;
+    --color-sandstone:    #D2B48C;
+    --color-ink:          #2C2C2C;
+    --color-muted:        #6B7280;
+    --color-playoff-gold: #CFB53B;
+    --color-playoff-dark: #1A1A2E;
+
+    --font-headline: 'Roboto Slab', Georgia, 'Times New Roman', serif;
+    --font-stat:     'JetBrains Mono', Consolas, 'Courier New', monospace;
+    --font-body:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                     Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+    --max-width-ledger: 1200px;
+    --border-spine:     4px;
+
+    --shadow-ledger: 0 2px 8px rgba(0, 0, 0, 0.12);
+    --shadow-card:   0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  html {
+    background-color: var(--color-old-lace);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+  }
+}
+
+@layer base {
+  [data-theme="postseason"] {
+    --color-old-lace:   #1A1A2E;
+    --color-ballpark:   #CFB53B;
+    --color-sandstone:  #3A3A5C;
+    --color-ink:        #F5F5F5;
+    --color-muted:      #9CA3AF;
+  }
+}

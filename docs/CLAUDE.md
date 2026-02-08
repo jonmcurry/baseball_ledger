@@ -9,7 +9,7 @@ Rule 5: Clean up your mess. Remove any temporary and/or outdated files or script
 Rule 6: NEVER use character emoji's in any of the code or documentation.
 Rule 7: Create a .md file with what your plan is to resolve issues or to develop new functionality and put it in a checklist.
 Rule 8: No shortcuts - fully resolve issues by solving it the right way and not creating cascading failures elsewhere.
-Rule 9: Commit to github
+Rule 9: Commit to github with messages that are clear and descriptive.
 Rule 10: Keep track with the changelog.md file
 Rule 11:Instruct Claude to first write a test case that reproduces the bug, without modifying the source code.
 Once the test fails (confirming the bug is reproducible), ask it to modify the code to make the test pass.
