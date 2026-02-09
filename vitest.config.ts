@@ -19,8 +19,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     environmentMatchGlobs: [
-      // Use jsdom only for component tests
       ['tests/unit/components/**', 'jsdom'],
+      ['tests/unit/features/**', 'jsdom'],
+      ['tests/unit/hooks/**', 'jsdom'],
       ['tests/e2e/**', 'jsdom'],
     ],
     setupFiles: ['./tests/setup.ts'],

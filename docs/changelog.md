@@ -1,5 +1,67 @@
 # Changelog
 
+## 2026-02-09 - Phase 6: Frontend Foundation (REQ-COMP, REQ-STATE, REQ-ARCH-002)
+
+### Added
+- **Feedback Components** (REQ-COMP-003, REQ-ERR-010, REQ-ERR-011):
+  - `src/components/feedback/ErrorBanner.tsx` -- Severity-based alert banner (error/warning/info) with auto-dismiss, role="alert"/role="status"
+  - `src/components/feedback/LoadingLedger.tsx` -- Animated loading indicator with 3 bouncing dots, role="status"
+  - `src/components/feedback/TypewriterText.tsx` -- Character-by-character text reveal with blinking cursor, aria-live="polite"
+  - `src/components/feedback/ErrorBoundary.tsx` -- React class error boundary with "Try Again" and "Return to Dashboard" fallback
+- **Data Display Components** (REQ-COMP-003, REQ-COMP-004):
+  - `src/components/data-display/Pagination.tsx` -- Previous/Next navigation with boundary disabling
+  - `src/components/data-display/StatTable.tsx` -- Generic sortable statistics table with StatColumn<T> interface, loading shimmer, row highlighting
+  - `src/components/data-display/StandingsTable.tsx` -- Division standings using computeWinPct/computeGamesBehind from Layer 1
+- **Baseball Display Components** (REQ-COMP-003):
+  - `src/components/baseball/LineScore.tsx` -- Classic baseball line score table (innings, R/H/E)
+  - `src/components/baseball/BaseIndicator.tsx` -- SVG diamond with occupied/empty base indicators
+- **Layout Components** (REQ-COMP-005, REQ-COMP-012):
+  - `src/components/layout/AppShell.tsx` -- Skip-to-content link, main#main-content, ErrorBoundary wrapper
+  - `src/components/layout/Header.tsx` -- League nav with postseason variant styling, commissioner-only links
+  - `src/components/layout/Footer.tsx` -- Simple footer with role="contentinfo"
+- **Router** (REQ-COMP-005, REQ-COMP-006):
+  - `src/router.tsx` -- createBrowserRouter with 13+ routes, lazy-loading, AuthGuard, 404 catch-all
+  - Updated `src/App.tsx` to use RouterProvider
+- **Feature Page Shells** (REQ-COMP-008):
+  - 15 feature page files across splash, auth, dashboard, league, draft, roster, stats, game-viewer, playoffs, archive, transactions, standings
+- **Zustand Stores** (REQ-STATE-001 through REQ-STATE-016):
+  - `src/stores/storage-factory.ts` -- createSafeStorage() with localStorage test + memory fallback
+  - `src/stores/authStore.ts` -- User/session/initialization state (devtools)
+  - `src/stores/leagueStore.ts` -- League/teams/standings/schedule state (devtools+persist+immer)
+  - `src/stores/rosterStore.ts` -- Active team roster state (devtools+persist+immer)
+  - `src/stores/simulationStore.ts` -- Simulation progress/results (devtools)
+  - `src/stores/statsStore.ts` -- Batting/pitching leaders, pagination (devtools+persist)
+- **Mock Services** (Layer 3 stubs):
+  - `src/services/mock-league-service.ts` -- Hardcoded league/team/standings/schedule data
+  - `src/services/mock-roster-service.ts` -- Hardcoded roster with PlayerCard objects
+  - `src/services/mock-stats-service.ts` -- Hardcoded batting/pitching leaders
+- **Hooks Layer** (REQ-STATE-006, REQ-STATE-007):
+  - `src/hooks/useAuth.ts` -- Composes authStore, derived isAuthenticated
+  - `src/hooks/useLeague.ts` -- Composes authStore+leagueStore, derived isCommissioner
+  - `src/hooks/useTeam.ts` -- Composes authStore+leagueStore+rosterStore, derived myTeam/starters/bench
+  - `src/hooks/useSimulation.ts` -- Composes simulationStore, derived progressPct/isRunning
+- **Key Feature Pages** (REQ-COMP-008, REQ-COMP-009):
+  - `src/features/dashboard/DashboardPage.tsx` -- League dashboard with standings, schedule, simulation controls
+  - `src/features/dashboard/SimulationControls.tsx` -- Day/Week/Month/Season buttons with progress bar
+  - `src/features/dashboard/ScheduleView.tsx` -- Game list for current day with scores
+  - `src/features/stats/StatsPage.tsx` -- Batting/pitching tabs, AL/NL/combined filter, pagination
+  - `src/features/stats/StatColumnConfigs.ts` -- 17 batting + 15 pitching column configs
+  - `src/features/standings/StandingsPage.tsx` -- Full standings with division grouping
+- **Test Fixtures**:
+  - `tests/fixtures/mock-league.ts` -- Factory functions for league/team/standings/schedule data
+  - `tests/fixtures/mock-roster.ts` -- Factory functions for roster entries
+  - `tests/fixtures/mock-stats.ts` -- Factory functions for batting/pitching leaders
+
+### Verification
+- `npm test` -- 1,320 tests pass across 84 test files (1,093 existing + 227 new)
+- New tests: 82 components + 30 layout + 48 stores + 30 hooks + 37 features = 227
+- `npx tsc --noEmit` -- Only pre-existing platoon.ts warnings
+- `npm run lint` -- Zero new errors (20 pre-existing in test files + platoon.ts)
+- Plan document: `docs/plans/phase-6-frontend.md`
+
+### Phase 6 Complete
+5 sub-phases finished. ~49 new source files + ~28 new test files. Full frontend foundation with components, stores, hooks, routing, and feature pages ready for service integration.
+
 ## 2026-02-09 - Phase 5: Schedule & Statistics Pure Logic (REQ-SCH, REQ-STS, REQ-LGE-008)
 
 ### Added
