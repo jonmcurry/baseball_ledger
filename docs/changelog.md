@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-02-09 - Phase 5: Schedule & Statistics Pure Logic (REQ-SCH, REQ-STS, REQ-LGE-008)
+
+### Added
+- **Derived Stats Calculator** (REQ-STS-002):
+  - `src/lib/stats/derived.ts` -- IP baseball notation conversion (ipToDecimal, addIP), batting derived (BA, OBP, SLG, OPS), pitching derived (ERA, WHIP, K/9, BB/9), computeDerivedBatting/computeDerivedPitching
+- **Stats Accumulator** (REQ-STS-001):
+  - `src/lib/stats/accumulator.ts` -- createEmptyBattingStats, createEmptyPitchingStats, accumulateBatting (immutable, recomputes derived), accumulatePitching (maps decision to W/L/SV/HLD/BS, uses addIP), accumulateGameStats (processes full game)
+- **Standings Calculator** (REQ-SCH-006, REQ-STS-004):
+  - `src/lib/stats/standings.ts` -- computeWinPct, computeGamesBehind, computePythagorean (RS^2/(RS^2+RA^2)), sortStandings (tiebreak: win%, run diff, runs scored), computeStandings (group by league/division), getDivisionWinners, getWildCardTeams
+- **League Leaders** (REQ-STS-003, REQ-STS-004):
+  - `src/lib/stats/leaders.ts` -- isBattingQualified (3.1 PA/team game), isPitchingQualified (1 IP/team game), getBattingLeaders/getPitchingLeaders (rate vs counting stat qualification, ERA/WHIP ascending sort), filterByLeague (AL/NL/combined), computeTeamAggregateStats (team BA/OBP/SLG/ERA, Pythagorean W%)
+- **Schedule Generator** (REQ-SCH-001 through REQ-SCH-004):
+  - `src/lib/schedule/generator.ts` -- Circle method round-robin pairing, division-weighted matchups (intraDivisionWeight), SeededRNG determinism, bye handling for odd team counts, league separation (AL/NL independent)
+- **Playoff Bracket** (REQ-LGE-008):
+  - `src/lib/schedule/playoff-bracket.ts` -- 2025 MLB format: WC(BO3), DS(BO5), CS(BO7), WS(BO7); seedPlayoffTeams (3 div winners + 3 wild cards), home-field patterns (H-A-H, H-A-A-H-H, H-A-A-H-H-A-H), recordPlayoffGameResult (immutable), getNextPlayoffGame; adapts for smaller leagues
+
+### Modified
+- `src/lib/types/schedule.ts` -- Added playoff types: PlayoffRoundName, PlayoffTeamSeed, PlayoffGame, PlayoffSeries, PlayoffRound, PlayoffBracket
+- `src/lib/types/index.ts` -- Added playoff type exports
+- `src/lib/errors/error-codes.ts` -- Added SCHEDULE_INVALID_TEAM_COUNT, SCHEDULE_NO_TEAMS, PLAYOFF_INSUFFICIENT_TEAMS, PLAYOFF_SERIES_COMPLETE
+
+### Verification
+- `npm test` -- 1,093 tests pass across 58 test files (953 existing + 140 new)
+- New tests: 34 derived + 21 accumulator + 20 standings + 20 leaders + 24 schedule + 21 playoff = 140
+- All new source files lint clean with `npx eslint`
+- Plan document: `docs/plans/phase-5-schedule-stats.md`
+
+### Phase 5 Complete
+All 7 tasks (0-6) finished. 6 new source files + 6 new test files. All Layer 1 pure logic modules for schedule generation, playoff brackets, and statistics pipeline are complete.
+
 ## 2026-02-09 - Phase 4A: League & Draft Pure Logic (REQ-LGE, REQ-DFT, REQ-RST, REQ-ERR)
 
 ### Added

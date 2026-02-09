@@ -54,6 +54,12 @@ export type {
 export type {
   ScheduleGameSummary,
   ScheduleDay,
+  PlayoffRoundName,
+  PlayoffTeamSeed,
+  PlayoffGame,
+  PlayoffSeries,
+  PlayoffRound,
+  PlayoffBracket,
 } from './schedule';
 
 export type {
