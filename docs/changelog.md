@@ -1,5 +1,165 @@
 # Changelog
 
+## 2026-02-09 - Phase 3, Task 15: Manager AI Decisions (REQ-AI-001 through REQ-AI-004)
+
+### Added
+- **Manager Profiles**: `src/lib/simulation/manager-profiles.ts` -- Four APBA BBW manager personalities per REQ-AI-001
+  - Cap Spalding (conservative): high bunt, low steal, lets starters go deep
+  - Duke Robinson (aggressive): high steal, low bunt, quick hook
+  - Johnny McCoy (balanced): moderate thresholds across all decisions
+  - Larry Pepper (analytical): data-driven, almost never bunts, platoon-heavy
+  - `getManagerProfile()` helper function
+- **Manager AI Decision Engine**: `src/lib/simulation/manager-ai.ts` -- Pre-pitch decision evaluation per REQ-AI-002/003/004
+  - `getInningMultiplier()` -- 1.0 early, lateInningMultiplier (7-9), extraInningMultiplier (10+)
+  - `computeDecisionScore()` -- baseFactors * threshold * inningMultiplier
+  - `evaluateStealDecision()` -- speed * close-game factor, blocked by 2 outs or blowout
+  - `evaluateBuntDecision()` -- (1 - contactRate) * threshold, requires 0 outs, game within 2
+  - `evaluateIntentionalWalkDecision()` -- OPS rank * scoring pos factor, requires 1B open
+  - `evaluatePitcherPullDecision()` -- fatigue factor * (1 - tolerance), higher tolerance = more patient
+- **Manager AI Tests**: 33 tests across 2 files covering all 4 profiles, decision formulas, prerequisites, comparative rates, determinism
+
+### Verification
+- `npm test` -- 744 tests pass across 40 test files (711 existing + 33 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+### Phase 3 Complete
+All 15 simulation engine tasks are now complete:
+- Tasks 1-2: SeededRNG + OutcomeTable (foundation)
+- Tasks 3-7: Outcome Resolver, Plate Appearance, Card Value Fallback, Archetype Modifiers, Platoon (core PA pipeline)
+- Tasks 8-11: Bunt Resolver, Baserunner Engine, Defense Engine, Stolen Base (specialized mechanics)
+- Tasks 12-14: Pitching Management, Game State Machine, Game Result/Box Score (game orchestration)
+- Task 15: Manager AI (strategic decision layer)
+
+## 2026-02-09 - Phase 3, Task 14: Game Result & Box Score (REQ-SIM-016)
+
+### Added
+- **Game Result Builder**: `src/lib/simulation/game-result.ts` -- Post-game output generation per REQ-SIM-016
+  - `buildLineScore()` -- Accumulates per-half-inning runs into line score arrays (handles extra innings, skipped bottom half)
+  - `buildBoxScore()` -- Assembles BoxScore with line score, hits, and errors
+  - `assignPitcherDecisions()` -- W/L/SV assignment: starter W with 5+ IP, reliever W otherwise, save with lead <= 3
+  - `buildEmptyBattingLine()` / `buildEmptyPitchingLine()` -- Zero-initialized stat lines
+- **Game Result Tests**: `tests/unit/lib/simulation/game-result.test.ts` -- 12 tests covering line score building, box score assembly, pitcher decision assignment, stat line initialization
+
+### Verification
+- `npm test` -- 711 tests pass across 38 test files (699 existing + 12 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 13: Game State Machine (REQ-SIM-001, REQ-SIM-002, REQ-SIM-015)
+
+### Added
+- **Game Engine**: `src/lib/simulation/engine.ts` -- Game state machine and flow control per REQ-SIM-001/002/015
+  - `createInitialGameState()` -- Initializes game state from config (inning 1, top, 0-0, empty bases)
+  - `advanceHalfInning()` -- Top -> Bottom or Bottom -> next inning Top; resets outs/bases/counters
+  - `isGameOver()` -- Checks 9+ innings with leader, walk-off detection, extra innings support
+  - `shouldSkipBottomHalf()` -- Home team skip when already winning after 9th+ top half
+  - `getBattingTeam()` / `getFieldingTeam()` -- Identifies active teams by half-inning
+  - `advanceBatterIndex()` -- 9-slot batting order cycling
+- **Game Engine Tests**: `tests/unit/lib/simulation/engine.test.ts` -- 31 tests covering state initialization, half-inning advancement, game completion logic, walk-offs, extra innings, team identification, batting order cycling
+
+### Verification
+- `npm test` -- 699 tests pass across 37 test files (668 existing + 31 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 12: Pitching Management (REQ-SIM-010 through 014)
+
+### Added
+- **Pitching Manager**: `src/lib/simulation/pitching.ts` -- Pitcher fatigue, bullpen decisions, rotation per REQ-SIM-010-014
+  - `computeEffectiveGrade()` -- Grade degradation: starters -2/inning beyond stamina, relievers -3/inning (min 1)
+  - `shouldRemoveStarter()` -- 4 removal triggers: grade <= 50%, 4+ ER/4+ IP, 3 consecutive H/W after 5th, with shutout/no-hitter protection
+  - `selectReliever()` -- Selects highest-grade available reliever (excludes closers)
+  - `shouldBringInCloser()` -- Closer enters when winning by <= 3 in 9th+, <= 2 runners on base
+  - `getNextStarter()` -- 4-man rotation cycling via game number modulo
+- **Pitching Tests**: `tests/unit/lib/simulation/pitching.test.ts` -- 31 tests covering fatigue degradation, all removal triggers, reliever selection, closer logic, rotation cycling
+
+### Verification
+- `npm test` -- 668 tests pass across 36 test files (637 existing + 31 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 11: Stolen Base Resolution (REQ-SIM-009)
+
+### Added
+- **Stolen Base Resolver**: `src/lib/simulation/stolen-base.ts` -- Stolen base attempt resolution per REQ-SIM-009
+  - `canAttemptStolenBase()` -- Eligibility check: runner on 1B/2B with < 2 outs
+  - `computeStolenBaseProbability()` -- speed * 0.75 + 0.15 (speed archetype) - catcher.arm * 0.20
+  - `attemptStolenBase()` -- Resolves SB attempt: success advances runner, failure = caught stealing
+- **Stolen Base Tests**: `tests/unit/lib/simulation/stolen-base.test.ts` -- 17 tests covering eligibility, probability computation, success/failure outcomes, statistical rates, determinism
+
+### Verification
+- `npm test` -- 637 tests pass across 35 test files (620 existing + 17 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 10: Defense Engine (REQ-SIM-008, REQ-SIM-008a)
+
+### Added
+- **Defense Engine**: `src/lib/simulation/defense.ts` -- Error resolution and DP defense checks per REQ-SIM-008/008a
+  - `getResponsiblePosition()` -- Maps outcome type to responsible fielding position (ground balls to IF, fly balls to OF, etc.)
+  - `checkForError()` -- Error probability = 1 - fieldingPct, checked via seeded RNG
+  - `checkDPDefense()` -- DP succeeds if SS/2B avg fieldingPct >= 0.95; 10% failure rate below threshold
+- **Defense Engine Tests**: `tests/unit/lib/simulation/defense.test.ts` -- 15 tests covering position assignment, error rates, DP defense, determinism
+
+### Verification
+- `npm test` -- 620 tests pass across 34 test files (605 existing + 15 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 9: Baserunner Engine (REQ-SIM-006, REQ-SIM-007)
+
+### Added
+- **Baserunner Engine**: `src/lib/simulation/baserunner.ts` -- Speed checks and runner advancement per REQ-SIM-006/007
+  - `computeEffectiveSpeed()` -- Base speed + modifiers: +0.15 speed archetype (6,0), -0.10 strong arm (>0.8), +0.10 two outs
+  - `performSpeedCheck()` -- Random vs effective speed determines extra-base taking
+  - `advanceRunnerOnSingle()` -- 1B: speed check for 3B; 2B/3B: always score
+  - `advanceRunnerOnDouble()` -- 1B: speed check to score; 2B/3B: always score
+  - `canTagUp()` -- Runner on 3B can tag on fly out with <2 outs
+- **Baserunner Tests**: `tests/unit/lib/simulation/baserunner.test.ts` -- 23 tests covering effective speed computation, speed checks, single/double advancement, tag-up rules
+
+### Verification
+- `npm test` -- 605 tests pass across 33 test files (582 existing + 23 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 8: Bunt Resolution (REQ-SIM-004c)
+
+### Added
+- **Bunt Resolver**: `src/lib/simulation/bunt-resolver.ts` -- Probability-based bunt resolution per REQ-SIM-004c
+  - 65% sacrifice success, 15% bunt foul, 10% bunt-for-hit attempt, 10% pop out
+  - Bunt foul with 2 strikes = strikeout; <2 strikes = resume PA
+  - Bunt-for-hit: speed > 0.6 AND 35% chance = single; else ground out
+- **Bunt Resolver Tests**: `tests/unit/lib/simulation/bunt-resolver.test.ts` -- 15 tests covering probability distributions, all bunt outcomes, edge cases, determinism
+
+### Verification
+- `npm test` -- 582 tests pass across 32 test files (567 existing + 15 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 6: Archetype Modifiers (REQ-SIM-004 step 6)
+
+### Added
+- **Archetype Modifier**: `src/lib/simulation/archetype-modifier.ts` -- Applies archetype-based bonuses after outcome determination per REQ-SIM-004 step 6
+  - Power (1,0)/(1,1): 15% chance to upgrade FLY_OUT to HOME_RUN
+  - Speed (6,0): Flags stolen base opportunity on singles/walks/HBP
+  - Contact+Speed (0,2): 20% chance to downgrade strikeouts to GROUND_OUT
+  - Elite defense (8,0), standard, pitcher, utility: No batting modifier
+  - Detection helpers: `isPowerArchetype()`, `isSpeedArchetype()`, `isContactSpeedArchetype()`
+- **Archetype Modifier Tests**: `tests/unit/lib/simulation/archetype-modifier.test.ts` -- 29 tests covering all archetype types, probability rates, non-modifying archetypes, determinism
+
+### Verification
+- `npm test` -- 567 tests pass across 31 test files (538 existing + 29 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
+## 2026-02-09 - Phase 3, Task 3: Outcome Resolver (REQ-SIM-005)
+
+### Added
+- **Outcome Resolver**: `src/lib/simulation/outcome-resolver.ts` -- Maps OutcomeCategory to concrete game state changes per REQ-SIM-005 and REQ-SIM-007
+  - `resolveOutcome()` -- Main function: takes OutcomeCategory + BaseState + outs + batterId, returns OutcomeResolution with new bases, outs added, runs scored, batter destination, sac fly flag, RBI credits
+  - `advanceAllRunners()` -- Moves all runners forward by N bases (3B first per REQ-SIM-007), scoring runners that pass home
+  - `forceAdvance()` -- Walk/HBP force logic: runners advance only when pushed by chain of occupied bases
+  - `removeLeadRunner()` -- Removes runner closest to home plate (for fielder's choice and DP)
+  - Handles all 26 OutcomeCategory values: hits (singles clean/advance, doubles, triples, HRs), outs (ground/fly/pop/line/strikeout), walks/HBP, double plays (ground + line with degradation), special plays (sacrifice, error, FC), no-PA events (wild pitch, balk, passed ball, SB opportunity)
+  - Conservative defaults for speed-dependent outcomes (Task 9 Baserunner Engine will add speed check overlay)
+- **Outcome Resolver Tests**: `tests/unit/lib/simulation/outcome-resolver.test.ts` -- 74 tests covering helpers, all outcome types, edge cases (3rd out prevents runs, bases loaded DP, grand slams)
+
+### Verification
+- `npm test` -- 538 tests pass across 30 test files (464 existing + 74 new)
+- `npm run lint` -- New files pass ESLint with 0 errors
+
 ## 2026-02-08 - Phase 2: Card Generator (APBA Port)
 
 ### Added
