@@ -9,6 +9,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { RosterEntry } from '@lib/types/roster';
+import * as rosterService from '@services/roster-service';
 import { createSafeStorage } from './storage-factory';
 
 export interface RosterState {
@@ -30,6 +31,8 @@ export interface RosterActions {
     lineupPosition: string | null,
   ) => void;
   reset: () => void;
+  fetchRoster: (leagueId: string, teamId: string) => Promise<void>;
+  saveLineup: (leagueId: string, teamId: string) => Promise<void>;
 }
 
 export type RosterStore = RosterState & RosterActions;
@@ -44,7 +47,7 @@ const initialState: RosterState = {
 export const useRosterStore = create<RosterStore>()(
   devtools(
     persist(
-      immer((set) => ({
+      immer((set, get) => ({
         ...initialState,
 
         setActiveTeam: (teamId) =>
@@ -106,6 +109,42 @@ export const useRosterStore = create<RosterStore>()(
             false,
             'reset',
           ),
+
+        fetchRoster: async (leagueId, teamId) => {
+          set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchRoster/start');
+          try {
+            const roster = await rosterService.fetchRoster(leagueId, teamId);
+            set((state) => {
+              state.activeTeamId = teamId;
+              state.roster = roster;
+              state.isLoading = false;
+            }, false, 'fetchRoster/success');
+          } catch (err) {
+            set((state) => {
+              state.isLoading = false;
+              state.error = err instanceof Error ? err.message : 'Failed to fetch roster';
+            }, false, 'fetchRoster/error');
+          }
+        },
+
+        saveLineup: async (leagueId, teamId) => {
+          set((state) => { state.isLoading = true; state.error = null; }, false, 'saveLineup/start');
+          try {
+            const updates = get().roster.map((entry) => ({
+              rosterId: entry.id,
+              lineupOrder: entry.lineupOrder,
+              lineupPosition: entry.lineupPosition,
+              rosterSlot: entry.rosterSlot,
+            }));
+            await rosterService.updateLineup(leagueId, teamId, updates);
+            set((state) => { state.isLoading = false; }, false, 'saveLineup/success');
+          } catch (err) {
+            set((state) => {
+              state.isLoading = false;
+              state.error = err instanceof Error ? err.message : 'Failed to save lineup';
+            }, false, 'saveLineup/error');
+          }
+        },
       })),
       {
         name: 'bl-roster-v1',

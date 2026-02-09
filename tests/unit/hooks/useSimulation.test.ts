@@ -3,7 +3,7 @@
  * Tests for useSimulation hook
  */
 
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useSimulation } from '@hooks/useSimulation';
 import { useSimulationStore } from '@stores/simulationStore';
 

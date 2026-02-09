@@ -2,18 +2,21 @@
  * AuthGuard
  *
  * Route guard that checks authentication status.
- * In mock mode (no Supabase), defaults to authenticated.
+ * Redirects to /login if not authenticated after initialization.
  */
 
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '@hooks/useAuth';
 
 export function AuthGuard() {
-  // Mock mode: always authenticated until Supabase is connected
-  const isAuthenticated = true;
+  const { isAuthenticated, isInitialized } = useAuth();
+
+  if (!isInitialized) {
+    return null;
+  }
 
   if (!isAuthenticated) {
-    // Will redirect to login when auth store is wired
-    return null;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

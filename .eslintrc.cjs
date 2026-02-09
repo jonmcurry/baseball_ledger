@@ -19,6 +19,10 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
 
     // Enforce layer architecture (Section 3.4)
     'no-restricted-imports': [
@@ -33,4 +37,12 @@ module.exports = {
       },
     ],
   },
+  overrides: [
+    {
+      files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
 };

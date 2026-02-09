@@ -9,6 +9,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { getSupabaseClient } from '@lib/supabase/client';
 
 export interface AuthUser {
   id: string;
@@ -34,6 +35,7 @@ export interface AuthActions {
   setInitialized: (initialized: boolean) => void;
   setError: (error: string | null) => void;
   logout: () => void;
+  initialize: () => Promise<void>;
 }
 
 export type AuthStore = AuthState & AuthActions;
@@ -61,6 +63,54 @@ export const useAuthStore = create<AuthStore>()(
 
       logout: () =>
         set({ user: null, session: null, error: null }, false, 'logout'),
+
+      initialize: async () => {
+        try {
+          const supabase = getSupabaseClient();
+          const { data } = await supabase.auth.getSession();
+          if (data.session?.user) {
+            const u = data.session.user;
+            set({
+              user: {
+                id: u.id,
+                email: u.email ?? '',
+                displayName: u.user_metadata?.display_name ?? u.email ?? '',
+              },
+              session: {
+                accessToken: data.session.access_token,
+                expiresAt: data.session.expires_at ?? 0,
+              },
+              isInitialized: true,
+            }, false, 'initialize');
+          } else {
+            set({ isInitialized: true }, false, 'initialize/no-session');
+          }
+
+          supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+              const u = session.user;
+              set({
+                user: {
+                  id: u.id,
+                  email: u.email ?? '',
+                  displayName: u.user_metadata?.display_name ?? u.email ?? '',
+                },
+                session: {
+                  accessToken: session.access_token,
+                  expiresAt: session.expires_at ?? 0,
+                },
+              }, false, 'authStateChange');
+            } else {
+              set({ user: null, session: null }, false, 'authStateChange/signout');
+            }
+          });
+        } catch (err) {
+          set({
+            isInitialized: true,
+            error: err instanceof Error ? err.message : 'Auth initialization failed',
+          }, false, 'initialize/error');
+        }
+      },
     }),
     { name: 'AuthStore' },
   ),

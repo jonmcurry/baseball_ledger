@@ -7,6 +7,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import * as simulationService from '@services/simulation-service';
 
 export type SimulationStatus = 'idle' | 'running' | 'complete' | 'error';
 
@@ -32,6 +33,9 @@ export interface SimulationActions {
   completeSimulation: () => void;
   setError: (error: string) => void;
   reset: () => void;
+  runSimulation: (leagueId: string, days: number | 'season') => Promise<void>;
+  subscribeToSimProgress: (leagueId: string) => void;
+  unsubscribeFromSimProgress: () => void;
 }
 
 export type SimulationStore = SimulationState & SimulationActions;
@@ -46,7 +50,7 @@ const initialState: SimulationState = {
 
 export const useSimulationStore = create<SimulationStore>()(
   devtools(
-    (set) => ({
+    (set, _get) => ({
       ...initialState,
 
       startSimulation: (totalGames) =>
@@ -79,6 +83,36 @@ export const useSimulationStore = create<SimulationStore>()(
         set({ status: 'error', error }, false, 'setError'),
 
       reset: () => set(initialState, false, 'reset'),
+
+      runSimulation: async (leagueId, days) => {
+        set({ status: 'running', completedGames: 0, results: [], error: null }, false, 'runSimulation/start');
+        try {
+          const response = await simulationService.startSimulation(leagueId, days);
+          if (response.result) {
+            set({ status: 'complete' }, false, 'runSimulation/complete');
+          }
+        } catch (err) {
+          set({
+            status: 'error',
+            error: err instanceof Error ? err.message : 'Simulation failed',
+          }, false, 'runSimulation/error');
+        }
+      },
+
+      subscribeToSimProgress: (leagueId) => {
+        simulationService.subscribeToProgress(leagueId, (progress) => {
+          set({
+            totalGames: progress.totalGames,
+            completedGames: progress.completedGames,
+            status: progress.status === 'completed' ? 'complete' : progress.status === 'error' ? 'error' : 'running',
+            error: progress.errorMessage ?? null,
+          }, false, 'simProgress');
+        });
+      },
+
+      unsubscribeFromSimProgress: () => {
+        simulationService.unsubscribeFromProgress();
+      },
     }),
     { name: 'SimulationStore' },
   ),

@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { BattingLeaderEntry, PitchingLeaderEntry, TeamAggregateStats } from '@lib/stats/leaders';
+import * as statsService from '@services/stats-service';
 import { createSafeStorage } from './storage-factory';
 
 export interface StatsState {
@@ -32,6 +33,9 @@ export interface StatsActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
+  fetchBattingLeaders: (leagueId: string) => Promise<void>;
+  fetchPitchingLeaders: (leagueId: string) => Promise<void>;
+  fetchTeamStats: (leagueId: string) => Promise<void>;
 }
 
 export type StatsStore = StatsState & StatsActions;
@@ -51,7 +55,7 @@ const initialState: StatsState = {
 export const useStatsStore = create<StatsStore>()(
   devtools(
     persist(
-      (set) => ({
+      (set, get) => ({
         ...initialState,
 
         setBattingLeaders: (leaders) =>
@@ -79,6 +83,37 @@ export const useStatsStore = create<StatsStore>()(
           set({ error }, false, 'setError'),
 
         reset: () => set(initialState, false, 'reset'),
+
+        fetchBattingLeaders: async (leagueId) => {
+          set({ isLoading: true, error: null }, false, 'fetchBattingLeaders/start');
+          try {
+            const page = get().currentPage;
+            const response = await statsService.fetchBattingLeaders(leagueId, page);
+            set({ battingLeaders: response.data, isLoading: false }, false, 'fetchBattingLeaders/success');
+          } catch (err) {
+            set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch batting leaders' }, false, 'fetchBattingLeaders/error');
+          }
+        },
+
+        fetchPitchingLeaders: async (leagueId) => {
+          set({ isLoading: true, error: null }, false, 'fetchPitchingLeaders/start');
+          try {
+            const page = get().currentPage;
+            const response = await statsService.fetchPitchingLeaders(leagueId, page);
+            set({ pitchingLeaders: response.data, isLoading: false }, false, 'fetchPitchingLeaders/success');
+          } catch (err) {
+            set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch pitching leaders' }, false, 'fetchPitchingLeaders/error');
+          }
+        },
+
+        fetchTeamStats: async (leagueId) => {
+          try {
+            const teamStats = await statsService.fetchTeamStats(leagueId);
+            set({ teamStats }, false, 'fetchTeamStats');
+          } catch (err) {
+            set({ error: err instanceof Error ? err.message : 'Failed to fetch team stats' }, false, 'fetchTeamStats/error');
+          }
+        },
       }),
       {
         name: 'bl-stats-v1',

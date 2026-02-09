@@ -1,5 +1,69 @@
 # Changelog
 
+## 2026-02-09 - Phase 7: Integration Layer (REQ-MIG, REQ-API, REQ-DATA-007, REQ-NFR-005/015/019)
+
+### Added
+- **SQL Migrations** (REQ-MIG-001 through REQ-MIG-013):
+  - 12 migration files in `supabase/migrations/` -- leagues, teams, rosters, schedule, season_stats, game_logs, archives, simulation_progress tables; indexes; RLS enable + policies; season_year column
+  - `supabase/seed.sql` -- Idempotent seed data (3 users, 1 league, 8 teams, 168 players, 20 schedule days, stats)
+  - 6 pgTAP RLS test stubs in `supabase/tests/` (require Docker to execute)
+- **Database TypeScript Types** (REQ-API-008):
+  - `src/lib/types/database.ts` -- Row/Insert/Update types per table; Database interface matching Supabase gen types format; Relationships metadata
+- **Supabase Client Wrappers**:
+  - `src/lib/supabase/client.ts` -- Browser client singleton with VITE_SUPABASE_URL/ANON_KEY
+  - `src/lib/supabase/server.ts` -- Server client for API functions with SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
+- **API Infrastructure** (`api/_lib/`):
+  - `response.ts` -- ok/created/accepted/noContent/paginated helpers with X-Request-Id and ApiResponse envelope
+  - `errors.ts` -- handleApiError mapping AppError categories to HTTP status codes (400/401/403/404/409/429/500)
+  - `validate.ts` -- Zod-based validateBody/validateQuery with AppError transformation
+  - `auth.ts` -- requireAuth extracting Bearer token, verifying via Supabase auth.getUser()
+  - `transform.ts` -- Deep recursive snakeToCamel/camelToSnake field conversion (REQ-API-008)
+  - `method-guard.ts` -- HTTP method validation returning 405
+- **API Endpoints** (~20 files in `api/leagues/`):
+  - League CRUD: POST create, GET by ID, DELETE (commissioner only), POST join via invite_key
+  - Team/Roster: GET list teams, PATCH update team, GET roster
+  - Standings/Schedule: GET computed standings, GET schedule with optional day filter
+  - Statistics: GET paginated batting/pitching leaders (REQ-NFR-019), GET team aggregate stats
+  - Simulation: POST sync (1 day, 200) or async (multi-day, 202) with simulation_progress
+  - Game detail: GET box score + play-by-play
+  - Draft: POST start, POST pick with turn validation, GET state
+  - Transactions: POST add/drop/trade with roster limit validation
+  - Archive: POST archive season (commissioner only), GET list past seasons
+- **Client Service Layer** (`src/services/`):
+  - `api-client.ts` -- fetch wrapper with auth headers from Supabase session, envelope unwrapping, error mapping
+  - `league-service.ts` -- 7 functions (fetchLeague, createLeague, deleteLeague, joinLeague, fetchTeams, fetchStandings, fetchSchedule)
+  - `roster-service.ts` -- 3 functions (fetchRoster, updateTeam, updateLineup)
+  - `stats-service.ts` -- 3 functions (fetchBattingLeaders, fetchPitchingLeaders, fetchTeamStats)
+  - `simulation-service.ts` -- 3 functions + Supabase Realtime subscription for async sim progress
+  - `draft-service.ts` -- 3 functions (startDraft, submitPick, fetchDraftState)
+  - `index.ts` -- Barrel re-export of all service functions
+- **Store Async Integration** (REQ-STATE-003, REQ-STATE-004):
+  - `leagueStore.ts` -- Added fetchLeagueData, fetchStandings, fetchSchedule async actions
+  - `rosterStore.ts` -- Added fetchRoster, saveLineup async actions
+  - `statsStore.ts` -- Added fetchBattingLeaders, fetchPitchingLeaders, fetchTeamStats async actions
+  - `simulationStore.ts` -- Added runSimulation, subscribeToSimProgress, unsubscribeFromSimProgress async actions
+  - `authStore.ts` -- Added initialize() with getSession + onAuthStateChange listener
+- **Auth Integration**:
+  - `useAuth.ts` -- Added login/signup functions calling Supabase Auth
+  - `LoginPage.tsx` -- Wired with controlled form, error handling, navigation
+  - `AuthGuard.tsx` -- Real auth check with initialization + redirect to /login
+- **Test Infrastructure**:
+  - `tests/fixtures/mock-supabase.ts` -- Factory for mocked Supabase query builder, request, response
+
+### Changed
+- `.eslintrc.cjs` -- Added `argsIgnorePattern: '^_'` for unused vars, `no-explicit-any: off` for test files
+
+### Verification
+- `npm test` -- 1,574 tests pass across 122 test files (1,320 existing + 254 new)
+- New tests: 65 API infrastructure + 105 API endpoints + 41 services + 43 store/auth = 254
+- `npx tsc --noEmit -p api/tsconfig.json` -- API directory compiles clean
+- `npx tsc --noEmit` -- Main app: only pre-existing platoon.ts warnings
+- `npm run lint` -- 19 pre-existing errors from prior phases; zero new Phase 7 errors
+- Plan document: `docs/plans/phase-7-integration.md`
+
+### Phase 7 Complete
+5 sub-phases finished (7A-7E). ~64 new source files + ~41 new test files. Full integration layer from SQL schema through API endpoints, client services, to store async actions. Frontend remains functional with mock data; real services ready for Supabase deployment.
+
 ## 2026-02-09 - Phase 6: Frontend Foundation (REQ-COMP, REQ-STATE, REQ-ARCH-002)
 
 ### Added

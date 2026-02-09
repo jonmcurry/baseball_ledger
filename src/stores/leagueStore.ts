@@ -10,6 +10,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';
 import type { ScheduleDay } from '@lib/types/schedule';
+import * as leagueService from '@services/league-service';
 import { createSafeStorage } from './storage-factory';
 
 export interface LeagueState {
@@ -33,6 +34,9 @@ export interface LeagueActions {
   setError: (error: string | null) => void;
   updateTeamRecord: (teamId: string, wins: number, losses: number) => void;
   reset: () => void;
+  fetchLeagueData: (id: string) => Promise<void>;
+  fetchStandings: (id: string) => Promise<void>;
+  fetchSchedule: (id: string, day?: number) => Promise<void>;
 }
 
 export type LeagueStore = LeagueState & LeagueActions;
@@ -51,7 +55,7 @@ const initialState: LeagueState = {
 export const useLeagueStore = create<LeagueStore>()(
   devtools(
     persist(
-      immer((set) => ({
+      immer((set, _get) => ({
         ...initialState,
 
         setActiveLeague: (league) =>
@@ -141,6 +145,54 @@ export const useLeagueStore = create<LeagueStore>()(
             false,
             'reset',
           ),
+
+        fetchLeagueData: async (id) => {
+          set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchLeagueData/start');
+          try {
+            const [league, teams, standings, schedule] = await Promise.all([
+              leagueService.fetchLeague(id),
+              leagueService.fetchTeams(id),
+              leagueService.fetchStandings(id),
+              leagueService.fetchSchedule(id),
+            ]);
+            set((state) => {
+              state.activeLeagueId = id;
+              state.league = league;
+              state.teams = teams;
+              state.standings = standings;
+              state.schedule = schedule;
+              state.currentDay = league.currentDay;
+              state.isLoading = false;
+            }, false, 'fetchLeagueData/success');
+          } catch (err) {
+            set((state) => {
+              state.isLoading = false;
+              state.error = err instanceof Error ? err.message : String((err as { message?: string }).message ?? 'Failed to fetch league data');
+            }, false, 'fetchLeagueData/error');
+          }
+        },
+
+        fetchStandings: async (id) => {
+          try {
+            const standings = await leagueService.fetchStandings(id);
+            set((state) => { state.standings = standings; }, false, 'fetchStandings');
+          } catch (err) {
+            set((state) => {
+              state.error = err instanceof Error ? err.message : 'Failed to fetch standings';
+            }, false, 'fetchStandings/error');
+          }
+        },
+
+        fetchSchedule: async (id, day) => {
+          try {
+            const schedule = await leagueService.fetchSchedule(id, day);
+            set((state) => { state.schedule = schedule; }, false, 'fetchSchedule');
+          } catch (err) {
+            set((state) => {
+              state.error = err instanceof Error ? err.message : 'Failed to fetch schedule';
+            }, false, 'fetchSchedule/error');
+          }
+        },
       })),
       {
         name: 'bl-league-v1',
