@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-02-09 - Phase 4A: League & Draft Pure Logic (REQ-LGE, REQ-DFT, REQ-RST, REQ-ERR)
+
+### Added
+- **Error Handling Foundation** (REQ-ERR-001, REQ-ERR-002):
+  - `src/lib/errors/error-codes.ts` -- ErrorCode constants for all domains (AUTH, DRAFT, LEAGUE, ROSTER, VALIDATION, SIMULATION, DATA, EXTERNAL)
+  - `src/lib/errors/app-error.ts` -- AppError class extending Error with category, code, statusCode, details
+  - `src/lib/errors/error-factory.ts` -- Factory functions: createValidationError, createAuthError, createNotFoundError, createConflictError, createDraftError, createLeagueError, createSimulationError
+- **Team Name Generation** (REQ-LGE-004):
+  - `src/lib/league/team-generator.ts` -- 57 US cities, 60 mascots, Fisher-Yates shuffle with SeededRNG, no duplicates within a league
+- **Division Assignment** (REQ-LGE-005):
+  - `src/lib/league/division-assignment.ts` -- AL/NL split, 4 divisions (East/South/West/North), even distribution with remainder handling
+- **Invite Key Generation** (REQ-LGE-003):
+  - `src/lib/league/invite-key.ts` -- 12-char alphanumeric keys from SeededRNG (62-char charset)
+- **Draft Order & Snake Logic** (REQ-DFT-001, REQ-DFT-002):
+  - `src/lib/draft/draft-order.ts` -- 21-round snake draft, Fisher-Yates shuffle, getPickingTeam, getNextPick
+- **AI Draft Valuation** (REQ-DFT-007):
+  - `src/lib/draft/ai-valuation.ts` -- Batter: (OPS*100)+(SB*0.5)+(fieldingPct*20)+positionBonus; SP: ((4.50-ERA)*30)+(K9*5)-(BB9*8)+(stamina*3); RP/CL: ((3.50-ERA)*25)+(K9*6)-(BB9*10); selectBestSeason for multi-season players
+- **AI Draft Strategy** (REQ-DFT-006):
+  - `src/lib/draft/ai-strategy.ts` -- Need-first approach: early rounds (1-3) best available excluding RP/CL; mid rounds (4-8) SP rotation then premium positions (C/SS/CF); late rounds (9+) CL, RP, remaining starters, bench
+- **Roster Validation** (REQ-DFT-008, REQ-RST-001):
+  - `src/lib/draft/roster-validator.ts` -- validateRoster, getRosterGaps, autoFillRoster; enforces 21-player composition (9 starters + 4 bench + 4 SP + 3 RP + 1 CL); OF positions interchangeable
+- **Lineup Generation** (REQ-RST-003, REQ-RST-004):
+  - `src/lib/roster/lineup-generator.ts` -- AI lineup: #1=highest OBP+speed, #2=highest contact, #3=highest OPS, #4=highest SLG, #5-7=next OPS, #8=weakest, #9=second weakest; validateLineup checks 9 slots + position coverage
+- **Zod Validation Schemas** (REQ-ERR-005, REQ-ERR-006, REQ-ERR-007):
+  - `src/lib/validation/league-schemas.ts` -- createLeagueSchema (name 3-50, teamCount even 4-32, yearRange 1901-2025, injuriesEnabled), joinLeagueSchema (12-char alphanumeric inviteKey)
+  - `src/lib/validation/draft-schemas.ts` -- draftPickSchema (leagueId UUID, teamId UUID, playerId, seasonYear 1901-2025)
+  - `src/lib/validation/zod-error-mapper.ts` -- mapZodError transforms ZodError to AppError with field-level ValidationDetail[]
+
+### Verification
+- `npm test` -- 953 tests pass across 52 test files (744 existing + 209 new)
+- New tests: 26 error + 19 team-gen + 17 division + 6 invite-key + 20 draft-order + 24 ai-valuation + 13 ai-strategy + 23 roster-validator + 19 lineup-gen + 42 validation = 209
+- All new source files compile cleanly with `tsc --noEmit`
+- Plan document: `docs/plans/phase-4-league-draft.md`
+
+### Phase 4A Complete
+All 10 pure logic tasks finished. Sub-phases 4B-4D (infrastructure, services/API, state/UI) deferred until Docker is available for local Supabase.
+
 ## 2026-02-09 - Phase 3, Task 15: Manager AI Decisions (REQ-AI-001 through REQ-AI-004)
 
 ### Added
