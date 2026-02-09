@@ -1681,7 +1681,7 @@ If any team is short, auto-fill from remaining player pool using best available 
 
 ### 9.1 Schedule Generation
 
-**REQ-SCH-001**: AL teams only play AL teams. NL teams only play NL teams.
+**REQ-SCH-001**: AL teams only play AL teams. NL teams only play NL teams.  AL and NL are split into divisions, and teams play each other within their division more often than they play teams in the other division.  
 
 **REQ-SCH-002**: All teams play on the same day, once per day. No rainouts.
 
