@@ -14,31 +14,35 @@ vi.mock('@services/roster-service', () => ({
 import { useRosterStore } from '../../../src/stores/rosterStore';
 import * as rosterService from '@services/roster-service';
 import type { RosterEntry } from '@lib/types/roster';
+import type { PlayerCard } from '@lib/types/player';
+
+const mockCard = (nameFirst: string, nameLast: string, pos: string, year: number): PlayerCard => ({
+  playerId: `p-${nameLast.toLowerCase()}`,
+  nameFirst,
+  nameLast,
+  seasonYear: year,
+  battingHand: 'R',
+  throwingHand: 'R',
+  primaryPosition: pos,
+  eligiblePositions: [pos],
+  isPitcher: false,
+  card: [7, 8, 9, 7, 13, 8, 7, 9, 8, 14, 7, 8, 9, 13, 14, 7, 8, 9, 8, 7, 9, 7, 8, 19, 8, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  powerRating: 19,
+  archetype: { byte33: 7, byte34: 0 },
+  speed: 0.6,
+  power: 0.5,
+  discipline: 0.5,
+  contactRate: 0.7,
+  fieldingPct: 0.98,
+  range: 0.7,
+  arm: 0.6,
+});
 
 const mockRoster: RosterEntry[] = [
   {
     id: 'r-1',
     playerId: 'p-1',
-    playerCard: {
-      playerId: 'p-1',
-      firstName: 'Ken',
-      lastName: 'Griffey',
-      yearId: 1993,
-      bats: 'L',
-      throws: 'L',
-      positions: ['CF'],
-      primaryPosition: 'CF',
-      cardValues: [7, 8, 9, 7, 13, 8, 7, 9, 8, 14, 7, 8, 9, 13, 14, 7, 8, 9, 8, 7, 9, 7, 8, 19, 8, 7],
-      pitcherGrade: null,
-      powerRating: 19,
-      speedRating: 6,
-      battingStats: {
-        G: 150, AB: 580, R: 90, H: 175, doubles: 30, triples: 5, HR: 25,
-        RBI: 85, SB: 20, CS: 5, BB: 60, SO: 100, IBB: 3, HBP: 5,
-        SH: 2, SF: 4, GIDP: 10, BA: 0.302, OBP: 0.370, SLG: 0.510, OPS: 0.880,
-      },
-      pitchingStats: null,
-    },
+    playerCard: mockCard('Ken', 'Griffey', 'CF', 1993),
     rosterSlot: 'starter',
     lineupOrder: 1,
     lineupPosition: 'CF',
@@ -46,26 +50,7 @@ const mockRoster: RosterEntry[] = [
   {
     id: 'r-2',
     playerId: 'p-2',
-    playerCard: {
-      playerId: 'p-2',
-      firstName: 'Cal',
-      lastName: 'Ripken',
-      yearId: 1991,
-      bats: 'R',
-      throws: 'R',
-      positions: ['SS'],
-      primaryPosition: 'SS',
-      cardValues: [7, 8, 9, 7, 13, 8, 7, 9, 8, 14, 7, 8, 9, 13, 14, 7, 8, 9, 8, 7, 9, 7, 8, 19, 8, 7],
-      pitcherGrade: null,
-      powerRating: 19,
-      speedRating: 4,
-      battingStats: {
-        G: 160, AB: 600, R: 85, H: 180, doubles: 28, triples: 2, HR: 20,
-        RBI: 80, SB: 5, CS: 3, BB: 55, SO: 80, IBB: 2, HBP: 3,
-        SH: 1, SF: 5, GIDP: 14, BA: 0.300, OBP: 0.360, SLG: 0.480, OPS: 0.840,
-      },
-      pitchingStats: null,
-    },
+    playerCard: mockCard('Cal', 'Ripken', 'SS', 1991),
     rosterSlot: 'starter',
     lineupOrder: 2,
     lineupPosition: 'SS',

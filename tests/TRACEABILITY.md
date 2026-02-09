@@ -116,6 +116,32 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-COMP-005 TypewriterText | `tests/unit/components/feedback/TypewriterText.test.tsx` |
 | REQ-COMP-011 CSS animations | `src/styles/globals.css` (stamp-slam, cursor-blink, prefers-reduced-motion) |
 
+## Phase 10: Feature UI Requirements
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-COMP-002 Postseason theme | `tests/unit/hooks/usePostseasonTheme.test.ts`, `src/styles/globals.css` |
+| REQ-COMP-006 Input | `tests/unit/components/forms/Input.test.tsx` |
+| REQ-COMP-007 Select | `tests/unit/components/forms/Select.test.tsx` |
+| REQ-COMP-008 Toggle | `tests/unit/components/forms/Toggle.test.tsx` |
+| REQ-COMP-009 ConfirmDialog | `tests/unit/components/forms/ConfirmDialog.test.tsx` |
+| REQ-COMP-010 DiamondField | `tests/unit/components/baseball/DiamondField.test.tsx` |
+| REQ-COMP-012 PlayerCardDisplay | `tests/unit/components/baseball/PlayerCardDisplay.test.tsx` |
+| REQ-COMP-013 Scoreboard | `tests/unit/components/baseball/Scoreboard.test.tsx` |
+| REQ-COMP-014 ProgressBar | `tests/unit/components/feedback/ProgressBar.test.tsx` |
+| REQ-STATE-003 Draft store | `tests/unit/stores/draftStore.test.ts` |
+| REQ-STATE-014 Realtime progress | `tests/unit/hooks/useRealtimeProgress.test.ts` |
+| REQ-NFR-020 Realtime progress hook | `tests/unit/hooks/useRealtimeProgress.test.ts` |
+| REQ-UI-001 League config page | `tests/unit/features/league/LeagueConfigPage.test.tsx` |
+| REQ-UI-002 Join league page | `tests/unit/features/league/JoinLeaguePage.test.tsx` |
+| REQ-UI-003 Draft board page | `tests/unit/features/draft/DraftBoardPage.test.tsx`, `tests/unit/features/draft/DraftTicker.test.tsx`, `tests/unit/features/draft/AvailablePlayersTable.test.tsx`, `tests/unit/features/draft/PickTimer.test.tsx`, `tests/unit/features/draft/RosterPreviewPanel.test.tsx` |
+| REQ-UI-004 Roster management | `tests/unit/features/roster/RosterPage.test.tsx`, `tests/unit/features/roster/LineupDiamond.test.tsx`, `tests/unit/features/roster/BenchPanel.test.tsx`, `tests/unit/features/roster/PitchingRotation.test.tsx` |
+| REQ-UI-005 Game viewer | `tests/unit/features/game-viewer/GameViewerPage.test.tsx`, `tests/unit/features/game-viewer/PlayByPlayFeed.test.tsx`, `tests/unit/features/game-viewer/BoxScoreDisplay.test.tsx`, `tests/unit/features/game-viewer/GameStatePanel.test.tsx` |
+| REQ-UI-006 Transactions page | `tests/unit/features/transactions/TransactionsPage.test.tsx`, `tests/unit/features/transactions/AddDropForm.test.tsx`, `tests/unit/features/transactions/TradeForm.test.tsx`, `tests/unit/features/transactions/TransactionLog.test.tsx` |
+| REQ-UI-007 Playoffs page | `tests/unit/features/playoffs/PlayoffsPage.test.tsx`, `tests/unit/features/playoffs/PlayoffBracketView.test.tsx`, `tests/unit/features/playoffs/SeriesCard.test.tsx` |
+| REQ-UI-008 Archive page | `tests/unit/features/archive/ArchivePage.test.tsx`, `tests/unit/features/archive/SeasonDetail.test.tsx` |
+| REQ-UI-009 Playoff sim lock | `tests/unit/features/dashboard/SimulationControls.test.tsx` |
+
 ## Test Requirements
 
 | Requirement | Coverage |

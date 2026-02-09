@@ -90,4 +90,21 @@ describe('SimulationControls', () => {
     );
     expect(screen.getByText('42%')).toBeInTheDocument();
   });
+
+  it('locks to single-game mode during playoffs', () => {
+    render(
+      <SimulationControls isRunning={false} progressPct={0} onSimulate={vi.fn()} leagueStatus="playoffs" />,
+    );
+    expect(screen.getByText('Sim Day')).toBeInTheDocument();
+    expect(screen.queryByText('Sim Week')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sim Month')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sim Season')).not.toBeInTheDocument();
+  });
+
+  it('shows playoff mode message during playoffs', () => {
+    render(
+      <SimulationControls isRunning={false} progressPct={0} onSimulate={vi.fn()} leagueStatus="playoffs" />,
+    );
+    expect(screen.getByText(/Playoff mode/)).toBeInTheDocument();
+  });
 });

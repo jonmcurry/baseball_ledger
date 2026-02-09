@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-02-09 - Phase 10: Feature UI Implementation
+
+### Added
+- **Shared Form Components** (Sub-phase 10A):
+  - `src/components/forms/Input.tsx` -- Text input with label, error state, aria-describedby
+  - `src/components/forms/Select.tsx` -- Dropdown with label and SelectOption type
+  - `src/components/forms/Toggle.tsx` -- Accessible switch with role="switch", aria-checked
+  - `src/components/forms/ConfirmDialog.tsx` -- Modal with focus trap, Escape key, overlay click
+- **Baseball + Feedback Components** (Sub-phase 10B):
+  - `src/components/baseball/DiamondField.tsx` -- SVG diamond (viewBox 400x360) with 9 positions, click-to-assign
+  - `src/components/baseball/PlayerCardDisplay.tsx` -- Modal digital baseball card with vintage styling
+  - `src/components/baseball/Scoreboard.tsx` -- Compact game state composing BaseIndicator
+  - `src/components/feedback/ProgressBar.tsx` -- Linear progress bar with role="progressbar"
+- **Draft Store + Hooks** (Sub-phase 10C):
+  - `src/stores/draftStore.ts` -- Zustand store for draft state, available players, pick timer
+  - `src/hooks/useDraft.ts` -- Composes authStore + leagueStore + draftStore, derives isMyPick
+  - `src/hooks/useRealtimeProgress.ts` -- Simulation progress subscription with cache invalidation (REQ-STATE-014)
+  - `src/hooks/usePostseasonTheme.ts` -- Sets data-theme="postseason" on html during playoffs (REQ-COMP-002)
+- **League Config + Join Pages** (Sub-phase 10D):
+  - `src/features/league/LeagueConfigForm.tsx` -- Form sub-component with validation
+  - Replaced LeagueConfigPage and JoinLeaguePage stubs with full implementations
+- **Draft Board Page** (Sub-phase 10E):
+  - `src/features/draft/DraftTicker.tsx` -- Vertical scrolling pick list with role="log"
+  - `src/features/draft/AvailablePlayersTable.tsx` -- Sortable/filterable table with search and position filter
+  - `src/features/draft/PickTimer.tsx` -- 60s countdown with urgency styling at <10s
+  - `src/features/draft/RosterPreviewPanel.tsx` -- Team roster preview filtered by teamId
+  - Replaced DraftBoardPage stub with 3-panel layout (ticker, players, roster)
+- **Roster Management Page** (Sub-phase 10F):
+  - `src/features/roster/LineupDiamond.tsx` -- Wraps DiamondField with lineup editing
+  - `src/features/roster/BenchPanel.tsx` -- Bench player list with "Add to Lineup" action
+  - `src/features/roster/PitchingRotation.tsx` -- SP1-SP4 with NEXT indicator, bullpen, closer
+  - Replaced RosterPage stub with full lineup, bench, and pitching rotation views
+- **Game Viewer Page** (Sub-phase 10G):
+  - `src/features/game-viewer/PlayByPlayFeed.tsx` -- Scrolling play-by-play with auto-scroll
+  - `src/features/game-viewer/BoxScoreDisplay.tsx` -- Full box score composing LineScore
+  - `src/features/game-viewer/GameStatePanel.tsx` -- Live game state composing Scoreboard
+  - `tests/fixtures/mock-game.ts` -- Factory functions for game results, plays, box scores
+  - Replaced GameViewerPage stub with route-param-based game result display
+- **Transactions Page** (Sub-phase 10H):
+  - `src/features/transactions/AddDropForm.tsx` -- Drop player from roster form
+  - `src/features/transactions/TradeForm.tsx` -- Trade proposal with team selection
+  - `src/features/transactions/TransactionLog.tsx` -- Transaction history with type badges
+  - Replaced TransactionsPage stub with tab layout (Add/Drop, Trade, History)
+- **Playoffs + Archive Pages** (Sub-phase 10I):
+  - `src/features/playoffs/PlayoffBracketView.tsx` -- Visual bracket with rounds and champion
+  - `src/features/playoffs/SeriesCard.tsx` -- Individual series matchup card
+  - `src/features/archive/SeasonList.tsx` -- Archived seasons list
+  - `src/features/archive/SeasonDetail.tsx` -- Season drill-down with standings
+  - Replaced PlayoffsPage and ArchivePage stubs with full implementations
+
+### Modified
+- `src/features/dashboard/SimulationControls.tsx` -- Added `leagueStatus` prop; locks to single-game mode during playoffs (REQ-COMP-002)
+- `src/styles/globals.css` -- Postseason CSS custom property overrides already present from Phase 1
+
+### Metrics
+- Tests: 1,813 -> 1,946 (+133 new, 184 test files)
+- Source files: ~260 -> ~295 (+35)
+- Sub-phases: 10A-10J (forms, baseball components, draft store/hooks, league pages, draft board, roster, game viewer, transactions, playoffs/archive, polish)
+- All 8 stub pages replaced with functional implementations
+
 ## 2026-02-09 - Phase 9: Performance & Polish (Final SRD Phase)
 
 ### Added

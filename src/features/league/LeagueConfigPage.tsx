@@ -1,14 +1,53 @@
 /**
  * LeagueConfigPage
  *
- * League creation and configuration page (commissioner only).
+ * League creation and configuration page.
+ * Uses useAuth for the current user, and league-service for creation.
+ *
+ * Layer 7: Feature page. Composes hooks + shared components.
  */
 
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@hooks/useAuth';
+import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { LeagueConfigForm } from './LeagueConfigForm';
+import type { LeagueFormData } from './LeagueConfigForm';
+import * as leagueService from '@services/league-service';
+
 export function LeagueConfigPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(config: LeagueFormData) {
+    if (!user) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const league = await leagueService.createLeague({
+        name: config.name,
+        teamCount: config.teamCount,
+        yearRangeStart: config.yearRangeStart,
+        yearRangeEnd: config.yearRangeEnd,
+        injuriesEnabled: config.injuriesEnabled,
+      });
+      navigate(`/leagues/${league.id}/dashboard`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create league');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
-    <div>
-      <h2 className="font-headline text-2xl font-bold text-ballpark">League Configuration</h2>
-      <p className="mt-gutter text-ink">Configure league settings...</p>
+    <div className="mx-auto max-w-lg space-y-gutter-lg">
+      <h2 className="font-headline text-2xl font-bold text-ballpark">Create a League</h2>
+
+      {error && <ErrorBanner severity="error" message={error} />}
+
+      <LeagueConfigForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
   );
 }

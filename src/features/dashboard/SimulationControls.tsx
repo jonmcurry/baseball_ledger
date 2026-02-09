@@ -9,6 +9,7 @@ export interface SimulationControlsProps {
   isRunning: boolean;
   progressPct: number;
   onSimulate: (scope: 'day' | 'week' | 'month' | 'season') => void;
+  leagueStatus?: string | null;
 }
 
 const SCOPES: { scope: 'day' | 'week' | 'month' | 'season'; label: string }[] = [
@@ -22,11 +23,18 @@ export function SimulationControls({
   isRunning,
   progressPct,
   onSimulate,
+  leagueStatus,
 }: SimulationControlsProps) {
+  const isPlayoffs = leagueStatus === 'playoffs';
+  const availableScopes = isPlayoffs ? SCOPES.filter((s) => s.scope === 'day') : SCOPES;
+
   return (
     <div className="flex flex-col gap-3">
+      {isPlayoffs && (
+        <p className="text-xs font-medium text-muted">Playoff mode: single-game simulation only</p>
+      )}
       <div className="flex gap-2">
-        {SCOPES.map(({ scope, label }) => (
+        {availableScopes.map(({ scope, label }) => (
           <button
             key={scope}
             type="button"
