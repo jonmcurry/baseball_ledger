@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-08 - Phase 1, Task 5: Lahman CSV Loader
+
+### Added
+- **CSV Parsing Layer**: 8 source files in `src/lib/csv/` implementing PapaParse-based Lahman data loading per REQ-DATA-001, REQ-DATA-002, REQ-DATA-002a, REQ-DATA-006
+  - `csv-types.ts` -- Raw CSV row types (RawPeopleRow, RawBattingRow, RawPitchingRow, RawFieldingRow), parsed domain records (PersonRecord, BattingSeasonRecord, PitchingSeasonRecord, FieldingSeasonRecord), player pool types (PlayerPoolEntry, LeagueAverages, CsvParseResult)
+  - `parser.ts` -- PapaParse streaming wrapper (parseCsvStream with step callback per REQ-NFR-011, parseCsvFull for small files), safeParseInt/safeParseFloat utilities
+  - `people-loader.ts` -- People.csv parser with handedness mapping (Lahman B->S for switch hitters, B/S->R for ambidextrous throwers)
+  - `batting-loader.ts` -- Batting.csv parser with multi-stint aggregation (sums counting stats, computes BA/OBP/SLG/OPS from aggregated totals), year range filtering, 2B->doubles/3B->triples column mapping
+  - `pitching-loader.ts` -- Pitching.csv parser with IPouts-to-IP conversion (baseball notation: 478->159.1), multi-stint aggregation (sums IPouts before converting), BFP->BF mapping, HLD/BS default to 0, ERA/WHIP derived from true decimal IP
+  - `fielding-loader.ts` -- Fielding.csv parser with position mapping (OF->RF, P->SP), PH/PR row filtering, same-position stint aggregation
+  - `player-pool.ts` -- Player pool assembly joining all 4 data sources, qualification filtering (batter>=200 AB, pitcher>=50 IP, two-way=EITHER per REQ-DATA-002a), league average computation (BA, HR/PA, BB/PA, SO/PA, ERA, K/9, BB/9, ISO, BABIP per REQ-DATA-006)
+  - `index.ts` -- Barrel re-exports for clean `@lib/csv` imports
+- **Mini-Lahman Test Fixtures**: 4 CSV files in `tests/fixtures/mini-lahman/` extracted from real 1971 Lahman data (53 players, 56 batting rows, 17 pitching rows, 75 fielding rows) including multi-stint players, switch hitters, LH throwers, and below-threshold players
+- **CSV Loader Tests**: 6 test files in `tests/unit/lib/csv/` (101 new tests) covering parser utilities, all 4 loaders with mini-lahman fixtures, player pool assembly, qualification thresholds, and league average computation
+
+### Verification
+- `npm run build` -- TypeScript compiles with strict mode
+- `npm test` -- 157 tests pass across 16 test files (56 type + 101 CSV)
+- `npm run lint` -- ESLint passes with 0 errors
+
 ## 2026-02-08 - Phase 1, Task 4: Core TypeScript Interfaces
 
 ### Added
