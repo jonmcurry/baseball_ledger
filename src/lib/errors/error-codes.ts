@@ -49,6 +49,11 @@ export const ERROR_CODES = {
 
   // External domain
   EXTERNAL_SERVICE: 'ERR_EXTERNAL_SERVICE',
+
+  // AI/Claude domain
+  CLAUDE_TIMEOUT: 'ERR_CLAUDE_TIMEOUT',
+  CLAUDE_MALFORMED: 'ERR_CLAUDE_MALFORMED',
+  CLAUDE_UNAVAILABLE: 'ERR_CLAUDE_UNAVAILABLE',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

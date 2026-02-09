@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-02-09 - Phase 8: AI Enhancement (REQ-AI-006, REQ-AI-007, REQ-AI-008)
+
+### Added
+- **AI Type Definitions** (`src/lib/types/ai.ts`):
+  - CommentaryStyle, AiSource, ManagerDecisionType type aliases
+  - Request/Response interfaces for all 5 AI features: Commentary, GameSummary, TradeEvaluation, DraftReasoning, ManagerExplanation
+  - Barrel re-exports via `src/lib/types/index.ts`
+- **Template Fallback Engine** (REQ-AI-008 -- graceful degradation):
+  - `src/lib/ai/commentary-templates.ts` -- 250+ template strings covering 26 OutcomeCategory x 3 styles (newspaper/radio/modern) x 3 situations (routine/clutch/dramatic)
+  - `src/lib/ai/template-commentary.ts` -- Deterministic commentary selection via hash(batterId + inning + outs), situation detection (routine/clutch/dramatic)
+  - `src/lib/ai/template-game-summary.ts` -- Headline variants (Rout/Cruise/Nip/Top/Edge), lead paragraph, highlights, line score
+  - `src/lib/ai/template-trade-eval.ts` -- Manager personality thresholds (conservative +15%, aggressive -5%, balanced +5%, analytical +10% with positional premiums)
+  - `src/lib/ai/template-draft-reasoning.ts` -- Round-aware reasoning (early/mid/late tiers matching ai-strategy.ts)
+  - `src/lib/ai/template-manager-explanation.ts` -- Decision type x personality templates for steal/bunt/IBB/pull decisions
+- **Claude API Client** (`api/_lib/claude-client.ts`):
+  - Anthropic SDK wrapper with 10s timeout, 3 retries with exponential backoff (1s/2s/4s)
+  - `isClaudeAvailable()` checks for ANTHROPIC_API_KEY
+  - `callClaude()` returns null on failure (callers use templates)
+- **Prompt Builders** (`api/_lib/prompts/`):
+  - 5 prompt builder modules: commentary, game-summary, trade-eval, draft-reasoning, manager-explanation
+  - Style-specific system prompts with structured user prompts
+- **AI Error Codes** (`src/lib/errors/error-codes.ts`):
+  - Added CLAUDE_TIMEOUT, CLAUDE_MALFORMED, CLAUDE_UNAVAILABLE codes
+  - Added `createExternalError()` factory for 502 responses
+- **AI API Endpoints** (`api/ai/`):
+  - POST /api/ai/commentary -- Play-by-play commentary
+  - POST /api/ai/game-summary -- Post-game newspaper recap
+  - POST /api/ai/trade-eval -- Trade evaluation with manager personality
+  - POST /api/ai/draft-reasoning -- Draft pick explanation
+  - POST /api/ai/manager-explanation -- In-game decision explanation
+  - All endpoints: checkMethod(POST) -> requireAuth -> validateBody(Zod) -> callClaude -> template fallback -> ok(200)
+- **Client AI Service** (`src/services/ai-service.ts`):
+  - 5 functions: generateCommentary, generateGameSummary, evaluateTrade, generateDraftReasoning, explainManagerDecision
+  - Barrel re-export via `src/services/index.ts`
+
+### Metrics
+- Tests: 1,688 -> 1,749 (+61 new, 17 test files)
+- Source files: ~224 -> ~244 (+20)
+- AI endpoints: 0 -> 5
+- Template fallbacks: 0 -> 5
+- Lint errors: 19 pre-existing (unchanged)
+
 ## 2026-02-09 - Phase 7: Integration Layer (REQ-MIG, REQ-API, REQ-DATA-007, REQ-NFR-005/015/019)
 
 ### Added

@@ -76,3 +76,19 @@ export type {
   ArchiveSummary,
   SimulationProgress,
 } from './api';
+
+export type {
+  CommentaryStyle,
+  AiSource,
+  CommentaryRequest,
+  CommentaryResponse,
+  GameSummaryRequest,
+  GameSummaryResponse,
+  TradeEvaluationRequest,
+  TradeEvaluationResponse,
+  DraftReasoningRequest,
+  DraftReasoningResponse,
+  ManagerDecisionType,
+  ManagerExplanationRequest,
+  ManagerExplanationResponse,
+} from './ai';

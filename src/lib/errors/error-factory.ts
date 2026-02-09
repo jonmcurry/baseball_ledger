@@ -76,3 +76,11 @@ export function createLeagueError(code: string, message: string): AppError {
 export function createSimulationError(message: string, cause?: Error): AppError {
   return new AppError('SIMULATION', ERROR_CODES.SIMULATION_FAILED, message, 500, undefined, cause);
 }
+
+/**
+ * Create an external service error (502).
+ * Used for Claude API failures that bubble up through the error handler.
+ */
+export function createExternalError(code: string, message: string, cause?: Error): AppError {
+  return new AppError('EXTERNAL', code, message, 502, undefined, cause);
+}

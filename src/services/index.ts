@@ -51,3 +51,11 @@ export {
   apiPatch,
   apiDelete,
 } from './api-client';
+
+export {
+  generateCommentary,
+  generateGameSummary,
+  evaluateTrade,
+  generateDraftReasoning,
+  explainManagerDecision,
+} from './ai-service';
