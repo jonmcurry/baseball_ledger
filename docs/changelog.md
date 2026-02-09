@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-08 - Phase 2: Card Generator (APBA Port)
+
+### Added
+- **Card Generator**: 8 source files in `src/lib/card-generator/` implementing APBA-style card generation from Lahman stats per REQ-DATA-005, REQ-DATA-005a, REQ-DATA-006
+  - `structural.ts` -- 9 structural constants at card positions 1,3,6,11,13,18,23,25,32 with values 30,28,27,26,31,29,25,32,35 (Step 2)
+  - `rate-calculator.ts` -- Per-PA rate computation from BattingStats (walkRate, strikeoutRate, homeRunRate, singleRate, doubleRate, tripleRate, sbRate, ISO) per Step 1
+  - `power-rating.ts` -- ISO-to-8-tier power scale mapping at card position 24 (values 13,15,16,17,18,19,20,21) per Step 4
+  - `archetype.ts` -- Hierarchical decision tree for bytes 33-34: pitcher(0,6), power(1,0/1,1), speed(6,0), contact+speed(0,2), elite defense(8,0), utility(5,0), standard(7,0/0,1) per Step 5
+  - `pitcher-grade.ts` -- ERA percentile ranking to 15-tier grade (15=ace top 3%, 1=worst bottom 1%) per REQ-DATA-005a
+  - `value-mapper.ts` -- Rate-to-card-value mapping using APBA correlation table (13=walk r=.978, 14=K r=.959, 1=HR r=.715, 7/8/9=singles, 0=double), slot allocation with scale factors, singles quality split by BABIP per Step 3
+  - `pitcher-card.ts` -- Pitcher batting card generation (flooded with value 13), PitcherAttributes (role from GS%, grade, stamina, k9/bb9/hr9, usage flags) per Step 6
+  - `generator.ts` -- Orchestrator: generateCard() and generateAllCards() entry points, computes fielding pct/range/arm/speed/discipline/contactRate, determines primary/eligible positions
+- **Card Generator Tests**: 8 test files in `tests/unit/lib/card-generator/` (164 new tests) covering structural constants, rate calculation, power rating tiers, archetype decision tree, pitcher grade percentile mapping, value mapping with slot allocation, pitcher card generation, and full integration tests with mini-lahman fixtures
+
+### Verification
+- `npm run build` -- TypeScript compiles with strict mode
+- `npm test` -- 321 tests pass across 24 test files (157 existing + 164 new)
+- `npm run lint` -- ESLint passes with 0 errors
+
 ## 2026-02-08 - Phase 1, Task 5: Lahman CSV Loader
 
 ### Added
