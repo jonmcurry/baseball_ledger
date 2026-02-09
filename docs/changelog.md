@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-08 - Phase 1, Task 4: Core TypeScript Interfaces
+
+### Added
+- **Layer 0 Type Definitions**: 9 type files in `src/lib/types/` with 50+ interfaces, types, and enums per SRD Sections 4, 5, 6, 7, 8, 9, 10, 14, 15.8
+  - `errors.ts` -- ErrorCategory (9 categories), AppError, ValidationDetail, ApiErrorResponse, ErrorLogEntry
+  - `stats.ts` -- BattingStats (21 fields), PitchingStats (22 fields) with counting + derived stats
+  - `player.ts` -- CardValue, Position (12 positions), PlayerArchetype (bytes 33-34), PitcherAttributes (grade 1-15, role, usage flags), PlayerCard (35-element card array, power rating, batting/defensive modifiers)
+  - `game.ts` -- OutcomeCategory enum (26 values, 15-40), BaseState, OutcomeTableEntry (IDT port), LineupSlot, GamePitcherStats, BattingLine, PitchingLine, TeamState, GameState (full mid-game snapshot), PlayByPlayEntry, BoxScore, GameResult
+  - `league.ts` -- LeagueStatus, ManagerProfile (4 styles with 9 decision thresholds), LeagueSummary, TeamSummary, DivisionStandings
+  - `draft.ts` -- DraftPickResult, DraftState (21 rounds, 60s timer)
+  - `schedule.ts` -- ScheduleGameSummary, ScheduleDay
+  - `roster.ts` -- RosterEntry (5 slot types), LineupUpdate
+  - `api.ts` -- ApiResponse<T>, PaginatedResponse<T>, JoinLeagueResult, GameDetail, TransactionResult, ArchiveSummary, SimulationProgress
+  - `index.ts` -- Barrel re-export for clean `@lib/types` imports
+- **Type Tests**: 9 test files in `tests/unit/lib/types/` (56 tests total) verifying all interfaces compile and validate correctly
+- **Fix**: Added explicit `resolve.alias` to `vitest.config.ts` for path alias resolution with value imports (enums)
+
+### Verification
+- `npm run build` -- TypeScript compiles with strict mode
+- `npm test` -- 56 tests pass across 10 test files
+- `npm run lint` -- ESLint passes with 0 errors
+
 ## 2026-02-08 - Phase 1, Task 1: Project Scaffolding
 
 ### Added
