@@ -17,7 +17,12 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'node',
+    environmentMatchGlobs: [
+      // Use jsdom only for component tests
+      ['tests/unit/components/**', 'jsdom'],
+      ['tests/e2e/**', 'jsdom'],
+    ],
     setupFiles: ['./tests/setup.ts'],
     testTimeout: 10_000,
     pool: 'forks',
