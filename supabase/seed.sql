@@ -6,7 +6,7 @@
 -- All INSERTs use ON CONFLICT DO NOTHING for idempotency.
 
 -- ===================================================================
--- TEST USERS (created via Supabase Auth, referenced by UUID)
+-- TEST USERS (inserted into auth.users for FK references)
 -- ===================================================================
 -- User 1: Commissioner (alice@test.com)
 --   UUID: 00000000-0000-0000-0000-000000000001
@@ -14,9 +14,13 @@
 --   UUID: 00000000-0000-0000-0000-000000000002
 -- User 3: Team Owner (carol@test.com)
 --   UUID: 00000000-0000-0000-0000-000000000003
---
--- Note: These users must be created via supabase auth admin or signup.
--- The seed only references their UUIDs in FK columns.
+
+INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, confirmation_token, raw_app_meta_data, raw_user_meta_data)
+VALUES
+  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'alice@test.com', crypt('password123', gen_salt('bf')), now(), now(), now(), '', '{"provider":"email","providers":["email"]}'::jsonb, '{"display_name":"Alice Commissioner"}'::jsonb),
+  ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'bob@test.com',   crypt('password123', gen_salt('bf')), now(), now(), now(), '', '{"provider":"email","providers":["email"]}'::jsonb, '{"display_name":"Bob Owner"}'::jsonb),
+  ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'carol@test.com', crypt('password123', gen_salt('bf')), now(), now(), now(), '', '{"provider":"email","providers":["email"]}'::jsonb, '{"display_name":"Carol Owner"}'::jsonb)
+ON CONFLICT (id) DO NOTHING;
 
 -- ===================================================================
 -- SAMPLE LEAGUE
