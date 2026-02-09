@@ -1,0 +1,704 @@
+/**
+ * Game Runner - Full Game Orchestrator
+ *
+ * REQ-SIM-001: Game state machine (inning flow, half-inning transitions).
+ * REQ-SIM-002: Game state object management.
+ * REQ-SIM-004: Card lookup with pitcher grade gate.
+ * REQ-SIM-016: Post-game output generation.
+ * REQ-NFR-007: Deterministic seeded RNG.
+ *
+ * Ties all simulation modules together into a single `runGame()` function
+ * that orchestrates a complete baseball game from first pitch to final out.
+ *
+ * Layer 1: Pure logic, no I/O, deterministic given seed.
+ */
+
+import type { PlayerCard, Position } from '../types/player';
+import type {
+  GameState,
+  TeamState,
+  GameResult,
+  PlayByPlayEntry,
+  BaseState,
+  BattingLine,
+  PitchingLine,
+} from '../types/game';
+import { OutcomeCategory } from '../types/game';
+import type { ManagerStyle } from './manager-profiles';
+import { getManagerProfile } from './manager-profiles';
+import { SeededRNG } from '../rng/seeded-rng';
+import {
+  createInitialGameState,
+  advanceHalfInning,
+  isGameOver,
+  shouldSkipBottomHalf,
+  advanceBatterIndex,
+} from './engine';
+import { resolvePlateAppearance } from './plate-appearance';
+import { resolveOutcome } from './outcome-resolver';
+import { computeEffectiveGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
+import type { PitcherGameState } from './pitching';
+import { evaluateStealDecision, evaluateBuntDecision, evaluateIntentionalWalkDecision, evaluatePitcherPullDecision } from './manager-ai';
+import type { GameSituation } from './manager-ai';
+import { resolveBunt } from './bunt-resolver';
+import { attemptStolenBase, canAttemptStolenBase } from './stolen-base';
+import { checkForError } from './defense';
+import {
+  buildLineScore,
+  buildBoxScore,
+  assignPitcherDecisions,
+  buildEmptyBattingLine,
+  buildEmptyPitchingLine,
+} from './game-result';
+import type { InningRuns, PitchingLineWithMeta } from './game-result';
+
+/** Safety limit to prevent infinite loops */
+const MAX_PLATE_APPEARANCES = 500;
+
+/**
+ * Configuration for running a game.
+ */
+export interface RunGameConfig {
+  gameId: string;
+  seed: number;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeLineup: { playerId: string; playerName: string; position: Position }[];
+  awayLineup: { playerId: string; playerName: string; position: Position }[];
+  homeBatterCards: Map<string, PlayerCard>;
+  awayBatterCards: Map<string, PlayerCard>;
+  homeStartingPitcher: PlayerCard;
+  awayStartingPitcher: PlayerCard;
+  homeBullpen: PlayerCard[];
+  awayBullpen: PlayerCard[];
+  homeCloser: PlayerCard | null;
+  awayCloser: PlayerCard | null;
+  homeManagerStyle: ManagerStyle;
+  awayManagerStyle: ManagerStyle;
+}
+
+/**
+ * Internal mutable game tracking state.
+ */
+interface GameTracker {
+  rng: SeededRNG;
+  playByPlay: PlayByPlayEntry[];
+  inningRuns: InningRuns[];
+  battingLines: Map<string, BattingLine>;
+  pitchingLines: Map<string, PitchingLineWithMeta>;
+  homePitcherState: PitcherGameState;
+  awayPitcherState: PitcherGameState;
+  homeCurrentPitcher: PlayerCard;
+  awayCurrentPitcher: PlayerCard;
+  homeBullpenAvailable: PlayerCard[];
+  awayBullpenAvailable: PlayerCard[];
+  homeCloser: PlayerCard | null;
+  awayCloser: PlayerCard | null;
+  homeBatterIndex: number;
+  awayBatterIndex: number;
+  homeHits: number;
+  awayHits: number;
+  homeErrors: number;
+  awayErrors: number;
+  currentHalfInningRuns: number;
+  consecutiveHitsWalks: number;
+}
+
+function isHitOutcome(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.SINGLE_CLEAN ||
+    outcome === OutcomeCategory.SINGLE_ADVANCE ||
+    outcome === OutcomeCategory.DOUBLE ||
+    outcome === OutcomeCategory.TRIPLE ||
+    outcome === OutcomeCategory.HOME_RUN ||
+    outcome === OutcomeCategory.HOME_RUN_VARIANT
+  );
+}
+
+function isWalkOutcome(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.WALK ||
+    outcome === OutcomeCategory.WALK_INTENTIONAL ||
+    outcome === OutcomeCategory.HIT_BY_PITCH
+  );
+}
+
+function isStrikeout(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.STRIKEOUT_LOOKING ||
+    outcome === OutcomeCategory.STRIKEOUT_SWINGING
+  );
+}
+
+function countRunnersOnBase(bases: BaseState): number {
+  let count = 0;
+  if (bases.first !== null) count++;
+  if (bases.second !== null) count++;
+  if (bases.third !== null) count++;
+  return count;
+}
+
+function buildGameSituation(
+  state: GameState,
+  batterCard: PlayerCard,
+  pitcherState: PitcherGameState,
+  pitcherCard: PlayerCard,
+): GameSituation {
+  const startingGrade = pitcherCard.pitching?.grade ?? 1;
+  const effectiveGrade = computeEffectiveGrade(pitcherCard, pitcherState.inningsPitched);
+
+  return {
+    inning: state.inning,
+    outs: state.outs,
+    runnerOnFirst: state.bases.first !== null,
+    runnerOnSecond: state.bases.second !== null,
+    runnerOnThird: state.bases.third !== null,
+    scoreDiff: state.halfInning === 'top'
+      ? state.awayScore - state.homeScore
+      : state.homeScore - state.awayScore,
+    batterContactRate: batterCard.contactRate,
+    batterOpsRank: (batterCard.power + batterCard.contactRate) / 2,
+    runnerSpeed: batterCard.speed,
+    pitcherEffectiveGradePct: effectiveGrade / startingGrade,
+    firstBaseOpen: state.bases.first === null,
+    runnerInScoringPosition: state.bases.second !== null || state.bases.third !== null,
+  };
+}
+
+function initPitcherState(): PitcherGameState {
+  return {
+    inningsPitched: 0,
+    earnedRuns: 0,
+    consecutiveHitsWalks: 0,
+    currentInning: 1,
+    isShutout: true,
+    isNoHitter: true,
+  };
+}
+
+function getOrCreateBattingLine(tracker: GameTracker, playerId: string): BattingLine {
+  let line = tracker.battingLines.get(playerId);
+  if (!line) {
+    line = buildEmptyBattingLine(playerId);
+    tracker.battingLines.set(playerId, line);
+  }
+  return line;
+}
+
+function getOrCreatePitchingLine(
+  tracker: GameTracker,
+  playerId: string,
+  isStarter: boolean,
+  teamSide: 'home' | 'away',
+): PitchingLineWithMeta {
+  let line = tracker.pitchingLines.get(playerId);
+  if (!line) {
+    line = { ...buildEmptyPitchingLine(playerId), isStarter, teamSide };
+    tracker.pitchingLines.set(playerId, line);
+  }
+  return line;
+}
+
+function recordHitStats(battingLine: BattingLine, outcome: OutcomeCategory): void {
+  battingLine.H++;
+  switch (outcome) {
+    case OutcomeCategory.DOUBLE:
+      battingLine.doubles++;
+      break;
+    case OutcomeCategory.TRIPLE:
+      battingLine.triples++;
+      break;
+    case OutcomeCategory.HOME_RUN:
+    case OutcomeCategory.HOME_RUN_VARIANT:
+      battingLine.HR++;
+      break;
+  }
+}
+
+/**
+ * Run a complete baseball game.
+ *
+ * Orchestrates all simulation modules: plate appearances, outcome resolution,
+ * baserunning, defense, stolen bases, pitching management, and manager AI.
+ *
+ * @param config - Game configuration with teams, lineups, and pitchers
+ * @returns Complete GameResult with box score, batting/pitching lines, and play-by-play
+ */
+export function runGame(config: RunGameConfig): GameResult {
+  const rng = new SeededRNG(config.seed);
+
+  // Build initial TeamState objects
+  const homeTeam: TeamState = {
+    teamId: config.homeTeamId,
+    lineup: config.homeLineup.map((s) => ({
+      rosterId: s.playerId,
+      playerId: s.playerId,
+      playerName: s.playerName,
+      position: s.position,
+    })),
+    currentPitcher: config.homeStartingPitcher,
+    bullpen: [...config.homeBullpen],
+    closer: config.homeCloser,
+    benchPlayers: [],
+    pitcherStats: { IP: 0, H: 0, R: 0, ER: 0, BB: 0, SO: 0, HR: 0, BF: 0, pitchCount: 0 },
+    pitchersUsed: [config.homeStartingPitcher],
+  };
+
+  const awayTeam: TeamState = {
+    teamId: config.awayTeamId,
+    lineup: config.awayLineup.map((s) => ({
+      rosterId: s.playerId,
+      playerId: s.playerId,
+      playerName: s.playerName,
+      position: s.position,
+    })),
+    currentPitcher: config.awayStartingPitcher,
+    bullpen: [...config.awayBullpen],
+    closer: config.awayCloser,
+    benchPlayers: [],
+    pitcherStats: { IP: 0, H: 0, R: 0, ER: 0, BB: 0, SO: 0, HR: 0, BF: 0, pitchCount: 0 },
+    pitchersUsed: [config.awayStartingPitcher],
+  };
+
+  let state = createInitialGameState({
+    gameId: config.gameId,
+    homeTeam,
+    awayTeam,
+    seed: config.seed,
+  });
+
+  const tracker: GameTracker = {
+    rng,
+    playByPlay: [],
+    inningRuns: [],
+    battingLines: new Map(),
+    pitchingLines: new Map(),
+    homePitcherState: initPitcherState(),
+    awayPitcherState: initPitcherState(),
+    homeCurrentPitcher: config.homeStartingPitcher,
+    awayCurrentPitcher: config.awayStartingPitcher,
+    homeBullpenAvailable: [...config.homeBullpen],
+    awayBullpenAvailable: [...config.awayBullpen],
+    homeCloser: config.homeCloser,
+    awayCloser: config.awayCloser,
+    homeBatterIndex: 0,
+    awayBatterIndex: 0,
+    homeHits: 0,
+    awayHits: 0,
+    homeErrors: 0,
+    awayErrors: 0,
+    currentHalfInningRuns: 0,
+    consecutiveHitsWalks: 0,
+  };
+
+  // Initialize pitching lines for starters
+  getOrCreatePitchingLine(tracker, config.homeStartingPitcher.playerId, true, 'home');
+  getOrCreatePitchingLine(tracker, config.awayStartingPitcher.playerId, true, 'away');
+
+  const homeProfile = getManagerProfile(config.homeManagerStyle);
+  const awayProfile = getManagerProfile(config.awayManagerStyle);
+
+  let totalPAs = 0;
+
+  // Main game loop
+  while (!isGameOver(state) && totalPAs < MAX_PLATE_APPEARANCES) {
+    // Check if we should skip bottom half
+    if (state.halfInning === 'bottom' && shouldSkipBottomHalf(state.inning, state.homeScore, state.awayScore)) {
+      // Record empty bottom half
+      tracker.inningRuns.push({ inning: state.inning, halfInning: 'bottom', runs: 0 });
+      state = { ...state, isComplete: true };
+      break;
+    }
+
+    tracker.currentHalfInningRuns = 0;
+    tracker.consecutiveHitsWalks = 0;
+
+    const isTopHalf = state.halfInning === 'top';
+    const batterCards = isTopHalf ? config.awayBatterCards : config.homeBatterCards;
+    const lineup = isTopHalf ? config.awayLineup : config.homeLineup;
+    const fieldingPitcher = isTopHalf ? tracker.homeCurrentPitcher : tracker.awayCurrentPitcher;
+    const fieldingPitcherState = isTopHalf ? tracker.homePitcherState : tracker.awayPitcherState;
+    const fieldingProfile = isTopHalf ? homeProfile : awayProfile;
+    const battingProfile = isTopHalf ? awayProfile : homeProfile;
+    const fieldingSide: 'home' | 'away' = isTopHalf ? 'home' : 'away';
+
+    // Process plate appearances until 3 outs
+    while (state.outs < 3 && !isGameOver(state) && totalPAs < MAX_PLATE_APPEARANCES) {
+      const batterIdx = isTopHalf ? tracker.awayBatterIndex : tracker.homeBatterIndex;
+      const batterSlot = lineup[batterIdx];
+      const batterCard = batterCards.get(batterSlot.playerId);
+      if (!batterCard) break;
+
+      // -- Manager AI pre-pitch decisions --
+      const situation = buildGameSituation(state, batterCard, fieldingPitcherState, fieldingPitcher);
+
+      // 1. Pitcher pull check (fielding team manager)
+      if (evaluatePitcherPullDecision(fieldingProfile, situation, rng) &&
+          shouldRemoveStarter(fieldingPitcher, fieldingPitcherState)) {
+        const runnersOn = countRunnersOnBase(state.bases);
+
+        // Try closer first
+        if (fieldingSide === 'home' && tracker.homeCloser &&
+            shouldBringInCloser(state.homeScore, state.awayScore, state.inning, runnersOn)) {
+          tracker.homeCurrentPitcher = tracker.homeCloser;
+          tracker.homeCloser = null;
+          tracker.homePitcherState = initPitcherState();
+          getOrCreatePitchingLine(tracker, tracker.homeCurrentPitcher.playerId, false, 'home');
+        } else if (fieldingSide === 'away' && tracker.awayCloser &&
+            shouldBringInCloser(state.awayScore, state.homeScore, state.inning, runnersOn)) {
+          tracker.awayCurrentPitcher = tracker.awayCloser;
+          tracker.awayCloser = null;
+          tracker.awayPitcherState = initPitcherState();
+          getOrCreatePitchingLine(tracker, tracker.awayCurrentPitcher.playerId, false, 'away');
+        } else {
+          // Try reliever
+          const bullpen = fieldingSide === 'home' ? tracker.homeBullpenAvailable : tracker.awayBullpenAvailable;
+          const reliever = selectReliever(bullpen);
+          if (reliever) {
+            if (fieldingSide === 'home') {
+              tracker.homeCurrentPitcher = reliever;
+              tracker.homeBullpenAvailable = tracker.homeBullpenAvailable.filter((p) => p !== reliever);
+              tracker.homePitcherState = initPitcherState();
+            } else {
+              tracker.awayCurrentPitcher = reliever;
+              tracker.awayBullpenAvailable = tracker.awayBullpenAvailable.filter((p) => p !== reliever);
+              tracker.awayPitcherState = initPitcherState();
+            }
+            getOrCreatePitchingLine(tracker, reliever.playerId, false, fieldingSide);
+          }
+        }
+      }
+
+      // Re-read current pitcher after potential change
+      const currentPitcher = isTopHalf ? tracker.homeCurrentPitcher : tracker.awayCurrentPitcher;
+      const currentPitcherState = isTopHalf ? tracker.homePitcherState : tracker.awayPitcherState;
+
+      // 2. Stolen base check (batting team manager)
+      if (state.bases.first !== null && canAttemptStolenBase('first', state.outs)) {
+        const runnerCard = batterCards.get(state.bases.first) ?? batterCard;
+        const stealSituation: GameSituation = {
+          ...situation,
+          runnerSpeed: runnerCard.speed,
+        };
+        if (evaluateStealDecision(battingProfile, stealSituation, rng)) {
+          // Find the catcher's arm rating for the fielding team
+          const catcherArm = 0.6; // Default; lineup doesn't expose full card access for catcher
+          const sbResult = attemptStolenBase('first', runnerCard.speed, runnerCard.archetype, catcherArm, rng);
+          const runnerBattingLine = getOrCreateBattingLine(tracker, state.bases.first);
+
+          if (sbResult.success) {
+            runnerBattingLine.SB++;
+            state = {
+              ...state,
+              bases: { first: null, second: state.bases.first, third: state.bases.third },
+            };
+          } else {
+            runnerBattingLine.CS++;
+            state = {
+              ...state,
+              bases: { first: null, second: state.bases.second, third: state.bases.third },
+              outs: state.outs + 1,
+            };
+            if (state.outs >= 3) break;
+          }
+          continue; // Re-evaluate situation after SB attempt (no PA consumed)
+        }
+      }
+
+      // 3. Intentional walk check
+      if (evaluateIntentionalWalkDecision(fieldingProfile, situation, rng)) {
+        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId);
+        battingLine.BB++;
+        const pitchingLine = getOrCreatePitchingLine(tracker, currentPitcher.playerId, false, fieldingSide);
+        pitchingLine.BB++;
+        pitchingLine.BF++;
+
+        const ibbResolution = resolveOutcome(OutcomeCategory.WALK_INTENTIONAL, state.bases, state.outs, batterSlot.playerId);
+        state = {
+          ...state,
+          bases: ibbResolution.basesAfter,
+          homeScore: isTopHalf ? state.homeScore : state.homeScore + ibbResolution.runsScored,
+          awayScore: isTopHalf ? state.awayScore + ibbResolution.runsScored : state.awayScore,
+        };
+
+        if (ibbResolution.runsScored > 0) {
+          battingLine.RBI += ibbResolution.rbiCredits;
+          tracker.currentHalfInningRuns += ibbResolution.runsScored;
+          currentPitcherState.earnedRuns += ibbResolution.runsScored;
+          currentPitcherState.isShutout = false;
+        }
+
+        tracker.consecutiveHitsWalks++;
+        currentPitcherState.consecutiveHitsWalks++;
+
+        // Advance batter
+        if (isTopHalf) {
+          tracker.awayBatterIndex = advanceBatterIndex(tracker.awayBatterIndex);
+        } else {
+          tracker.homeBatterIndex = advanceBatterIndex(tracker.homeBatterIndex);
+        }
+        totalPAs++;
+        continue;
+      }
+
+      // 4. Bunt check (batting team manager)
+      if (evaluateBuntDecision(battingProfile, situation, rng)) {
+        const buntResult = resolveBunt(rng, batterCard.speed, 0);
+        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId);
+        const pitchingLine = getOrCreatePitchingLine(tracker, currentPitcher.playerId, false, fieldingSide);
+        pitchingLine.BF++;
+
+        if (buntResult.outcome === null || buntResult.resumePA) {
+          // Bunt foul, resume PA -- simplified: advance batter, skip this PA
+          totalPAs++;
+          if (isTopHalf) {
+            tracker.awayBatterIndex = advanceBatterIndex(tracker.awayBatterIndex);
+          } else {
+            tracker.homeBatterIndex = advanceBatterIndex(tracker.homeBatterIndex);
+          }
+          continue;
+        }
+
+        // Resolve the bunt outcome against base state
+        const buntResolution = resolveOutcome(buntResult.outcome, state.bases, state.outs, batterSlot.playerId);
+
+        if (isHitOutcome(buntResult.outcome)) {
+          battingLine.AB++;
+          recordHitStats(battingLine, buntResult.outcome);
+          if (isTopHalf) tracker.awayHits++;
+          else tracker.homeHits++;
+        } else if (buntResult.outcome === OutcomeCategory.SACRIFICE) {
+          battingLine.SF++;
+        } else {
+          battingLine.AB++;
+          if (isStrikeout(buntResult.outcome)) battingLine.SO++;
+        }
+
+        battingLine.RBI += buntResolution.rbiCredits;
+
+        if (buntResolution.runsScored > 0) {
+          tracker.currentHalfInningRuns += buntResolution.runsScored;
+          currentPitcherState.earnedRuns += buntResolution.runsScored;
+          currentPitcherState.isShutout = false;
+        }
+
+        state = {
+          ...state,
+          bases: buntResolution.basesAfter,
+          outs: state.outs + buntResolution.outsAdded,
+          homeScore: isTopHalf ? state.homeScore : state.homeScore + buntResolution.runsScored,
+          awayScore: isTopHalf ? state.awayScore + buntResolution.runsScored : state.awayScore,
+        };
+
+        tracker.consecutiveHitsWalks = 0;
+        currentPitcherState.consecutiveHitsWalks = 0;
+
+        if (isTopHalf) {
+          tracker.awayBatterIndex = advanceBatterIndex(tracker.awayBatterIndex);
+        } else {
+          tracker.homeBatterIndex = advanceBatterIndex(tracker.homeBatterIndex);
+        }
+        totalPAs++;
+        if (state.outs >= 3) break;
+        continue;
+      }
+
+      // -- Standard plate appearance --
+      const effectiveGrade = computeEffectiveGrade(currentPitcher, currentPitcherState.inningsPitched);
+      const paResult = resolvePlateAppearance(batterCard.card, effectiveGrade, rng);
+      const outcome = paResult.outcome;
+
+      // Resolve outcome against base/out state
+      const resolution = resolveOutcome(outcome, state.bases, state.outs, batterSlot.playerId);
+
+      // Update batting line
+      const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId);
+      if (!resolution.isNoPA) {
+        if (!isWalkOutcome(outcome) && !resolution.sacrificeFly) {
+          battingLine.AB++;
+        }
+        if (isHitOutcome(outcome)) {
+          recordHitStats(battingLine, outcome);
+          if (isTopHalf) tracker.awayHits++;
+          else tracker.homeHits++;
+          tracker.consecutiveHitsWalks++;
+          currentPitcherState.consecutiveHitsWalks++;
+          currentPitcherState.isNoHitter = false;
+        } else if (isWalkOutcome(outcome)) {
+          battingLine.BB++;
+          if (outcome === OutcomeCategory.HIT_BY_PITCH) battingLine.HBP++;
+          tracker.consecutiveHitsWalks++;
+          currentPitcherState.consecutiveHitsWalks++;
+        } else if (isStrikeout(outcome)) {
+          battingLine.SO++;
+          tracker.consecutiveHitsWalks = 0;
+          currentPitcherState.consecutiveHitsWalks = 0;
+        } else if (resolution.sacrificeFly) {
+          battingLine.SF++;
+          tracker.consecutiveHitsWalks = 0;
+          currentPitcherState.consecutiveHitsWalks = 0;
+        } else {
+          // Other outs
+          tracker.consecutiveHitsWalks = 0;
+          currentPitcherState.consecutiveHitsWalks = 0;
+        }
+
+        battingLine.RBI += resolution.rbiCredits;
+
+        // Batter scored
+        if (resolution.batterDestination === 'scored') {
+          battingLine.R++;
+        }
+      }
+
+      // Runners who scored
+      if (resolution.runsScored > 0) {
+        tracker.currentHalfInningRuns += resolution.runsScored;
+        currentPitcherState.earnedRuns += resolution.runsScored;
+        currentPitcherState.isShutout = false;
+      }
+
+      // Error check for outs
+      if (resolution.outsAdded > 0 && !isStrikeout(outcome)) {
+        const errorResult = checkForError(batterCard.fieldingPct, rng);
+        if (errorResult.errorOccurred) {
+          if (isTopHalf) tracker.homeErrors++;
+          else tracker.awayErrors++;
+        }
+      }
+
+      // Update pitching line
+      const pitchingLine = getOrCreatePitchingLine(
+        tracker,
+        currentPitcher.playerId,
+        currentPitcher.playerId === (isTopHalf ? config.homeStartingPitcher.playerId : config.awayStartingPitcher.playerId),
+        fieldingSide,
+      );
+      pitchingLine.BF++;
+      if (isHitOutcome(outcome)) pitchingLine.H++;
+      if (isWalkOutcome(outcome)) pitchingLine.BB++;
+      if (isStrikeout(outcome)) pitchingLine.SO++;
+      if (outcome === OutcomeCategory.HOME_RUN || outcome === OutcomeCategory.HOME_RUN_VARIANT) {
+        pitchingLine.HR++;
+      }
+      pitchingLine.R += resolution.runsScored;
+      pitchingLine.ER += resolution.runsScored; // Simplified: all runs are earned
+
+      // Update game state
+      state = {
+        ...state,
+        bases: resolution.basesAfter,
+        outs: state.outs + resolution.outsAdded,
+        homeScore: isTopHalf ? state.homeScore : state.homeScore + resolution.runsScored,
+        awayScore: isTopHalf ? state.awayScore + resolution.runsScored : state.awayScore,
+      };
+
+      // Record play-by-play
+      tracker.playByPlay.push({
+        inning: state.inning,
+        halfInning: state.halfInning,
+        outs: state.outs,
+        batterId: batterSlot.playerId,
+        pitcherId: currentPitcher.playerId,
+        cardPosition: paResult.cardPosition,
+        cardValue: paResult.cardValue,
+        outcomeTableRow: paResult.outcomeTableRow ?? -1,
+        outcome,
+        description: `${batterSlot.playerName}: ${OutcomeCategory[outcome]}`,
+        basesAfter: { ...state.bases },
+        scoreAfter: { home: state.homeScore, away: state.awayScore },
+      });
+
+      // Advance batter in order
+      if (!resolution.isNoPA) {
+        if (isTopHalf) {
+          tracker.awayBatterIndex = advanceBatterIndex(tracker.awayBatterIndex);
+        } else {
+          tracker.homeBatterIndex = advanceBatterIndex(tracker.homeBatterIndex);
+        }
+      }
+
+      totalPAs++;
+
+      // Check for walk-off
+      if (isGameOver(state)) break;
+    }
+
+    // Record inning runs
+    tracker.inningRuns.push({
+      inning: state.inning,
+      halfInning: state.halfInning,
+      runs: tracker.currentHalfInningRuns,
+    });
+
+    // Update pitcher IP for the half inning
+    const pitcherForIP = isTopHalf ? tracker.homeCurrentPitcher : tracker.awayCurrentPitcher;
+    const pitcherStateForIP = isTopHalf ? tracker.homePitcherState : tracker.awayPitcherState;
+    if (state.outs >= 3) {
+      pitcherStateForIP.inningsPitched++;
+      pitcherStateForIP.currentInning = state.inning + 1;
+      const ipLine = getOrCreatePitchingLine(
+        tracker,
+        pitcherForIP.playerId,
+        pitcherForIP.playerId === (isTopHalf ? config.homeStartingPitcher.playerId : config.awayStartingPitcher.playerId),
+        fieldingSide,
+      );
+      ipLine.IP++;
+    }
+
+    // Check game end
+    if (isGameOver(state)) break;
+
+    // Advance to next half inning
+    state = advanceHalfInning(state);
+  }
+
+  // Build final result
+  const totalInnings = state.inning;
+  const lineScore = buildLineScore(tracker.inningRuns, totalInnings);
+  const boxScore = buildBoxScore(
+    lineScore,
+    tracker.awayHits,
+    tracker.homeHits,
+    tracker.awayErrors,
+    tracker.homeErrors,
+  );
+
+  // Assign pitcher decisions
+  const pitchingLinesArray = Array.from(tracker.pitchingLines.values());
+  const withDecisions = assignPitcherDecisions(pitchingLinesArray, state.homeScore, state.awayScore);
+
+  const winnerLine = withDecisions.find((l) => l.decision === 'W');
+  const loserLine = withDecisions.find((l) => l.decision === 'L');
+  const saveLine = withDecisions.find((l) => l.decision === 'SV');
+
+  // Build clean PitchingLine array (without internal metadata)
+  const cleanPitchingLines: PitchingLine[] = withDecisions.map((l) => ({
+    playerId: l.playerId,
+    IP: l.IP,
+    H: l.H,
+    R: l.R,
+    ER: l.ER,
+    BB: l.BB,
+    SO: l.SO,
+    HR: l.HR,
+    BF: l.BF,
+    decision: l.decision,
+  }));
+
+  return {
+    gameId: config.gameId,
+    homeTeamId: config.homeTeamId,
+    awayTeamId: config.awayTeamId,
+    homeScore: state.homeScore,
+    awayScore: state.awayScore,
+    innings: totalInnings,
+    winningPitcherId: winnerLine?.playerId ?? '',
+    losingPitcherId: loserLine?.playerId ?? '',
+    savePitcherId: saveLine?.playerId ?? null,
+    boxScore,
+    playerBattingLines: Array.from(tracker.battingLines.values()),
+    playerPitchingLines: cleanPitchingLines,
+    playByPlay: tracker.playByPlay,
+  };
+}

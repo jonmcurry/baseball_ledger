@@ -97,21 +97,17 @@ export function applyPlatoonAdjustment(
   }
 
   // Find first out-value position (not structural) and replace with hit
-  let outReplaced = false;
   for (let i = 0; i < adjusted.length; i++) {
     if (!STRUCTURAL_SET.has(i) && OUT_VALUES.includes(adjusted[i])) {
       adjusted[i] = HIT_VALUE;
-      outReplaced = true;
       break;
     }
   }
 
   // Find first strikeout position (not structural) and replace with contact
-  let soReplaced = false;
   for (let i = 0; i < adjusted.length; i++) {
     if (!STRUCTURAL_SET.has(i) && adjusted[i] === STRIKEOUT_VALUE) {
       adjusted[i] = CONTACT_VALUE;
-      soReplaced = true;
       break;
     }
   }

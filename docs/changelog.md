@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-02-09 - Phase 9: Performance & Polish (Final SRD Phase)
+
+### Added
+- **Game Orchestrator** (`src/lib/simulation/game-runner.ts`):
+  - `runGame(config): GameResult` -- Full game loop tying together all 15+ simulation modules
+  - Plate appearance -> outcome resolution -> baserunning -> defense -> stolen bases -> pitching fatigue -> manager AI
+  - Pure, deterministic execution via SeededRNG; walk-off detection, extra innings, pitching changes
+  - Builds GameResult via `buildBoxScore()`, `buildLineScore()`, `assignPitcherDecisions()`
+- **Season Runner** (`src/lib/simulation/season-runner.ts`):
+  - `runDay(dayNumber, games, seed): DayResult` -- Batch-processes all games for one day
+  - `runSeason(schedule, startDay, endDay, seed): SeasonResult` -- Iterates days with cumulative stats
+  - Memory-safe: strips play-by-play after each day per REQ-NFR-010
+- **Web Worker** (`src/workers/simulation-worker.ts`, `src/lib/simulation/worker-api.ts`):
+  - Client-side simulation in Web Worker keeps UI thread at 60fps (REQ-NFR-008)
+  - Map serialization/deserialization for structured clone compatibility
+  - Main-thread fallback when Worker unavailable (Node/SSR environments)
+- **Server-side Simulation** (`api/_lib/simulate-day.ts`):
+  - `simulateDayOnServer()` -- Fetches team data, runs `runDay()`, commits results via PostgreSQL RPC
+  - Atomic transaction: inserts game_logs, updates season_stats, updates standings (REQ-NFR-014)
+- **Simulate Day RPC** (`supabase/migrations/00013_simulate_day_rpc.sql`):
+  - PostgreSQL function `simulate_day_commit(league_id, day_results)` for atomic multi-table writes (REQ-NFR-016)
+- **StampAnimation** (`src/components/feedback/StampAnimation.tsx`):
+  - CSS-only stamp-slam animation for "SEASON COMPLETED" overlay (REQ-SCH-009, REQ-COMP-011)
+  - Respects `prefers-reduced-motion` media query
+- **Traditional/Advanced Stats Toggle** (REQ-STS-005):
+  - `StatColumnConfigs.ts` -- 4 column sets: BATTING_COLUMNS_TRADITIONAL/ADVANCED, PITCHING_COLUMNS_TRADITIONAL/ADVANCED
+  - Traditional: AVG, HR, RBI, ERA, W, SV; Advanced: OPS, OBP, SLG, WHIP, K/9
+  - Toggle button in StatsPage with persisted preference via statsStore
+- **Performance Benchmarks** (`tests/bench/`):
+  - `simulation.bench.ts` -- Single game < 500ms (REQ-NFR-001), 10-game day < 5s, 20-game batch < 10s (REQ-NFR-002)
+  - `csv-parse.bench.ts` -- CSV parse timing (REQ-NFR-003)
+  - Implemented as timed tests with `performance.now()` assertions
+- **Determinism Tests** (`tests/unit/lib/simulation/determinism.test.ts`):
+  - REQ-NFR-007 + REQ-TEST-014: Same seed produces identical scores, play-by-play, box scores, batting lines
+  - Different seeds produce different results; deterministic across 5 consecutive runs
+- **Traceability Matrix** (`tests/TRACEABILITY.md`):
+  - REQ-TEST-011: Full requirement-to-test mapping for all REQ-* identifiers
+- **E2E Tests** (`tests/e2e/`):
+  - `splash.spec.ts` -- Landing page title, Create/Join links (3 tests)
+  - `auth.spec.ts` -- Login form fields, submit button, validation, splash link (4 tests)
+  - `navigation.spec.ts` -- Auth redirect, 404 page, return home link (4 tests)
+  - `stats.spec.ts` -- Auth guard verification for stats/roster/standings/draft routes (4 tests)
+
+### Modified
+- `api/leagues/[id]/simulate.ts` -- Replaced stub with real simulation logic (single-day sync, multi-day async)
+- `vite.config.ts` -- Added manual chunk splitting (vendor/simulation/ui) and Web Worker support (REQ-NFR-017)
+- `vitest.config.ts` -- Added coverage thresholds: 60% statements, 50% branches, 55% functions, 60% lines (REQ-TEST-003/004)
+- `playwright.config.ts` -- Added Firefox and WebKit projects for multi-browser E2E (REQ-TEST-017)
+- `src/features/stats/StatsPage.tsx` -- Added traditional/advanced toggle button
+- `src/stores/statsStore.ts` -- Added `statView` state with localStorage persistence
+- `src/styles/globals.css` -- Added stamp-slam/cursor-blink keyframes, reduced-motion overrides
+- `index.html` -- Added font preload with Latin subset for ~60% size reduction (REQ-NFR-018)
+
+### Metrics
+- Tests: 1,749 -> 1,813 (+64 new, 148 test files)
+- Source files: ~244 -> ~260 (+16)
+- Sub-phases: 9A (game orchestrator), 9B (web worker + API), 9C (stats toggle + animations), 9D (benchmarks + determinism), 9E (E2E tests)
+- All SRD requirements addressed
+
 ## 2026-02-09 - Phase 8: AI Enhancement (REQ-AI-006, REQ-AI-007, REQ-AI-008)
 
 ### Added

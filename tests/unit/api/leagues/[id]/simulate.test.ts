@@ -86,13 +86,23 @@ describe('POST /api/leagues/:id/simulate', () => {
     expect(res._body.error).toHaveProperty('code', 'INVALID_LEAGUE_STATUS');
   });
 
-  it('returns 200 for sync simulation (days=1) with dayNumber and games', async () => {
+  it('returns 200 for sync simulation (days=1) with no games when schedule empty', async () => {
+    let fromCallCount = 0;
     const leagueBuilder = createMockQueryBuilder({
       data: { status: 'regular_season', current_day: 42 },
       error: null,
       count: null,
     });
-    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(leagueBuilder) } as never);
+    const scheduleBuilder = createMockQueryBuilder({
+      data: [],
+      error: null,
+      count: null,
+    });
+    const mockFrom = vi.fn().mockImplementation(() => {
+      fromCallCount++;
+      return fromCallCount === 1 ? leagueBuilder : scheduleBuilder;
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
 
     const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
     const res = createMockResponse();
@@ -102,7 +112,39 @@ describe('POST /api/leagues/:id/simulate', () => {
     expect(res._status).toBe(200);
     expect(res._body.data).toHaveProperty('dayNumber', 43);
     expect(res._body.data).toHaveProperty('games');
-    expect(Array.isArray(res._body.data.games)).toBe(true);
+    expect(res._body.data.games).toEqual([]);
+    expect(res._body.meta).toHaveProperty('requestId');
+  });
+
+  it('returns 200 for sync simulation (days=1) with gamesScheduled count', async () => {
+    let fromCallCount = 0;
+    const leagueBuilder = createMockQueryBuilder({
+      data: { status: 'regular_season', current_day: 42 },
+      error: null,
+      count: null,
+    });
+    const scheduleBuilder = createMockQueryBuilder({
+      data: [
+        { id: 'g-1', league_id: 'league-1', day_number: 43, home_team_id: 't-1', away_team_id: 't-2' },
+        { id: 'g-2', league_id: 'league-1', day_number: 43, home_team_id: 't-3', away_team_id: 't-4' },
+      ],
+      error: null,
+      count: null,
+    });
+    const mockFrom = vi.fn().mockImplementation(() => {
+      fromCallCount++;
+      return fromCallCount === 1 ? leagueBuilder : scheduleBuilder;
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toHaveProperty('dayNumber', 43);
+    expect(res._body.data).toHaveProperty('gamesScheduled', 2);
     expect(res._body.meta).toHaveProperty('requestId');
   });
 

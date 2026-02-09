@@ -11,7 +11,12 @@ import { StatTable } from '@components/data-display/StatTable';
 import { Pagination } from '@components/data-display/Pagination';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
-import { BATTING_COLUMNS, PITCHING_COLUMNS } from './StatColumnConfigs';
+import {
+  BATTING_COLUMNS_TRADITIONAL,
+  BATTING_COLUMNS_ADVANCED,
+  PITCHING_COLUMNS_TRADITIONAL,
+  PITCHING_COLUMNS_ADVANCED,
+} from './StatColumnConfigs';
 
 const LEAGUE_FILTERS = ['combined', 'AL', 'NL'] as const;
 
@@ -24,8 +29,10 @@ export function StatsPage() {
   const pageSize = useStatsStore((s) => s.pageSize);
   const isLoading = useStatsStore((s) => s.isLoading);
   const error = useStatsStore((s) => s.error);
+  const statView = useStatsStore((s) => s.statView);
   const setActiveTab = useStatsStore((s) => s.setActiveTab);
   const setLeagueFilter = useStatsStore((s) => s.setLeagueFilter);
+  const setStatView = useStatsStore((s) => s.setStatView);
   const setPage = useStatsStore((s) => s.setPage);
 
   const filteredBatting = leagueFilter === 'combined'
@@ -87,6 +94,17 @@ export function StatsPage() {
           </button>
         </div>
 
+        <div className="flex gap-1">
+          <button
+            type="button"
+            onClick={() => setStatView(statView === 'traditional' ? 'advanced' : 'traditional')}
+            className="rounded-button border border-sandstone px-3 py-1 text-xs font-medium text-ink hover:bg-sandstone/20"
+            aria-label="Toggle stat view"
+          >
+            {statView === 'traditional' ? 'Advanced' : 'Traditional'}
+          </button>
+        </div>
+
         <div className="ml-auto flex gap-1">
           {LEAGUE_FILTERS.map((f) => (
             <button
@@ -107,7 +125,7 @@ export function StatsPage() {
 
       {activeTab === 'batting' ? (
         <StatTable
-          columns={BATTING_COLUMNS}
+          columns={statView === 'advanced' ? BATTING_COLUMNS_ADVANCED : BATTING_COLUMNS_TRADITIONAL}
           data={pagedBatting}
           sortBy="BA"
           sortOrder="desc"
@@ -117,7 +135,7 @@ export function StatsPage() {
         />
       ) : (
         <StatTable
-          columns={PITCHING_COLUMNS}
+          columns={statView === 'advanced' ? PITCHING_COLUMNS_ADVANCED : PITCHING_COLUMNS_TRADITIONAL}
           data={pagedPitching}
           sortBy="ERA"
           sortOrder="asc"

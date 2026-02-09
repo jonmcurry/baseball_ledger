@@ -11,6 +11,8 @@ import type { BattingLeaderEntry, PitchingLeaderEntry, TeamAggregateStats } from
 import * as statsService from '@services/stats-service';
 import { createSafeStorage } from './storage-factory';
 
+export type StatView = 'traditional' | 'advanced';
+
 export interface StatsState {
   battingLeaders: BattingLeaderEntry[];
   pitchingLeaders: PitchingLeaderEntry[];
@@ -19,6 +21,7 @@ export interface StatsState {
   pageSize: number;
   activeTab: 'batting' | 'pitching';
   leagueFilter: 'AL' | 'NL' | 'combined';
+  statView: StatView;
   isLoading: boolean;
   error: string | null;
 }
@@ -30,6 +33,7 @@ export interface StatsActions {
   setPage: (page: number) => void;
   setActiveTab: (tab: 'batting' | 'pitching') => void;
   setLeagueFilter: (filter: 'AL' | 'NL' | 'combined') => void;
+  setStatView: (view: StatView) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
@@ -48,6 +52,7 @@ const initialState: StatsState = {
   pageSize: 25,
   activeTab: 'batting',
   leagueFilter: 'combined',
+  statView: 'traditional',
   isLoading: false,
   error: null,
 };
@@ -75,6 +80,9 @@ export const useStatsStore = create<StatsStore>()(
 
         setLeagueFilter: (filter) =>
           set({ leagueFilter: filter, currentPage: 1 }, false, 'setLeagueFilter'),
+
+        setStatView: (view) =>
+          set({ statView: view }, false, 'setStatView'),
 
         setLoading: (loading) =>
           set({ isLoading: loading }, false, 'setLoading'),
@@ -135,6 +143,7 @@ export const useStatsStore = create<StatsStore>()(
         partialize: (state) => ({
           activeTab: state.activeTab,
           leagueFilter: state.leagueFilter,
+          statView: state.statView,
           pageSize: state.pageSize,
         } as StatsStore),
       },

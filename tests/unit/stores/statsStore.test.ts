@@ -87,4 +87,25 @@ describe('statsStore', () => {
     expect(state.activeTab).toBe('batting');
     expect(state.currentPage).toBe(1);
   });
+
+  it('statView defaults to traditional', () => {
+    expect(useStatsStore.getState().statView).toBe('traditional');
+  });
+
+  it('setStatView updates stat view to advanced', () => {
+    useStatsStore.getState().setStatView('advanced');
+    expect(useStatsStore.getState().statView).toBe('advanced');
+  });
+
+  it('setStatView updates stat view back to traditional', () => {
+    useStatsStore.getState().setStatView('advanced');
+    useStatsStore.getState().setStatView('traditional');
+    expect(useStatsStore.getState().statView).toBe('traditional');
+  });
+
+  it('reset restores statView to traditional', () => {
+    useStatsStore.getState().setStatView('advanced');
+    useStatsStore.getState().reset();
+    expect(useStatsStore.getState().statView).toBe('traditional');
+  });
 });

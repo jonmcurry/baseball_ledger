@@ -108,4 +108,40 @@ describe('StatsPage', () => {
     render(<StatsPage />);
     expect(screen.getByText('No batting leaders available')).toBeInTheDocument();
   });
+
+  it('renders stat view toggle button', () => {
+    render(<StatsPage />);
+    expect(screen.getByLabelText('Toggle stat view')).toBeInTheDocument();
+  });
+
+  it('toggle shows "Advanced" label in traditional view (default)', () => {
+    render(<StatsPage />);
+    expect(screen.getByLabelText('Toggle stat view')).toHaveTextContent('Advanced');
+  });
+
+  it('clicking toggle switches to advanced view with OPS column', async () => {
+    const user = userEvent.setup();
+    useStatsStore.getState().setBattingLeaders(createMockBattingLeaders());
+
+    render(<StatsPage />);
+    await user.click(screen.getByLabelText('Toggle stat view'));
+
+    // Advanced batting view should show OPS column
+    expect(screen.getByText('OPS')).toBeInTheDocument();
+    // Toggle label should now say "Traditional"
+    expect(screen.getByLabelText('Toggle stat view')).toHaveTextContent('Traditional');
+  });
+
+  it('clicking toggle twice returns to traditional view', async () => {
+    const user = userEvent.setup();
+    useStatsStore.getState().setBattingLeaders(createMockBattingLeaders());
+
+    render(<StatsPage />);
+    await user.click(screen.getByLabelText('Toggle stat view'));
+    await user.click(screen.getByLabelText('Toggle stat view'));
+
+    // Back to traditional: should have RBI column but not OPS
+    expect(screen.getByText('RBI')).toBeInTheDocument();
+    expect(screen.getByLabelText('Toggle stat view')).toHaveTextContent('Advanced');
+  });
 });

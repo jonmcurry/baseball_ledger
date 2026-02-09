@@ -30,6 +30,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'json-summary'],
+      thresholds: {
+        statements: 60,
+        branches: 50,
+        functions: 55,
+        lines: 60,
+      },
     },
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'tests/**/*.bench.ts'],
   },
 });

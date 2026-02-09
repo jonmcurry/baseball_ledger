@@ -7,4 +7,24 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
   ],
+  worker: {
+    format: 'es',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'zustand'],
+          simulation: [
+            './src/lib/simulation/game-runner',
+            './src/lib/simulation/season-runner',
+            './src/lib/simulation/engine',
+            './src/lib/simulation/plate-appearance',
+            './src/lib/simulation/outcome-resolver',
+          ],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 });
