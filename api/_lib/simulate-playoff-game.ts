@@ -148,8 +148,8 @@ export async function simulatePlayoffGame(
       winning_pitcher_id: gameResult.winningPitcherId,
       losing_pitcher_id: gameResult.losingPitcherId,
       save_pitcher_id: gameResult.savePitcherId,
-      batting_lines: JSON.stringify(gameResult.battingLines),
-      pitching_lines: JSON.stringify(gameResult.pitchingLines),
+      batting_lines: JSON.stringify(gameResult.playerBattingLines),
+      pitching_lines: JSON.stringify(gameResult.playerPitchingLines),
     });
 
   return {
