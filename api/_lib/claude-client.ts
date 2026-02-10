@@ -11,6 +11,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { getServerConfig } from './config';
 
 export interface ClaudeRequest {
   readonly system: string;
@@ -34,8 +35,9 @@ let clientInstance: Anthropic | null = null;
  * Check if the Claude API is available (API key is set).
  */
 export function isClaudeAvailable(): boolean {
-  return typeof process.env.ANTHROPIC_API_KEY === 'string'
-    && process.env.ANTHROPIC_API_KEY.length > 0;
+  const config = getServerConfig();
+  return typeof config.anthropicApiKey === 'string'
+    && config.anthropicApiKey.length > 0;
 }
 
 /**
@@ -45,8 +47,9 @@ export function isClaudeAvailable(): boolean {
 function getClient(): Anthropic | null {
   if (!isClaudeAvailable()) return null;
   if (!clientInstance) {
+    const config = getServerConfig();
     clientInstance = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: config.anthropicApiKey,
       timeout: TIMEOUT_MS,
     });
   }

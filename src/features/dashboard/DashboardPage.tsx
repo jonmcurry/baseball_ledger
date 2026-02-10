@@ -13,9 +13,22 @@ import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { SimulationControls } from './SimulationControls';
 import { ScheduleView } from './ScheduleView';
 
+const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
+  day: 1,
+  week: 7,
+  month: 30,
+  season: 162,
+};
+
 export function DashboardPage() {
-  const { league, teams, standings, schedule, currentDay, isLoading, error } = useLeague();
-  const { isRunning, progressPct } = useSimulation();
+  const { league, teams, standings, schedule, currentDay, isLoading, error, leagueStatus } = useLeague();
+  const { isRunning, progressPct, runSimulation } = useSimulation();
+
+  const handleSimulate = (scope: 'day' | 'week' | 'month' | 'season') => {
+    if (!league) return;
+    const days = SCOPE_TO_DAYS[scope] ?? 1;
+    runSimulation(league.id, days);
+  };
 
   if (isLoading) {
     return <LoadingLedger message="Loading league data..." />;
@@ -41,7 +54,8 @@ export function DashboardPage() {
       <SimulationControls
         isRunning={isRunning}
         progressPct={progressPct}
-        onSimulate={() => {}}
+        onSimulate={handleSimulate}
+        leagueStatus={leagueStatus}
       />
 
       <div className="grid grid-cols-1 gap-gutter-lg md:grid-cols-2">

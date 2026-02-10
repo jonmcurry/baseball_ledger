@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phases 12-16)
+
+### Phase 12: Database Schema + Config
+- **12A:** Migration `00014_alter_game_logs_columns.sql` adding `game_id`, `innings`, pitcher IDs, `batting_lines`, `pitching_lines` to `game_logs`
+- **12B:** Client config module `src/lib/config.ts` (REQ-ENV-003/004) with fail-fast validation of `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+- **12C:** Server config module `api/_lib/config.ts` (REQ-ENV-005) with `getServerConfig()` lazy initialization
+
+### Phase 13: Error Handling Hardening
+- **13A:** PostgreSQL error code mapping (REQ-ERR-019/020) in `api/_lib/errors.ts` -- maps PG codes 23505, 23503, 23502, 23514, 40001, 57014, 42P01 to structured error categories with constraint-to-message lookup
+- **13B:** Structured JSON logging `api/_lib/logger.ts` (REQ-ERR-013/014) -- `{ timestamp, level, requestId, code, message, context }` format
+- **13C:** DB retry wrapper `api/_lib/db-retry.ts` (REQ-ERR-015/016) -- 3 retries, exponential backoff (200/400/800ms), retries transient errors only
+
+### Phase 14: Validation Schemas
+- **14A:** Roster schemas `src/lib/validation/roster-schemas.ts` (REQ-ERR-005) -- `rosterActionSchema`, `tradeSchema`, `lineupSchema` with Zod
+- **14B:** Simulation/team schemas `src/lib/validation/simulation-schemas.ts` (REQ-ERR-006) -- `simulateSchema`, `updateTeamSchema`
+
+### Phase 15: Wire Up UI Features
+- **15A:** Dashboard simulation controls (REQ-SCH-005) -- wired `onSimulate` to `runSimulation` with scope-to-days mapping
+- **15B:** GameViewer tabs (REQ-UI-010) -- Play-by-Play / Box Score tab navigation with PlayByPlayFeed and BoxScoreDisplay
+- **15C:** ArchivePage data + StampAnimation (REQ-UI-011, REQ-SCH-009) -- `useArchive` hook fetches from API, StampAnimation renders on season completion
+- **15D:** PlayoffsPage live bracket (REQ-UI-012) -- `generatePlayoffBracket()` from standings data
+- **15E:** RosterPage interactions (REQ-UI-008) -- position selection + bench-to-lineup swap via `updateRosterSlot`, with displaced starter sent to bench
+- **15F:** StatsPage sorting (REQ-STS-003) -- client-side sorting with smart defaults (ERA ascending, batting stats descending), fixed nested stats property resolution bug
+
+### Phase 16: Cleanup
+- Deleted 3 stale mock service files (`mock-league-service.ts`, `mock-stats-service.ts`, `mock-roster-service.ts`)
+- Removed 6 empty placeholder directories and ~35 redundant `.gitkeep` files from directories with real content
+- Fixed TRACEABILITY.md: corrected `card-gen/` paths to `card-generator/`, added Phase 12-15 requirement entries
+- Cleaned stale comments referencing deleted mock services
+
+### Metrics
+- Vitest: 1,978 -> 2,099 (+121 tests, 183 test files)
+- TypeScript: clean build, no errors
+- Vite: production build succeeds (3.05s)
+
 ## 2026-02-09 - API Route Consolidation (24 -> 12 Serverless Functions)
 
 ### Changed

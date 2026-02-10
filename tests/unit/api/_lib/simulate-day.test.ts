@@ -113,6 +113,24 @@ describe('simulateDayOnServer', () => {
     });
   });
 
+  it('game log entries include all columns required by the RPC schema', async () => {
+    const { client, rpcFn } = createMockSupabase();
+
+    await simulateDayOnServer(client, 'league-1', 5, [], 42);
+
+    const gameLogEntries = rpcFn.mock.calls[0][1].p_game_logs;
+    const entry = gameLogEntries[0];
+
+    // All columns that migration 00014 adds to game_logs
+    expect(entry).toHaveProperty('game_id', 'g-1');
+    expect(entry).toHaveProperty('innings', 9);
+    expect(entry).toHaveProperty('winning_pitcher_id', 'p-1');
+    expect(entry).toHaveProperty('losing_pitcher_id', 'p-2');
+    expect(entry).toHaveProperty('save_pitcher_id', null);
+    expect(entry).toHaveProperty('batting_lines');
+    expect(entry).toHaveProperty('pitching_lines');
+  });
+
   it('computes standings deltas correctly for multiple games', async () => {
     const { client, rpcFn } = createMockSupabase();
 

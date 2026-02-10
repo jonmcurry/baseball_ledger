@@ -1,8 +1,7 @@
 /**
  * League Service
  *
- * Layer 3 real service module that calls Layer 2 API endpoints.
- * Replaces mock-league-service.ts for production use.
+ * Layer 3 service module that calls Layer 2 API endpoints.
  */
 
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';

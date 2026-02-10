@@ -5,7 +5,7 @@
  * Mocks hooks to isolate page rendering logic.
  */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { DashboardPage } from '@features/dashboard/DashboardPage';
 import { createMockLeague, createMockTeams, createMockStandings, createMockScheduleDay, createMockGame } from '../../../../tests/fixtures/mock-league';
 
@@ -45,6 +45,7 @@ function setDefaultMocks() {
     progressPct: 0,
     isRunning: false,
     startSimulation: vi.fn(),
+    runSimulation: vi.fn(),
     reset: vi.fn(),
   });
 }
@@ -181,6 +182,7 @@ describe('DashboardPage', () => {
       progressPct: 50,
       isRunning: true,
       startSimulation: vi.fn(),
+      runSimulation: vi.fn(),
       reset: vi.fn(),
     });
 
@@ -199,10 +201,94 @@ describe('DashboardPage', () => {
       progressPct: 70,
       isRunning: true,
       startSimulation: vi.fn(),
+      runSimulation: vi.fn(),
       reset: vi.fn(),
     });
 
     render(<DashboardPage />);
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
+  });
+
+  it('calls runSimulation with league id and 1 day when Sim Day is clicked', () => {
+    const mockRunSim = vi.fn();
+    mockUseSimulation.mockReturnValue({
+      status: 'idle',
+      totalGames: 0,
+      completedGames: 0,
+      results: [],
+      error: null,
+      progressPct: 0,
+      isRunning: false,
+      startSimulation: vi.fn(),
+      runSimulation: mockRunSim,
+      reset: vi.fn(),
+    });
+
+    render(<DashboardPage />);
+    fireEvent.click(screen.getByText('Sim Day'));
+
+    expect(mockRunSim).toHaveBeenCalledWith('league-1', 1);
+  });
+
+  it('calls runSimulation with 7 days when Sim Week is clicked', () => {
+    const mockRunSim = vi.fn();
+    mockUseSimulation.mockReturnValue({
+      status: 'idle',
+      totalGames: 0,
+      completedGames: 0,
+      results: [],
+      error: null,
+      progressPct: 0,
+      isRunning: false,
+      startSimulation: vi.fn(),
+      runSimulation: mockRunSim,
+      reset: vi.fn(),
+    });
+
+    render(<DashboardPage />);
+    fireEvent.click(screen.getByText('Sim Week'));
+
+    expect(mockRunSim).toHaveBeenCalledWith('league-1', 7);
+  });
+
+  it('calls runSimulation with 162 days when Sim Season is clicked', () => {
+    const mockRunSim = vi.fn();
+    mockUseSimulation.mockReturnValue({
+      status: 'idle',
+      totalGames: 0,
+      completedGames: 0,
+      results: [],
+      error: null,
+      progressPct: 0,
+      isRunning: false,
+      startSimulation: vi.fn(),
+      runSimulation: mockRunSim,
+      reset: vi.fn(),
+    });
+
+    render(<DashboardPage />);
+    fireEvent.click(screen.getByText('Sim Season'));
+
+    expect(mockRunSim).toHaveBeenCalledWith('league-1', 162);
+  });
+
+  it('passes leagueStatus to SimulationControls for playoff detection', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'playoffs' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      currentDay: 162,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'playoffs',
+    });
+
+    render(<DashboardPage />);
+    // In playoff mode, only Sim Day should be visible
+    expect(screen.getByText('Sim Day')).toBeInTheDocument();
+    expect(screen.queryByText('Sim Week')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sim Season')).not.toBeInTheDocument();
   });
 });

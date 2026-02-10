@@ -1,8 +1,7 @@
 /**
  * Stats Service
  *
- * Layer 3 real service module that calls Layer 2 API endpoints.
- * Replaces mock-stats-service.ts for production use.
+ * Layer 3 service module that calls Layer 2 API endpoints.
  *
  * REQ-NFR-019: Pagination at 50 rows/page.
  */

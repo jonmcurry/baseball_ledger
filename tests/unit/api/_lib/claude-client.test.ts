@@ -2,7 +2,14 @@
  * Claude Client Tests
  */
 
-const mockCreate = vi.fn();
+const { mockCreate, mockServerConfig } = vi.hoisted(() => ({
+  mockCreate: vi.fn(),
+  mockServerConfig: {
+    supabaseUrl: 'https://test.supabase.co',
+    serviceRoleKey: 'test-service-key',
+    anthropicApiKey: undefined as string | undefined,
+  },
+}));
 
 vi.mock('@anthropic-ai/sdk', () => {
   return {
@@ -15,6 +22,10 @@ vi.mock('@anthropic-ai/sdk', () => {
   };
 });
 
+vi.mock('../../../../api/_lib/config', () => ({
+  getServerConfig: () => mockServerConfig,
+}));
+
 import {
   isClaudeAvailable,
   callClaude,
@@ -22,48 +33,42 @@ import {
 } from '../../../../api/_lib/claude-client';
 
 describe('claude-client', () => {
-  const originalEnv = process.env.ANTHROPIC_API_KEY;
-
   beforeEach(() => {
     vi.clearAllMocks();
     _resetClient();
   });
 
   afterEach(() => {
-    if (originalEnv !== undefined) {
-      process.env.ANTHROPIC_API_KEY = originalEnv;
-    } else {
-      delete process.env.ANTHROPIC_API_KEY;
-    }
+    mockServerConfig.anthropicApiKey = undefined;
     vi.useRealTimers();
   });
 
   describe('isClaudeAvailable', () => {
     it('returns true when API key is set', () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       expect(isClaudeAvailable()).toBe(true);
     });
 
     it('returns false when API key is empty', () => {
-      process.env.ANTHROPIC_API_KEY = '';
+      mockServerConfig.anthropicApiKey = '';
       expect(isClaudeAvailable()).toBe(false);
     });
 
     it('returns false when API key is not set', () => {
-      delete process.env.ANTHROPIC_API_KEY;
+      mockServerConfig.anthropicApiKey = undefined;
       expect(isClaudeAvailable()).toBe(false);
     });
   });
 
   describe('callClaude', () => {
     it('returns null when API key is not set', async () => {
-      delete process.env.ANTHROPIC_API_KEY;
+      mockServerConfig.anthropicApiKey = undefined;
       const result = await callClaude({ system: 'test', prompt: 'test' });
       expect(result).toBeNull();
     });
 
     it('returns text on successful response', async () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       mockCreate.mockResolvedValueOnce({
         content: [{ type: 'text', text: 'A sharp single by Trout.' }],
       });
@@ -73,7 +78,7 @@ describe('claude-client', () => {
     });
 
     it('returns null when response has no text block', async () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       mockCreate.mockResolvedValueOnce({
         content: [{ type: 'image', source: {} }],
       });
@@ -83,7 +88,7 @@ describe('claude-client', () => {
     });
 
     it('retries on failure and succeeds on second attempt', async () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       mockCreate
         .mockRejectedValueOnce(new Error('timeout'))
         .mockResolvedValueOnce({
@@ -100,7 +105,7 @@ describe('claude-client', () => {
     });
 
     it('returns null after all retries exhausted', async () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       mockCreate.mockRejectedValue(new Error('persistent failure'));
 
       vi.useFakeTimers();
@@ -113,7 +118,7 @@ describe('claude-client', () => {
     });
 
     it('passes maxTokens to the API', async () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       mockCreate.mockResolvedValueOnce({
         content: [{ type: 'text', text: 'Response.' }],
       });
@@ -125,7 +130,7 @@ describe('claude-client', () => {
     });
 
     it('uses default maxTokens of 256 when not specified', async () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-test-key';
+      mockServerConfig.anthropicApiKey = 'sk-test-key';
       mockCreate.mockResolvedValueOnce({
         content: [{ type: 'text', text: 'Response.' }],
       });

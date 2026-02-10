@@ -15,6 +15,7 @@ export function useSimulation() {
   const results = useSimulationStore((s) => s.results);
   const error = useSimulationStore((s) => s.error);
   const startSimulation = useSimulationStore((s) => s.startSimulation);
+  const runSimulation = useSimulationStore((s) => s.runSimulation);
   const reset = useSimulationStore((s) => s.reset);
 
   const progressPct = totalGames === 0 ? 0 : Math.round((completedGames / totalGames) * 100);
@@ -29,6 +30,7 @@ export function useSimulation() {
     progressPct,
     isRunning,
     startSimulation,
+    runSimulation,
     reset,
   };
 }

@@ -4,26 +4,30 @@
  * Creates a Supabase client with the service role key for use in
  * Vercel Serverless Functions. Bypasses RLS for server-side operations.
  *
- * Environment variables (server-side only, never VITE_ prefixed):
- *   SUPABASE_URL             - Supabase project URL
- *   SUPABASE_SERVICE_ROLE_KEY - Service role key (bypasses RLS)
+ * Reads env vars directly rather than importing api/_lib/config to avoid
+ * cross-project TypeScript boundary issues. API handlers use getServerConfig()
+ * from api/_lib/config.ts for the full server config (REQ-ENV-005).
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@lib/types/database';
 
-export function createServerClient(): SupabaseClient<Database> {
-  const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
+function requireServerEnv(key: string, fallbackKey?: string): string {
+  const value = process.env[key] ?? (fallbackKey ? process.env[fallbackKey] : undefined);
+  if (!value || value.trim() === '') {
+    const keys = fallbackKey ? `${key} or ${fallbackKey}` : key;
     throw new Error(
-      'Missing Supabase server environment variables. ' +
-      'Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+      `Missing required server environment variable: ${keys}. ` +
+      'Set it in Vercel dashboard or .env.local.'
     );
   }
+  return value;
+}
 
-  return createClient<Database>(url, serviceRoleKey, {
+export function createServerClient(): SupabaseClient<Database> {
+  const supabaseUrl = requireServerEnv('SUPABASE_URL', 'VITE_SUPABASE_URL');
+  const serviceRoleKey = requireServerEnv('SUPABASE_SERVICE_ROLE_KEY');
+  return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

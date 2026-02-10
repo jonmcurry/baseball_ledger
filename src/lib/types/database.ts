@@ -83,12 +83,19 @@ export type GameLogRow = {
   id: string;
   league_id: string;
   day_number: number;
+  game_id: string | null;
   home_team_id: string;
   away_team_id: string;
   home_score: number;
   away_score: number;
-  box_score: Record<string, unknown>;
-  play_by_play: Record<string, unknown>[];
+  innings: number | null;
+  winning_pitcher_id: string | null;
+  losing_pitcher_id: string | null;
+  save_pitcher_id: string | null;
+  box_score: Record<string, unknown> | null;
+  play_by_play: Record<string, unknown>[] | null;
+  batting_lines: Record<string, unknown> | null;
+  pitching_lines: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -186,12 +193,19 @@ export type GameLogInsert = {
   id?: string;
   league_id: string;
   day_number: number;
+  game_id?: string | null;
   home_team_id: string;
   away_team_id: string;
   home_score: number;
   away_score: number;
-  box_score: Record<string, unknown>;
-  play_by_play: Record<string, unknown>[];
+  innings?: number | null;
+  winning_pitcher_id?: string | null;
+  losing_pitcher_id?: string | null;
+  save_pitcher_id?: string | null;
+  box_score?: Record<string, unknown> | null;
+  play_by_play?: Record<string, unknown>[] | null;
+  batting_lines?: Record<string, unknown> | null;
+  pitching_lines?: Record<string, unknown> | null;
 }
 
 export type ArchiveInsert = {

@@ -5,7 +5,7 @@
  * Tabs for batting/pitching, league filter, pagination.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useStatsStore } from '@stores/statsStore';
 import { StatTable } from '@components/data-display/StatTable';
 import { Pagination } from '@components/data-display/Pagination';
@@ -20,10 +20,25 @@ import {
 
 const LEAGUE_FILTERS = ['combined', 'AL', 'NL'] as const;
 
+type SortOrder = 'asc' | 'desc';
+
+/** Resolve sort value from top-level or nested stats object. */
+function resolveSortValue(obj: unknown, key: string): unknown {
+  const rec = obj as Record<string, unknown>;
+  if (key in rec) return rec[key];
+  const stats = rec.stats;
+  if (typeof stats === 'object' && stats !== null && key in (stats as Record<string, unknown>)) {
+    return (stats as Record<string, unknown>)[key];
+  }
+  return undefined;
+}
+
 export function StatsPage() {
   const battingLeaders = useStatsStore((s) => s.battingLeaders);
   const pitchingLeaders = useStatsStore((s) => s.pitchingLeaders);
   const activeTab = useStatsStore((s) => s.activeTab);
+  const [sortBy, setSortBy] = useState<string>('BA');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const leagueFilter = useStatsStore((s) => s.leagueFilter);
   const currentPage = useStatsStore((s) => s.currentPage);
   const pageSize = useStatsStore((s) => s.pageSize);
@@ -43,16 +58,48 @@ export function StatsPage() {
     ? pitchingLeaders
     : pitchingLeaders.filter((l) => l.leagueDivision === leagueFilter);
 
-  const activeDataLength = activeTab === 'batting' ? filteredBatting.length : filteredPitching.length;
+  const sortedBatting = useMemo(() => {
+    const data = [...filteredBatting];
+    data.sort((a, b) => {
+      const aVal = resolveSortValue(a, sortBy);
+      const bVal = resolveSortValue(b, sortBy);
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      return 0;
+    });
+    return data;
+  }, [filteredBatting, sortBy, sortOrder]);
+
+  const sortedPitching = useMemo(() => {
+    const data = [...filteredPitching];
+    data.sort((a, b) => {
+      const aVal = resolveSortValue(a, sortBy);
+      const bVal = resolveSortValue(b, sortBy);
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      return 0;
+    });
+    return data;
+  }, [filteredPitching, sortBy, sortOrder]);
+
+  const activeDataLength = activeTab === 'batting' ? sortedBatting.length : sortedPitching.length;
   const totalPages = Math.max(1, Math.ceil(activeDataLength / pageSize));
   const start = (currentPage - 1) * pageSize;
-  const pagedBatting = filteredBatting.slice(start, start + pageSize);
-  const pagedPitching = filteredPitching.slice(start, start + pageSize);
+  const pagedBatting = sortedBatting.slice(start, start + pageSize);
+  const pagedPitching = sortedPitching.slice(start, start + pageSize);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleSort = useCallback((_key: string) => {
-    // Sort will be implemented when stats service is connected
-  }, []);
+  const handleSort = useCallback((key: string) => {
+    if (key === sortBy) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      // ERA and pitching stats sort ascending by default, batting stats descending
+      const defaultAsc = ['ERA', 'WHIP', 'BB', 'H', 'ER', 'R'].includes(key);
+      setSortOrder(defaultAsc ? 'asc' : 'desc');
+    }
+  }, [sortBy]);
 
   if (isLoading) {
     return <LoadingLedger message="Loading statistics..." />;
@@ -127,8 +174,8 @@ export function StatsPage() {
         <StatTable
           columns={statView === 'advanced' ? BATTING_COLUMNS_ADVANCED : BATTING_COLUMNS_TRADITIONAL}
           data={pagedBatting}
-          sortBy="BA"
-          sortOrder="desc"
+          sortBy={sortBy}
+          sortOrder={sortOrder}
           onSort={handleSort}
           isLoading={isLoading}
           emptyMessage="No batting leaders available"
@@ -137,8 +184,8 @@ export function StatsPage() {
         <StatTable
           columns={statView === 'advanced' ? PITCHING_COLUMNS_ADVANCED : PITCHING_COLUMNS_TRADITIONAL}
           data={pagedPitching}
-          sortBy="ERA"
-          sortOrder="asc"
+          sortBy={sortBy}
+          sortOrder={sortOrder}
           onSort={handleSort}
           isLoading={isLoading}
           emptyMessage="No pitching leaders available"

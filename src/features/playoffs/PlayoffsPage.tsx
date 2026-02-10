@@ -2,6 +2,7 @@
  * PlayoffsPage
  *
  * Playoff bracket viewer with series progress.
+ * Generates bracket from standings via generatePlayoffBracket.
  * Postseason theme is active when this page renders.
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
@@ -13,10 +14,11 @@ import { usePostseasonTheme } from '@hooks/usePostseasonTheme';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayoffBracketView } from './PlayoffBracketView';
+import { generatePlayoffBracket } from '@lib/schedule/playoff-bracket';
 import type { PlayoffBracket } from '@lib/types/schedule';
 
 export function PlayoffsPage() {
-  const { teams, isLoading, error, leagueStatus } = useLeague();
+  const { league, teams, standings, isLoading, error, leagueStatus } = useLeague();
   usePostseasonTheme();
 
   const teamNameMap = useMemo(() => {
@@ -25,16 +27,16 @@ export function PlayoffsPage() {
     return map;
   }, [teams]);
 
+  const bracket: PlayoffBracket = useMemo(() => {
+    if (leagueStatus !== 'playoffs' || standings.length === 0 || !league) {
+      return { leagueId: league?.id ?? '', rounds: [], championId: null };
+    }
+    return generatePlayoffBracket(league.id, standings, 'AL');
+  }, [league, standings, leagueStatus]);
+
   if (isLoading) {
     return <LoadingLedger message="Loading playoffs..." />;
   }
-
-  // Placeholder bracket until live data is available
-  const bracket: PlayoffBracket = {
-    leagueId: '',
-    rounds: [],
-    championId: null,
-  };
 
   const isPlayoffActive = leagueStatus === 'playoffs';
 

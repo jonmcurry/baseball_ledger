@@ -23,7 +23,9 @@ export function RosterPage() {
   const { myTeam, roster, starters, bench, isRosterLoading, rosterError } = useTeam();
   const fetchRoster = useRosterStore((s) => s.fetchRoster);
   const saveLineup = useRosterStore((s) => s.saveLineup);
+  const updateRosterSlot = useRosterStore((s) => s.updateRosterSlot);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
 
   useEffect(() => {
     if (league?.id && myTeam?.id) {
@@ -46,13 +48,31 @@ export function RosterPage() {
     [roster],
   );
 
-  const handlePositionClick = useCallback((_position: string) => {
-    // Position assignment - handled through UI state in a future enhancement
+  const handlePositionClick = useCallback((position: string) => {
+    setSelectedPosition((prev) => (prev === position ? null : position));
   }, []);
 
-  const handleBenchPlayerSelect = useCallback((_entry: RosterEntry) => {
-    // Bench-to-lineup swap - handled through UI state in a future enhancement
-  }, []);
+  const handleBenchPlayerSelect = useCallback((entry: RosterEntry) => {
+    const targetPosition = selectedPosition ?? entry.playerCard.primaryPosition;
+
+    // Find the current starter at the target position
+    const currentStarter = starters.find((s) => s.lineupPosition === targetPosition);
+
+    // Determine lineup order: use displaced starter's order, or next available
+    const lineupOrder = currentStarter?.lineupOrder
+      ?? (Math.max(0, ...starters.map((s) => s.lineupOrder ?? 0)) + 1);
+
+    // Move current starter to bench if one exists at target position
+    if (currentStarter) {
+      updateRosterSlot(currentStarter.id, 'bench', null, null);
+    }
+
+    // Promote bench player to starter
+    updateRosterSlot(entry.id, 'starter', lineupOrder, targetPosition);
+
+    // Clear position selection
+    setSelectedPosition(null);
+  }, [selectedPosition, starters, updateRosterSlot]);
 
   const handleSaveLineup = useCallback(async () => {
     if (!league?.id || !myTeam?.id) return;
@@ -83,6 +103,15 @@ export function RosterPage() {
       </div>
 
       {rosterError && <ErrorBanner severity="error" message={rosterError} />}
+
+      {selectedPosition && (
+        <div className="rounded-card border border-ballpark/40 bg-ballpark/5 px-gutter py-2">
+          <p className="text-sm text-ink">
+            Selected: {selectedPosition}
+            <span className="ml-2 text-xs text-muted">-- Click a bench player to assign</span>
+          </p>
+        </div>
+      )}
 
       {roster.length === 0 && !isRosterLoading && (
         <div className="rounded-card border border-sandstone bg-old-lace px-gutter py-3">

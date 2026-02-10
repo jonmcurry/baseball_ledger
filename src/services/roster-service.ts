@@ -1,8 +1,7 @@
 /**
  * Roster Service
  *
- * Layer 3 real service module that calls Layer 2 API endpoints.
- * Replaces mock-roster-service.ts for production use.
+ * Layer 3 service module that calls Layer 2 API endpoints.
  */
 
 import type { RosterEntry, LineupUpdate } from '@lib/types/roster';

@@ -144,4 +144,80 @@ describe('StatsPage', () => {
     expect(screen.getByText('RBI')).toBeInTheDocument();
     expect(screen.getByLabelText('Toggle stat view')).toHaveTextContent('Advanced');
   });
+
+  describe('sorting', () => {
+    function getDataRows(): HTMLElement[] {
+      const table = screen.getByRole('table');
+      const tbody = table.querySelector('tbody')!;
+      return Array.from(tbody.querySelectorAll('tr'));
+    }
+
+    function getFirstColumnValues(): string[] {
+      return getDataRows().map((row) => {
+        const cells = row.querySelectorAll('td');
+        return cells[0]?.textContent ?? '';
+      });
+    }
+
+    it('sorts batting by BA descending by default', () => {
+      useStatsStore.getState().setBattingLeaders(createMockBattingLeaders());
+      render(<StatsPage />);
+
+      // BA: p-1=.333, p-2=.328, p-3=.321 => desc order: p-1, p-2, p-3
+      const playerIds = getFirstColumnValues();
+      expect(playerIds).toEqual(['p-1', 'p-2', 'p-3']);
+    });
+
+    it('clicking HR column sorts by HR descending', async () => {
+      const user = userEvent.setup();
+      useStatsStore.getState().setBattingLeaders(createMockBattingLeaders());
+      render(<StatsPage />);
+
+      await user.click(screen.getByText('HR'));
+
+      // HR: p-1=40, p-2=35, p-3=30 => desc order: p-1, p-2, p-3
+      const playerIds = getFirstColumnValues();
+      expect(playerIds).toEqual(['p-1', 'p-2', 'p-3']);
+    });
+
+    it('clicking same column toggles sort direction', async () => {
+      const user = userEvent.setup();
+      useStatsStore.getState().setBattingLeaders(createMockBattingLeaders());
+      render(<StatsPage />);
+
+      // Default is BA desc. Click AVG (which maps to BA key) to toggle to asc.
+      const avgHeader = screen.getByText('AVG');
+      await user.click(avgHeader);
+
+      // BA asc: p-3=.321, p-2=.328, p-1=.333
+      const playerIds = getFirstColumnValues();
+      expect(playerIds).toEqual(['p-3', 'p-2', 'p-1']);
+    });
+
+    it('shows sort indicator on active column', () => {
+      useStatsStore.getState().setBattingLeaders(createMockBattingLeaders());
+      render(<StatsPage />);
+
+      // BA is default sort column, AVG header should have aria-sort
+      const avgHeader = screen.getByText('AVG').closest('th');
+      expect(avgHeader).toHaveAttribute('aria-sort', 'descending');
+    });
+
+    it('ERA column defaults to ascending sort', async () => {
+      const user = userEvent.setup();
+      useStatsStore.getState().setPitchingLeaders(createMockPitchingLeaders());
+      render(<StatsPage />);
+
+      await user.click(screen.getByRole('tab', { name: 'Pitching' }));
+      await user.click(screen.getByText('ERA'));
+
+      // ERA header should be ascending
+      const eraHeader = screen.getByText('ERA').closest('th');
+      expect(eraHeader).toHaveAttribute('aria-sort', 'ascending');
+
+      // ERA: pp-1=1.80, pp-2=2.45, pp-3=3.09 => asc order: pp-1, pp-2, pp-3
+      const playerIds = getFirstColumnValues();
+      expect(playerIds).toEqual(['pp-1', 'pp-2', 'pp-3']);
+    });
+  });
 });

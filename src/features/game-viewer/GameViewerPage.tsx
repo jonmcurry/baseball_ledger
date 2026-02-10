@@ -7,19 +7,24 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulationStore } from '@stores/simulationStore';
 import { useWorkerSimulation } from '@hooks/useWorkerSimulation';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { GameStatePanel } from './GameStatePanel';
+import { PlayByPlayFeed } from './PlayByPlayFeed';
+import { BoxScoreDisplay } from './BoxScoreDisplay';
+
+type ViewTab = 'play-by-play' | 'box-score';
 
 export function GameViewerPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const { teams } = useLeague();
   const simulationResults = useSimulationStore((s) => s.results);
   const workerSim = useWorkerSimulation();
+  const [activeTab, setActiveTab] = useState<ViewTab>('play-by-play');
 
   const teamNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -97,6 +102,60 @@ export function GameViewerPage() {
 
       {workerSim.status === 'error' && workerSim.error && (
         <ErrorBanner severity="error" message={workerSim.error} />
+      )}
+
+      {/* Tab navigation for Play-by-Play and Box Score */}
+      <div className="flex border-b border-sandstone" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'play-by-play'}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === 'play-by-play'
+              ? 'border-b-2 border-ballpark text-ballpark'
+              : 'text-muted hover:text-ink'
+          }`}
+          onClick={() => setActiveTab('play-by-play')}
+        >
+          Play-by-Play
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === 'box-score'}
+          className={`px-4 py-2 text-sm font-medium ${
+            activeTab === 'box-score'
+              ? 'border-b-2 border-ballpark text-ballpark'
+              : 'text-muted hover:text-ink'
+          }`}
+          onClick={() => setActiveTab('box-score')}
+        >
+          Box Score
+        </button>
+      </div>
+
+      {/* Tab panels */}
+      {activeTab === 'play-by-play' && (
+        <PlayByPlayFeed
+          plays={workerSim.result?.playByPlay ?? []}
+          teams={teamNameMap}
+        />
+      )}
+
+      {activeTab === 'box-score' && workerSim.result && (
+        <BoxScoreDisplay
+          boxScore={workerSim.result.boxScore}
+          battingLines={workerSim.result.playerBattingLines}
+          pitchingLines={workerSim.result.playerPitchingLines}
+          homeTeam={homeTeamName}
+          awayTeam={awayTeamName}
+        />
+      )}
+
+      {activeTab === 'box-score' && !workerSim.result && (
+        <p className="py-4 text-center text-sm text-muted">
+          Box score not available. Run a replay to see detailed stats.
+        </p>
       )}
     </div>
   );

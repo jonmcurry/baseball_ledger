@@ -87,3 +87,73 @@ function isAppError(error: unknown): error is AppErrorLike & { category: ErrorCa
     typeof (error as AppErrorLike).category === 'string'
   );
 }
+
+// --- PostgreSQL Error Code Mapping (REQ-ERR-019, REQ-ERR-020) ---
+
+export interface PostgresErrorInput {
+  code: string;
+  message: string;
+}
+
+export interface MappedPostgresError {
+  category: ErrorCategory;
+  code: string;
+  message: string;
+  retryable: boolean;
+}
+
+/**
+ * Constraint name -> user-friendly message lookup.
+ * Add entries as new constraints are created in migrations.
+ */
+const CONSTRAINT_MESSAGES: Record<string, string> = {
+  rosters_team_id_player_id_key: 'This player is already on this team.',
+  leagues_name_key: 'A league with this name already exists.',
+  teams_league_id_name_key: 'A team with this name already exists in this league.',
+};
+
+/**
+ * Map a PostgreSQL error (from Supabase) to an application-level error
+ * with the correct category, code, message, and retryable hint.
+ */
+export function mapPostgresError(pgError: PostgresErrorInput): MappedPostgresError {
+  switch (pgError.code) {
+    // Class 23: Integrity Constraint Violations
+    case '23505': { // unique_violation
+      const constraint = extractConstraint(pgError.message);
+      const message = (constraint && CONSTRAINT_MESSAGES[constraint])
+        ?? 'A record with this value already exists.';
+      return { category: 'CONFLICT', code: 'UNIQUE_VIOLATION', message, retryable: false };
+    }
+    case '23503': // foreign_key_violation
+      return { category: 'VALIDATION', code: 'FOREIGN_KEY_VIOLATION', message: 'Referenced record does not exist.', retryable: false };
+    case '23502': // not_null_violation
+      return { category: 'VALIDATION', code: 'NOT_NULL_VIOLATION', message: 'A required field is missing.', retryable: false };
+    case '23514': // check_violation
+      return { category: 'VALIDATION', code: 'CHECK_VIOLATION', message: 'Value does not meet constraints.', retryable: false };
+
+    // Class 40: Transaction Rollback
+    case '40001': // serialization_failure
+      return { category: 'EXTERNAL', code: 'SERIALIZATION_FAILURE', message: 'Concurrent update conflict. Please retry.', retryable: true };
+
+    // Class 57: Operator Intervention
+    case '57014': // statement_timeout
+      return { category: 'EXTERNAL', code: 'STATEMENT_TIMEOUT', message: 'Database query timed out. Please retry.', retryable: true };
+
+    // Class 42: Syntax/Access Rule errors
+    case '42P01': // undefined_table
+      return { category: 'DATA', code: 'UNDEFINED_TABLE', message: pgError.message, retryable: false };
+
+    default:
+      return { category: 'DATA', code: 'DATABASE_ERROR', message: pgError.message, retryable: false };
+  }
+}
+
+/**
+ * Extract the constraint name from a PG error message.
+ * Example: '...violates unique constraint "rosters_team_id_player_id_key"' -> 'rosters_team_id_player_id_key'
+ */
+function extractConstraint(message: string): string | null {
+  const match = message.match(/"([^"]+)"/);
+  return match ? match[1] : null;
+}

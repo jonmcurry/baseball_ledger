@@ -74,4 +74,9 @@ describe('useSimulation', () => {
     const { result } = renderHook(() => useSimulation());
     expect(result.current.isRunning).toBe(false);
   });
+
+  it('exposes runSimulation action from store', () => {
+    const { result } = renderHook(() => useSimulation());
+    expect(typeof result.current.runSimulation).toBe('function');
+  });
 });

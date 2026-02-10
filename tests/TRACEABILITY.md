@@ -27,11 +27,11 @@ REQ-TEST-011: All requirements have mapped test cases.
 
 | Requirement | Test File(s) |
 |-------------|-------------|
-| REQ-CARD-001 Card structure | `tests/unit/lib/card-gen/card-structure.test.ts` |
-| REQ-CARD-002 Card values | `tests/unit/lib/card-gen/card-values.test.ts` |
-| REQ-CARD-003 Card generator | `tests/unit/lib/card-gen/card-generator.test.ts` |
-| REQ-CARD-004 Pitcher attributes | `tests/unit/lib/card-gen/pitcher-generator.test.ts` |
-| REQ-CARD-005 Archetype flags | `tests/unit/lib/card-gen/archetype-flags.test.ts` |
+| REQ-CARD-001 Card structure | `tests/unit/lib/card-generator/structural.test.ts` |
+| REQ-CARD-002 Card values | `tests/unit/lib/card-generator/value-mapper.test.ts`, `tests/unit/lib/card-generator/rate-calculator.test.ts` |
+| REQ-CARD-003 Card generator | `tests/unit/lib/card-generator/generator.test.ts` |
+| REQ-CARD-004 Pitcher attributes | `tests/unit/lib/card-generator/pitcher-card.test.ts`, `tests/unit/lib/card-generator/pitcher-grade.test.ts` |
+| REQ-CARD-005 Archetype flags | `tests/unit/lib/card-generator/archetype.test.ts` |
 
 ## CSV/Data Requirements
 
@@ -141,6 +141,20 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-UI-007 Playoffs page | `tests/unit/features/playoffs/PlayoffsPage.test.tsx`, `tests/unit/features/playoffs/PlayoffBracketView.test.tsx`, `tests/unit/features/playoffs/SeriesCard.test.tsx` |
 | REQ-UI-008 Archive page | `tests/unit/features/archive/ArchivePage.test.tsx`, `tests/unit/features/archive/SeasonDetail.test.tsx` |
 | REQ-UI-009 Playoff sim lock | `tests/unit/features/dashboard/SimulationControls.test.tsx` |
+
+## Infrastructure Requirements (Phase 12-14)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ENV-003/004 Client config | `tests/unit/lib/config.test.ts` |
+| REQ-ENV-005 Server config | `tests/unit/api/_lib/config.test.ts` |
+| REQ-ERR-005 Roster validation | `tests/unit/lib/validation/roster-schemas.test.ts` |
+| REQ-ERR-005 Simulation validation | `tests/unit/lib/validation/simulation-schemas.test.ts` |
+| REQ-ERR-013/014 Structured logging | `tests/unit/api/_lib/logger.test.ts` |
+| REQ-ERR-015/016 DB retry | `tests/unit/api/_lib/db-retry.test.ts` |
+| REQ-ERR-019/020 PG error mapping | `tests/unit/api/_lib/postgres-errors.test.ts` |
+| REQ-STS-003 Stats sorting | `tests/unit/features/stats/StatsPage.test.tsx` (sorting tests) |
+| REQ-UI-008 Roster interactions | `tests/unit/features/roster/RosterPage.test.tsx` (bench-to-lineup tests) |
 
 ## Test Requirements
 

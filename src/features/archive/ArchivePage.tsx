@@ -2,38 +2,54 @@
  * ArchivePage
  *
  * Historical season archive and records.
+ * Fetches archived seasons via useArchive hook.
+ * Shows StampAnimation when league status is 'completed'.
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
 import { useState } from 'react';
 import { useLeague } from '@hooks/useLeague';
+import { useArchive } from '@hooks/useArchive';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { StampAnimation } from '@components/feedback/StampAnimation';
 import { SeasonList } from './SeasonList';
 import { SeasonDetail } from './SeasonDetail';
-import type { ArchivedSeason } from './SeasonList';
 
 export function ArchivePage() {
-  const { standings, isLoading, error } = useLeague();
+  const { league, standings, isLoading, error, leagueStatus } = useLeague();
+  const { seasons: archivedSeasons, isLoading: archiveLoading, error: archiveError } = useArchive(league?.id ?? '');
   const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
 
-  // Placeholder: archive data would come from an archive service
-  const archivedSeasons: ArchivedSeason[] = [];
+  const loading = isLoading || archiveLoading;
+  const displayError = error || archiveError;
+  const seasonJustCompleted = leagueStatus === 'completed';
 
-  if (isLoading) {
+  if (loading) {
     return <LoadingLedger message="Loading archives..." />;
   }
+
+  const seasonListData = archivedSeasons.map((s) => ({
+    id: s.id,
+    year: s.seasonNumber,
+    champion: s.champion ?? 'Unknown',
+    runnerUp: '',
+  }));
+
+  const selectedArchive = archivedSeasons.find((s) => s.id === selectedSeason);
 
   return (
     <div className="space-y-gutter-lg">
       <h2 className="font-headline text-2xl font-bold text-ballpark">Archive</h2>
 
-      {error && <ErrorBanner severity="error" message={error} />}
+      <StampAnimation isVisible={seasonJustCompleted} />
+
+      {displayError && <ErrorBanner severity="error" message={displayError} />}
 
       {!selectedSeason && (
         <SeasonList
-          seasons={archivedSeasons}
+          seasons={seasonListData}
           onSelect={setSelectedSeason}
         />
       )}
@@ -48,8 +64,8 @@ export function ArchivePage() {
             Back to Archive
           </button>
           <SeasonDetail
-            year={2024}
-            champion="TBD"
+            year={selectedArchive?.seasonNumber ?? 0}
+            champion={selectedArchive?.champion ?? 'Unknown'}
             standings={standings}
           />
         </div>
