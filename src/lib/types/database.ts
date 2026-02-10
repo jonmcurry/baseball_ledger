@@ -28,6 +28,7 @@ export type LeagueRow = {
   status: 'setup' | 'drafting' | 'regular_season' | 'playoffs' | 'completed';
   current_day: number;
   season_year: number;
+  draft_order: string[] | null;
   playoff_bracket: Record<string, unknown> | null;
   player_name_cache: Record<string, string>;
   created_at: string;
@@ -152,6 +153,7 @@ export type LeagueInsert = {
   status?: LeagueRow['status'];
   current_day?: number;
   season_year?: number;
+  draft_order?: string[] | null;
   playoff_bracket?: Record<string, unknown> | null;
   player_name_cache?: Record<string, string>;
 }
