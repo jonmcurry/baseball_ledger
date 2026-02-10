@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-02-10 - Post-Simulation Dashboard Refresh and Results Notification (Phase 32)
+
+### Phase 32: Post-Simulation Dashboard Refresh and Results Notification (REQ-STATE-014, REQ-SCH-007)
+
+After Phase 31 made simulation functional, two issues remained: the dashboard never refreshed after simulation (standings/schedule stale until manual reload), and there was no visual feedback when simulation completed. Both are now fixed.
+
+- **Bug fix: Cache invalidation (REQ-STATE-014)**
+  - `useRealtimeProgress` hook existed but was never imported in any component -- orphaned code
+  - Wired `useRealtimeProgress(league?.id ?? null)` into `DashboardPage.tsx`
+  - After simulation completes, `fetchLeagueData` is called automatically to refresh standings, schedule, and currentDay
+  - 2 new tests in `useRealtimeProgress.test.ts`
+
+- **Created `src/features/dashboard/SimulationNotification.tsx` (REQ-SCH-007)**
+  - Typewriter-effect notification using existing `TypewriterText` component
+  - Single-day message: "Simulation complete -- 4 games simulated"
+  - Multi-day message: "7 days simulated -- 28 games complete"
+  - Auto-dismisses 4 seconds after typewriter animation finishes
+  - Styled with vintage theme (stitch-red border, old-lace background)
+  - `role="status"` for accessibility
+  - 5 tests in `SimulationNotification.test.tsx`
+
+- **Modified `src/features/dashboard/DashboardPage.tsx`**
+  - Added `useRealtimeProgress` call for cache invalidation
+  - Added `showNotification` state driven by simulation status
+  - Renders `SimulationNotification` between controls and data grid
+  - 4 new tests in `DashboardPage.test.tsx`
+
+- **Dead code cleanup: `src/services/simulation-service.ts`**
+  - Removed `days` parameter from `startSimulation` (always sends `{ days: 1 }` internally)
+  - Removed unreachable `simulationId` return branch (API only accepts `days: 1` since Phase 31)
+  - Simplified return type from `Promise<{ simulationId?: string; result?: SimDayResult }>` to `Promise<SimDayResult>`
+  - Updated `simulationStore.ts` call site and 2 test files
+
+**REQ-STATE-014**: Cache invalidation on simulation completion -- wired and tested.
+**REQ-SCH-007**: Typewriter effect simulation results notification -- implemented.
+**2,459 tests** across 215 files pass. TypeScript clean.
+
 ## 2026-02-10 - Client-Driven Multi-Day Simulation (Phase 31)
 
 ### Phase 31: Client-Driven Multi-Day Simulation (REQ-NFR-021, REQ-SCH-005)

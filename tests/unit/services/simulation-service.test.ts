@@ -58,30 +58,16 @@ describe('simulation-service', () => {
     mockSupabase.channel.mockClear();
   });
 
-  it('startSimulation with 1 day calls apiPost and returns result', async () => {
+  it('startSimulation calls apiPost and returns SimDayResult', async () => {
     mockApiPost.mockResolvedValue({
       data: { dayNumber: 42, games: [{ id: 'g1' }] },
       meta: defaultMeta,
     });
 
-    const result = await startSimulation('lg-1', 1);
+    const result = await startSimulation('lg-1');
 
     expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/simulate', { days: 1 });
-    expect(result).toEqual({
-      result: { dayNumber: 42, games: [{ id: 'g1' }] },
-    });
-  });
-
-  it('startSimulation with multiple days calls apiPost and returns simulationId', async () => {
-    mockApiPost.mockResolvedValue({
-      data: { simulationId: 'sim-abc' },
-      meta: defaultMeta,
-    });
-
-    const result = await startSimulation('lg-1', 7);
-
-    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/simulate', { days: 7 });
-    expect(result).toEqual({ simulationId: 'sim-abc' });
+    expect(result).toEqual({ dayNumber: 42, games: [{ id: 'g1' }] });
   });
 
   it('subscribeToProgress creates a Realtime channel with correct config', () => {

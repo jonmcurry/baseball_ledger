@@ -2,8 +2,8 @@
  * Simulation Service
  *
  * Layer 3 real service module for simulation operations.
- * Supports sync (1 day) and async (multi-day) simulation.
- * Uses Supabase Realtime for async progress updates.
+ * Single-day simulation via POST /api/leagues/:id/simulate.
+ * Uses Supabase Realtime for progress updates.
  */
 
 import type { SimulationProgress } from '@lib/types/api';
@@ -20,23 +20,16 @@ export interface SimDayResult {
 
 export async function startSimulation(
   leagueId: string,
-  days: number | 'season',
-): Promise<{ simulationId?: string; result?: SimDayResult }> {
-  const response = await apiPost<{ simulationId?: string; dayNumber?: number; games?: unknown[] }>(
+): Promise<SimDayResult> {
+  const response = await apiPost<{ dayNumber?: number; games?: unknown[] }>(
     `/api/leagues/${leagueId}/simulate`,
-    { days },
+    { days: 1 },
   );
 
-  if (days === 1) {
-    return {
-      result: {
-        dayNumber: response.data.dayNumber ?? 0,
-        games: response.data.games ?? [],
-      },
-    };
-  }
-
-  return { simulationId: response.data.simulationId };
+  return {
+    dayNumber: response.data.dayNumber ?? 0,
+    games: response.data.games ?? [],
+  };
 }
 
 export function subscribeToProgress(

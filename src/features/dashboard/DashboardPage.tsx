@@ -1,12 +1,17 @@
-﻿/**
+/**
  * DashboardPage
  *
  * Main league dashboard with standings, today's schedule, and simulation controls.
- * Wires useLeague + useSimulation hooks to presentational components.
+ * Wires useLeague + useSimulation + useRealtimeProgress hooks to presentational components.
+ *
+ * REQ-STATE-014: useRealtimeProgress triggers cache invalidation after simulation.
+ * REQ-SCH-007: SimulationNotification shows typewriter results after simulation.
  */
 
+import { useState, useEffect } from 'react';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulation } from '@hooks/useSimulation';
+import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
 import { StandingsTable } from '@components/data-display/StandingsTable';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
@@ -14,6 +19,7 @@ import { SimulationControls } from './SimulationControls';
 import { ScheduleView } from './ScheduleView';
 import { ResultsTicker } from './ResultsTicker';
 import type { TickerResult } from './ResultsTicker';
+import { SimulationNotification } from './SimulationNotification';
 import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
 
 const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
@@ -25,7 +31,21 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 
 export function DashboardPage() {
   const { league, teams, standings, schedule, currentDay, isLoading, error, leagueStatus } = useLeague();
-  const { isRunning, progressPct, runSimulation } = useSimulation();
+  const { status, totalDays, completedGames, isRunning, progressPct, runSimulation } = useSimulation();
+
+  // REQ-STATE-014: Cache invalidation on simulation completion
+  useRealtimeProgress(league?.id ?? null);
+
+  // REQ-SCH-007: Typewriter results notification
+  const [showNotification, setShowNotification] = useState(false);
+
+  useEffect(() => {
+    if (status === 'complete' && completedGames > 0) {
+      setShowNotification(true);
+    } else if (status === 'running') {
+      setShowNotification(false);
+    }
+  }, [status, completedGames]);
 
   const handleSimulate = (scope: 'day' | 'week' | 'month' | 'season') => {
     if (!league) return;
@@ -87,6 +107,15 @@ export function DashboardPage() {
         onSimulate={handleSimulate}
         leagueStatus={leagueStatus}
       />
+
+      {showNotification && (
+        <SimulationNotification
+          daysSimulated={totalDays}
+          gamesCompleted={completedGames}
+          isVisible={showNotification}
+          onDismiss={() => setShowNotification(false)}
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-gutter-lg md:grid-cols-2">
         <div>

@@ -5,7 +5,7 @@
  * Mocks hooks to isolate page rendering logic.
  */
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DashboardPage } from '@features/dashboard/DashboardPage';
 import { createMockLeague, createMockTeams, createMockStandings, createMockScheduleDay, createMockGame } from '../../../../tests/fixtures/mock-league';
 
@@ -17,11 +17,35 @@ vi.mock('@hooks/useSimulation', () => ({
   useSimulation: vi.fn(),
 }));
 
+vi.mock('@hooks/useRealtimeProgress', () => ({
+  useRealtimeProgress: vi.fn().mockReturnValue({ status: 'idle' }),
+}));
+
 import { useLeague } from '@hooks/useLeague';
 import { useSimulation } from '@hooks/useSimulation';
+import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
 
 const mockUseLeague = vi.mocked(useLeague);
 const mockUseSimulation = vi.mocked(useSimulation);
+const mockUseRealtimeProgress = vi.mocked(useRealtimeProgress);
+
+function defaultSimulationMock(overrides: Record<string, unknown> = {}) {
+  return {
+    status: 'idle' as const,
+    totalGames: 0,
+    completedGames: 0,
+    totalDays: 0,
+    currentDay: 0,
+    results: [],
+    error: null,
+    progressPct: 0,
+    isRunning: false,
+    startSimulation: vi.fn(),
+    runSimulation: vi.fn(),
+    reset: vi.fn(),
+    ...overrides,
+  };
+}
 
 function setDefaultMocks() {
   mockUseLeague.mockReturnValue({
@@ -36,18 +60,8 @@ function setDefaultMocks() {
     leagueStatus: 'regular_season',
   });
 
-  mockUseSimulation.mockReturnValue({
-    status: 'idle',
-    totalGames: 0,
-    completedGames: 0,
-    results: [],
-    error: null,
-    progressPct: 0,
-    isRunning: false,
-    startSimulation: vi.fn(),
-    runSimulation: vi.fn(),
-    reset: vi.fn(),
-  });
+  mockUseSimulation.mockReturnValue(defaultSimulationMock());
+  mockUseRealtimeProgress.mockReturnValue({ status: 'idle' });
 }
 
 describe('DashboardPage', () => {
@@ -173,18 +187,13 @@ describe('DashboardPage', () => {
   });
 
   it('disables sim buttons when simulation is running', () => {
-    mockUseSimulation.mockReturnValue({
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
       status: 'running',
       totalGames: 10,
       completedGames: 5,
-      results: [],
-      error: null,
       progressPct: 50,
       isRunning: true,
-      startSimulation: vi.fn(),
-      runSimulation: vi.fn(),
-      reset: vi.fn(),
-    });
+    }));
 
     render(<DashboardPage />);
     const simDayBtn = screen.getByText('Sim Day');
@@ -192,18 +201,13 @@ describe('DashboardPage', () => {
   });
 
   it('shows progress bar when simulation is running', () => {
-    mockUseSimulation.mockReturnValue({
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
       status: 'running',
       totalGames: 10,
       completedGames: 7,
-      results: [],
-      error: null,
       progressPct: 70,
       isRunning: true,
-      startSimulation: vi.fn(),
-      runSimulation: vi.fn(),
-      reset: vi.fn(),
-    });
+    }));
 
     render(<DashboardPage />);
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
@@ -211,18 +215,9 @@ describe('DashboardPage', () => {
 
   it('calls runSimulation with league id and 1 day when Sim Day is clicked', () => {
     const mockRunSim = vi.fn();
-    mockUseSimulation.mockReturnValue({
-      status: 'idle',
-      totalGames: 0,
-      completedGames: 0,
-      results: [],
-      error: null,
-      progressPct: 0,
-      isRunning: false,
-      startSimulation: vi.fn(),
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
       runSimulation: mockRunSim,
-      reset: vi.fn(),
-    });
+    }));
 
     render(<DashboardPage />);
     fireEvent.click(screen.getByText('Sim Day'));
@@ -232,18 +227,9 @@ describe('DashboardPage', () => {
 
   it('calls runSimulation with 7 days when Sim Week is clicked', () => {
     const mockRunSim = vi.fn();
-    mockUseSimulation.mockReturnValue({
-      status: 'idle',
-      totalGames: 0,
-      completedGames: 0,
-      results: [],
-      error: null,
-      progressPct: 0,
-      isRunning: false,
-      startSimulation: vi.fn(),
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
       runSimulation: mockRunSim,
-      reset: vi.fn(),
-    });
+    }));
 
     render(<DashboardPage />);
     fireEvent.click(screen.getByText('Sim Week'));
@@ -253,18 +239,9 @@ describe('DashboardPage', () => {
 
   it('calls runSimulation with 162 days when Sim Season is clicked', () => {
     const mockRunSim = vi.fn();
-    mockUseSimulation.mockReturnValue({
-      status: 'idle',
-      totalGames: 0,
-      completedGames: 0,
-      results: [],
-      error: null,
-      progressPct: 0,
-      isRunning: false,
-      startSimulation: vi.fn(),
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
       runSimulation: mockRunSim,
-      reset: vi.fn(),
-    });
+    }));
 
     render(<DashboardPage />);
     fireEvent.click(screen.getByText('Sim Season'));
@@ -290,5 +267,59 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Sim Day')).toBeInTheDocument();
     expect(screen.queryByText('Sim Week')).not.toBeInTheDocument();
     expect(screen.queryByText('Sim Season')).not.toBeInTheDocument();
+  });
+
+  // REQ-STATE-014: Cache invalidation via useRealtimeProgress
+  it('calls useRealtimeProgress with league id', () => {
+    render(<DashboardPage />);
+    expect(mockUseRealtimeProgress).toHaveBeenCalledWith('league-1');
+  });
+
+  it('calls useRealtimeProgress with null when no league', () => {
+    mockUseLeague.mockReturnValue({
+      league: null,
+      teams: [],
+      standings: [],
+      schedule: [],
+      currentDay: 0,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: null,
+    });
+
+    render(<DashboardPage />);
+    expect(mockUseRealtimeProgress).toHaveBeenCalledWith(null);
+  });
+
+  // REQ-SCH-007: Typewriter results notification
+  it('shows notification when simulation completes with games', () => {
+    vi.useFakeTimers();
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
+      status: 'complete',
+      totalDays: 7,
+      completedGames: 28,
+    }));
+
+    render(<DashboardPage />);
+
+    // Advance timers for typewriter animation
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    expect(screen.getByTestId('simulation-notification')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('does not show notification when simulation completes with zero games', () => {
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
+      status: 'complete',
+      totalDays: 0,
+      completedGames: 0,
+    }));
+
+    render(<DashboardPage />);
+    expect(screen.queryByTestId('simulation-notification')).not.toBeInTheDocument();
   });
 });

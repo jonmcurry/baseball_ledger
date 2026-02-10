@@ -25,7 +25,7 @@ describe('simulationStore async actions', () => {
   // -----------------------------------------------------------------------
 
   it('runSimulation sets status to running', async () => {
-    let resolveStart!: (value: { simulationId: string }) => void;
+    let resolveStart!: (value: { dayNumber: number; games: unknown[] }) => void;
     vi.mocked(simulationService.startSimulation).mockReturnValue(
       new Promise((resolve) => { resolveStart = resolve; }),
     );
@@ -33,14 +33,14 @@ describe('simulationStore async actions', () => {
     const promise = useSimulationStore.getState().runSimulation('league-1', 7);
     expect(useSimulationStore.getState().status).toBe('running');
 
-    resolveStart({ simulationId: 'sim-1' });
+    resolveStart({ dayNumber: 1, games: [] });
     await promise;
   });
 
   it('runSimulation with days=1 sets status to complete on success (sync)', async () => {
-    vi.mocked(simulationService.startSimulation).mockResolvedValue({
-      result: { dayNumber: 42, games: [] },
-    });
+    vi.mocked(simulationService.startSimulation).mockResolvedValue(
+      { dayNumber: 42, games: [] },
+    );
 
     await useSimulationStore.getState().runSimulation('league-1', 1);
 
@@ -70,16 +70,16 @@ describe('simulationStore async actions', () => {
   // -----------------------------------------------------------------------
 
   it('runSimulation with days=7 calls startSimulation 7 times', async () => {
-    vi.mocked(simulationService.startSimulation).mockResolvedValue({
-      result: { dayNumber: 1, games: [{ id: 'g1' }] },
-    });
+    vi.mocked(simulationService.startSimulation).mockResolvedValue(
+      { dayNumber: 1, games: [{ id: 'g1' }] },
+    );
 
     await useSimulationStore.getState().runSimulation('league-1', 7);
 
     expect(simulationService.startSimulation).toHaveBeenCalledTimes(7);
-    // Every call uses days=1
+    // Every call passes only leagueId (days=1 is internal to the service)
     for (const call of vi.mocked(simulationService.startSimulation).mock.calls) {
-      expect(call).toEqual(['league-1', 1]);
+      expect(call).toEqual(['league-1']);
     }
   });
 
@@ -88,7 +88,7 @@ describe('simulationStore async actions', () => {
     vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
       // Capture currentDay from within the loop (after the previous iteration's set)
       dayStates.push(useSimulationStore.getState().currentDay);
-      return { result: { dayNumber: 1, games: [{ id: 'g1' }] } };
+      return { dayNumber: 1, games: [{ id: 'g1' }] };
     });
 
     await useSimulationStore.getState().runSimulation('league-1', 3);
@@ -103,9 +103,9 @@ describe('simulationStore async actions', () => {
     vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
       callCount++;
       if (callCount <= 2) {
-        return { result: { dayNumber: callCount, games: [{ id: `g${callCount}` }] } };
+        return { dayNumber: callCount, games: [{ id: `g${callCount}` }] };
       }
-      return { result: { dayNumber: callCount, games: [] } };
+      return { dayNumber: callCount, games: [] };
     });
 
     await useSimulationStore.getState().runSimulation('league-1', 7);
@@ -123,9 +123,9 @@ describe('simulationStore async actions', () => {
     vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
       callCount++;
       if (callCount <= 5) {
-        return { result: { dayNumber: callCount, games: [{ id: `g${callCount}` }] } };
+        return { dayNumber: callCount, games: [{ id: `g${callCount}` }] };
       }
-      return { result: { dayNumber: callCount, games: [] } };
+      return { dayNumber: callCount, games: [] };
     });
 
     await useSimulationStore.getState().runSimulation('league-1', 'season');
@@ -141,7 +141,7 @@ describe('simulationStore async actions', () => {
     vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
       callCount++;
       if (callCount <= 2) {
-        return { result: { dayNumber: callCount, games: [{ id: `g${callCount}` }] } };
+        return { dayNumber: callCount, games: [{ id: `g${callCount}` }] };
       }
       throw new Error('Day 3 server error');
     });
@@ -156,9 +156,9 @@ describe('simulationStore async actions', () => {
   });
 
   it('runSimulation sets totalDays and currentDay in initial state', async () => {
-    vi.mocked(simulationService.startSimulation).mockResolvedValue({
-      result: { dayNumber: 1, games: [{ id: 'g1' }] },
-    });
+    vi.mocked(simulationService.startSimulation).mockResolvedValue(
+      { dayNumber: 1, games: [{ id: 'g1' }] },
+    );
 
     await useSimulationStore.getState().runSimulation('league-1', 30);
 

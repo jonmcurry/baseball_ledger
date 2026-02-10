@@ -100,10 +100,10 @@ export const useSimulationStore = create<SimulationStore>()(
         try {
           let daysDone = 0;
           for (let d = 0; d < maxDays; d++) {
-            const { result } = await simulationService.startSimulation(leagueId, 1);
+            const result = await simulationService.startSimulation(leagueId);
             daysDone++;
 
-            if (!result || result.games.length === 0) break;
+            if (result.games.length === 0) break;
 
             set((state) => ({
               currentDay: daysDone,
