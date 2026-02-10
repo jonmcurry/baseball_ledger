@@ -302,6 +302,259 @@ describe('PATCH /api/leagues/:id/teams?tid=X', () => {
   });
 });
 
+// ---------- PATCH: Update lineup ----------
+
+describe('PATCH /api/leagues/:id/teams?tid=X&include=roster (lineup update)', () => {
+  const existingTeamWithLeagues = {
+    id: 'team-1',
+    name: 'Yankees',
+    city: 'New York',
+    league_id: 'league-1',
+    owner_id: 'user-123',
+    manager_profile: 'balanced',
+    leagues: { commissioner_id: 'commissioner-1' },
+  };
+
+  const rosterRows = [
+    { id: 'roster-1', team_id: 'team-1', player_id: 'p-1', season_year: 1927, player_card: { power: 21 }, roster_slot: 'starter', lineup_order: 1, lineup_position: 'SS' },
+    { id: 'roster-2', team_id: 'team-1', player_id: 'p-2', season_year: 1927, player_card: { power: 18 }, roster_slot: 'starter', lineup_order: 2, lineup_position: 'CF' },
+  ];
+
+  const validLineupBody = {
+    updates: [
+      { rosterId: 'roster-1', lineupOrder: 3, lineupPosition: 'SS', rosterSlot: 'starter' },
+      { rosterId: 'roster-2', lineupOrder: 1, lineupPosition: 'CF', rosterSlot: 'starter' },
+    ],
+  };
+
+  function setupLineupMocks(opts: {
+    teamData?: Record<string, unknown> | null;
+    teamError?: { message: string; code: string } | null;
+    rosterData?: Record<string, unknown>[];
+    rosterSelectData?: Record<string, unknown>[];
+    updateError?: { message: string } | null;
+  } = {}) {
+    const teamData = opts.teamData !== undefined ? opts.teamData : existingTeamWithLeagues;
+    const teamError = opts.teamError ?? (teamData ? null : { message: 'Not found', code: 'PGRST116' });
+
+    const teamsBuilder = createMockQueryBuilder({
+      data: teamData,
+      error: teamError,
+      count: null,
+    });
+
+    // Rosters: first call = select for ownership check, second call = update loop, last call = re-fetch
+    const rostersBuilder = createMockQueryBuilder({
+      data: opts.rosterData ?? rosterRows,
+      error: null,
+      count: null,
+    });
+
+    // Update call on rosters (chained .update().eq())
+    const updateBuilder = createMockQueryBuilder({
+      data: null,
+      error: opts.updateError ?? null,
+      count: null,
+    });
+
+    let rostersCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') {
+        rostersCallCount++;
+        // First call: select roster IDs for ownership verification
+        // Middle calls: update operations
+        // Last call: re-fetch full roster
+        if (rostersCallCount === 1) return rostersBuilder;
+        // The final re-fetch call
+        const refetchData = opts.rosterSelectData ?? rosterRows;
+        const refetchBuilder = createMockQueryBuilder({
+          data: refetchData,
+          error: null,
+          count: null,
+        });
+        // For update calls, also return a builder that has update
+        updateBuilder.select = vi.fn().mockReturnValue(updateBuilder);
+        return { ...rostersBuilder, update: vi.fn().mockReturnValue(updateBuilder), select: vi.fn().mockReturnValue(refetchBuilder) };
+      }
+      return createMockQueryBuilder();
+    });
+
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+    return { mockFrom, teamsBuilder, rostersBuilder };
+  }
+
+  it('returns 200 with updated roster on successful lineup save', async () => {
+    setupLineupMocks();
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: validLineupBody,
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(Array.isArray(res._body.data)).toBe(true);
+    expect(res._body.meta).toHaveProperty('requestId');
+  });
+
+  it('rejects invalid rosterSlot value', async () => {
+    mockValidateBody.mockImplementation(() => {
+      throw {
+        category: 'VALIDATION',
+        code: 'INVALID_REQUEST_BODY',
+        message: 'Request body validation failed',
+        details: [{ field: 'updates.0.rosterSlot', message: 'Invalid enum value' }],
+      };
+    });
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: {
+        updates: [
+          { rosterId: 'roster-1', lineupOrder: 1, lineupPosition: 'SS', rosterSlot: 'invalid' },
+        ],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
+  });
+
+  it('rejects lineupOrder out of range', async () => {
+    mockValidateBody.mockImplementation(() => {
+      throw {
+        category: 'VALIDATION',
+        code: 'INVALID_REQUEST_BODY',
+        message: 'Request body validation failed',
+        details: [{ field: 'updates.0.lineupOrder', message: 'Number must be less than or equal to 9' }],
+      };
+    });
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: {
+        updates: [
+          { rosterId: 'roster-1', lineupOrder: 10, lineupPosition: 'SS', rosterSlot: 'starter' },
+        ],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
+  });
+
+  it('rejects invalid lineupPosition', async () => {
+    mockValidateBody.mockImplementation(() => {
+      throw {
+        category: 'VALIDATION',
+        code: 'INVALID_REQUEST_BODY',
+        message: 'Request body validation failed',
+        details: [{ field: 'updates.0.lineupPosition', message: 'Invalid enum value' }],
+      };
+    });
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: {
+        updates: [
+          { rosterId: 'roster-1', lineupOrder: 1, lineupPosition: 'XX', rosterSlot: 'starter' },
+        ],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
+  });
+
+  it('returns 403 if user is not team owner or commissioner', async () => {
+    mockRequireAuth.mockResolvedValue({ userId: 'other-user', email: 'other@example.com' });
+    setupLineupMocks();
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: validLineupBody,
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(403);
+    expect(res._body.error).toHaveProperty('code', 'NOT_TEAM_OWNER');
+  });
+
+  it('returns 404 if team not found', async () => {
+    setupLineupMocks({ teamData: null });
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: validLineupBody,
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(404);
+    expect(res._body.error).toHaveProperty('code', 'TEAM_NOT_FOUND');
+  });
+
+  it('returns 400 when roster ID does not belong to team', async () => {
+    // Roster select returns only roster-1, but we try to update roster-999
+    setupLineupMocks({
+      rosterData: [{ id: 'roster-1', team_id: 'team-1' }],
+    });
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: {
+        updates: [
+          { rosterId: 'roster-999', lineupOrder: 1, lineupPosition: 'SS', rosterSlot: 'starter' },
+        ],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'INVALID_ROSTER_ID');
+  });
+
+  it('handles empty updates array and returns current roster', async () => {
+    setupLineupMocks();
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: { updates: [] },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(Array.isArray(res._body.data)).toBe(true);
+  });
+});
+
 // ---------- POST: Roster transactions ----------
 
 describe('POST /api/leagues/:id/teams (transactions)', () => {

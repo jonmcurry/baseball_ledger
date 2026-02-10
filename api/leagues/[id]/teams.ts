@@ -1,9 +1,11 @@
 /**
  * GET   /api/leagues/:id/teams          -- List teams
  * GET   /api/leagues/:id/teams?tid=X&include=roster -- Get team roster
- * PATCH /api/leagues/:id/teams?tid=X    -- Update team
+ * PATCH /api/leagues/:id/teams?tid=X    -- Update team metadata
+ * PATCH /api/leagues/:id/teams?tid=X&include=roster -- Update lineup (REQ-RST-002)
  * POST  /api/leagues/:id/teams          -- Execute a roster transaction (add/drop/trade)
  *
+ * REQ-RST-002: Lineup management (save lineup order, positions, roster slots).
  * REQ-RST-005: Trade between two teams with atomic roster swap.
  * REQ-RST-006: Both rosters must remain valid after trade.
  */
@@ -26,6 +28,17 @@ const UpdateTeamSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   city: z.string().min(1).max(100).optional(),
   managerProfile: z.enum(['conservative', 'aggressive', 'balanced', 'analytical']).optional(),
+});
+
+const LineupUpdateSchema = z.object({
+  updates: z.array(z.object({
+    rosterId: z.string().uuid(),
+    lineupOrder: z.number().int().min(1).max(9).nullable(),
+    lineupPosition: z.enum([
+      'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH',
+    ]).nullable(),
+    rosterSlot: z.enum(['starter', 'bench', 'rotation', 'bullpen', 'closer']),
+  })),
 });
 
 const TransactionSchema = z.object({
@@ -88,49 +101,131 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (req.method === 'POST') {
       await handleTransaction(req, res, requestId);
     } else {
-      // PATCH -- update team
+      // PATCH
       const { userId } = await requireAuth(req);
       const teamId = tid as string;
-      const body = validateBody(req, UpdateTeamSchema);
 
-      const supabase = createServerClient();
+      if (include === 'roster') {
+        await handleLineupUpdate(req, res, userId, teamId, requestId);
+      } else {
+        // Update team metadata
+        const body = validateBody(req, UpdateTeamSchema);
 
-      // Verify ownership
-      const { data: team, error: teamError } = await supabase
-        .from('teams')
-        .select('*, leagues!inner(commissioner_id)')
-        .eq('id', teamId)
-        .single();
+        const supabase = createServerClient();
 
-      if (teamError || !team) {
-        throw { category: 'NOT_FOUND', code: 'TEAM_NOT_FOUND', message: `Team ${teamId} not found` };
+        // Verify ownership
+        const { data: team, error: teamError } = await supabase
+          .from('teams')
+          .select('*, leagues!inner(commissioner_id)')
+          .eq('id', teamId)
+          .single();
+
+        if (teamError || !team) {
+          throw { category: 'NOT_FOUND', code: 'TEAM_NOT_FOUND', message: `Team ${teamId} not found` };
+        }
+
+        const teamData = team as unknown as { owner_id: string; leagues: { commissioner_id: string } };
+        const isOwner = teamData.owner_id === userId;
+        const isCommissioner = teamData.leagues.commissioner_id === userId;
+
+        if (!isOwner && !isCommissioner) {
+          throw { category: 'AUTHORIZATION', code: 'NOT_TEAM_OWNER', message: 'Only the team owner or commissioner can update this team' };
+        }
+
+        const updateData = camelToSnake(body) as Record<string, unknown>;
+        const { data: updated, error: updateError } = await supabase
+          .from('teams')
+          .update(updateData as Database['public']['Tables']['teams']['Update'])
+          .eq('id', teamId)
+          .select('*')
+          .single();
+
+        if (updateError || !updated) {
+          throw { category: 'DATA', code: 'UPDATE_FAILED', message: updateError?.message ?? 'Update failed' };
+        }
+
+        ok(res, snakeToCamel(updated), requestId);
       }
-
-      const teamData = team as unknown as { owner_id: string; leagues: { commissioner_id: string } };
-      const isOwner = teamData.owner_id === userId;
-      const isCommissioner = teamData.leagues.commissioner_id === userId;
-
-      if (!isOwner && !isCommissioner) {
-        throw { category: 'AUTHORIZATION', code: 'NOT_TEAM_OWNER', message: 'Only the team owner or commissioner can update this team' };
-      }
-
-      const updateData = camelToSnake(body) as Record<string, unknown>;
-      const { data: updated, error: updateError } = await supabase
-        .from('teams')
-        .update(updateData as Database['public']['Tables']['teams']['Update'])
-        .eq('id', teamId)
-        .select('*')
-        .single();
-
-      if (updateError || !updated) {
-        throw { category: 'DATA', code: 'UPDATE_FAILED', message: updateError?.message ?? 'Update failed' };
-      }
-
-      ok(res, snakeToCamel(updated), requestId);
     }
   } catch (err) {
     handleApiError(res, err, requestId);
   }
+}
+
+// ---------- PATCH: Lineup update (REQ-RST-002) ----------
+
+async function handleLineupUpdate(
+  req: VercelRequest,
+  res: VercelResponse,
+  userId: string,
+  teamId: string,
+  requestId: string,
+): Promise<void> {
+  const body = validateBody(req, LineupUpdateSchema);
+  const supabase = createServerClient();
+
+  // Verify ownership (owner OR commissioner)
+  const { data: team, error: teamError } = await supabase
+    .from('teams')
+    .select('*, leagues!inner(commissioner_id)')
+    .eq('id', teamId)
+    .single();
+
+  if (teamError || !team) {
+    throw { category: 'NOT_FOUND', code: 'TEAM_NOT_FOUND', message: `Team ${teamId} not found` };
+  }
+
+  const teamData = team as unknown as { owner_id: string; leagues: { commissioner_id: string } };
+  const isOwner = teamData.owner_id === userId;
+  const isCommissioner = teamData.leagues.commissioner_id === userId;
+
+  if (!isOwner && !isCommissioner) {
+    throw { category: 'AUTHORIZATION', code: 'NOT_TEAM_OWNER', message: 'Only the team owner or commissioner can update this team' };
+  }
+
+  if (body.updates.length > 0) {
+    // Verify all roster IDs belong to this team
+    const { data: rosterRows } = await supabase
+      .from('rosters')
+      .select('id')
+      .eq('team_id', teamId);
+
+    const validIds = new Set((rosterRows ?? []).map((r: Record<string, unknown>) => r.id as string));
+    for (const update of body.updates) {
+      if (!validIds.has(update.rosterId)) {
+        throw {
+          category: 'VALIDATION',
+          code: 'INVALID_ROSTER_ID',
+          message: `Roster entry ${update.rosterId} does not belong to team ${teamId}`,
+        };
+      }
+    }
+
+    // Apply updates
+    for (const update of body.updates) {
+      await supabase
+        .from('rosters')
+        .update({
+          roster_slot: update.rosterSlot,
+          lineup_order: update.lineupOrder,
+          lineup_position: update.lineupPosition,
+        })
+        .eq('id', update.rosterId);
+    }
+  }
+
+  // Re-fetch and return full roster
+  const { data: roster, error: rosterError } = await supabase
+    .from('rosters')
+    .select('*')
+    .eq('team_id', teamId)
+    .order('lineup_order', { nullsFirst: false });
+
+  if (rosterError) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: rosterError.message };
+  }
+
+  ok(res, snakeToCamel(roster ?? []), requestId);
 }
 
 // ---------- POST: Roster transactions (add/drop/trade) ----------

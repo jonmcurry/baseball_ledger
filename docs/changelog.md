@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-02-10 - Lineup Update API Endpoint (Phase 29)
+
+### Phase 29: Lineup Update API Endpoint (REQ-RST-002)
+
+The frontend (RosterPage, rosterStore, roster-service) called `PATCH /api/leagues/:id/teams?tid=X&include=roster` to save lineup changes, but the API handler only processed team metadata updates. Lineup saves silently failed with validation errors.
+
+- **Modified `api/leagues/[id]/teams.ts`**
+  - Added `LineupUpdateSchema` with Zod validation (rosterId, lineupOrder 1-9, lineupPosition enum, rosterSlot enum)
+  - Added branching on `include=roster` in the PATCH handler (matching existing GET pattern)
+  - Added `handleLineupUpdate` function: verifies ownership, validates roster IDs belong to team, applies updates, returns full updated roster
+  - No new files -- single function added to existing handler
+- **Modified `tests/unit/api/leagues/[id]/teams.test.ts`**
+  - 8 new tests covering: successful save, invalid rosterSlot/lineupOrder/lineupPosition rejection, auth/ownership checks, invalid roster ID detection, empty updates handling
+
+**REQ-RST-002**: Lineup management save path now works end-to-end.
+**2,425 tests** across 212 files pass. TypeScript clean.
+
 ## 2026-02-10 - Schedule Generation Wiring (Phase 28)
 
 ### Phase 28: Wire Schedule Generation into Draft Completion
