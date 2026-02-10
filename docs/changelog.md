@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phase 21)
+
+### Phase 21: PlayerProfileModal + AI Commentary (REQ-UI-009, REQ-UI-010, REQ-DFT-005)
+- **Created `src/components/baseball/PlayerProfileModal.tsx`** (REQ-UI-009)
+  - "Digital Baseball Card" popup: batting attributes, pitcher attributes, fielding section
+  - POWER_LABELS map (None to Excellent), pctLabel helper, StatRow sub-component
+  - Props: `player: PlayerCard`, `isOpen: boolean`, `onClose: () => void`
+- **Created `src/features/game-viewer/CommentaryPanel.tsx`** (REQ-UI-010)
+  - Displays commentary entries with TypewriterText effect for latest entry
+  - Shows inning labels before each entry
+- **Updated `src/features/draft/AvailablePlayersTable.tsx`** (REQ-DFT-005)
+  - Added Pwr, Spd, ERA stat columns with sortable headers
+  - Added SortableHeader sub-component with SortKey/SortDir state
+  - Added `onPlayerClick` optional prop for PlayerProfileModal integration
+  - Default sort: name ascending, clicking toggles asc/desc
+- **Updated `src/features/game-viewer/GameViewerPage.tsx`** -- integrated CommentaryPanel
+  - Renders commentary from last 10 play-by-play entries
+- **Updated `src/features/roster/RosterPage.tsx`** -- integrated PlayerProfileModal
+  - Player names in LineupDiamond and BenchPanel now clickable
+- **Updated `src/features/roster/BenchPanel.tsx`** -- added `onPlayerClick` prop
+- **Updated `src/features/roster/LineupDiamond.tsx`** -- added `onPlayerClick` prop
+- **Updated `src/features/draft/DraftBoardPage.tsx`** -- integrated PlayerProfileModal
+  - Player names in AvailablePlayersTable now clickable for profile preview
+
+### Metrics
+- Vitest: 2,201 -> 2,218 (+17 tests, 191 test files)
+- New test files: `PlayerProfileModal.test.tsx` (8), `CommentaryPanel.test.tsx` (5)
+- Updated: `AvailablePlayersTable.test.tsx` (+4 tests)
+- TypeScript: clean build, no errors
+- Vite: production build succeeds
+
 ## 2026-02-10 - SRD Gap Closure (Phases 19-20)
 
 ### Phase 19: Transaction Service + UI Wiring (REQ-RST-005)

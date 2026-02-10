@@ -16,6 +16,8 @@ import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { GameStatePanel } from './GameStatePanel';
 import { PlayByPlayFeed } from './PlayByPlayFeed';
 import { BoxScoreDisplay } from './BoxScoreDisplay';
+import { CommentaryPanel } from './CommentaryPanel';
+import type { CommentaryEntry } from './CommentaryPanel';
 
 type ViewTab = 'play-by-play' | 'box-score';
 
@@ -156,6 +158,16 @@ export function GameViewerPage() {
         <p className="py-4 text-center text-sm text-muted">
           Box score not available. Run a replay to see detailed stats.
         </p>
+      )}
+
+      {/* Commentary panel from play-by-play descriptions */}
+      {workerSim.result?.playByPlay && workerSim.result.playByPlay.length > 0 && (
+        <CommentaryPanel
+          entries={workerSim.result.playByPlay.slice(-10).map((p): CommentaryEntry => ({
+            text: p.description,
+            inning: p.inning,
+          }))}
+        />
       )}
     </div>
   );

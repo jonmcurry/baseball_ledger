@@ -8,16 +8,18 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDraft } from '@hooks/useDraft';
 import { useLeague } from '@hooks/useLeague';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import { DraftTicker } from './DraftTicker';
 import { AvailablePlayersTable } from './AvailablePlayersTable';
 import { PickTimer } from './PickTimer';
 import { RosterPreviewPanel } from './RosterPreviewPanel';
 import type { AvailablePlayer } from '@stores/draftStore';
+import type { PlayerCard } from '@lib/types/player';
 
 export function DraftBoardPage() {
   const { league } = useLeague();
@@ -43,6 +45,12 @@ export function DraftBoardPage() {
   if (isLoading) {
     return <LoadingLedger message="Loading draft board..." />;
   }
+
+  const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
+
+  const handlePlayerClick = (player: AvailablePlayer) => {
+    setProfilePlayer(player.playerCard);
+  };
 
   const handlePlayerSelect = (player: AvailablePlayer) => {
     if (!league?.id || !myTeam) return;
@@ -106,6 +114,7 @@ export function DraftBoardPage() {
           <AvailablePlayersTable
             players={availablePlayers}
             onSelect={handlePlayerSelect}
+            onPlayerClick={handlePlayerClick}
             disabled={!isMyPick}
           />
         </div>
@@ -120,6 +129,14 @@ export function DraftBoardPage() {
           )}
         </div>
       </div>
+
+      {profilePlayer && (
+        <PlayerProfileModal
+          player={profilePlayer}
+          isOpen={true}
+          onClose={() => setProfilePlayer(null)}
+        />
+      )}
     </div>
   );
 }

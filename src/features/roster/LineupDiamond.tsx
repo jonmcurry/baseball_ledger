@@ -15,9 +15,10 @@ export interface LineupDiamondProps {
   readonly roster: readonly RosterEntry[];
   readonly isEditable: boolean;
   readonly onAssign: (position: string) => void;
+  readonly onPlayerClick?: (entry: RosterEntry) => void;
 }
 
-export function LineupDiamond({ starters, isEditable, onAssign }: LineupDiamondProps) {
+export function LineupDiamond({ starters, isEditable, onAssign, onPlayerClick }: LineupDiamondProps) {
   const positions: FieldPosition[] = [
     'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF', 'P',
   ].map((pos) => {
@@ -45,9 +46,19 @@ export function LineupDiamond({ starters, isEditable, onAssign }: LineupDiamondP
             className="flex items-center gap-1 rounded-card border border-sandstone/50 px-2 py-0.5 text-xs"
           >
             <span className="font-stat text-muted">{s.lineupOrder}.</span>
-            <span className="font-medium text-ink">
-              {s.playerCard.nameFirst} {s.playerCard.nameLast}
-            </span>
+            {onPlayerClick ? (
+              <button
+                type="button"
+                className="font-medium text-ballpark underline-offset-2 hover:underline"
+                onClick={() => onPlayerClick(s)}
+              >
+                {s.playerCard.nameFirst} {s.playerCard.nameLast}
+              </button>
+            ) : (
+              <span className="font-medium text-ink">
+                {s.playerCard.nameFirst} {s.playerCard.nameLast}
+              </span>
+            )}
             <span className="text-muted">{s.lineupPosition}</span>
           </div>
         ))}

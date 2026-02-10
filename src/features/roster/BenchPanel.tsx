@@ -10,9 +10,10 @@ import type { RosterEntry } from '@lib/types/roster';
 export interface BenchPanelProps {
   readonly bench: readonly RosterEntry[];
   readonly onPlayerSelect: (entry: RosterEntry) => void;
+  readonly onPlayerClick?: (entry: RosterEntry) => void;
 }
 
-export function BenchPanel({ bench, onPlayerSelect }: BenchPanelProps) {
+export function BenchPanel({ bench, onPlayerSelect, onPlayerClick }: BenchPanelProps) {
   return (
     <div className="space-y-2">
       <h3 className="font-headline text-sm font-bold text-ballpark">Bench</h3>
@@ -26,9 +27,19 @@ export function BenchPanel({ bench, onPlayerSelect }: BenchPanelProps) {
             className="flex items-center justify-between rounded-card border border-sandstone/50 px-2 py-1"
           >
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-ink">
-                {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
-              </span>
+              {onPlayerClick ? (
+                <button
+                  type="button"
+                  className="text-sm font-medium text-ballpark underline-offset-2 hover:underline"
+                  onClick={() => onPlayerClick(entry)}
+                >
+                  {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
+                </button>
+              ) : (
+                <span className="text-sm font-medium text-ink">
+                  {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
+                </span>
+              )}
               <span className="font-stat text-xs text-muted">
                 {entry.playerCard.primaryPosition}
               </span>

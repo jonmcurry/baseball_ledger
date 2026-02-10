@@ -16,7 +16,9 @@ import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LineupDiamond } from './LineupDiamond';
 import { BenchPanel } from './BenchPanel';
 import { PitchingRotation } from './PitchingRotation';
+import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import type { RosterEntry } from '@lib/types/roster';
+import type { PlayerCard } from '@lib/types/player';
 
 export function RosterPage() {
   const { league } = useLeague();
@@ -26,6 +28,7 @@ export function RosterPage() {
   const updateRosterSlot = useRosterStore((s) => s.updateRosterSlot);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
+  const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
 
   useEffect(() => {
     if (league?.id && myTeam?.id) {
@@ -47,6 +50,10 @@ export function RosterPage() {
     () => roster.find((r) => r.rosterSlot === 'closer') ?? null,
     [roster],
   );
+
+  const handlePlayerClick = useCallback((entry: RosterEntry) => {
+    setProfilePlayer(entry.playerCard);
+  }, []);
 
   const handlePositionClick = useCallback((position: string) => {
     setSelectedPosition((prev) => (prev === position ? null : position));
@@ -127,12 +134,14 @@ export function RosterPage() {
             roster={roster}
             isEditable
             onAssign={handlePositionClick}
+            onPlayerClick={handlePlayerClick}
           />
 
           <div className="grid gap-gutter lg:grid-cols-2">
             <BenchPanel
               bench={bench}
               onPlayerSelect={handleBenchPlayerSelect}
+              onPlayerClick={handlePlayerClick}
             />
             <PitchingRotation
               rotation={rotation}
@@ -142,6 +151,14 @@ export function RosterPage() {
             />
           </div>
         </>
+      )}
+
+      {profilePlayer && (
+        <PlayerProfileModal
+          player={profilePlayer}
+          isOpen={true}
+          onClose={() => setProfilePlayer(null)}
+        />
       )}
     </div>
   );
