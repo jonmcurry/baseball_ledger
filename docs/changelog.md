@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-10 - Client-Driven Multi-Day Simulation (Phase 31)
+
+### Phase 31: Client-Driven Multi-Day Simulation (REQ-NFR-021, REQ-SCH-005)
+
+The "Simulate Week/Month/Season" buttons called the API with `days > 1`, which returned `202 Accepted` but never actually simulated any days -- the server-side loop was never implemented. Per REQ-NFR-021 (chunked simulation pattern) and Vercel Hobby's 60s function timeout, multi-day simulation is now driven by the client.
+
+- **Modified `src/stores/simulationStore.ts`**
+  - Added `totalDays` and `currentDay` to `SimulationState`
+  - Rewrote `runSimulation` to loop calling `startSimulation(leagueId, 1)` for each day
+  - Breaks early when endpoint returns `games: []` (schedule exhausted or playoff transition)
+  - On completion, sets `totalDays = daysDone` for accurate progress display
+  - 6 new tests in `simulationStore-async.test.ts`
+- **Modified `src/hooks/useSimulation.ts`**
+  - Exposed `currentDay` and `totalDays` from store
+  - Updated `progressPct` to use day-based calculation (`currentDay / totalDays`) when available, falling back to game-based when `totalDays` is 0
+  - 3 new tests in `useSimulation.test.ts`
+- **Modified `api/leagues/[id]/simulate.ts`**
+  - Removed dead 202 async path (never completed simulation)
+  - Tightened schema to `days: z.literal(1)` -- endpoint only handles single-day
+  - Removed unused `accepted` import
+  - Replaced 2 broken 202 tests with 2 validation rejection tests
+
+**REQ-NFR-021**: Chunked simulation pattern implemented (client loops day-by-day).
+**REQ-SCH-005**: Simulate Day/Week/Month/Season buttons now functional.
+**2,449 tests** across 214 files pass. TypeScript clean.
+
 ## 2026-02-10 - Post-Draft Lineup Auto-Generation (Phase 30)
 
 ### Phase 30: Post-Draft Lineup Auto-Generation (REQ-RST-001)

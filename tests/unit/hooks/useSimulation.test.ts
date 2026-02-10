@@ -13,6 +13,8 @@ describe('useSimulation', () => {
       status: 'idle',
       totalGames: 0,
       completedGames: 0,
+      totalDays: 0,
+      currentDay: 0,
       results: [],
       error: null,
     });
@@ -78,5 +80,43 @@ describe('useSimulation', () => {
   it('exposes runSimulation action from store', () => {
     const { result } = renderHook(() => useSimulation());
     expect(typeof result.current.runSimulation).toBe('function');
+  });
+
+  it('progressPct uses day-based calculation when totalDays > 0', () => {
+    useSimulationStore.setState({
+      status: 'running',
+      totalDays: 7,
+      currentDay: 3,
+      totalGames: 0,
+      completedGames: 0,
+    });
+
+    const { result } = renderHook(() => useSimulation());
+    expect(result.current.progressPct).toBe(43); // Math.round(3/7*100)
+  });
+
+  it('progressPct falls back to game-based when totalDays is 0', () => {
+    useSimulationStore.setState({
+      status: 'running',
+      totalDays: 0,
+      currentDay: 0,
+      totalGames: 10,
+      completedGames: 5,
+    });
+
+    const { result } = renderHook(() => useSimulation());
+    expect(result.current.progressPct).toBe(50); // 5/10*100
+  });
+
+  it('exposes currentDay and totalDays from store', () => {
+    useSimulationStore.setState({
+      status: 'running',
+      totalDays: 30,
+      currentDay: 15,
+    });
+
+    const { result } = renderHook(() => useSimulation());
+    expect(result.current.currentDay).toBe(15);
+    expect(result.current.totalDays).toBe(30);
   });
 });

@@ -23,6 +23,8 @@ export interface SimulationState {
   status: SimulationStatus;
   totalGames: number;
   completedGames: number;
+  totalDays: number;
+  currentDay: number;
   results: SimulationResult[];
   error: string | null;
 }
@@ -44,6 +46,8 @@ const initialState: SimulationState = {
   status: 'idle',
   totalGames: 0,
   completedGames: 0,
+  totalDays: 0,
+  currentDay: 0,
   results: [],
   error: null,
 };
@@ -59,6 +63,8 @@ export const useSimulationStore = create<SimulationStore>()(
             status: 'running',
             totalGames,
             completedGames: 0,
+            totalDays: 0,
+            currentDay: 0,
             results: [],
             error: null,
           },
@@ -85,12 +91,28 @@ export const useSimulationStore = create<SimulationStore>()(
       reset: () => set(initialState, false, 'reset'),
 
       runSimulation: async (leagueId, days) => {
-        set({ status: 'running', completedGames: 0, results: [], error: null }, false, 'runSimulation/start');
+        const maxDays = days === 'season' ? 162 : (days as number);
+        set({
+          status: 'running', totalDays: maxDays, currentDay: 0,
+          completedGames: 0, totalGames: 0, results: [], error: null,
+        }, false, 'runSimulation/start');
+
         try {
-          const response = await simulationService.startSimulation(leagueId, days);
-          if (response.result) {
-            set({ status: 'complete' }, false, 'runSimulation/complete');
+          let daysDone = 0;
+          for (let d = 0; d < maxDays; d++) {
+            const { result } = await simulationService.startSimulation(leagueId, 1);
+            daysDone++;
+
+            if (!result || result.games.length === 0) break;
+
+            set((state) => ({
+              currentDay: daysDone,
+              completedGames: state.completedGames + result.games.length,
+            }), false, 'runSimulation/dayComplete');
           }
+
+          set({ status: 'complete', currentDay: daysDone, totalDays: daysDone },
+            false, 'runSimulation/complete');
         } catch (err) {
           set({
             status: 'error',

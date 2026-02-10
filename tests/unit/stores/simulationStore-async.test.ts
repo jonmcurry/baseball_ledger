@@ -66,6 +66,109 @@ describe('simulationStore async actions', () => {
   });
 
   // -----------------------------------------------------------------------
+  // runSimulation -- multi-day loop (REQ-NFR-021 chunked simulation)
+  // -----------------------------------------------------------------------
+
+  it('runSimulation with days=7 calls startSimulation 7 times', async () => {
+    vi.mocked(simulationService.startSimulation).mockResolvedValue({
+      result: { dayNumber: 1, games: [{ id: 'g1' }] },
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 7);
+
+    expect(simulationService.startSimulation).toHaveBeenCalledTimes(7);
+    // Every call uses days=1
+    for (const call of vi.mocked(simulationService.startSimulation).mock.calls) {
+      expect(call).toEqual(['league-1', 1]);
+    }
+  });
+
+  it('runSimulation updates currentDay after each iteration', async () => {
+    const dayStates: number[] = [];
+    vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
+      // Capture currentDay from within the loop (after the previous iteration's set)
+      dayStates.push(useSimulationStore.getState().currentDay);
+      return { result: { dayNumber: 1, games: [{ id: 'g1' }] } };
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 3);
+
+    const state = useSimulationStore.getState();
+    expect(state.currentDay).toBe(3);
+    expect(state.status).toBe('complete');
+  });
+
+  it('runSimulation breaks early when no games returned', async () => {
+    let callCount = 0;
+    vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 2) {
+        return { result: { dayNumber: callCount, games: [{ id: `g${callCount}` }] } };
+      }
+      return { result: { dayNumber: callCount, games: [] } };
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 7);
+
+    // Should stop after 3 calls (2 with games + 1 empty)
+    expect(simulationService.startSimulation).toHaveBeenCalledTimes(3);
+    const state = useSimulationStore.getState();
+    expect(state.status).toBe('complete');
+    expect(state.currentDay).toBe(3);
+    expect(state.totalDays).toBe(3);
+  });
+
+  it('runSimulation with days=season loops until no games', async () => {
+    let callCount = 0;
+    vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 5) {
+        return { result: { dayNumber: callCount, games: [{ id: `g${callCount}` }] } };
+      }
+      return { result: { dayNumber: callCount, games: [] } };
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 'season');
+
+    expect(simulationService.startSimulation).toHaveBeenCalledTimes(6);
+    const state = useSimulationStore.getState();
+    expect(state.status).toBe('complete');
+    expect(state.totalDays).toBe(6);
+  });
+
+  it('runSimulation sets error on mid-loop failure', async () => {
+    let callCount = 0;
+    vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
+      callCount++;
+      if (callCount <= 2) {
+        return { result: { dayNumber: callCount, games: [{ id: `g${callCount}` }] } };
+      }
+      throw new Error('Day 3 server error');
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 7);
+
+    const state = useSimulationStore.getState();
+    expect(state.status).toBe('error');
+    expect(state.error).toBe('Day 3 server error');
+    // Progress should reflect the 2 successful days
+    expect(state.currentDay).toBe(2);
+  });
+
+  it('runSimulation sets totalDays and currentDay in initial state', async () => {
+    vi.mocked(simulationService.startSimulation).mockResolvedValue({
+      result: { dayNumber: 1, games: [{ id: 'g1' }] },
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 30);
+
+    const state = useSimulationStore.getState();
+    expect(state.status).toBe('complete');
+    expect(state.currentDay).toBe(30);
+    expect(state.totalDays).toBe(30);
+  });
+
+  // -----------------------------------------------------------------------
   // subscribeToSimProgress
   // -----------------------------------------------------------------------
 

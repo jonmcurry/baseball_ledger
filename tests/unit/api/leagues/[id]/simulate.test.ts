@@ -396,68 +396,23 @@ describe('POST /api/leagues/:id/simulate', () => {
     expect(res._body.error).toHaveProperty('code', 'SIMULATION_COMMIT_FAILED');
   });
 
-  it('returns 202 for async simulation (days=7) with simulationId', async () => {
-    let fromCallCount = 0;
-    const leagueBuilder = createMockQueryBuilder({
-      data: { status: 'regular_season', current_day: 10 },
-      error: null,
-      count: null,
-    });
-    const progressBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
-    const mockFrom = vi.fn().mockImplementation(() => {
-      fromCallCount++;
-      return fromCallCount === 1 ? leagueBuilder : progressBuilder;
-    });
-    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
-
+  it('returns 400 for days > 1 (multi-day is client-driven)', async () => {
     const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 7 } });
     const res = createMockResponse();
 
     await handler(req as any, res as any);
 
-    expect(res._status).toBe(202);
-    expect(res._body.data).toHaveProperty('simulationId');
-    expect(typeof res._body.data.simulationId).toBe('string');
-    expect(res._body.meta).toHaveProperty('requestId');
-    expect(progressBuilder.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        league_id: 'league-1',
-        status: 'running',
-      }),
-    );
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
   });
 
-  it('returns 202 for season simulation (days=season)', async () => {
-    let fromCallCount = 0;
-    const leagueBuilder = createMockQueryBuilder({
-      data: { status: 'regular_season', current_day: 50 },
-      error: null,
-      count: null,
-    });
-    const progressBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
-    const mockFrom = vi.fn().mockImplementation(() => {
-      fromCallCount++;
-      return fromCallCount === 1 ? leagueBuilder : progressBuilder;
-    });
-    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
-
-    const req = createMockRequest({
-      method: 'POST',
-      query: { id: 'league-1' },
-      body: { days: 'season' },
-    });
+  it('returns 400 for days=season (multi-day is client-driven)', async () => {
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 'season' } });
     const res = createMockResponse();
 
     await handler(req as any, res as any);
 
-    expect(res._status).toBe(202);
-    expect(res._body.data).toHaveProperty('simulationId');
-    expect(res._body.meta).toHaveProperty('requestId');
-    expect(progressBuilder.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        total_games: 448,
-        current_day: 50,
-      }),
-    );
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
   });
 });
