@@ -1,5 +1,5 @@
 /**
- * GET /api/leagues/:id/stats?type=batting|pitching|team
+ * GET /api/leagues/:id/stats?type=batting|pitching|team|standings
  *
  * Consolidated stats endpoint. Dispatches based on `type` query parameter.
  */
@@ -124,10 +124,60 @@ async function handleTeam(req: VercelRequest, res: VercelResponse, requestId: st
   ok(res, snakeToCamel(teamStats), requestId);
 }
 
+interface StandingsTeamRow {
+  id: string;
+  name: string;
+  city: string;
+  owner_id: string | null;
+  manager_profile: string;
+  league_division: string;
+  division: string;
+  wins: number;
+  losses: number;
+  runs_scored: number;
+  runs_allowed: number;
+}
+
+async function handleStandings(req: VercelRequest, res: VercelResponse, requestId: string) {
+  const leagueId = req.query.id as string;
+  const supabase = createServerClient();
+
+  const { data: teams, error } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('league_id', leagueId)
+    .order('wins', { ascending: false });
+
+  if (error) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
+  }
+
+  const divisionMap = new Map<string, StandingsTeamRow[]>();
+  for (const team of (teams ?? []) as StandingsTeamRow[]) {
+    const key = `${team.league_division}-${team.division}`;
+    if (!divisionMap.has(key)) {
+      divisionMap.set(key, []);
+    }
+    divisionMap.get(key)!.push(team);
+  }
+
+  const standings = Array.from(divisionMap.entries()).map(([key, divTeams]) => {
+    const [leagueDivision, division] = key.split('-');
+    return {
+      league_division: leagueDivision,
+      division,
+      teams: divTeams,
+    };
+  });
+
+  ok(res, snakeToCamel(standings), requestId);
+}
+
 const typeHandlers: Record<string, (req: VercelRequest, res: VercelResponse, requestId: string) => Promise<void>> = {
   batting: handleBatting,
   pitching: handlePitching,
   team: handleTeam,
+  standings: handleStandings,
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

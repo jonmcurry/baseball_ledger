@@ -65,7 +65,7 @@ export async function fetchAvailablePlayers(
   if (filters?.sortOrder) params.set('sortOrder', filters.sortOrder);
 
   const response = await apiGetPaginated<PlayerPoolRow>(
-    `/api/leagues/${leagueId}/players?${params}`,
+    `/api/leagues/${leagueId}/draft?resource=players&${params}`,
   );
   return response.data;
 }

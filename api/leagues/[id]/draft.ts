@@ -1,10 +1,12 @@
 /**
- * GET  /api/leagues/:id/draft -- Get draft state
- * POST /api/leagues/:id/draft -- Start draft (action=start), submit pick (action=pick),
- *                                 or auto-pick (action=auto-pick)
+ * GET  /api/leagues/:id/draft                  -- Get draft state
+ * GET  /api/leagues/:id/draft?resource=players -- Fetch player pool (paginated)
+ * POST /api/leagues/:id/draft                  -- Start draft (action=start), submit pick (action=pick),
+ *                                                  or auto-pick (action=auto-pick)
  *
  * REQ-DFT-001: 21-round snake draft.
  * REQ-DFT-002: Randomized order, reverses each round.
+ * REQ-DATA-002: Player pool accessible for draft board.
  *
  * Consolidated draft endpoint.
  */
@@ -14,7 +16,7 @@ import { z } from 'zod';
 import { checkMethod } from '../../_lib/method-guard';
 import { requireAuth } from '../../_lib/auth';
 import { validateBody } from '../../_lib/validate';
-import { ok, created } from '../../_lib/response';
+import { ok, created, paginated } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '@lib/supabase/server';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '@lib/draft/draft-order';
@@ -34,6 +36,58 @@ const DraftPickSchema = z.object({
 const DraftStartSchema = z.object({
   action: z.literal('start'),
 });
+
+// ---------- GET ?resource=players: Player pool ----------
+
+const SORT_COLUMN_MAP: Record<string, string> = {
+  nameLast: 'player_card->nameLast',
+  seasonYear: 'season_year',
+  primaryPosition: 'player_card->primaryPosition',
+};
+
+async function handleGetPlayers(req: VercelRequest, res: VercelResponse, requestId: string) {
+  await requireAuth(req);
+  const leagueId = req.query.id as string;
+  const drafted = req.query.drafted === 'true';
+  const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+  const pageSize = Math.min(500, Math.max(1, parseInt(req.query.pageSize as string, 10) || 100));
+  const position = req.query.position as string | undefined;
+  const search = req.query.search as string | undefined;
+  const sortBy = (req.query.sortBy as string) || 'nameLast';
+  const sortOrder = (req.query.sortOrder as string) === 'desc' ? 'desc' : 'asc';
+
+  const supabase = createServerClient();
+
+  let query = supabase
+    .from('player_pool')
+    .select('*', { count: 'exact' })
+    .eq('league_id', leagueId)
+    .eq('is_drafted', drafted);
+
+  if (position) {
+    query = query.eq('player_card->>primaryPosition', position);
+  }
+
+  if (search) {
+    query = query.or(
+      `player_card->>nameFirst.ilike.%${search}%,player_card->>nameLast.ilike.%${search}%`,
+    );
+  }
+
+  const sortColumn = SORT_COLUMN_MAP[sortBy] || 'player_card->nameLast';
+  query = query.order(sortColumn, { ascending: sortOrder === 'asc' });
+
+  const offset = (page - 1) * pageSize;
+  query = query.range(offset, offset + pageSize - 1);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
+  }
+
+  paginated(res, data ?? [], { page, pageSize, totalRows: count ?? 0 }, requestId);
+}
 
 // ---------- GET: Draft state ----------
 
@@ -306,7 +360,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const requestId = crypto.randomUUID();
   try {
     if (req.method === 'GET') {
-      await handleGetState(req, res, requestId);
+      const resource = req.query.resource as string | undefined;
+      if (resource === 'players') {
+        await handleGetPlayers(req, res, requestId);
+      } else {
+        await handleGetState(req, res, requestId);
+      }
     } else {
       // POST -- determine action from body
       const body = req.body as Record<string, unknown> | null;

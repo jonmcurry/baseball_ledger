@@ -41,7 +41,7 @@ describe('transaction-service', () => {
       await dropPlayer('lg-1', 'team-1', 'player-42');
 
       expect(mockApiPost).toHaveBeenCalledWith(
-        '/api/leagues/lg-1/transactions',
+        '/api/leagues/lg-1/teams',
         {
           type: 'drop',
           teamId: 'team-1',
@@ -72,7 +72,7 @@ describe('transaction-service', () => {
       await addPlayer('lg-1', 'team-1', player);
 
       expect(mockApiPost).toHaveBeenCalledWith(
-        '/api/leagues/lg-1/transactions',
+        '/api/leagues/lg-1/teams',
         {
           type: 'add',
           teamId: 'team-1',
@@ -90,7 +90,7 @@ describe('transaction-service', () => {
       await submitTrade('lg-1', 'team-1', 'team-2', ['p1', 'p2'], ['p3']);
 
       expect(mockApiPost).toHaveBeenCalledWith(
-        '/api/leagues/lg-1/transactions',
+        '/api/leagues/lg-1/teams',
         {
           type: 'trade',
           teamId: 'team-1',
@@ -117,7 +117,7 @@ describe('transaction-service', () => {
 
       const result = await fetchTransactionHistory('lg-1');
 
-      expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/transactions');
+      expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/teams');
       expect(result).toEqual(history);
     });
 

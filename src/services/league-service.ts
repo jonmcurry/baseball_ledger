@@ -40,7 +40,7 @@ export async function fetchTeams(leagueId: string): Promise<TeamSummary[]> {
 }
 
 export async function fetchStandings(leagueId: string): Promise<DivisionStandings[]> {
-  const response = await apiGet<DivisionStandings[]>(`/api/leagues/${leagueId}/standings`);
+  const response = await apiGet<DivisionStandings[]>(`/api/leagues/${leagueId}/stats?type=standings`);
   return response.data;
 }
 

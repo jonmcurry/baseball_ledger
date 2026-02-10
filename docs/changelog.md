@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-02-10 - API Route Consolidation (Phase 27)
+
+### Phase 27: API Route Consolidation -- Vercel Hobby Limit
+
+Consolidated 13 serverless functions down to 10 to fit within the Vercel Hobby plan limit of 12 (with headroom for 2 future routes). Three merges follow existing dispatch patterns already used in the codebase.
+
+- **Merge 1: standings.ts into stats.ts**
+  - Added `?type=standings` to the existing `typeHandlers` dispatch map
+  - `handleStandings` + `StandingsTeamRow` moved from standalone file
+  - Updated `league-service.ts` URL: `/standings` -> `/stats?type=standings`
+  - 3 standings tests merged into stats.test.ts
+  - Deleted: `api/leagues/[id]/standings.ts`, `tests/.../standings.test.ts`
+- **Merge 2: players.ts into draft.ts**
+  - Added `?resource=players` sub-routing on the GET branch
+  - `handleGetPlayers` + `SORT_COLUMN_MAP` moved from standalone file
+  - Updated `draft-service.ts` URL: `/players?` -> `/draft?resource=players&`
+  - 9 player tests merged into draft.test.ts
+  - Deleted: `api/leagues/[id]/players.ts`, `tests/.../players.test.ts`
+- **Merge 3: transactions.ts into teams.ts**
+  - Added POST method for roster transactions (add/drop/trade)
+  - `handleTransaction`, `handleTrade`, `toRosterEntry`, `TransactionSchema` moved from standalone file
+  - Updated `transaction-service.ts` URLs: `/transactions` -> `/teams`
+  - 11 transaction tests merged into teams.test.ts; 405 test updated (POST->DELETE)
+  - Deleted: `api/leagues/[id]/transactions.ts`, `tests/.../transactions.test.ts`
+
+**10 API endpoint files** (down from 13):
+`ai/index`, `leagues/index`, `[id]/index`, `[id]/archive`, `[id]/draft`, `[id]/games/[gid]`, `[id]/schedule`, `[id]/simulate`, `[id]/stats`, `[id]/teams`
+
+**Test total: 2,408 tests across 211 files** (3 test files merged, 1 duplicate 405 test dropped)
+
 ## 2026-02-10 - Game Simulation Integration (Phase 26)
 
 ### Phase 26: Game Simulation Integration -- MVP Blocker (REQ-NFR-010, REQ-NFR-014)

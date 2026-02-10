@@ -91,7 +91,7 @@ describe('league-service', () => {
 
     const result = await fetchStandings('lg-1');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/standings');
+    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/stats?type=standings');
     expect(result).toEqual(standings);
   });
 

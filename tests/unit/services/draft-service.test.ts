@@ -18,10 +18,12 @@ import {
   submitPick,
   fetchDraftState,
   autoPick,
+  fetchAvailablePlayers,
 } from '../../../src/services/draft-service';
-import { apiGet, apiPost } from '../../../src/services/api-client';
+import { apiGet, apiGetPaginated, apiPost } from '../../../src/services/api-client';
 
 const mockApiGet = vi.mocked(apiGet);
+const mockApiGetPaginated = vi.mocked(apiGetPaginated);
 const mockApiPost = vi.mocked(apiPost);
 
 const defaultMeta = { requestId: 'req-1', timestamp: '2024-01-01' };
@@ -30,6 +32,7 @@ describe('draft-service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockApiGet.mockResolvedValue({ data: {}, meta: defaultMeta });
+    mockApiGetPaginated.mockResolvedValue({ data: [], pagination: { page: 1, pageSize: 100, totalRows: 0 } });
     mockApiPost.mockResolvedValue({ data: {}, meta: defaultMeta });
   });
 
@@ -91,5 +94,29 @@ describe('draft-service', () => {
     mockApiPost.mockRejectedValue(new Error('Network error'));
 
     await expect(autoPick('lg-1')).rejects.toThrow('Network error');
+  });
+
+  it('fetchAvailablePlayers calls apiGetPaginated with draft?resource=players URL', async () => {
+    const players = [{ playerId: 'p1' }];
+    mockApiGetPaginated.mockResolvedValue({ data: players, pagination: { page: 1, pageSize: 100, totalRows: 1 } });
+
+    const result = await fetchAvailablePlayers('lg-1');
+
+    expect(mockApiGetPaginated).toHaveBeenCalledWith(
+      expect.stringContaining('/api/leagues/lg-1/draft?resource=players&'),
+    );
+    expect(result).toEqual(players);
+  });
+
+  it('fetchAvailablePlayers passes filter params in URL', async () => {
+    mockApiGetPaginated.mockResolvedValue({ data: [], pagination: { page: 1, pageSize: 50, totalRows: 0 } });
+
+    await fetchAvailablePlayers('lg-1', { position: 'SP', page: 2, pageSize: 50 });
+
+    const url = mockApiGetPaginated.mock.calls[0][0];
+    expect(url).toContain('resource=players');
+    expect(url).toContain('position=SP');
+    expect(url).toContain('page=2');
+    expect(url).toContain('pageSize=50');
   });
 });

@@ -28,7 +28,7 @@ export async function dropPlayer(
   playerId: string,
 ): Promise<TransactionResult> {
   const response = await apiPost<TransactionResult>(
-    `/api/leagues/${leagueId}/transactions`,
+    `/api/leagues/${leagueId}/teams`,
     {
       type: 'drop',
       teamId,
@@ -52,7 +52,7 @@ export async function addPlayer(
   },
 ): Promise<TransactionResult> {
   const response = await apiPost<TransactionResult>(
-    `/api/leagues/${leagueId}/transactions`,
+    `/api/leagues/${leagueId}/teams`,
     {
       type: 'add',
       teamId,
@@ -73,7 +73,7 @@ export async function submitTrade(
   playersFromThem: string[],
 ): Promise<TransactionResult> {
   const response = await apiPost<TransactionResult>(
-    `/api/leagues/${leagueId}/transactions`,
+    `/api/leagues/${leagueId}/teams`,
     {
       type: 'trade',
       teamId,
@@ -92,7 +92,7 @@ export async function fetchTransactionHistory(
   leagueId: string,
 ): Promise<TransactionEntry[]> {
   const response = await apiGet<TransactionEntry[]>(
-    `/api/leagues/${leagueId}/transactions`,
+    `/api/leagues/${leagueId}/teams`,
   );
   return response.data;
 }
