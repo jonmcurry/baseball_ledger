@@ -1,5 +1,5 @@
 /**
- * Tests for GET /api/leagues/:id and DELETE /api/leagues/:id
+ * Tests for GET /api/leagues/:id, POST /api/leagues/:id (join), and DELETE /api/leagues/:id
  */
 
 vi.mock('@lib/supabase/server', () => ({ createServerClient: vi.fn() }));
@@ -9,9 +9,22 @@ import handler from '../../../../../api/leagues/[id]/index';
 import { createServerClient } from '@lib/supabase/server';
 import { requireAuth } from '../../../../../api/_lib/auth';
 import { createMockRequest, createMockResponse, createMockQueryBuilder } from '../../../../fixtures/mock-supabase';
+import type { MockQueryBuilder } from '../../../../fixtures/mock-supabase';
 
 const mockCreateServerClient = vi.mocked(createServerClient);
 const mockRequireAuth = vi.mocked(requireAuth);
+
+/**
+ * Add the `.is()` method to a mock query builder.
+ * The join handler uses `.is('owner_id', null)` which is not on the default builder.
+ */
+function addIsMethod(builder: MockQueryBuilder): MockQueryBuilder & { is: ReturnType<typeof vi.fn> } {
+  const extended = builder as MockQueryBuilder & { is: ReturnType<typeof vi.fn> };
+  extended.is = vi.fn().mockReturnValue(builder);
+  return extended;
+}
+
+// ---------- GET ----------
 
 describe('GET /api/leagues/:id', () => {
   beforeEach(() => {
@@ -76,8 +89,6 @@ describe('GET /api/leagues/:id', () => {
       error: null,
       count: null,
     });
-    // teams query does not call .single(), it resolves via thenable
-    // The builder's thenable resolves to the result, which has data: []
 
     const mockFrom = vi.fn().mockImplementation((table: string) => {
       if (table === 'leagues') return leaguesBuilder;
@@ -208,6 +219,330 @@ describe('GET /api/leagues/:id', () => {
   });
 });
 
+// ---------- POST (Join) ----------
+
+describe('POST /api/leagues/:id (join)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireAuth.mockResolvedValue({ userId: 'user-123', email: 'test@example.com' });
+  });
+
+  it('returns 401 when requireAuth rejects', async () => {
+    mockRequireAuth.mockRejectedValue({
+      category: 'AUTHENTICATION',
+      code: 'MISSING_TOKEN',
+      message: 'Missing token',
+    });
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { inviteKey: 'ABCD1234' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(401);
+  });
+
+  it('returns 400 for missing inviteKey in body', async () => {
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {},
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(400);
+    expect(res._body).toMatchObject({
+      error: { code: 'INVALID_REQUEST_BODY' },
+    });
+  });
+
+  it('returns 404 when league not found', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: null,
+      error: { message: 'Not found', code: 'PGRST116' },
+      count: null,
+    });
+
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(leaguesBuilder),
+    } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'nonexistent' },
+      body: { inviteKey: 'ABCD1234' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(404);
+    expect(res._body).toMatchObject({
+      error: { code: 'LEAGUE_NOT_FOUND' },
+    });
+  });
+
+  it('returns 400 when invite key does not match', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: {
+        id: 'league-1',
+        name: 'Test League',
+        invite_key: 'CORRECT1',
+        commissioner_id: 'other-user',
+      },
+      error: null,
+      count: null,
+    });
+
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(leaguesBuilder),
+    } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { inviteKey: 'WRONGKEY' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(400);
+    expect(res._body).toMatchObject({
+      error: { code: 'INVALID_INVITE_KEY' },
+    });
+  });
+
+  it('returns 409 when user is already a member', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: {
+        id: 'league-1',
+        name: 'Test League',
+        invite_key: 'ABCD1234',
+        commissioner_id: 'other-user',
+      },
+      error: null,
+      count: null,
+    });
+
+    const existingTeamsBuilder = createMockQueryBuilder({
+      data: [{ id: 'team-1' }],
+      error: null,
+      count: null,
+    });
+
+    let teamsCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') {
+        teamsCallCount++;
+        if (teamsCallCount === 1) return existingTeamsBuilder;
+      }
+      return createMockQueryBuilder();
+    });
+
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { inviteKey: 'ABCD1234' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(409);
+    expect(res._body).toMatchObject({
+      error: { code: 'ALREADY_MEMBER' },
+    });
+  });
+
+  it('returns 409 when no available teams', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: {
+        id: 'league-1',
+        name: 'Test League',
+        invite_key: 'ABCD1234',
+        commissioner_id: 'other-user',
+      },
+      error: null,
+      count: null,
+    });
+
+    const existingTeamsBuilder = createMockQueryBuilder({
+      data: [],
+      error: null,
+      count: null,
+    });
+
+    const unownedTeamBuilder = createMockQueryBuilder({
+      data: null,
+      error: { message: 'No rows found', code: 'PGRST116' },
+      count: null,
+    });
+    addIsMethod(unownedTeamBuilder);
+
+    let teamsCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') {
+        teamsCallCount++;
+        if (teamsCallCount === 1) return existingTeamsBuilder;
+        if (teamsCallCount === 2) return unownedTeamBuilder;
+      }
+      return createMockQueryBuilder();
+    });
+
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { inviteKey: 'ABCD1234' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(409);
+    expect(res._body).toMatchObject({
+      error: { code: 'NO_AVAILABLE_TEAMS' },
+    });
+  });
+
+  it('returns 200 with teamId and teamName on success', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: {
+        id: 'league-1',
+        name: 'Test League',
+        invite_key: 'ABCD1234',
+        commissioner_id: 'other-user',
+      },
+      error: null,
+      count: null,
+    });
+
+    const existingTeamsBuilder = createMockQueryBuilder({
+      data: [],
+      error: null,
+      count: null,
+    });
+
+    const unownedTeamBuilder = createMockQueryBuilder({
+      data: { id: 'team-5', name: 'Unowned Team', owner_id: null, league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    addIsMethod(unownedTeamBuilder);
+
+    const updateBuilder = createMockQueryBuilder({
+      data: null,
+      error: null,
+      count: null,
+    });
+
+    let teamsCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') {
+        teamsCallCount++;
+        if (teamsCallCount === 1) return existingTeamsBuilder;
+        if (teamsCallCount === 2) return unownedTeamBuilder;
+        if (teamsCallCount === 3) return updateBuilder;
+      }
+      return createMockQueryBuilder();
+    });
+
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { inviteKey: 'ABCD1234' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(200);
+    expect(res._body).toMatchObject({
+      data: {
+        teamId: 'team-5',
+        teamName: 'Unowned Team',
+      },
+    });
+  });
+
+  it('returns 500 when team update fails', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: {
+        id: 'league-1',
+        name: 'Test League',
+        invite_key: 'ABCD1234',
+        commissioner_id: 'other-user',
+      },
+      error: null,
+      count: null,
+    });
+
+    const existingTeamsBuilder = createMockQueryBuilder({
+      data: [],
+      error: null,
+      count: null,
+    });
+
+    const unownedTeamBuilder = createMockQueryBuilder({
+      data: { id: 'team-5', name: 'Unowned Team', owner_id: null, league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    addIsMethod(unownedTeamBuilder);
+
+    const updateBuilder = createMockQueryBuilder({
+      data: null,
+      error: { message: 'Update failed', code: 'PGRST001' },
+      count: null,
+    });
+
+    let teamsCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') {
+        teamsCallCount++;
+        if (teamsCallCount === 1) return existingTeamsBuilder;
+        if (teamsCallCount === 2) return unownedTeamBuilder;
+        if (teamsCallCount === 3) return updateBuilder;
+      }
+      return createMockQueryBuilder();
+    });
+
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { inviteKey: 'ABCD1234' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as never, res as never);
+
+    expect(res._status).toBe(500);
+    expect(res._body).toMatchObject({
+      error: { code: 'JOIN_FAILED' },
+    });
+  });
+});
+
+// ---------- DELETE ----------
+
 describe('DELETE /api/leagues/:id', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -215,9 +550,6 @@ describe('DELETE /api/leagues/:id', () => {
   });
 
   it('returns 204 when commissioner deletes league', async () => {
-    // DELETE handler calls from('leagues') twice:
-    // 1. select('commissioner_id').eq('id', ...).single() -> returns commissioner row
-    // 2. delete().eq('id', ...) -> succeeds
     const selectBuilder = createMockQueryBuilder({
       data: { commissioner_id: 'user-123' },
       error: null,

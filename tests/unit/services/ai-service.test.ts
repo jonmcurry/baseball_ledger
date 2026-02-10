@@ -39,7 +39,7 @@ describe('ai-service', () => {
 
     const result = await generateCommentary(body);
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/ai/commentary', body);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/ai?feature=commentary', body);
     expect(result.data).toEqual(response);
   });
 
@@ -49,7 +49,7 @@ describe('ai-service', () => {
 
     const result = await generateGameSummary(body);
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/ai/game-summary', body);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/ai?feature=game-summary', body);
     expect(result.data).toBeDefined();
   });
 
@@ -59,7 +59,7 @@ describe('ai-service', () => {
 
     const result = await evaluateTrade(body);
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/ai/trade-eval', body);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/ai?feature=trade-eval', body);
     expect(result.data).toBeDefined();
   });
 
@@ -69,7 +69,7 @@ describe('ai-service', () => {
 
     const result = await generateDraftReasoning(body);
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/ai/draft-reasoning', body);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/ai?feature=draft-reasoning', body);
     expect(result.data).toBeDefined();
   });
 
@@ -79,7 +79,7 @@ describe('ai-service', () => {
 
     const result = await explainManagerDecision(body);
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/ai/manager-explanation', body);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/ai?feature=manager-explanation', body);
     expect(result.data).toBeDefined();
   });
 

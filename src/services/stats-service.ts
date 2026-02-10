@@ -18,7 +18,7 @@ export async function fetchBattingLeaders(
   sortOrder: 'asc' | 'desc' = 'desc',
 ): Promise<PaginatedResponse<BattingLeaderEntry>> {
   return apiGetPaginated<BattingLeaderEntry>(
-    `/api/leagues/${leagueId}/stats/batting?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+    `/api/leagues/${leagueId}/stats?type=batting&page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
   );
 }
 
@@ -29,13 +29,13 @@ export async function fetchPitchingLeaders(
   sortOrder: 'asc' | 'desc' = 'asc',
 ): Promise<PaginatedResponse<PitchingLeaderEntry>> {
   return apiGetPaginated<PitchingLeaderEntry>(
-    `/api/leagues/${leagueId}/stats/pitching?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
+    `/api/leagues/${leagueId}/stats?type=pitching&page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
   );
 }
 
 export async function fetchTeamStats(leagueId: string): Promise<TeamAggregateStats[]> {
   const response = await apiGet<TeamAggregateStats[]>(
-    `/api/leagues/${leagueId}/stats/team`,
+    `/api/leagues/${leagueId}/stats?type=team`,
   );
   return response.data;
 }

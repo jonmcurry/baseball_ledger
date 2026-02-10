@@ -71,7 +71,7 @@ describe('league-service', () => {
 
     const result = await joinLeague('lg-1', 'secret-key');
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/join', { inviteKey: 'secret-key' });
+    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1', { inviteKey: 'secret-key' });
     expect(result).toEqual(joinResult);
   });
 

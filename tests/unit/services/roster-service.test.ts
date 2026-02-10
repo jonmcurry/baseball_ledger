@@ -38,7 +38,7 @@ describe('roster-service', () => {
 
     const result = await fetchRoster('lg-1', 'team-1');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/teams/team-1/roster');
+    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/teams?tid=team-1&include=roster');
     expect(result).toEqual(roster);
   });
 
@@ -49,7 +49,7 @@ describe('roster-service', () => {
 
     const result = await updateTeam('lg-1', 'team-1', updates);
 
-    expect(mockApiPatch).toHaveBeenCalledWith('/api/leagues/lg-1/teams/team-1', updates);
+    expect(mockApiPatch).toHaveBeenCalledWith('/api/leagues/lg-1/teams?tid=team-1', updates);
     expect(result).toEqual(updated);
   });
 
@@ -64,7 +64,7 @@ describe('roster-service', () => {
     const result = await updateLineup('lg-1', 'team-1', updates as never);
 
     expect(mockApiPatch).toHaveBeenCalledWith(
-      '/api/leagues/lg-1/teams/team-1/roster',
+      '/api/leagues/lg-1/teams?tid=team-1&include=roster',
       { updates },
     );
     expect(result).toEqual(updatedRoster);
@@ -76,6 +76,6 @@ describe('roster-service', () => {
 
     await updateTeam('lg-1', 'team-1', updates);
 
-    expect(mockApiPatch).toHaveBeenCalledWith('/api/leagues/lg-1/teams/team-1', { city: 'Chicago' });
+    expect(mockApiPatch).toHaveBeenCalledWith('/api/leagues/lg-1/teams?tid=team-1', { city: 'Chicago' });
   });
 });

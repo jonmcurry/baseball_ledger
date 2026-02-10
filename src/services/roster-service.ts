@@ -11,7 +11,7 @@ import { apiGet, apiPatch } from './api-client';
 
 export async function fetchRoster(leagueId: string, teamId: string): Promise<RosterEntry[]> {
   const response = await apiGet<RosterEntry[]>(
-    `/api/leagues/${leagueId}/teams/${teamId}/roster`,
+    `/api/leagues/${leagueId}/teams?tid=${teamId}&include=roster`,
   );
   return response.data;
 }
@@ -22,7 +22,7 @@ export async function updateTeam(
   updates: { name?: string; city?: string; managerProfile?: string },
 ): Promise<TeamSummary> {
   const response = await apiPatch<TeamSummary>(
-    `/api/leagues/${leagueId}/teams/${teamId}`,
+    `/api/leagues/${leagueId}/teams?tid=${teamId}`,
     updates,
   );
   return response.data;
@@ -34,7 +34,7 @@ export async function updateLineup(
   updates: LineupUpdate[],
 ): Promise<RosterEntry[]> {
   const response = await apiPatch<RosterEntry[]>(
-    `/api/leagues/${leagueId}/teams/${teamId}/roster`,
+    `/api/leagues/${leagueId}/teams?tid=${teamId}&include=roster`,
     { updates },
   );
   return response.data;

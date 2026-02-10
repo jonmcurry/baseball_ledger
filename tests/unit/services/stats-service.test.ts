@@ -40,7 +40,7 @@ describe('stats-service', () => {
     await fetchBattingLeaders('lg-1');
 
     expect(mockApiGetPaginated).toHaveBeenCalledWith(
-      '/api/leagues/lg-1/stats/batting?page=1&sortBy=BA&sortOrder=desc',
+      '/api/leagues/lg-1/stats?type=batting&page=1&sortBy=BA&sortOrder=desc',
     );
   });
 
@@ -48,7 +48,7 @@ describe('stats-service', () => {
     await fetchBattingLeaders('lg-1', 3, 'HR', 'asc');
 
     expect(mockApiGetPaginated).toHaveBeenCalledWith(
-      '/api/leagues/lg-1/stats/batting?page=3&sortBy=HR&sortOrder=asc',
+      '/api/leagues/lg-1/stats?type=batting&page=3&sortBy=HR&sortOrder=asc',
     );
   });
 
@@ -56,7 +56,7 @@ describe('stats-service', () => {
     await fetchPitchingLeaders('lg-1');
 
     expect(mockApiGetPaginated).toHaveBeenCalledWith(
-      '/api/leagues/lg-1/stats/pitching?page=1&sortBy=ERA&sortOrder=asc',
+      '/api/leagues/lg-1/stats?type=pitching&page=1&sortBy=ERA&sortOrder=asc',
     );
   });
 
@@ -64,7 +64,7 @@ describe('stats-service', () => {
     await fetchPitchingLeaders('lg-1', 2, 'W', 'desc');
 
     expect(mockApiGetPaginated).toHaveBeenCalledWith(
-      '/api/leagues/lg-1/stats/pitching?page=2&sortBy=W&sortOrder=desc',
+      '/api/leagues/lg-1/stats?type=pitching&page=2&sortBy=W&sortOrder=desc',
     );
   });
 
@@ -74,7 +74,7 @@ describe('stats-service', () => {
 
     const result = await fetchTeamStats('lg-1');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/stats/team');
+    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/stats?type=team');
     expect(result).toEqual(stats);
   });
 });

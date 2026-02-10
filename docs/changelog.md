@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-09 - API Route Consolidation (24 -> 12 Serverless Functions)
+
+### Changed
+- Consolidated 24 API route handlers into 12 to fit Vercel Hobby plan limit
+- **Merge A:** 5 AI endpoints -> `api/ai/index.ts` with `?feature=` query param routing
+- **Merge B:** 3 Stats endpoints -> `api/leagues/[id]/stats.ts` with `?type=batting|pitching|team`
+- **Merge C:** 3 Draft endpoints -> `api/leagues/[id]/draft.ts` (GET=state, POST action=start|pick)
+- **Merge D:** 2 Archive endpoints -> `api/leagues/[id]/archive.ts` (GET=list, POST=archive)
+- **Merge E:** join.ts merged into `api/leagues/[id]/index.ts` as POST method
+- **Merge F:** 3 Teams endpoints -> `api/leagues/[id]/teams.ts` with `?tid=` and `?include=roster`
+- Updated 5 client services: ai-service, stats-service, draft-service, league-service, roster-service
+
+### Removed
+- 17 handler files (5 AI, 3 stats, 3 draft, 1 archives, 1 join, 4 teams)
+- 17 corresponding test files (consolidated into 4 new unified test files)
+
+### Metrics
+- Vitest: 1,985 -> 1,978 (175 test files) -- all passing
+- Serverless functions: 24 -> 12 (within Vercel Hobby plan limit)
+
 ## 2026-02-09 - Phase 11: Final Polish & Hardening
 
 ### Added

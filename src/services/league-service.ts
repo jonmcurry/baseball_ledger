@@ -31,7 +31,7 @@ export async function deleteLeague(id: string): Promise<void> {
 }
 
 export async function joinLeague(id: string, inviteKey: string): Promise<JoinLeagueResult> {
-  const response = await apiPost<JoinLeagueResult>(`/api/leagues/${id}/join`, { inviteKey });
+  const response = await apiPost<JoinLeagueResult>(`/api/leagues/${id}`, { inviteKey });
   return response.data;
 }
 

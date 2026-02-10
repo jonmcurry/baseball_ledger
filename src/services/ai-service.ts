@@ -23,29 +23,29 @@ import type {
 export async function generateCommentary(
   request: CommentaryRequest,
 ): Promise<ApiResponse<CommentaryResponse>> {
-  return apiPost<CommentaryResponse>('/api/ai/commentary', request);
+  return apiPost<CommentaryResponse>('/api/ai?feature=commentary', request);
 }
 
 export async function generateGameSummary(
   request: GameSummaryRequest,
 ): Promise<ApiResponse<GameSummaryResponse>> {
-  return apiPost<GameSummaryResponse>('/api/ai/game-summary', request);
+  return apiPost<GameSummaryResponse>('/api/ai?feature=game-summary', request);
 }
 
 export async function evaluateTrade(
   request: TradeEvaluationRequest,
 ): Promise<ApiResponse<TradeEvaluationResponse>> {
-  return apiPost<TradeEvaluationResponse>('/api/ai/trade-eval', request);
+  return apiPost<TradeEvaluationResponse>('/api/ai?feature=trade-eval', request);
 }
 
 export async function generateDraftReasoning(
   request: DraftReasoningRequest,
 ): Promise<ApiResponse<DraftReasoningResponse>> {
-  return apiPost<DraftReasoningResponse>('/api/ai/draft-reasoning', request);
+  return apiPost<DraftReasoningResponse>('/api/ai?feature=draft-reasoning', request);
 }
 
 export async function explainManagerDecision(
   request: ManagerExplanationRequest,
 ): Promise<ApiResponse<ManagerExplanationResponse>> {
-  return apiPost<ManagerExplanationResponse>('/api/ai/manager-explanation', request);
+  return apiPost<ManagerExplanationResponse>('/api/ai?feature=manager-explanation', request);
 }

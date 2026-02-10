@@ -32,17 +32,17 @@ describe('draft-service', () => {
     mockApiPost.mockResolvedValue({ data: {}, meta: defaultMeta });
   });
 
-  it('startDraft calls apiPost with correct path and returns data', async () => {
+  it('startDraft calls apiPost with correct path and action body', async () => {
     const draftState = { leagueId: 'lg-1', status: 'in_progress', round: 1 };
     mockApiPost.mockResolvedValue({ data: draftState, meta: defaultMeta });
 
     const result = await startDraft('lg-1');
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft/start');
+    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft', { action: 'start' });
     expect(result).toEqual(draftState);
   });
 
-  it('submitPick calls apiPost with correct path and pick body', async () => {
+  it('submitPick calls apiPost with correct path and pick body with action', async () => {
     const pick = {
       playerId: 'player-42',
       playerName: 'Babe Ruth',
@@ -55,7 +55,7 @@ describe('draft-service', () => {
 
     const result = await submitPick('lg-1', pick);
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft/pick', pick);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft', { action: 'pick', ...pick });
     expect(result).toEqual(pickResult);
   });
 
@@ -65,15 +65,14 @@ describe('draft-service', () => {
 
     const result = await fetchDraftState('lg-1');
 
-    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/draft/state');
+    expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/draft');
     expect(result).toEqual(draftState);
   });
 
-  it('startDraft sends no body in the POST request', async () => {
+  it('startDraft sends action in the POST body', async () => {
     await startDraft('lg-1');
 
-    // apiPost is called with only the path (no body argument)
-    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft/start');
-    expect(mockApiPost.mock.calls[0]).toHaveLength(1);
+    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft', { action: 'start' });
+    expect(mockApiPost.mock.calls[0]).toHaveLength(2);
   });
 });

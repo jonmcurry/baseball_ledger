@@ -8,7 +8,7 @@ import type { DraftState, DraftPickResult } from '@lib/types/draft';
 import { apiGet, apiPost } from './api-client';
 
 export async function startDraft(leagueId: string): Promise<DraftState> {
-  const response = await apiPost<DraftState>(`/api/leagues/${leagueId}/draft/start`);
+  const response = await apiPost<DraftState>(`/api/leagues/${leagueId}/draft`, { action: 'start' });
   return response.data;
 }
 
@@ -23,13 +23,13 @@ export async function submitPick(
   },
 ): Promise<DraftPickResult> {
   const response = await apiPost<DraftPickResult>(
-    `/api/leagues/${leagueId}/draft/pick`,
-    pick,
+    `/api/leagues/${leagueId}/draft`,
+    { action: 'pick', ...pick },
   );
   return response.data;
 }
 
 export async function fetchDraftState(leagueId: string): Promise<DraftState> {
-  const response = await apiGet<DraftState>(`/api/leagues/${leagueId}/draft/state`);
+  const response = await apiGet<DraftState>(`/api/leagues/${leagueId}/draft`);
   return response.data;
 }
