@@ -18,10 +18,9 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FullPlayoffBracket, PlayoffRoundName } from '@lib/types/schedule';
-import type { PlayerCard, Position } from '@lib/types/player';
-import type { ManagerStyle } from '@lib/simulation/manager-profiles';
 import { runGame } from '@lib/simulation/game-runner';
 import type { RunGameConfig } from '@lib/simulation/game-runner';
+import { loadTeamConfig } from './load-team-config';
 import {
   getNextFullBracketGame,
   recordFullBracketGameResult,
@@ -163,106 +162,4 @@ export async function simulatePlayoffGame(
     gameNumber: nextGame.gameNumber,
     isPlayoffsComplete: isComplete,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Roster Loading
-// ---------------------------------------------------------------------------
-
-interface TeamConfig {
-  lineup: { playerId: string; playerName: string; position: Position }[];
-  batterCards: Map<string, PlayerCard>;
-  startingPitcher: PlayerCard;
-  bullpen: PlayerCard[];
-  closer: PlayerCard | null;
-  bench: PlayerCard[];
-  managerStyle: ManagerStyle;
-}
-
-async function loadTeamConfig(
-  supabase: SupabaseClient,
-  teamId: string,
-): Promise<TeamConfig> {
-  // Load roster entries
-  const { data: rosterEntries } = await supabase
-    .from('rosters')
-    .select('player_id, player_card, roster_slot, lineup_order, lineup_position')
-    .eq('team_id', teamId);
-
-  // Load manager profile
-  const { data: team } = await supabase
-    .from('teams')
-    .select('manager_profile')
-    .eq('id', teamId)
-    .single();
-
-  const entries = rosterEntries ?? [];
-  const managerStyle = (team?.manager_profile ?? 'balanced') as ManagerStyle;
-
-  // Build lineup from starters (sorted by lineup_order)
-  const starters = entries
-    .filter((e: { roster_slot: string }) => e.roster_slot === 'starter')
-    .sort((a: { lineup_order: number | null }, b: { lineup_order: number | null }) =>
-      (a.lineup_order ?? 99) - (b.lineup_order ?? 99));
-
-  const lineup = starters.map((s: {
-    player_id: string;
-    player_card: Record<string, unknown>;
-    lineup_position: string | null;
-  }) => ({
-    playerId: s.player_id,
-    playerName: `${(s.player_card as unknown as PlayerCard).nameFirst} ${(s.player_card as unknown as PlayerCard).nameLast}`,
-    position: (s.lineup_position ?? 'DH') as Position,
-  }));
-
-  // Build batter card map from starters + bench
-  const batterCards = new Map<string, PlayerCard>();
-  const benchEntries = entries.filter((e: { roster_slot: string }) => e.roster_slot === 'bench' || e.roster_slot === 'starter');
-  for (const e of benchEntries) {
-    batterCards.set(
-      (e as { player_id: string }).player_id,
-      (e as { player_card: unknown }).player_card as unknown as PlayerCard,
-    );
-  }
-
-  // Starting pitcher (first rotation entry)
-  const rotationEntries = entries.filter((e: { roster_slot: string }) => e.roster_slot === 'rotation');
-  const startingPitcher = rotationEntries.length > 0
-    ? (rotationEntries[0] as { player_card: unknown }).player_card as unknown as PlayerCard
-    : createFallbackPitcher();
-
-  // Bullpen
-  const bullpenEntries = entries.filter((e: { roster_slot: string }) => e.roster_slot === 'bullpen');
-  const bullpen = bullpenEntries.map(
-    (e: { player_card: unknown }) => (e as { player_card: unknown }).player_card as unknown as PlayerCard,
-  );
-
-  // Closer
-  const closerEntries = entries.filter((e: { roster_slot: string }) => e.roster_slot === 'closer');
-  const closer = closerEntries.length > 0
-    ? (closerEntries[0] as { player_card: unknown }).player_card as unknown as PlayerCard
-    : null;
-
-  // Bench position players
-  const benchOnly = entries.filter((e: { roster_slot: string }) => e.roster_slot === 'bench');
-  const bench = benchOnly.map(
-    (e: { player_card: unknown }) => (e as { player_card: unknown }).player_card as unknown as PlayerCard,
-  );
-
-  return { lineup, batterCards, startingPitcher, bullpen, closer, bench, managerStyle };
-}
-
-function createFallbackPitcher(): PlayerCard {
-  return {
-    playerId: 'fallback-pitcher',
-    nameFirst: 'Default',
-    nameLast: 'Pitcher',
-    yearId: 2023,
-    cardValues: new Array(35).fill(7),
-    pitcherGrade: 5,
-    positions: ['P'],
-    powerRating: 13,
-    speedRating: 5,
-    archetypeFlags: [7, 0],
-  } as PlayerCard;
 }

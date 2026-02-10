@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-02-10 - Game Simulation Integration (Phase 26)
+
+### Phase 26: Game Simulation Integration -- MVP Blocker (REQ-NFR-010, REQ-NFR-014)
+
+Wires the simulate endpoint to actually run games. Previously it was a stub returning `{ gamesScheduled: N }` -- now it loads rosters, builds game configs, runs the simulation engine, and returns full game results.
+
+- **Shared team config loader** (Step 26.1)
+  - Extracted `loadTeamConfig()` from `simulate-playoff-game.ts` to shared `api/_lib/load-team-config.ts`
+  - New `TeamConfig` interface exposes full `rotation` array for pitcher cycling
+  - `selectStartingPitcher(rotation, gameIndex)` cycles via modulo
+  - `createFallbackPitcher()` for teams with empty rotations
+  - 11 tests
+- **Playoff module refactor** (Step 26.2)
+  - `simulate-playoff-game.ts` now imports from shared module (no behavioral change)
+  - 14 existing playoff tests pass unchanged
+- **Simulate endpoint wiring** (Steps 26.3-26.4)
+  - Replaced stub at `api/leagues/[id]/simulate.ts` lines 91-95 with full pipeline:
+    - Collects unique team IDs from scheduled games
+    - Loads team configs in parallel via `loadTeamConfig()`
+    - Queries team wins+losses for pitcher rotation index
+    - Builds `DayGameConfig[]` with `selectStartingPitcher()` for rotation cycling
+    - Calls `simulateDayOnServer()` for atomic RPC commit
+    - Marks schedule rows complete with scores
+    - Returns `DayResult` with full game results
+  - 13 tests (5 new + 1 rewritten + 7 existing)
+
+**Test total: 2,409 tests across 214 files**
+
 ## 2026-02-10 - League Creation Pipeline (Phase 25)
 
 ### Phase 25: League Creation Pipeline -- MVP Blocker (REQ-DATA-002, REQ-DFT-001)

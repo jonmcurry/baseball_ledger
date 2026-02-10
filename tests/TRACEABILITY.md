@@ -220,3 +220,12 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-DATA-002 Available players endpoint | `tests/unit/api/leagues/[id]/players.test.ts` |
 | REQ-DATA-002 Draft store fetch players | `tests/unit/stores/draftStore-players.test.ts` |
 | REQ-DFT-001 Draft marks player_pool | `tests/unit/api/leagues/[id]/draft.test.ts` (player_pool marking tests) |
+
+## Phase 26: Game Simulation Integration
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-NFR-010 Day-batched simulation wiring | `tests/unit/api/leagues/[id]/simulate.test.ts` (DayResult, team configs, simulateDayOnServer) |
+| REQ-NFR-014 Atomic commit via RPC | `tests/unit/api/_lib/simulate-day.test.ts`, `tests/unit/api/leagues/[id]/simulate.test.ts` |
+| REQ-LGE-008 Shared team config loader | `tests/unit/api/_lib/load-team-config.test.ts` |
+| REQ-LGE-008 Playoff shared module | `tests/unit/api/_lib/simulate-playoff-game.test.ts` |

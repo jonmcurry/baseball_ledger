@@ -22,6 +22,8 @@ import { createServerClient } from '@lib/supabase/server';
 import { simulateDayOnServer } from '../../_lib/simulate-day';
 import { simulatePlayoffGame } from '../../_lib/simulate-playoff-game';
 import { checkAndTransitionToPlayoffs } from '../../_lib/playoff-transition';
+import { loadTeamConfig, selectStartingPitcher } from '../../_lib/load-team-config';
+import type { DayGameConfig } from '@lib/simulation/season-runner';
 
 const SimulateSchema = z.object({
   days: z.union([z.number().int().min(1), z.literal('season')]),
@@ -88,11 +90,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
-      // Note: Full team data loading (lineups, cards, pitchers) would be
-      // done here in production. For now, return the day number and schedule.
-      // The simulateDayOnServer function handles the full pipeline when
-      // team data is pre-loaded by the caller.
-      ok(res, { dayNumber: nextDay, gamesScheduled: scheduledGames.length }, requestId);
+      // Collect unique team IDs from scheduled games
+      const teamIds = [...new Set(
+        scheduledGames.flatMap((g: { home_team_id: string; away_team_id: string }) =>
+          [g.home_team_id, g.away_team_id]),
+      )];
+
+      // Load team configs in parallel
+      const teamConfigs = new Map<string, Awaited<ReturnType<typeof loadTeamConfig>>>();
+      await Promise.all(teamIds.map(async (teamId) => {
+        const config = await loadTeamConfig(supabase, teamId);
+        teamConfigs.set(teamId, config);
+      }));
+
+      // Load team records for pitcher rotation index
+      const { data: teamRecords } = await supabase
+        .from('teams')
+        .select('id, wins, losses')
+        .in('id', teamIds);
+
+      const gamesPlayedMap = new Map<string, number>();
+      for (const t of teamRecords ?? []) {
+        gamesPlayedMap.set(t.id, (t.wins ?? 0) + (t.losses ?? 0));
+      }
+
+      // Build DayGameConfig array
+      const dayGames: DayGameConfig[] = scheduledGames.map(
+        (g: { id: string; home_team_id: string; away_team_id: string }) => {
+          const homeConfig = teamConfigs.get(g.home_team_id)!;
+          const awayConfig = teamConfigs.get(g.away_team_id)!;
+          const homeGamesPlayed = gamesPlayedMap.get(g.home_team_id) ?? 0;
+          const awayGamesPlayed = gamesPlayedMap.get(g.away_team_id) ?? 0;
+
+          return {
+            gameId: g.id,
+            homeTeamId: g.home_team_id,
+            awayTeamId: g.away_team_id,
+            homeLineup: homeConfig.lineup,
+            awayLineup: awayConfig.lineup,
+            homeBatterCards: homeConfig.batterCards,
+            awayBatterCards: awayConfig.batterCards,
+            homeStartingPitcher: selectStartingPitcher(homeConfig.rotation, homeGamesPlayed),
+            awayStartingPitcher: selectStartingPitcher(awayConfig.rotation, awayGamesPlayed),
+            homeBullpen: homeConfig.bullpen,
+            awayBullpen: awayConfig.bullpen,
+            homeCloser: homeConfig.closer,
+            awayCloser: awayConfig.closer,
+            homeManagerStyle: homeConfig.managerStyle,
+            awayManagerStyle: awayConfig.managerStyle,
+          };
+        },
+      );
+
+      // Run simulation
+      const dayResult = await simulateDayOnServer(supabase, leagueId, nextDay, dayGames, baseSeed);
+
+      // Mark schedule rows complete
+      for (const game of dayResult.games) {
+        await supabase
+          .from('schedule')
+          .update({
+            is_complete: true,
+            home_score: game.homeScore,
+            away_score: game.awayScore,
+          })
+          .eq('id', game.gameId);
+      }
+
+      ok(res, dayResult, requestId);
     } else {
       // Asynchronous multi-day simulation
       const simulationId = crypto.randomUUID();
