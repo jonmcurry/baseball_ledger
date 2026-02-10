@@ -1,10 +1,18 @@
 // @vitest-environment jsdom
 /**
  * Tests for PlayoffsPage
+ *
+ * Verifies:
+ * - Loading state
+ * - Not-started message for non-playoff status
+ * - AL/NL bracket + WS rendering from persisted bracket
+ * - Champion banner when worldSeriesChampionId is set
+ * - Bracket-not-set message when playoffs active but no bracket
  */
 
 import { render, screen } from '@testing-library/react';
 import { PlayoffsPage } from '@features/playoffs/PlayoffsPage';
+import type { FullPlayoffBracket } from '@lib/types/schedule';
 
 const { mockUseLeague } = vi.hoisted(() => {
   const mockUseLeague = vi.fn();
@@ -19,6 +27,21 @@ vi.mock('@hooks/usePostseasonTheme', () => ({
   usePostseasonTheme: vi.fn(),
 }));
 
+function buildMockBracket(): FullPlayoffBracket {
+  return {
+    leagueId: 'league-1',
+    al: { leagueId: 'league-1', rounds: [], championId: null },
+    nl: { leagueId: 'league-1', rounds: [], championId: null },
+    worldSeries: {
+      id: 'ws-0', round: 'WorldSeries',
+      leagueDivision: 'MLB', higherSeed: null, lowerSeed: null,
+      bestOf: 7, games: [], higherSeedWins: 0, lowerSeedWins: 0,
+      isComplete: false, winnerId: null,
+    },
+    worldSeriesChampionId: null,
+  };
+}
+
 describe('PlayoffsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -26,6 +49,7 @@ describe('PlayoffsPage', () => {
       league: { id: 'league-1', status: 'regular_season' },
       teams: [],
       standings: [],
+      playoffBracket: null,
       isLoading: false,
       error: null,
       leagueStatus: 'regular_season',
@@ -42,24 +66,12 @@ describe('PlayoffsPage', () => {
     expect(screen.getByText('Playoffs Not Started')).toBeInTheDocument();
   });
 
-  it('shows bracket when playoffs are active', () => {
-    mockUseLeague.mockReturnValue({
-      league: { id: 'league-1', status: 'playoffs' },
-      teams: [],
-      standings: [],
-      isLoading: false,
-      error: null,
-      leagueStatus: 'playoffs',
-    });
-    render(<PlayoffsPage />);
-    expect(screen.getByText('Playoff Bracket')).toBeInTheDocument();
-  });
-
   it('shows loading state', () => {
     mockUseLeague.mockReturnValue({
       league: null,
       teams: [],
       standings: [],
+      playoffBracket: null,
       isLoading: true,
       error: null,
       leagueStatus: null,
@@ -68,50 +80,81 @@ describe('PlayoffsPage', () => {
     expect(screen.getByText('Loading playoffs...')).toBeInTheDocument();
   });
 
-  it('generates bracket from standings when playoffs active', () => {
-    const standings = [
-      {
-        leagueDivision: 'AL',
-        divisionName: 'East',
-        teams: [
-          { id: 't1', name: 'Yankees', city: 'NY', ownerId: 'u1', wins: 95, losses: 67, runsScored: 800, runsAllowed: 700 },
-          { id: 't2', name: 'Red Sox', city: 'BOS', ownerId: 'u2', wins: 90, losses: 72, runsScored: 750, runsAllowed: 720 },
-        ],
-      },
-      {
-        leagueDivision: 'AL',
-        divisionName: 'Central',
-        teams: [
-          { id: 't3', name: 'Guardians', city: 'CLE', ownerId: 'u3', wins: 88, losses: 74, runsScored: 730, runsAllowed: 710 },
-          { id: 't4', name: 'Twins', city: 'MIN', ownerId: 'u4', wins: 85, losses: 77, runsScored: 700, runsAllowed: 730 },
-        ],
-      },
-      {
-        leagueDivision: 'AL',
-        divisionName: 'West',
-        teams: [
-          { id: 't5', name: 'Astros', city: 'HOU', ownerId: 'u5', wins: 92, losses: 70, runsScored: 780, runsAllowed: 690 },
-          { id: 't6', name: 'Rangers', city: 'TEX', ownerId: 'u6', wins: 82, losses: 80, runsScored: 700, runsAllowed: 750 },
-        ],
-      },
-    ];
-
+  it('renders AL and NL bracket sections when playoffs active with bracket', () => {
     mockUseLeague.mockReturnValue({
       league: { id: 'league-1', status: 'playoffs' },
-      teams: [
-        { id: 't1', name: 'Yankees', city: 'NY', ownerId: 'u1' },
-        { id: 't2', name: 'Red Sox', city: 'BOS', ownerId: 'u2' },
-      ],
-      standings,
+      teams: [],
+      standings: [],
+      playoffBracket: buildMockBracket(),
       isLoading: false,
       error: null,
       leagueStatus: 'playoffs',
     });
-
     render(<PlayoffsPage />);
-    // Should have bracket rounds generated from standings
-    expect(screen.getByText('Playoff Bracket')).toBeInTheDocument();
-    // Should not show the "not set" message since there are rounds
-    expect(screen.queryByText('Playoff bracket has not been set.')).not.toBeInTheDocument();
+    expect(screen.getByText('American League')).toBeInTheDocument();
+    expect(screen.getByText('National League')).toBeInTheDocument();
+    expect(screen.getByText('World Series')).toBeInTheDocument();
+  });
+
+  it('shows bracket-not-set message when playoffs active but no bracket', () => {
+    mockUseLeague.mockReturnValue({
+      league: { id: 'league-1', status: 'playoffs' },
+      teams: [],
+      standings: [],
+      playoffBracket: null,
+      isLoading: false,
+      error: null,
+      leagueStatus: 'playoffs',
+    });
+    render(<PlayoffsPage />);
+    expect(screen.getByText('Playoff bracket has not been set.')).toBeInTheDocument();
+  });
+
+  it('shows champion banner when worldSeriesChampionId is set', () => {
+    const bracket = buildMockBracket();
+    bracket.worldSeriesChampionId = 'team-1';
+
+    mockUseLeague.mockReturnValue({
+      league: { id: 'league-1', status: 'completed' },
+      teams: [{ id: 'team-1', name: 'Yankees', city: 'New York' }],
+      standings: [],
+      playoffBracket: bracket,
+      isLoading: false,
+      error: null,
+      leagueStatus: 'completed',
+    });
+    render(<PlayoffsPage />);
+    expect(screen.getByText('World Series Champion')).toBeInTheDocument();
+    expect(screen.getByText('New York Yankees')).toBeInTheDocument();
+  });
+
+  it('renders bracket in completed status', () => {
+    mockUseLeague.mockReturnValue({
+      league: { id: 'league-1', status: 'completed' },
+      teams: [],
+      standings: [],
+      playoffBracket: buildMockBracket(),
+      isLoading: false,
+      error: null,
+      leagueStatus: 'completed',
+    });
+    render(<PlayoffsPage />);
+    // Should still show brackets when completed
+    expect(screen.getByText('American League')).toBeInTheDocument();
+    expect(screen.getByText('National League')).toBeInTheDocument();
+  });
+
+  it('shows error banner when error present', () => {
+    mockUseLeague.mockReturnValue({
+      league: { id: 'league-1', status: 'playoffs' },
+      teams: [],
+      standings: [],
+      playoffBracket: buildMockBracket(),
+      isLoading: false,
+      error: 'Something went wrong',
+      leagueStatus: 'playoffs',
+    });
+    render(<PlayoffsPage />);
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
   });
 });

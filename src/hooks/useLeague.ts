@@ -16,6 +16,7 @@ export function useLeague() {
   const teams = useLeagueStore((s) => s.teams);
   const standings = useLeagueStore((s) => s.standings);
   const schedule = useLeagueStore((s) => s.schedule);
+  const playoffBracket = useLeagueStore((s) => s.playoffBracket);
   const currentDay = useLeagueStore((s) => s.currentDay);
   const isLoading = useLeagueStore((s) => s.isLoading);
   const error = useLeagueStore((s) => s.error);
@@ -28,6 +29,7 @@ export function useLeague() {
     teams,
     standings,
     schedule,
+    playoffBracket,
     currentDay,
     isLoading,
     error,

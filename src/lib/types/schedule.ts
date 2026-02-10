@@ -63,3 +63,15 @@ export interface PlayoffBracket {
   rounds: PlayoffRound[];
   championId: string | null;
 }
+
+/**
+ * Full playoff bracket combining AL + NL league brackets with World Series.
+ * REQ-LGE-008: 2025 MLB playoff format.
+ */
+export interface FullPlayoffBracket {
+  readonly leagueId: string;
+  readonly al: PlayoffBracket;
+  readonly nl: PlayoffBracket;
+  readonly worldSeries: PlayoffSeries;
+  worldSeriesChampionId: string | null;
+}

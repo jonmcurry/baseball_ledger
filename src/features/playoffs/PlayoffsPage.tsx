@@ -1,8 +1,9 @@
-﻿/**
+/**
  * PlayoffsPage
  *
  * Playoff bracket viewer with series progress.
- * Generates bracket from standings via generatePlayoffBracket.
+ * Loads persisted bracket from league data (FullPlayoffBracket).
+ * Renders AL bracket, NL bracket, and World Series section.
  * Postseason theme is active when this page renders.
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
@@ -14,11 +15,10 @@ import { usePostseasonTheme } from '@hooks/usePostseasonTheme';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayoffBracketView } from './PlayoffBracketView';
-import { generatePlayoffBracket } from '@lib/schedule/playoff-bracket';
-import type { PlayoffBracket } from '@lib/types/schedule';
+import { SeriesCard } from './SeriesCard';
 
 export function PlayoffsPage() {
-  const { league, teams, standings, isLoading, error, leagueStatus } = useLeague();
+  const { teams, playoffBracket, isLoading, error, leagueStatus } = useLeague();
   usePostseasonTheme();
 
   const teamNameMap = useMemo(() => {
@@ -27,18 +27,15 @@ export function PlayoffsPage() {
     return map;
   }, [teams]);
 
-  const bracket: PlayoffBracket = useMemo(() => {
-    if (leagueStatus !== 'playoffs' || standings.length === 0 || !league) {
-      return { leagueId: league?.id ?? '', rounds: [], championId: null };
-    }
-    return generatePlayoffBracket(league.id, standings, 'AL');
-  }, [league, standings, leagueStatus]);
+  const getTeamName = (teamId: string | null | undefined) =>
+    teamId ? (teamNameMap.get(teamId) ?? 'TBD') : 'TBD';
 
   if (isLoading) {
     return <LoadingLedger message="Loading playoffs..." />;
   }
 
-  const isPlayoffActive = leagueStatus === 'playoffs';
+  const isPlayoffActive = leagueStatus === 'playoffs' || leagueStatus === 'completed';
+  const hasBracket = playoffBracket !== null;
 
   return (
     <div className="space-y-gutter-lg">
@@ -53,8 +50,46 @@ export function PlayoffsPage() {
         </div>
       )}
 
-      {isPlayoffActive && (
-        <PlayoffBracketView bracket={bracket} teams={teamNameMap} />
+      {isPlayoffActive && playoffBracket?.worldSeriesChampionId && (
+        <div className="rounded-card border-2 border-ballpark bg-ballpark/10 px-gutter py-4 text-center">
+          <p className="text-xs font-medium text-muted">World Series Champion</p>
+          <p className="font-headline text-xl font-bold text-ballpark">
+            {getTeamName(playoffBracket.worldSeriesChampionId)}
+          </p>
+        </div>
+      )}
+
+      {isPlayoffActive && hasBracket && (
+        <div className="grid gap-gutter lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <h3 className="mb-2 font-headline text-sm font-bold text-ballpark">
+              American League
+            </h3>
+            <PlayoffBracketView bracket={playoffBracket.al} teams={teamNameMap} />
+          </div>
+
+          <div className="lg:col-span-2">
+            <h3 className="mb-2 font-headline text-sm font-bold text-ballpark">
+              World Series
+            </h3>
+            <SeriesCard
+              series={playoffBracket.worldSeries}
+              homeTeam={getTeamName(playoffBracket.worldSeries.higherSeed?.teamId)}
+              awayTeam={getTeamName(playoffBracket.worldSeries.lowerSeed?.teamId)}
+            />
+          </div>
+
+          <div className="lg:col-span-5">
+            <h3 className="mb-2 font-headline text-sm font-bold text-ballpark">
+              National League
+            </h3>
+            <PlayoffBracketView bracket={playoffBracket.nl} teams={teamNameMap} />
+          </div>
+        </div>
+      )}
+
+      {isPlayoffActive && !hasBracket && (
+        <p className="text-xs text-muted">Playoff bracket has not been set.</p>
       )}
     </div>
   );

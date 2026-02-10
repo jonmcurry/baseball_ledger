@@ -28,6 +28,7 @@ export type LeagueRow = {
   status: 'setup' | 'drafting' | 'regular_season' | 'playoffs' | 'completed';
   current_day: number;
   season_year: number;
+  playoff_bracket: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -139,6 +140,7 @@ export type LeagueInsert = {
   status?: LeagueRow['status'];
   current_day?: number;
   season_year?: number;
+  playoff_bracket?: Record<string, unknown> | null;
 }
 
 export type TeamInsert = {

@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';
-import type { ScheduleDay } from '@lib/types/schedule';
+import type { ScheduleDay, FullPlayoffBracket } from '@lib/types/schedule';
 import * as leagueService from '@services/league-service';
 import { createSafeStorage } from './storage-factory';
 
@@ -19,6 +19,7 @@ export interface LeagueState {
   teams: TeamSummary[];
   standings: DivisionStandings[];
   schedule: ScheduleDay[];
+  playoffBracket: FullPlayoffBracket | null;
   currentDay: number;
   isLoading: boolean;
   error: string | null;
@@ -29,6 +30,7 @@ export interface LeagueActions {
   setTeams: (teams: TeamSummary[]) => void;
   setStandings: (standings: DivisionStandings[]) => void;
   setSchedule: (schedule: ScheduleDay[]) => void;
+  setPlayoffBracket: (bracket: FullPlayoffBracket | null) => void;
   setCurrentDay: (day: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -47,6 +49,7 @@ const initialState: LeagueState = {
   teams: [],
   standings: [],
   schedule: [],
+  playoffBracket: null,
   currentDay: 0,
   isLoading: false,
   error: null,
@@ -95,6 +98,15 @@ export const useLeagueStore = create<LeagueStore>()(
             },
             false,
             'setSchedule',
+          ),
+
+        setPlayoffBracket: (bracket) =>
+          set(
+            (state) => {
+              state.playoffBracket = bracket;
+            },
+            false,
+            'setPlayoffBracket',
           ),
 
         setCurrentDay: (day) =>
@@ -161,6 +173,7 @@ export const useLeagueStore = create<LeagueStore>()(
               state.teams = teams;
               state.standings = standings;
               state.schedule = schedule;
+              state.playoffBracket = league.playoffBracket ?? null;
               state.currentDay = league.currentDay;
               state.isLoading = false;
             }, false, 'fetchLeagueData/success');

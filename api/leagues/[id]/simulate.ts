@@ -20,6 +20,8 @@ import { ok, accepted } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '@lib/supabase/server';
 import { simulateDayOnServer } from '../../_lib/simulate-day';
+import { simulatePlayoffGame } from '../../_lib/simulate-playoff-game';
+import { checkAndTransitionToPlayoffs } from '../../_lib/playoff-transition';
 
 const SimulateSchema = z.object({
   days: z.union([z.number().int().min(1), z.literal('season')]),
@@ -54,9 +56,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const baseSeed = body.seed ?? Date.now();
 
+    // Playoff simulation: one game at a time
+    if (league.status === 'playoffs') {
+      const result = await simulatePlayoffGame(supabase, leagueId, baseSeed);
+      if (!result) {
+        ok(res, { message: 'No playoff games remaining' }, requestId);
+        return;
+      }
+      ok(res, result, requestId);
+      return;
+    }
+
     if (body.days === 1) {
       // Synchronous single-day simulation
-      // Load team data from schedule for the next day
       const nextDay = league.current_day + 1;
       const { data: scheduledGames } = await supabase
         .from('schedule')
@@ -66,6 +78,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('is_complete', false);
 
       if (!scheduledGames || scheduledGames.length === 0) {
+        // Check for season-to-playoffs transition
+        const transitioned = await checkAndTransitionToPlayoffs(supabase, leagueId, nextDay);
+        if (transitioned) {
+          ok(res, { dayNumber: nextDay, games: [], transitionedToPlayoffs: true }, requestId);
+          return;
+        }
         ok(res, { dayNumber: nextDay, games: [] }, requestId);
         return;
       }

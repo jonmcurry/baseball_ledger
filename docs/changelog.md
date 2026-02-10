@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phase 23)
+
+### Phase 23: Playoff Pipeline (REQ-LGE-008)
+- **Bracket advancement logic** (Step 23.1)
+  - `advanceWinners(bracket)`: Propagates WC winners to DS (re-seeded by record), DS winners to CS, CS winner to championId
+  - `isBracketComplete(bracket)`: Checks if championId is set
+  - 21 tests covering all advancement paths, idempotency, immutability
+- **Full bracket structure** (Step 23.2)
+  - `FullPlayoffBracket` type: AL bracket + NL bracket + World Series + worldSeriesChampionId
+  - `generateFullPlayoffBracket()`: Creates both league brackets (without WS round) + standalone WS
+  - `recordFullBracketGameResult()`: Routes game result to correct bracket (AL/NL/WS)
+  - `getNextFullBracketGame()`: Finds next game across all brackets
+  - `advanceFullBracketWinners()`: Advances within leagues + populates WS when both champions set
+  - `isFullBracketComplete()`: Checks worldSeriesChampionId
+  - Refactored `generatePlayoffBracket` to use shared `buildBracketRounds` helper
+  - 16 tests
+- **Bracket persistence** (Step 23.3)
+  - Migration `00015_add_playoff_bracket.sql`: JSONB column on leagues table
+  - Added `playoff_bracket` to `LeagueRow`, `LeagueInsert`, `LeagueSummary`
+  - Added `playoffBracket` to `LeagueState`, `LeagueStore`, `useLeague` hook
+  - 6 tests
+- **Season-to-playoffs transition** (Step 23.4)
+  - `checkAndTransitionToPlayoffs()`: When day >= 162 and no incomplete games, generates bracket, updates status to 'playoffs'
+  - Builds `DivisionStandings` from team DB rows with snake_case conversion
+  - Wired into simulate endpoint (empty-schedule path)
+  - 10 tests
+- **Playoff game simulation** (Steps 23.5 + 23.6)
+  - `simulatePlayoffGame()`: Full pipeline -- load bracket, find next game, load rosters, build RunGameConfig, run game, record result, advance winners, persist, insert game_log
+  - `loadTeamConfig()`: Builds lineup, batter cards, pitchers from roster DB entries
+  - Playoffs-to-completed: Sets league status to 'completed' when `isFullBracketComplete()` returns true
+  - Wired into simulate endpoint (playoffs status path)
+  - 14 tests
+- **Playoffs UI** (Step 23.7)
+  - Updated `PlayoffsPage` to load persisted bracket from `useLeague().playoffBracket`
+  - Renders AL bracket, NL bracket, and World Series in 3-column layout
+  - Champion banner when `worldSeriesChampionId` is set
+  - Visible in both 'playoffs' and 'completed' status
+  - 8 tests (updated from 5)
+
+### Metrics
+- Vitest: 2,221 -> 2,291 (+70 tests, 197 test files)
+- New source files: `playoff-transition.ts`, `simulate-playoff-game.ts`, migration `00015`
+- Modified: `playoff-bracket.ts`, `schedule.ts`, `database.ts`, `league.ts`, `leagueStore.ts`, `useLeague.ts`, `simulate.ts`, `PlayoffsPage.tsx`
+- TypeScript: clean build, no errors
+
 ## 2026-02-10 - SRD Gap Closure (Phase 22)
 
 ### Phase 22: Polish + NFR Compliance (REQ-NFR-018, REQ-ARCH-004a)

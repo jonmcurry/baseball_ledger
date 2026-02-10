@@ -1,3 +1,5 @@
+import type { FullPlayoffBracket } from './schedule';
+
 export type LeagueStatus =
   | 'setup'
   | 'drafting'
@@ -34,6 +36,7 @@ export interface LeagueSummary {
   readonly injuriesEnabled: boolean;
   readonly status: LeagueStatus;
   readonly currentDay: number;
+  readonly playoffBracket: FullPlayoffBracket | null;
 }
 
 export interface TeamSummary {
