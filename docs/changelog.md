@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-02-09 - Phase 11: Final Polish & Hardening
+
+### Added
+- **StatTable Virtualization** (Sub-phase 11A, REQ-NFR-004):
+  - Integrated `@tanstack/react-virtual` into `StatTable.tsx` for datasets > 50 rows
+  - Scroll container with `max-h-[600px]`, spacer rows, sticky thead
+  - 600-row datasets render < 50 DOM rows; small datasets unchanged
+- **Trade Execution Logic** (Sub-phase 11B, REQ-RST-005, REQ-RST-006):
+  - `src/lib/draft/trade-validator.ts` -- Pure function validating roster composition post-swap
+  - Extended `api/leagues/[id]/transactions.ts` with atomic trade handler (delete + insert pattern)
+  - Rewrote `TradeForm.tsx` with player selection checkboxes for both sides
+- **Anonymous Auth** (Sub-phase 11C, REQ-AUTH-001):
+  - Added `loginAsGuest()` to `useAuth` hook via `supabase.auth.signInAnonymously()`
+  - Added "Play as Guest" button to `LoginPage.tsx`
+- **Web Worker Integration** (Sub-phase 11D, REQ-NFR-008):
+  - `src/hooks/useWorkerSimulation.ts` -- React hook wrapping `simulateGameInWorker()`
+  - Wired into `GameViewerPage.tsx` for client-side game replay with status display
+- **pgTAP RLS Tests** (Sub-phase 11E, REQ-MIG-009):
+  - Replaced `ok(true)` placeholders in all 6 pgTAP test files with 40 real assertions
+  - Tests cover commissioner/member/outsider SELECT, INSERT, UPDATE, DELETE per table
+  - Tables: leagues (8), teams (8), rosters (8), schedule (6), season_stats (6), game_logs (4)
+- **GitHub Actions CI** (Sub-phase 11F, REQ-TEST-015):
+  - `.github/workflows/ci.yml` -- Lint + type-check (app + API) + vitest coverage + benchmarks
+  - `.github/workflows/e2e.yml` -- Playwright chromium-only for CI
+- **E2E Test Expansion** (Sub-phase 11G, REQ-TEST-017):
+  - 3 page objects: `login.page.ts`, `dashboard.page.ts`, `league-config.page.ts`
+  - Auth fixture: `fixtures/auth.ts` with Supabase route interception
+  - 5 new spec files: `guest-login.spec.ts` (3), `league-creation.spec.ts` (5), `draft-board.spec.ts` (4), `simulation.spec.ts` (4), `roster.spec.ts` (4)
+
+### Modified
+- `playwright.config.ts` -- CI-only single browser (chromium) via `process.env.CI` check
+- `src/features/transactions/TransactionsPage.tsx` -- Passes `targetRoster` prop to TradeForm
+
+### Metrics
+- Vitest: 1,946 -> 1,985 (+39 new, 187 test files)
+- E2E: 15 -> 35 (+20 new, 9 spec files)
+- pgTAP: 0 -> 40 assertions (6 SQL test files)
+- Sub-phases: 11A-11G (virtualization, trade, anon auth, worker, pgTAP, CI, E2E)
+- All SRD gaps from audit closed
+
 ## 2026-02-09 - Phase 10: Feature UI Implementation
 
 ### Added

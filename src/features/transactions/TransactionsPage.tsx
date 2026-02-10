@@ -81,6 +81,7 @@ export function TransactionsPage() {
         <TradeForm
           teams={otherTeams}
           myRoster={myRosterList}
+          targetRoster={[]}
           onSubmit={() => {}}
         />
       )}

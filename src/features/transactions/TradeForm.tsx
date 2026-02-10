@@ -2,6 +2,8 @@
  * TradeForm
  *
  * Propose a trade: select team, select players on each side.
+ * REQ-RST-005: Trade between two teams with player selection.
+ *
  * Feature-scoped sub-component. No store imports.
  */
 
@@ -13,23 +15,77 @@ export interface TradeTeam {
   name: string;
 }
 
-export interface TradeFormProps {
-  readonly teams: readonly TradeTeam[];
-  readonly myRoster: readonly { id: string; name: string }[];
-  readonly onSubmit: (targetTeamId: string) => void;
+export interface TradePlayer {
+  id: string;
+  name: string;
 }
 
-export function TradeForm({ teams, myRoster, onSubmit }: TradeFormProps) {
+export interface TradePayload {
+  targetTeamId: string;
+  playersFromMe: string[];
+  playersFromThem: string[];
+}
+
+export interface TradeFormProps {
+  readonly teams: readonly TradeTeam[];
+  readonly myRoster: readonly TradePlayer[];
+  readonly targetRoster: readonly TradePlayer[];
+  readonly onTargetChange?: (teamId: string) => void;
+  readonly onSubmit: (payload: TradePayload) => void;
+}
+
+export function TradeForm({
+  teams,
+  myRoster,
+  targetRoster,
+  onTargetChange,
+  onSubmit,
+}: TradeFormProps) {
   const [targetTeam, setTargetTeam] = useState('');
+  const [selectedFromMe, setSelectedFromMe] = useState<Set<string>>(new Set());
+  const [selectedFromThem, setSelectedFromThem] = useState<Set<string>>(new Set());
 
   const teamOptions = teams.map((t) => ({
     value: t.id,
     label: t.name,
   }));
 
+  const handleTargetChange = (teamId: string) => {
+    setTargetTeam(teamId);
+    setSelectedFromThem(new Set());
+    onTargetChange?.(teamId);
+  };
+
+  const toggleMyPlayer = (id: string) => {
+    setSelectedFromMe((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleTheirPlayer = (id: string) => {
+    setSelectedFromThem((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const canSubmit =
+    targetTeam !== '' &&
+    selectedFromMe.size > 0 &&
+    selectedFromThem.size > 0;
+
   const handleSubmit = () => {
-    if (targetTeam) {
-      onSubmit(targetTeam);
+    if (canSubmit) {
+      onSubmit({
+        targetTeamId: targetTeam,
+        playersFromMe: Array.from(selectedFromMe),
+        playersFromThem: Array.from(selectedFromThem),
+      });
     }
   };
 
@@ -40,7 +96,7 @@ export function TradeForm({ teams, myRoster, onSubmit }: TradeFormProps) {
       <div className="space-y-2">
         <Select
           value={targetTeam}
-          onChange={setTargetTeam}
+          onChange={handleTargetChange}
           options={teamOptions}
           name="trade-target"
           label="Trade with"
@@ -48,18 +104,52 @@ export function TradeForm({ teams, myRoster, onSubmit }: TradeFormProps) {
         />
       </div>
 
-      {targetTeam && (
-        <div className="rounded-card border border-sandstone bg-old-lace px-gutter py-2">
-          <p className="text-xs text-muted">
-            Select players to include in the trade proposal. Your roster has {myRoster.length} players available.
-          </p>
+      <div className="grid grid-cols-2 gap-gutter">
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-muted">My Players</p>
+          {myRoster.map((p) => (
+            <label
+              key={p.id}
+              className="flex items-center gap-2 rounded-card border border-sandstone/50 px-2 py-1 text-sm hover:bg-sandstone/10"
+            >
+              <input
+                type="checkbox"
+                checked={selectedFromMe.has(p.id)}
+                onChange={() => toggleMyPlayer(p.id)}
+                aria-label={p.name}
+                className="accent-ballpark"
+              />
+              <span className="text-ink">{p.name}</span>
+            </label>
+          ))}
         </div>
-      )}
+
+        {targetRoster.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted">Their Players</p>
+            {targetRoster.map((p) => (
+              <label
+                key={p.id}
+                className="flex items-center gap-2 rounded-card border border-sandstone/50 px-2 py-1 text-sm hover:bg-sandstone/10"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedFromThem.has(p.id)}
+                  onChange={() => toggleTheirPlayer(p.id)}
+                  aria-label={p.name}
+                  className="accent-ballpark"
+                />
+                <span className="text-ink">{p.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
 
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={!targetTeam}
+        disabled={!canSubmit}
         className="rounded-button bg-ballpark px-4 py-2 text-xs font-medium text-old-lace hover:opacity-90 disabled:opacity-40"
       >
         Submit Trade

@@ -27,6 +27,15 @@ vi.mock('@hooks/useLeague', () => ({
   }),
 }));
 
+const { mockUseWorkerSimulation } = vi.hoisted(() => {
+  const mockUseWorkerSimulation = vi.fn();
+  return { mockUseWorkerSimulation };
+});
+
+vi.mock('@hooks/useWorkerSimulation', () => ({
+  useWorkerSimulation: mockUseWorkerSimulation,
+}));
+
 vi.mock('@stores/simulationStore', () => ({
   useSimulationStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({
@@ -47,6 +56,13 @@ describe('GameViewerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ gameId: 'game-1' });
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'idle',
+      result: null,
+      error: null,
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
   });
 
   it('renders page heading with team names', () => {
@@ -74,5 +90,48 @@ describe('GameViewerPage', () => {
   it('renders game state panel', () => {
     render(<GameViewerPage />);
     expect(screen.getByText('Game State')).toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Worker simulation display (REQ-NFR-008)
+  // ---------------------------------------------------------------------------
+
+  it('shows progress when worker simulation is running', () => {
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'running',
+      result: null,
+      error: null,
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<GameViewerPage />);
+    expect(screen.getByText('Simulating replay...')).toBeInTheDocument();
+  });
+
+  it('shows replay result when worker completes', () => {
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'complete',
+      result: { awayScore: 7, homeScore: 2 },
+      error: null,
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<GameViewerPage />);
+    expect(screen.getByText(/Replay complete: 7 - 2/)).toBeInTheDocument();
+  });
+
+  it('shows error when worker simulation fails', () => {
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'error',
+      result: null,
+      error: 'Worker crashed',
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<GameViewerPage />);
+    expect(screen.getByText('Worker crashed')).toBeInTheDocument();
   });
 });

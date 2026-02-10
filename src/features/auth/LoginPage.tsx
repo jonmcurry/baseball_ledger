@@ -6,13 +6,22 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, error } = useAuth();
+  const { login, loginAsGuest, error } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     const success = await login(email, password);
+    setIsSubmitting(false);
+    if (success) {
+      navigate('/');
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setIsSubmitting(true);
+    const success = await loginAsGuest();
     setIsSubmitting(false);
     if (success) {
       navigate('/');
@@ -62,6 +71,21 @@ export function LoginPage() {
             {isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-gutter-lg flex items-center gap-2">
+          <div className="h-px flex-1 bg-sandstone" />
+          <span className="text-xs text-muted">or</span>
+          <div className="h-px flex-1 bg-sandstone" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGuestLogin}
+          disabled={isSubmitting}
+          className="mt-gutter w-full rounded-button border border-sandstone py-2 text-sm font-medium text-ink hover:bg-sandstone/20 disabled:opacity-50"
+        >
+          Play as Guest
+        </button>
       </div>
     </div>
   );

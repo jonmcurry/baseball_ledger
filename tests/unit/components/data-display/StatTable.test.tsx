@@ -254,4 +254,114 @@ describe('StatTable', () => {
     const hrHeader = screen.getByText('HR').closest('th');
     expect(hrHeader?.className).toContain('text-right');
   });
+
+  // ---------------------------------------------------------------------------
+  // Virtualization (REQ-NFR-004)
+  // ---------------------------------------------------------------------------
+
+  it('renders all rows for small datasets (below virtualization threshold)', () => {
+    render(
+      <StatTable
+        columns={columns}
+        data={sampleData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={vi.fn()}
+      />,
+    );
+    const table = screen.getByRole('table');
+    const rows = within(table).getAllByRole('row');
+    // 1 header row + 3 data rows
+    expect(rows).toHaveLength(4);
+  });
+
+  it('uses scroll container for large datasets', () => {
+    const largeData: TestRow[] = Array.from({ length: 600 }, (_, i) => ({
+      id: `${i}`,
+      name: `Player ${i}`,
+      avg: 0.250 + Math.random() * 0.1,
+      hr: Math.floor(Math.random() * 60),
+    }));
+    render(
+      <StatTable
+        columns={columns}
+        data={largeData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={vi.fn()}
+      />,
+    );
+    const scrollContainer = screen.getByTestId('stat-table-scroll');
+    expect(scrollContainer).toBeInTheDocument();
+  });
+
+  it('does not render all 600 rows in the DOM for large datasets', () => {
+    const largeData: TestRow[] = Array.from({ length: 600 }, (_, i) => ({
+      id: `${i}`,
+      name: `Player ${i}`,
+      avg: 0.250,
+      hr: i,
+    }));
+    render(
+      <StatTable
+        columns={columns}
+        data={largeData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={vi.fn()}
+      />,
+    );
+    const table = screen.getByRole('table');
+    const dataRows = within(table).getAllByRole('row').filter(
+      (row) => !row.querySelector('th') && !row.hasAttribute('data-loading-row'),
+    );
+    // Virtualized: should render far fewer than 600 rows
+    expect(dataRows.length).toBeLessThan(100);
+  });
+
+  it('sort still works after virtualization on large datasets', async () => {
+    const user = userEvent.setup();
+    const onSort = vi.fn();
+    const largeData: TestRow[] = Array.from({ length: 200 }, (_, i) => ({
+      id: `${i}`,
+      name: `Player ${i}`,
+      avg: 0.250,
+      hr: i,
+    }));
+    render(
+      <StatTable
+        columns={columns}
+        data={largeData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={onSort}
+      />,
+    );
+    await user.click(screen.getByText('AVG'));
+    expect(onSort).toHaveBeenCalledWith('avg');
+  });
+
+  it('virtualized table preserves table structure with thead and tbody', () => {
+    const largeData: TestRow[] = Array.from({ length: 200 }, (_, i) => ({
+      id: `${i}`,
+      name: `Player ${i}`,
+      avg: 0.250,
+      hr: i,
+    }));
+    render(
+      <StatTable
+        columns={columns}
+        data={largeData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={vi.fn()}
+        onRowClick={vi.fn()}
+      />,
+    );
+    const table = screen.getByRole('table');
+    expect(table.querySelector('thead')).toBeInTheDocument();
+    expect(table.querySelector('tbody')).toBeInTheDocument();
+    // Header has sticky class for scroll context
+    expect(table.querySelector('thead')?.className).toContain('sticky');
+  });
 });

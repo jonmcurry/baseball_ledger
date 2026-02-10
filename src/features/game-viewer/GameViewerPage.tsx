@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulationStore } from '@stores/simulationStore';
+import { useWorkerSimulation } from '@hooks/useWorkerSimulation';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { GameStatePanel } from './GameStatePanel';
 
@@ -18,6 +19,7 @@ export function GameViewerPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const { teams } = useLeague();
   const simulationResults = useSimulationStore((s) => s.results);
+  const workerSim = useWorkerSimulation();
 
   const teamNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -75,6 +77,27 @@ export function GameViewerPage() {
         homeTeam={homeTeamName}
         awayTeam={awayTeamName}
       />
+
+      {workerSim.status === 'running' && (
+        <div className="rounded-card border border-sandstone bg-old-lace px-gutter py-2">
+          <p className="text-xs text-muted">Simulating replay...</p>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-sandstone/40">
+            <div className="h-full w-1/2 animate-pulse rounded bg-ballpark" />
+          </div>
+        </div>
+      )}
+
+      {workerSim.status === 'complete' && workerSim.result && (
+        <div className="rounded-card border border-ballpark/30 bg-ballpark/5 px-gutter py-2">
+          <p className="text-xs font-medium text-ballpark">
+            Replay complete: {workerSim.result.awayScore} - {workerSim.result.homeScore}
+          </p>
+        </div>
+      )}
+
+      {workerSim.status === 'error' && workerSim.error && (
+        <ErrorBanner severity="error" message={workerSim.error} />
+      )}
     </div>
   );
 }

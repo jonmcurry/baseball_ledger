@@ -50,6 +50,33 @@ export function useAuth() {
     }
   };
 
+  const loginAsGuest = async () => {
+    try {
+      setError(null);
+      const supabase = getSupabaseClient();
+      const { data, error: authError } = await supabase.auth.signInAnonymously();
+      if (authError) {
+        setError(authError.message);
+        return false;
+      }
+      if (data.user && data.session) {
+        setUser({
+          id: data.user.id,
+          email: '',
+          displayName: 'Guest',
+        });
+        setSession({
+          accessToken: data.session.access_token,
+          expiresAt: data.session.expires_at ?? 0,
+        });
+      }
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Guest login failed');
+      return false;
+    }
+  };
+
   const signup = async (email: string, password: string) => {
     try {
       setError(null);
@@ -73,6 +100,7 @@ export function useAuth() {
     isInitialized,
     error,
     login,
+    loginAsGuest,
     signup,
     logout,
     initialize,
