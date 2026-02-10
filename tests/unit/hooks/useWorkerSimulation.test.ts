@@ -39,6 +39,7 @@ const mockResult: GameResult = {
     homeErrors: 0,
   },
   playByPlay: [],
+  playerNames: {},
 };
 
 describe('useWorkerSimulation', () => {

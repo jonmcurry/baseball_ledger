@@ -22,6 +22,7 @@ vi.mock('../../../src/lib/simulation/game-runner', () => ({
     playerBattingLines: [],
     playerPitchingLines: [],
     playByPlay: [],
+    playerNames: {},
   }),
 }));
 

@@ -16,8 +16,11 @@ import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { GameStatePanel } from './GameStatePanel';
 import { PlayByPlayFeed } from './PlayByPlayFeed';
 import { BoxScoreDisplay } from './BoxScoreDisplay';
-import { CommentaryPanel } from './CommentaryPanel';
-import type { CommentaryEntry } from './CommentaryPanel';
+import { CommentarySection } from './CommentarySection';
+import { GameSummaryPanel } from './GameSummaryPanel';
+import { ManagerDecisionsPanel } from './ManagerDecisionsPanel';
+import { detectDecisions } from '@lib/ai/decision-detector';
+import type { GameSummaryRequest } from '@lib/types/ai';
 
 type ViewTab = 'play-by-play' | 'box-score';
 
@@ -61,6 +64,42 @@ export function GameViewerPage() {
 
   const homeTeamName = teamNameMap.get(gameResult.homeTeamId) ?? 'Home';
   const awayTeamName = teamNameMap.get(gameResult.awayTeamId) ?? 'Away';
+
+  const gameSummaryRequest = useMemo((): GameSummaryRequest | null => {
+    const r = workerSim.result;
+    if (!r?.boxScore || !r.playByPlay) return null;
+    const names = r.playerNames ?? {};
+    const plays = r.playByPlay ?? [];
+    const batLines = r.playerBattingLines ?? [];
+    return {
+      homeTeamName,
+      awayTeamName,
+      homeScore: r.homeScore,
+      awayScore: r.awayScore,
+      innings: r.innings,
+      winningPitcherName: names[r.winningPitcherId] ?? 'Unknown',
+      losingPitcherName: names[r.losingPitcherId] ?? 'Unknown',
+      savePitcherName: r.savePitcherId ? (names[r.savePitcherId] ?? null) : null,
+      keyPlays: plays
+        .filter((p) => p.outcome >= 17 && p.outcome <= 20)
+        .slice(0, 5)
+        .map((p) => ({ inning: p.inning, description: p.description })),
+      boxScore: r.boxScore,
+      playerHighlights: batLines
+        .filter((b) => b.H >= 2 || b.HR >= 1)
+        .slice(0, 3)
+        .map((b) => ({
+          playerName: names[b.playerId] ?? b.playerId,
+          statLine: `${b.H}-${b.AB}${b.HR > 0 ? `, ${b.HR} HR` : ''}${b.RBI > 0 ? `, ${b.RBI} RBI` : ''}`,
+        })),
+    };
+  }, [workerSim.result, homeTeamName, awayTeamName]);
+
+  const detectedDecisions = useMemo(() => {
+    const plays = workerSim.result?.playByPlay;
+    if (!plays || plays.length === 0) return [];
+    return detectDecisions(plays);
+  }, [workerSim.result?.playByPlay]);
 
   return (
     <div className="space-y-gutter-lg">
@@ -160,13 +199,24 @@ export function GameViewerPage() {
         </p>
       )}
 
-      {/* Commentary panel from play-by-play descriptions */}
+      {/* Game Summary: template-first with optional AI recap */}
+      <GameSummaryPanel request={gameSummaryRequest} />
+
+      {/* AI Commentary: template-first with optional Claude enhancement */}
       {workerSim.result?.playByPlay && workerSim.result.playByPlay.length > 0 && (
-        <CommentaryPanel
-          entries={workerSim.result.playByPlay.slice(-10).map((p): CommentaryEntry => ({
-            text: p.description,
-            inning: p.inning,
-          }))}
+        <CommentarySection
+          plays={workerSim.result.playByPlay.slice(-10)}
+          playerNames={workerSim.result.playerNames}
+          style="newspaper"
+        />
+      )}
+
+      {/* Manager Decisions: template-first with optional Claude enhancement */}
+      {detectedDecisions.length > 0 && (
+        <ManagerDecisionsPanel
+          decisions={detectedDecisions}
+          managerStyle="balanced"
+          managerName={awayTeamName + ' Manager'}
         />
       )}
     </div>

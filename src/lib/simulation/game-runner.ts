@@ -819,6 +819,21 @@ export function runGame(config: RunGameConfig): GameResult {
     decision: l.decision,
   }));
 
+  // Build player name map from lineups + pitchers used
+  const playerNames: Record<string, string> = {};
+  for (const slot of state.homeTeam.lineup) {
+    playerNames[slot.playerId] = slot.playerName;
+  }
+  for (const slot of state.awayTeam.lineup) {
+    playerNames[slot.playerId] = slot.playerName;
+  }
+  for (const p of state.homeTeam.pitchersUsed) {
+    playerNames[p.playerId] = `${p.nameFirst} ${p.nameLast}`;
+  }
+  for (const p of state.awayTeam.pitchersUsed) {
+    playerNames[p.playerId] = `${p.nameFirst} ${p.nameLast}`;
+  }
+
   return {
     gameId: config.gameId,
     homeTeamId: config.homeTeamId,
@@ -833,5 +848,6 @@ export function runGame(config: RunGameConfig): GameResult {
     playerBattingLines: Array.from(tracker.battingLines.values()),
     playerPitchingLines: cleanPitchingLines,
     playByPlay: tracker.playByPlay,
+    playerNames,
   };
 }

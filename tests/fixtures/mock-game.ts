@@ -115,6 +115,7 @@ export function createMockGameResult(overrides?: Partial<GameResult>): GameResul
       createMockPlayByPlay({ inning: 1, halfInning: 'top', description: 'Leadoff single to left.' }),
       createMockPlayByPlay({ inning: 1, halfInning: 'bottom', description: 'Solo homer to right.', outcome: OutcomeCategory.HOME_RUN }),
     ],
+    playerNames: {},
     ...overrides,
   };
 }

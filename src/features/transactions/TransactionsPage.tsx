@@ -8,7 +8,7 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTeam } from '@hooks/useTeam';
 import { useLeague } from '@hooks/useLeague';
 import { useRosterStore } from '@stores/rosterStore';
@@ -16,9 +16,12 @@ import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { AddDropForm } from './AddDropForm';
 import { TradeForm } from './TradeForm';
+import { TradeEvaluationPanel } from './TradeEvaluationPanel';
 import { TransactionLog } from './TransactionLog';
 import type { TransactionEntry } from './TransactionLog';
-import type { TradePlayer } from './TradeForm';
+import type { TradePlayer, TradePayload } from './TradeForm';
+import type { TradeEvaluationRequest } from '@lib/types/ai';
+import type { RosterEntry } from '@lib/types/roster';
 import * as transactionService from '@services/transaction-service';
 import { fetchRoster } from '@services/roster-service';
 
@@ -38,6 +41,8 @@ export function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionEntry[]>([]);
   const [targetRoster, setTargetRoster] = useState<TradePlayer[]>([]);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingTrade, setPendingTrade] = useState<TradePayload | null>(null);
+  const [targetRosterEntries, setTargetRosterEntries] = useState<RosterEntry[]>([]);
 
   const leagueId = league?.id;
   const teamId = myTeam?.id;
@@ -74,8 +79,10 @@ export function TransactionsPage() {
   const handleTargetChange = useCallback(async (targetTeamId: string) => {
     if (!leagueId) return;
     setTargetRoster([]);
+    setTargetRosterEntries([]);
     try {
       const targetEntries = await fetchRoster(leagueId, targetTeamId);
+      setTargetRosterEntries(targetEntries);
       setTargetRoster(
         targetEntries.map((r) => ({
           id: r.playerId,
@@ -84,6 +91,7 @@ export function TransactionsPage() {
       );
     } catch {
       setTargetRoster([]);
+      setTargetRosterEntries([]);
     }
   }, [leagueId]);
 
@@ -112,6 +120,44 @@ export function TransactionsPage() {
       setActionError(err instanceof Error ? err.message : 'Failed to submit trade');
     }
   }, [leagueId, teamId, fetchMyRoster]);
+
+  const handleSelectionChange = useCallback((payload: TradePayload | null) => {
+    setPendingTrade(payload);
+  }, []);
+
+  const tradeEvalRequest = useMemo((): TradeEvaluationRequest | null => {
+    if (!pendingTrade) return null;
+
+    const findMyEntry = (pid: string) => roster.find((r) => r.playerId === pid);
+    const findTheirEntry = (pid: string) => targetRosterEntries.find((r) => r.playerId === pid);
+
+    const playersOffered = pendingTrade.playersFromMe.map((pid) => {
+      const entry = findMyEntry(pid);
+      return {
+        name: entry ? `${entry.playerCard.nameFirst} ${entry.playerCard.nameLast}` : pid,
+        position: entry?.playerCard.eligiblePositions?.[0] ?? 'UT',
+        value: entry?.playerCard.card?.reduce((a: number, b: number) => a + b, 0) ?? 50,
+      };
+    });
+
+    const playersRequested = pendingTrade.playersFromThem.map((pid) => {
+      const entry = findTheirEntry(pid);
+      return {
+        name: entry ? `${entry.playerCard.nameFirst} ${entry.playerCard.nameLast}` : pid,
+        position: entry?.playerCard.eligiblePositions?.[0] ?? 'UT',
+        value: entry?.playerCard.card?.reduce((a: number, b: number) => a + b, 0) ?? 50,
+      };
+    });
+
+    return {
+      managerStyle: 'balanced',
+      managerName: 'Manager',
+      teamName: myTeam ? `${myTeam.city} ${myTeam.name}` : 'My Team',
+      playersOffered,
+      playersRequested,
+      teamNeeds: [],
+    };
+  }, [pendingTrade, roster, targetRosterEntries, myTeam]);
 
   if (leagueLoading || isRosterLoading) {
     return <LoadingLedger message="Loading transactions..." />;
@@ -160,13 +206,17 @@ export function TransactionsPage() {
       )}
 
       {activeTab === 'trade' && (
-        <TradeForm
-          teams={otherTeams}
-          myRoster={myRosterList}
-          targetRoster={targetRoster}
-          onTargetChange={handleTargetChange}
-          onSubmit={handleTrade}
-        />
+        <>
+          <TradeForm
+            teams={otherTeams}
+            myRoster={myRosterList}
+            targetRoster={targetRoster}
+            onTargetChange={handleTargetChange}
+            onSelectionChange={handleSelectionChange}
+            onSubmit={handleTrade}
+          />
+          <TradeEvaluationPanel request={tradeEvalRequest} />
+        </>
       )}
 
       {activeTab === 'history' && (

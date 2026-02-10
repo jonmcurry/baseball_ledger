@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phase 24)
+
+### Phase 24: AI Service Wiring (REQ-AI-006, REQ-AI-007, REQ-AI-008)
+
+All 5 AI features wired from backend infrastructure to UI using template-first pattern with optional Claude enhancement. Each feature renders immediately with template output; Claude API is opt-in per item (REQ-AI-007) with graceful degradation to templates on failure (REQ-AI-008).
+
+- **Commentary wiring** (Step 24.1)
+  - `useCommentary` hook: template commentary per play, optional `enhancePlay(index)` for Claude
+  - `CommentarySection` component: wraps CommentaryPanel + "Enhance with AI" button
+  - Wired into `GameViewerPage` replacing hardcoded CommentaryPanel
+  - Added `playerNames: Record<string, string>` to `GameResult` for player name resolution
+  - 14 tests (9 hook + 5 component)
+- **Game summary wiring** (Step 24.2)
+  - `useGameSummary` hook: template summary immediate, optional `fetchAiSummary()`
+  - `GameSummaryPanel` component: headline + summary + "Generate AI Recap" button
+  - Wired into `GameViewerPage` after box score with `gameSummaryRequest` useMemo
+  - 12 tests (7 hook + 5 component)
+- **Trade evaluation wiring** (Step 24.3)
+  - `useTradeEvaluation` hook: template eval immediate, optional `fetchAiEval()`
+  - `TradeEvaluationPanel` component: recommendation badge + reasoning + value diff
+  - Added `onSelectionChange` callback to `TradeForm` for live trade tracking
+  - Wired into `TransactionsPage` next to TradeForm
+  - 11 tests (6 hook + 5 component)
+- **Draft reasoning wiring** (Step 24.4)
+  - `useDraftReasoning` hook: template reasoning from last pick, optional `fetchAiReasoning()`
+  - `DraftReasoningPanel` component: reasoning text + source badge + "Get AI Reasoning" button
+  - Wired into `DraftBoardPage` below DraftTicker
+  - 9 tests (5 hook + 4 component)
+- **Manager decisions wiring** (Step 24.5)
+  - `detectDecisions()`: Pure function detecting IBB, steal, bunt, pitcher changes from play-by-play
+  - `useManagerExplanations` hook: template explanations with per-decision Claude opt-in
+  - `ManagerDecisionsPanel` component: decision list with explanations + "Enhance" buttons
+  - Wired into `GameViewerPage` with `detectedDecisions` useMemo
+  - 18 tests (8 detector + 6 hook + 4 component)
+
+### Metrics
+- Vitest: 2,291 -> 2,354 (+63 tests, 208 test files)
+- New source files: 5 hooks, 5 components, 1 detector (11 files)
+- New test files: 11
+- Modified: `GameViewerPage.tsx`, `TransactionsPage.tsx`, `TradeForm.tsx`, `DraftBoardPage.tsx`, `game-runner.ts`, `game.ts`
+- TypeScript: clean build, no errors
+
 ## 2026-02-10 - SRD Gap Closure (Phase 23)
 
 ### Phase 23: Playoff Pipeline (REQ-LGE-008)

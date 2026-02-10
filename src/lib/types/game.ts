@@ -166,4 +166,6 @@ export interface GameResult {
   playerBattingLines: BattingLine[];
   playerPitchingLines: PitchingLine[];
   playByPlay: PlayByPlayEntry[];
+  /** Maps playerId -> display name for all players who appeared in the game. */
+  playerNames: Record<string, string>;
 }

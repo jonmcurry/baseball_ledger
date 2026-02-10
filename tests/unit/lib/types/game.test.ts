@@ -200,6 +200,7 @@ describe('Game types', () => {
         playerBattingLines: [],
         playerPitchingLines: [],
         playByPlay: [],
+        playerNames: {},
       };
       expect(result.innings).toBe(9);
       expect(result.savePitcherId).toBe('pitcher3');
@@ -223,6 +224,7 @@ describe('Game types', () => {
         playerBattingLines: [],
         playerPitchingLines: [],
         playByPlay: [],
+        playerNames: {},
       };
       expect(result.savePitcherId).toBeNull();
     });

@@ -7,7 +7,7 @@
  * Feature-scoped sub-component. No store imports.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Select } from '@components/forms/Select';
 
 export interface TradeTeam {
@@ -31,6 +31,7 @@ export interface TradeFormProps {
   readonly myRoster: readonly TradePlayer[];
   readonly targetRoster: readonly TradePlayer[];
   readonly onTargetChange?: (teamId: string) => void;
+  readonly onSelectionChange?: (payload: TradePayload | null) => void;
   readonly onSubmit: (payload: TradePayload) => void;
 }
 
@@ -39,6 +40,7 @@ export function TradeForm({
   myRoster,
   targetRoster,
   onTargetChange,
+  onSelectionChange,
   onSubmit,
 }: TradeFormProps) {
   const [targetTeam, setTargetTeam] = useState('');
@@ -78,6 +80,18 @@ export function TradeForm({
     targetTeam !== '' &&
     selectedFromMe.size > 0 &&
     selectedFromThem.size > 0;
+
+  useEffect(() => {
+    if (canSubmit) {
+      onSelectionChange?.({
+        targetTeamId: targetTeam,
+        playersFromMe: Array.from(selectedFromMe),
+        playersFromThem: Array.from(selectedFromThem),
+      });
+    } else {
+      onSelectionChange?.(null);
+    }
+  }, [targetTeam, selectedFromMe, selectedFromThem, canSubmit, onSelectionChange]);
 
   const handleSubmit = () => {
     if (canSubmit) {

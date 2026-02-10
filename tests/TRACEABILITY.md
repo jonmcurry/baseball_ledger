@@ -190,3 +190,21 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-UI-010 Commentary panel | `tests/unit/features/game-viewer/CommentaryPanel.test.tsx` |
 | REQ-NFR-018 Self-hosted fonts | `tests/unit/styles/fonts.test.ts` |
 | REQ-ARCH-004a Default exports | All `src/components/` and `src/features/` `.tsx` files |
+
+## Phase 23-24: Playoff Pipeline + AI Wiring
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-LGE-008 Playoff bracket advancement | `tests/unit/lib/schedule/playoff-advancement.test.ts` |
+| REQ-LGE-008 Full playoff bracket | `tests/unit/lib/schedule/full-playoff-bracket.test.ts` |
+| REQ-LGE-008 Bracket persistence | `tests/unit/api/leagues/[id]/playoff-bracket-persistence.test.ts` |
+| REQ-LGE-008 Season-to-playoffs transition | `tests/unit/api/_lib/playoff-transition.test.ts` |
+| REQ-LGE-008 Playoff game simulation | `tests/unit/api/_lib/simulate-playoff-game.test.ts` |
+| REQ-LGE-008 Playoffs UI | `tests/unit/features/playoffs/PlayoffsPage.test.tsx` |
+| REQ-AI-006 Commentary wiring | `tests/unit/hooks/useCommentary.test.ts`, `tests/unit/features/game-viewer/CommentarySection.test.tsx` |
+| REQ-AI-006 Game summary wiring | `tests/unit/hooks/useGameSummary.test.ts`, `tests/unit/features/game-viewer/GameSummaryPanel.test.tsx` |
+| REQ-AI-006 Trade evaluation wiring | `tests/unit/hooks/useTradeEvaluation.test.ts`, `tests/unit/features/transactions/TradeEvaluationPanel.test.tsx` |
+| REQ-AI-006 Draft reasoning wiring | `tests/unit/hooks/useDraftReasoning.test.ts`, `tests/unit/features/draft/DraftReasoningPanel.test.tsx` |
+| REQ-AI-006 Manager decisions | `tests/unit/lib/ai/decision-detector.test.ts`, `tests/unit/hooks/useManagerExplanations.test.ts`, `tests/unit/features/game-viewer/ManagerDecisionsPanel.test.tsx` |
+| REQ-AI-007 AI opt-in per item | All 5 `useManager*`/`use*` hook tests verify enhance/fetch is optional |
+| REQ-AI-008 Graceful degradation | `tests/unit/hooks/useManagerExplanations.test.ts` (failure keeps template), all hook tests |

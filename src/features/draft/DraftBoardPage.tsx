@@ -8,18 +8,20 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDraft } from '@hooks/useDraft';
 import { useLeague } from '@hooks/useLeague';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import { DraftTicker } from './DraftTicker';
+import { DraftReasoningPanel } from './DraftReasoningPanel';
 import { AvailablePlayersTable } from './AvailablePlayersTable';
 import { PickTimer } from './PickTimer';
 import { RosterPreviewPanel } from './RosterPreviewPanel';
 import type { AvailablePlayer } from '@stores/draftStore';
 import type { PlayerCard } from '@lib/types/player';
+import type { DraftReasoningRequest } from '@lib/types/ai';
 
 export function DraftBoardPage() {
   const { league } = useLeague();
@@ -60,6 +62,28 @@ export function DraftBoardPage() {
   const isDraftComplete = draftState?.status === 'completed';
   const isDraftNotStarted = !draftState || draftState.status === 'not_started';
   const isDraftActive = draftState?.status === 'in_progress';
+
+  // Build reasoning request from the last completed pick
+  const lastPickRequest = useMemo((): DraftReasoningRequest | null => {
+    const picks = draftState?.picks;
+    if (!picks || picks.length === 0) return null;
+    const lastPick = picks[picks.length - 1];
+    return {
+      round: lastPick.round,
+      managerStyle: 'balanced',
+      managerName: 'Manager',
+      teamName: currentTeamName ?? 'Team',
+      pickedPlayerName: lastPick.playerName,
+      pickedPlayerPosition: lastPick.position,
+      pickedPlayerValue: 50,
+      alternativePlayers: availablePlayers.slice(0, 3).map((p) => ({
+        name: `${p.playerCard.nameFirst} ${p.playerCard.nameLast}`,
+        position: p.playerCard.eligiblePositions?.[0] ?? 'UT',
+        value: 50,
+      })),
+      teamNeeds: [],
+    };
+  }, [draftState?.picks, currentTeamName, availablePlayers]);
 
   return (
     <div className="space-y-gutter-lg">
@@ -103,11 +127,12 @@ export function DraftBoardPage() {
       )}
 
       <div className="grid gap-gutter lg:grid-cols-12">
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 space-y-3">
           <DraftTicker
             picks={draftState?.picks ?? []}
             currentPick={draftState?.currentPick ?? 0}
           />
+          <DraftReasoningPanel request={lastPickRequest} />
         </div>
 
         <div className="lg:col-span-6">
