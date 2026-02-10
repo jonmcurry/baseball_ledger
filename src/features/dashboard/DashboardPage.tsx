@@ -6,9 +6,10 @@
  *
  * REQ-STATE-014: useRealtimeProgress triggers cache invalidation after simulation.
  * REQ-SCH-007: SimulationNotification shows typewriter results after simulation.
+ * REQ-SCH-009: SeasonCompletePanel shows champion and archive button when completed.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulation } from '@hooks/useSimulation';
 import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
@@ -20,7 +21,10 @@ import { ScheduleView } from './ScheduleView';
 import { ResultsTicker } from './ResultsTicker';
 import type { TickerResult } from './ResultsTicker';
 import { SimulationNotification } from './SimulationNotification';
+import { SeasonCompletePanel } from './SeasonCompletePanel';
 import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
+import { apiPost } from '@services/api-client';
+import { useLeagueStore } from '@stores/leagueStore';
 
 const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
   day: 1,
@@ -30,11 +34,33 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 };
 
 export function DashboardPage() {
-  const { league, teams, standings, schedule, currentDay, isLoading, error, leagueStatus } = useLeague();
+  const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
   const { status, totalDays, completedGames, isRunning, progressPct, runSimulation } = useSimulation();
 
   // REQ-STATE-014: Cache invalidation on simulation completion
   useRealtimeProgress(league?.id ?? null);
+
+  // REQ-SCH-009: Season completion ceremony
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const championName = useMemo(() => {
+    if (!playoffBracket?.worldSeriesChampionId) return 'Unknown';
+    const team = teams.find((t) => t.id === playoffBracket.worldSeriesChampionId);
+    return team ? `${team.city} ${team.name}` : 'Unknown';
+  }, [playoffBracket, teams]);
+
+  const handleArchive = async () => {
+    if (!league) return;
+    setIsArchiving(true);
+    try {
+      await apiPost(`/api/leagues/${league.id}/archive`);
+      await useLeagueStore.getState().fetchLeagueData(league.id);
+    } catch {
+      // Error reflected in league store
+    } finally {
+      setIsArchiving(false);
+    }
+  };
 
   // REQ-SCH-007: Typewriter results notification
   const [showNotification, setShowNotification] = useState(false);
@@ -101,12 +127,21 @@ export function DashboardPage() {
         <ResultsTicker results={recentResults} />
       )}
 
-      <SimulationControls
-        isRunning={isRunning}
-        progressPct={progressPct}
-        onSimulate={handleSimulate}
-        leagueStatus={leagueStatus}
-      />
+      {leagueStatus === 'completed' ? (
+        <SeasonCompletePanel
+          championName={championName}
+          isCommissioner={isCommissioner}
+          onArchive={handleArchive}
+          isArchiving={isArchiving}
+        />
+      ) : (
+        <SimulationControls
+          isRunning={isRunning}
+          progressPct={progressPct}
+          onSimulate={handleSimulate}
+          leagueStatus={leagueStatus}
+        />
+      )}
 
       {showNotification && (
         <SimulationNotification

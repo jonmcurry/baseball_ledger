@@ -53,6 +53,7 @@ function setDefaultMocks() {
     teams: createMockTeams(),
     standings: createMockStandings(),
     schedule: [createMockScheduleDay(42)],
+    playoffBracket: null,
     currentDay: 42,
     isLoading: false,
     error: null,
@@ -75,6 +76,7 @@ describe('DashboardPage', () => {
       teams: [],
       standings: [],
       schedule: [],
+      playoffBracket: null,
       currentDay: 0,
       isLoading: true,
       error: null,
@@ -102,6 +104,7 @@ describe('DashboardPage', () => {
       teams: [],
       standings: [],
       schedule: [],
+      playoffBracket: null,
       currentDay: 0,
       isLoading: false,
       error: null,
@@ -130,6 +133,7 @@ describe('DashboardPage', () => {
       teams: createMockTeams(),
       standings: createMockStandings(),
       schedule: [],
+      playoffBracket: null,
       currentDay: 42,
       isLoading: false,
       error: 'Something went wrong',
@@ -158,6 +162,7 @@ describe('DashboardPage', () => {
           }),
         ]),
       ],
+      playoffBracket: null,
       currentDay: 42,
       isLoading: false,
       error: null,
@@ -175,6 +180,7 @@ describe('DashboardPage', () => {
       teams: createMockTeams(),
       standings: createMockStandings(),
       schedule: [],
+      playoffBracket: null,
       currentDay: 42,
       isLoading: false,
       error: null,
@@ -255,6 +261,7 @@ describe('DashboardPage', () => {
       teams: createMockTeams(),
       standings: createMockStandings(),
       schedule: [],
+      playoffBracket: null,
       currentDay: 162,
       isLoading: false,
       error: null,
@@ -281,6 +288,7 @@ describe('DashboardPage', () => {
       teams: [],
       standings: [],
       schedule: [],
+      playoffBracket: null,
       currentDay: 0,
       isLoading: false,
       error: null,
@@ -321,5 +329,68 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />);
     expect(screen.queryByTestId('simulation-notification')).not.toBeInTheDocument();
+  });
+
+  // REQ-SCH-009: Season completion ceremony
+  it('shows SeasonCompletePanel when league is completed', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'completed' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: { worldSeriesChampionId: 'al-e1' } as any,
+      currentDay: 162,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'completed',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.getByTestId('season-complete-panel')).toBeInTheDocument();
+    expect(screen.getByText('SEASON COMPLETED')).toBeInTheDocument();
+    expect(screen.queryByText('Sim Day')).not.toBeInTheDocument();
+  });
+
+  it('shows champion name from playoffBracket', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'completed' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: { worldSeriesChampionId: 'al-e1' } as any,
+      currentDay: 162,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'completed',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.getByText('Eastern Eagles')).toBeInTheDocument();
+  });
+
+  it('shows archive button for commissioner when season is completed', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'completed' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: { worldSeriesChampionId: 'al-e1' } as any,
+      currentDay: 162,
+      isLoading: false,
+      error: null,
+      isCommissioner: true,
+      leagueStatus: 'completed',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.getByRole('button', { name: /archive season/i })).toBeInTheDocument();
+  });
+
+  it('shows SimulationControls during regular_season, not SeasonCompletePanel', () => {
+    render(<DashboardPage />);
+    expect(screen.getByText('Sim Day')).toBeInTheDocument();
+    expect(screen.queryByTestId('season-complete-panel')).not.toBeInTheDocument();
   });
 });

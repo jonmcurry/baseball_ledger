@@ -13,15 +13,27 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 let activeChannel: RealtimeChannel | null = null;
 
+export interface PlayoffMetadata {
+  round: string;
+  seriesId: string;
+  gameNumber: number;
+  isPlayoffsComplete: boolean;
+}
+
 export interface SimDayResult {
   dayNumber: number;
   games: unknown[];
+  playoff?: PlayoffMetadata;
 }
 
 export async function startSimulation(
   leagueId: string,
 ): Promise<SimDayResult> {
-  const response = await apiPost<{ dayNumber?: number; games?: unknown[] }>(
+  const response = await apiPost<{
+    dayNumber?: number;
+    games?: unknown[];
+    playoff?: PlayoffMetadata;
+  }>(
     `/api/leagues/${leagueId}/simulate`,
     { days: 1 },
   );
@@ -29,6 +41,7 @@ export async function startSimulation(
   return {
     dayNumber: response.data.dayNumber ?? 0,
     games: response.data.games ?? [],
+    playoff: response.data.playoff,
   };
 }
 

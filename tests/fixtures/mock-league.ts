@@ -19,6 +19,7 @@ export function createMockLeague(overrides?: Partial<LeagueSummary>): LeagueSumm
     injuriesEnabled: true,
     status: 'regular_season',
     currentDay: 42,
+    playoffBracket: null,
     ...overrides,
   };
 }

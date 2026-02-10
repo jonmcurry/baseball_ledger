@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-10 - Season Completion Ceremony and Playoff Sim Fix (Phase 33)
+
+### Phase 33: Season Completion Ceremony and Playoff Sim Fix (REQ-SCH-009, REQ-LGE-009)
+
+After the World Series concludes, the dashboard now shows a champion announcement with stamp animation and an archive button. Also fixed a bug where playoff simulation returned a non-standard response format, causing "0 games simulated" notifications.
+
+- **Bug fix: Playoff simulation response normalization**
+  - `api/leagues/[id]/simulate.ts` was returning raw `PlayoffGameSimResult` without `dayNumber` or `games[]`
+  - Client-side `simulation-service.ts` expected standard shape, so `games` defaulted to `[]`
+  - Store broke the loop immediately, reporting `completedGames: 0`
+  - Fixed: playoff responses now return `{ dayNumber, games: [oneGame], playoff: metadata }`
+  - Extended `SimDayResult` type with optional `playoff` metadata field
+  - 2 new tests in `simulate.test.ts`
+
+- **Created `src/features/dashboard/SeasonCompletePanel.tsx` (REQ-SCH-009)**
+  - Displays `StampAnimation` with "SEASON COMPLETED" stamp
+  - Shows champion name resolved from `playoffBracket.worldSeriesChampionId`
+  - "Archive Season & Start New" button (commissioner only)
+  - Calls `POST /api/leagues/:id/archive` to create archive record and reset league to setup
+  - 7 tests in `SeasonCompletePanel.test.tsx`
+
+- **Modified `src/features/dashboard/DashboardPage.tsx`**
+  - Destructured `playoffBracket` and `isCommissioner` from `useLeague()`
+  - Added `championName` memo, `isArchiving` state, and `handleArchive` handler
+  - When `leagueStatus === 'completed'`, renders `SeasonCompletePanel` instead of `SimulationControls`
+  - 4 new tests in `DashboardPage.test.tsx`
+
+- **Fixed `tests/fixtures/mock-league.ts`**
+  - Added missing `playoffBracket: null` to `createMockLeague` defaults
+
+**REQ-SCH-009**: Season completion ceremony with stamp animation, champion display, and archive action.
+**REQ-LGE-009**: Playoff simulation now returns correct game count for frontend tracking.
+**2,472 tests** across 216 files pass. TypeScript clean.
+
 ## 2026-02-10 - Post-Simulation Dashboard Refresh and Results Notification (Phase 32)
 
 ### Phase 32: Post-Simulation Dashboard Refresh and Results Notification (REQ-STATE-014, REQ-SCH-007)

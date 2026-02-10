@@ -56,14 +56,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const baseSeed = body.seed ?? Date.now();
 
-    // Playoff simulation: one game at a time
+    // Playoff simulation: one game at a time (normalized to match regular season shape)
     if (league.status === 'playoffs') {
       const result = await simulatePlayoffGame(supabase, leagueId, baseSeed);
       if (!result) {
-        ok(res, { message: 'No playoff games remaining' }, requestId);
+        ok(res, { dayNumber: league.current_day, games: [] }, requestId);
         return;
       }
-      ok(res, result, requestId);
+      ok(res, {
+        dayNumber: league.current_day,
+        games: [{
+          gameId: `playoff-${result.seriesId}-g${result.gameNumber}`,
+          homeTeamId: result.homeTeamId,
+          awayTeamId: result.awayTeamId,
+          homeScore: result.homeScore,
+          awayScore: result.awayScore,
+        }],
+        playoff: {
+          round: result.round,
+          seriesId: result.seriesId,
+          gameNumber: result.gameNumber,
+          isPlayoffsComplete: result.isPlayoffsComplete,
+        },
+      }, requestId);
       return;
     }
 

@@ -23,6 +23,7 @@ import { createServerClient } from '@lib/supabase/server';
 import { requireAuth } from '../../../../../api/_lib/auth';
 import { loadTeamConfig, selectStartingPitcher } from '../../../../../api/_lib/load-team-config';
 import { simulateDayOnServer } from '../../../../../api/_lib/simulate-day';
+import { simulatePlayoffGame } from '../../../../../api/_lib/simulate-playoff-game';
 import {
   createMockRequest,
   createMockResponse,
@@ -35,6 +36,7 @@ const mockRequireAuth = vi.mocked(requireAuth);
 const mockLoadTeamConfig = vi.mocked(loadTeamConfig);
 const mockSelectStartingPitcher = vi.mocked(selectStartingPitcher);
 const mockSimulateDayOnServer = vi.mocked(simulateDayOnServer);
+const mockSimulatePlayoffGame = vi.mocked(simulatePlayoffGame);
 
 function mockPitcherCard(id: string): PlayerCard {
   return { playerId: id, nameFirst: 'Pitcher', nameLast: id } as PlayerCard;
@@ -414,5 +416,72 @@ describe('POST /api/leagues/:id/simulate', () => {
 
     expect(res._status).toBe(400);
     expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
+  });
+
+  // -----------------------------------------------------------------------
+  // Playoff simulation response normalization
+  // -----------------------------------------------------------------------
+
+  it('returns normalized response for playoff simulation', async () => {
+    const leagueBuilder = createMockQueryBuilder({
+      data: { status: 'playoffs', current_day: 162 },
+      error: null,
+      count: null,
+    });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(leagueBuilder) } as never);
+
+    mockSimulatePlayoffGame.mockResolvedValue({
+      homeTeamId: 't-1',
+      awayTeamId: 't-2',
+      homeScore: 4,
+      awayScore: 2,
+      round: 'WorldSeries' as any,
+      seriesId: 'ws-1',
+      gameNumber: 3,
+      isPlayoffsComplete: false,
+    });
+
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toHaveProperty('dayNumber', 162);
+    expect(res._body.data.games).toHaveLength(1);
+    expect(res._body.data.games[0]).toMatchObject({
+      gameId: 'playoff-ws-1-g3',
+      homeTeamId: 't-1',
+      awayTeamId: 't-2',
+      homeScore: 4,
+      awayScore: 2,
+    });
+    expect(res._body.data.playoff).toMatchObject({
+      round: 'WorldSeries',
+      seriesId: 'ws-1',
+      gameNumber: 3,
+      isPlayoffsComplete: false,
+    });
+  });
+
+  it('returns empty games when no playoff games remain', async () => {
+    const leagueBuilder = createMockQueryBuilder({
+      data: { status: 'playoffs', current_day: 162 },
+      error: null,
+      count: null,
+    });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(leagueBuilder) } as never);
+
+    mockSimulatePlayoffGame.mockResolvedValue(null);
+
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toHaveProperty('dayNumber', 162);
+    expect(res._body.data.games).toEqual([]);
+    expect(res._body.data).not.toHaveProperty('playoff');
   });
 });
