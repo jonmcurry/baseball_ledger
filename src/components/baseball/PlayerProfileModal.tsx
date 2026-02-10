@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PlayerProfileModal
  *
  * "Digital Baseball Card" popup (REQ-UI-009).
@@ -116,3 +116,5 @@ export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileMod
     </div>
   );
 }
+
+export default PlayerProfileModal;

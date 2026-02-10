@@ -1,4 +1,4 @@
-/**
+﻿/**
  * StandingsTable
  *
  * Division standings display with W, L, PCT, GB, RS, RA, DIFF columns.
@@ -91,3 +91,5 @@ export function StandingsTable({
     </div>
   );
 }
+
+export default StandingsTable;

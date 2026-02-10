@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ScheduleView
  *
  * Displays games for a given schedule day with scores.
@@ -50,3 +50,5 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
     </div>
   );
 }
+
+export default ScheduleView;

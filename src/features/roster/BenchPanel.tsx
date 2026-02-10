@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BenchPanel
  *
  * Bench player list with "move to lineup" action.
@@ -57,3 +57,5 @@ export function BenchPanel({ bench, onPlayerSelect, onPlayerClick }: BenchPanelP
     </div>
   );
 }
+
+export default BenchPanel;

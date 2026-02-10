@@ -1,4 +1,4 @@
-/**
+﻿/**
  * StandingsPage
  *
  * Full standings view with division standings.
@@ -30,3 +30,5 @@ export function StandingsPage() {
     </div>
   );
 }
+
+export default StandingsPage;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ProgressBar
  *
  * Linear progress indicator for simulation and bulk operations.
@@ -38,3 +38,5 @@ export function ProgressBar({
     </div>
   );
 }
+
+export default ProgressBar;

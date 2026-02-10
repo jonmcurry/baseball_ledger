@@ -1,4 +1,4 @@
-/**
+﻿/**
  * JoinLeaguePage
  *
  * Page for joining an existing league via invite code.
@@ -70,3 +70,5 @@ export function JoinLeaguePage() {
     </div>
   );
 }
+
+export default JoinLeaguePage;

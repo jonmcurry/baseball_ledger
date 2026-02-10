@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Toggle
  *
  * Accessible switch component with vintage styling.
@@ -51,3 +51,5 @@ export function Toggle({
     </div>
   );
 }
+
+export default Toggle;

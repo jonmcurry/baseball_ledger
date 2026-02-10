@@ -1,4 +1,4 @@
-/**
+﻿/**
  * StatTable
  *
  * Generic sortable statistics table with monospace font alignment.
@@ -281,3 +281,5 @@ function renderLoadingRows(colCount: number) {
     </tr>
   ));
 }
+
+export default StatTable;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AuthGuard
  *
  * Route guard that checks authentication status.
@@ -21,3 +21,5 @@ export function AuthGuard() {
 
   return <Outlet />;
 }
+
+export default AuthGuard;

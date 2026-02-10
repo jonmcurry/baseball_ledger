@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ErrorBanner
  *
  * Severity-based alert banner with optional auto-dismiss.
@@ -63,3 +63,5 @@ export function ErrorBanner({
     </div>
   );
 }
+
+export default ErrorBanner;

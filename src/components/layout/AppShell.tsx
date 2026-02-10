@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AppShell
  *
  * Main layout wrapper with skip-to-content link, centered max-width container,
@@ -33,3 +33,5 @@ export function AppShell({ children }: AppShellProps) {
     </div>
   );
 }
+
+export default AppShell;

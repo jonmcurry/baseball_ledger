@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Input
  *
  * Text input with label, error state, and aria-describedby for validation.
@@ -62,3 +62,5 @@ export function Input({
     </div>
   );
 }
+
+export default Input;

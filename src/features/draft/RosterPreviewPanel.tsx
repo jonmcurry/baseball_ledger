@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RosterPreviewPanel
  *
  * Shows the current team roster during draft.
@@ -39,3 +39,5 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
     </div>
   );
 }
+
+export default RosterPreviewPanel;

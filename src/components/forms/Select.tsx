@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Select
  *
  * Dropdown select with label and error state.
@@ -73,3 +73,5 @@ export function Select({
     </div>
   );
 }
+
+export default Select;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ArchivePage
  *
  * Historical season archive and records.
@@ -73,3 +73,5 @@ export function ArchivePage() {
     </div>
   );
 }
+
+export default ArchivePage;

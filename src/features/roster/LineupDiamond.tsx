@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LineupDiamond
  *
  * Wraps DiamondField with lineup editing capability.
@@ -66,3 +66,5 @@ export function LineupDiamond({ starters, isEditable, onAssign, onPlayerClick }:
     </div>
   );
 }
+
+export default LineupDiamond;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GameViewerPage
  *
  * Play-by-play game viewer with line score and box score.
@@ -172,3 +172,5 @@ export function GameViewerPage() {
     </div>
   );
 }
+
+export default GameViewerPage;

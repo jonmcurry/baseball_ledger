@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SeasonList
  *
  * List of archived seasons for selection.
@@ -43,3 +43,5 @@ export function SeasonList({ seasons, onSelect }: SeasonListProps) {
     </div>
   );
 }
+
+export default SeasonList;

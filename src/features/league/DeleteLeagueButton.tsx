@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DeleteLeagueButton
  *
  * Destructive action with typed-name confirmation (REQ-LGE-010).
@@ -120,3 +120,5 @@ export function DeleteLeagueButton({
     </>
   );
 }
+
+export default DeleteLeagueButton;

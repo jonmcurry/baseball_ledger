@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PlayByPlayFeed
  *
  * Scrolling play-by-play entries with auto-scroll.
@@ -50,3 +50,5 @@ export function PlayByPlayFeed({ plays }: PlayByPlayFeedProps) {
     </div>
   );
 }
+
+export default PlayByPlayFeed;

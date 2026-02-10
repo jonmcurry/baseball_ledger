@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DiamondField
  *
  * SVG baseball diamond showing 9 defensive positions with player names.
@@ -161,3 +161,5 @@ export function DiamondField({
     </svg>
   );
 }
+
+export default DiamondField;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TypewriterText
  *
  * Character-by-character text reveal with blinking cursor.
@@ -62,3 +62,5 @@ export function TypewriterText({
     </span>
   );
 }
+
+export default TypewriterText;

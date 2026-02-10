@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TransactionsPage
  *
  * Player transactions, trades, and waiver wire.
@@ -175,3 +175,5 @@ export function TransactionsPage() {
     </div>
   );
 }
+
+export default TransactionsPage;

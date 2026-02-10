@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LoadingLedger
  *
  * Animated "Processing Ledger..." loading indicator with 3 staggered dots.
@@ -39,3 +39,5 @@ export function LoadingLedger({ message = 'Processing Ledger...' }: LoadingLedge
     </div>
   );
 }
+
+export default LoadingLedger;

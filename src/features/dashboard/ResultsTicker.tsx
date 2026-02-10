@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ResultsTicker
  *
  * Horizontal scrolling game results feed (REQ-UI-007).
@@ -45,3 +45,5 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
     </div>
   );
 }
+
+export default ResultsTicker;

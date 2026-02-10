@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DraftTicker
  *
  * Vertical scrolling list of draft picks.
@@ -38,3 +38,5 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
     </div>
   );
 }
+
+export default DraftTicker;

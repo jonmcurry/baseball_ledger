@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LeagueConfigPage
  *
  * League creation and configuration page.
@@ -58,3 +58,5 @@ export function LeagueConfigPage() {
     </div>
   );
 }
+
+export default LeagueConfigPage;

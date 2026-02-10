@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PlayerCardDisplay
  *
  * Modal displaying a "Digital Baseball Card" with vintage styling.
@@ -133,3 +133,5 @@ function StatCell({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+export default PlayerCardDisplay;

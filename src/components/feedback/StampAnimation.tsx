@@ -1,4 +1,4 @@
-/**
+﻿/**
  * StampAnimation
  *
  * REQ-SCH-009: "SEASON COMPLETED" stamp animation.
@@ -23,3 +23,5 @@ export function StampAnimation({ text = 'SEASON COMPLETED', isVisible }: StampAn
     </div>
   );
 }
+
+export default StampAnimation;

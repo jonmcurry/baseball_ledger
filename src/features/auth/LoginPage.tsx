@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 
@@ -90,3 +90,5 @@ export function LoginPage() {
     </div>
   );
 }
+
+export default LoginPage;

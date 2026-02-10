@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Header
  *
  * Navigation header with league info, user display, and nav links.
@@ -90,3 +90,5 @@ export function Header({
     </header>
   );
 }
+
+export default Header;

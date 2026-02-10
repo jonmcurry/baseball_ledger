@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SimulationControls
  *
  * Button panel for advancing the simulation: Day, Week, Month, Season.
@@ -60,3 +60,5 @@ export function SimulationControls({
     </div>
   );
 }
+
+export default SimulationControls;

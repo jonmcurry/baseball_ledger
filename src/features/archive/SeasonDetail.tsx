@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SeasonDetail
  *
  * Drill-down: standings + bracket + champion for an archived season.
@@ -51,3 +51,5 @@ export function SeasonDetail({ year, champion, standings }: SeasonDetailProps) {
     </div>
   );
 }
+
+export default SeasonDetail;

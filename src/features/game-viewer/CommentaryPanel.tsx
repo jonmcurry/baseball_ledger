@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CommentaryPanel
  *
  * Displays AI commentary for game plays (REQ-UI-010).
@@ -44,3 +44,5 @@ export function CommentaryPanel({ entries }: CommentaryPanelProps) {
     </div>
   );
 }
+
+export default CommentaryPanel;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TradeForm
  *
  * Propose a trade: select team, select players on each side.
@@ -157,3 +157,5 @@ export function TradeForm({
     </div>
   );
 }
+
+export default TradeForm;

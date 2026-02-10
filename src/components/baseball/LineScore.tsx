@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LineScore
  *
  * Classic baseball line score table: innings, R/H/E totals.
@@ -83,3 +83,5 @@ export function LineScore({
     </div>
   );
 }
+
+export default LineScore;

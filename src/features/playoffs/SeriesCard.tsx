@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SeriesCard
  *
  * Individual playoff series card showing matchup and score.
@@ -53,3 +53,5 @@ export function SeriesCard({ series, homeTeam, awayTeam }: SeriesCardProps) {
     </div>
   );
 }
+
+export default SeriesCard;

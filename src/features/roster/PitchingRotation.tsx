@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PitchingRotation
  *
  * SP1-SP4 with next-up indicator, bullpen, and closer.
@@ -102,3 +102,5 @@ export function PitchingRotation({
     </div>
   );
 }
+
+export default PitchingRotation;

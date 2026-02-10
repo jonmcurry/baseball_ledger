@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phase 22)
+
+### Phase 22: Polish + NFR Compliance (REQ-NFR-018, REQ-ARCH-004a)
+- **Self-hosted fonts** (REQ-NFR-018): No more Google Fonts CDN dependency
+  - Downloaded woff2 variable font files for Roboto Slab and JetBrains Mono (Latin subset)
+  - Created `src/styles/fonts.css` with `@font-face` declarations (`font-display: swap`)
+  - Removed Google Fonts CDN links from `index.html`
+  - Added `fonts.css` import to `main.tsx`
+- **Default exports** (REQ-ARCH-004a): Added `export default ComponentName` to all 61 component/feature `.tsx` files
+  - Named exports preserved for backward compatibility
+  - Includes class component (ErrorBoundary)
+- **Updated `tests/TRACEABILITY.md`** with Phase 17-22 requirement mappings
+- **Cleaned up** temp script file (Rule 5)
+
+### Metrics
+- Vitest: 2,218 -> 2,221 (+3 tests, 192 test files)
+- New test file: `fonts.test.ts` (3 tests: font files exist, no CDN refs)
+- TypeScript: clean build, no errors
+- Vite: production build succeeds
+
 ## 2026-02-10 - SRD Gap Closure (Phase 21)
 
 ### Phase 21: PlayerProfileModal + AI Commentary (REQ-UI-009, REQ-UI-010, REQ-DFT-005)

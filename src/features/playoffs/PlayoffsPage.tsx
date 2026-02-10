@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PlayoffsPage
  *
  * Playoff bracket viewer with series progress.
@@ -59,3 +59,5 @@ export function PlayoffsPage() {
     </div>
   );
 }
+
+export default PlayoffsPage;

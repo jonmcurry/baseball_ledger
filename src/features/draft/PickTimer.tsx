@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PickTimer
  *
  * Countdown timer for draft picks (60s default).
@@ -38,3 +38,5 @@ export function PickTimer({ timeRemaining, isActive }: PickTimerProps) {
     </div>
   );
 }
+
+export default PickTimer;

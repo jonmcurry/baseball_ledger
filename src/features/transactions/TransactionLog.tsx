@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TransactionLog
  *
  * History list of transactions.
@@ -54,3 +54,5 @@ export function TransactionLog({ transactions }: TransactionLogProps) {
     </div>
   );
 }
+
+export default TransactionLog;

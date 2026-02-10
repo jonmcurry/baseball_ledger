@@ -1,4 +1,4 @@
-/**
+﻿/**
  * StatsPage
  *
  * League statistics with batting/pitching leader boards.
@@ -200,3 +200,5 @@ export function StatsPage() {
     </div>
   );
 }
+
+export default StatsPage;

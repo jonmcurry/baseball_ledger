@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardPage
  *
  * Main league dashboard with standings, today's schedule, and simulation controls.
@@ -106,3 +106,5 @@ export function DashboardPage() {
     </div>
   );
 }
+
+export default DashboardPage;

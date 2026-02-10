@@ -102,7 +102,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-NFR-011 PapaParse streaming | `tests/unit/lib/csv/parser.test.ts` |
 | REQ-NFR-014 PostgreSQL transactions | `tests/unit/api/_lib/simulate-day.test.ts` |
 | REQ-NFR-017 Code splitting | `vite.config.ts` (manual chunks config) |
-| REQ-NFR-018 Font optimization | `index.html` (preload + subset) |
+| REQ-NFR-018 Self-hosted fonts | `tests/unit/styles/fonts.test.ts` |
 
 ## UI/Component Requirements
 
@@ -140,7 +140,9 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-UI-006 Transactions page | `tests/unit/features/transactions/TransactionsPage.test.tsx`, `tests/unit/features/transactions/AddDropForm.test.tsx`, `tests/unit/features/transactions/TradeForm.test.tsx`, `tests/unit/features/transactions/TransactionLog.test.tsx` |
 | REQ-UI-007 Playoffs page | `tests/unit/features/playoffs/PlayoffsPage.test.tsx`, `tests/unit/features/playoffs/PlayoffBracketView.test.tsx`, `tests/unit/features/playoffs/SeriesCard.test.tsx` |
 | REQ-UI-008 Archive page | `tests/unit/features/archive/ArchivePage.test.tsx`, `tests/unit/features/archive/SeasonDetail.test.tsx` |
-| REQ-UI-009 Playoff sim lock | `tests/unit/features/dashboard/SimulationControls.test.tsx` |
+| REQ-UI-009 Player profile modal | `tests/unit/components/baseball/PlayerProfileModal.test.tsx` |
+| REQ-UI-010 AI commentary | `tests/unit/features/game-viewer/CommentaryPanel.test.tsx` |
+| REQ-UI-SIM Playoff sim lock | `tests/unit/features/dashboard/SimulationControls.test.tsx` |
 
 ## Infrastructure Requirements (Phase 12-14)
 
@@ -166,3 +168,25 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-TEST-012 Performance benchmarks | `tests/bench/simulation.bench.ts`, `tests/bench/csv-parse.bench.ts` |
 | REQ-TEST-014 Determinism test | `tests/unit/lib/simulation/determinism.test.ts` |
 | REQ-TEST-017 Multi-browser E2E | `playwright.config.ts` (Firefox, WebKit projects) |
+
+## Phase 17-22: SRD Gap Closure
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-AI-002 Hit-and-run decision | `tests/unit/lib/simulation/manager-ai.test.ts` (hitAndRun describe) |
+| REQ-AI-002 Pinch-hit decision | `tests/unit/lib/simulation/manager-ai.test.ts` (pinchHit describe) |
+| REQ-AI-002 Aggressive baserunning | `tests/unit/lib/simulation/manager-ai.test.ts` (aggressiveBaserunning describe) |
+| REQ-DFT-001 Draft engine orchestrator | `tests/unit/lib/draft/draft-engine.test.ts` |
+| REQ-DFT-002 Draft turn validation | `tests/unit/lib/draft/draft-engine.test.ts` |
+| REQ-DFT-005 Draft table stat columns | `tests/unit/features/draft/AvailablePlayersTable.test.tsx` |
+| REQ-DFT-006 AI drafter compositor | `tests/unit/lib/draft/ai-drafter.test.ts` |
+| REQ-DFT-007 AI draft reasoning | `tests/unit/lib/draft/ai-drafter.test.ts` |
+| REQ-RST-005 Transaction service | `tests/unit/services/transaction-service.test.ts` |
+| REQ-LGE-003 Invite key display | `tests/unit/features/league/InviteKeyDisplay.test.tsx` |
+| REQ-LGE-010 Delete league | `tests/unit/features/league/DeleteLeagueButton.test.tsx` |
+| REQ-UI-007 Results ticker | `tests/unit/features/dashboard/ResultsTicker.test.tsx` |
+| REQ-STS-005 FIP calculation | `tests/unit/lib/stats/derived.test.ts` (FIP describe) |
+| REQ-UI-009 Player profile modal | `tests/unit/components/baseball/PlayerProfileModal.test.tsx` |
+| REQ-UI-010 Commentary panel | `tests/unit/features/game-viewer/CommentaryPanel.test.tsx` |
+| REQ-NFR-018 Self-hosted fonts | `tests/unit/styles/fonts.test.ts` |
+| REQ-ARCH-004a Default exports | All `src/components/` and `src/features/` `.tsx` files |

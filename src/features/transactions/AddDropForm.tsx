@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AddDropForm
  *
  * Drop a player from roster + add from player pool.
@@ -60,3 +60,5 @@ export function AddDropForm({ roster, onDrop }: AddDropFormProps) {
     </div>
   );
 }
+
+export default AddDropForm;

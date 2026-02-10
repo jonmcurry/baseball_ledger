@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BoxScoreDisplay
  *
  * Full box score with line score, batting lines, and pitching lines.
@@ -121,3 +121,5 @@ export function BoxScoreDisplay({
     </div>
   );
 }
+
+export default BoxScoreDisplay;

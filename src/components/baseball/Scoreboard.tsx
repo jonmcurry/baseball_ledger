@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Scoreboard
  *
  * Compact game state display showing score, inning, outs, and bases.
@@ -84,3 +84,5 @@ export function Scoreboard({
     </div>
   );
 }
+
+export default Scoreboard;

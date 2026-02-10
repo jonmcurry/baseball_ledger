@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LeagueConfigForm
  *
  * Form sub-component for league creation/configuration.
@@ -128,3 +128,5 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
     </form>
   );
 }
+
+export default LeagueConfigForm;

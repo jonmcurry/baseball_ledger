@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AvailablePlayersTable
  *
  * Sortable, filterable table of available players for drafting.
@@ -180,3 +180,5 @@ export function AvailablePlayersTable({ players, onSelect, onPlayerClick, disabl
     </div>
   );
 }
+
+export default AvailablePlayersTable;

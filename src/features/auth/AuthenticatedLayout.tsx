@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AuthenticatedLayout
  *
  * Composes AppShell + Header + Footer for authenticated routes.
@@ -34,3 +34,5 @@ export function AuthenticatedLayout() {
     </AppShell>
   );
 }
+
+export default AuthenticatedLayout;

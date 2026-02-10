@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PlayoffBracketView
  *
  * Visual bracket: WC -> DS -> CS -> WS.
@@ -54,3 +54,5 @@ export function PlayoffBracketView({ bracket, teams }: PlayoffBracketViewProps) 
     </div>
   );
 }
+
+export default PlayoffBracketView;

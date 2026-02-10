@@ -1,4 +1,4 @@
-/**
+﻿/**
  * RosterPage
  *
  * Team roster management with lineup configuration.
@@ -163,3 +163,5 @@ export function RosterPage() {
     </div>
   );
 }
+
+export default RosterPage;

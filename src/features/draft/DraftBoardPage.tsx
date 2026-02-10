@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DraftBoardPage
  *
  * Live draft board with pick timer and player pool.
@@ -140,3 +140,5 @@ export function DraftBoardPage() {
     </div>
   );
 }
+
+export default DraftBoardPage;

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Footer
  *
  * Simple footer with app name and role="contentinfo".
@@ -16,3 +16,5 @@ export function Footer() {
     </footer>
   );
 }
+
+export default Footer;

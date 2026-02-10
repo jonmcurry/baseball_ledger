@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GameStatePanel
  *
  * Live game state: Scoreboard + BaseIndicator + outs display.
@@ -38,3 +38,5 @@ export function GameStatePanel({ gameState, homeTeam, awayTeam }: GameStatePanel
     </div>
   );
 }
+
+export default GameStatePanel;

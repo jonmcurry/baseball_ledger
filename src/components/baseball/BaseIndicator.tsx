@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BaseIndicator
  *
  * SVG diamond showing base runner positions.
@@ -99,3 +99,5 @@ export function BaseIndicator({
     </svg>
   );
 }
+
+export default BaseIndicator;

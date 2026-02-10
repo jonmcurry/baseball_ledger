@@ -1,4 +1,4 @@
-/**
+﻿/**
  * InviteKeyDisplay
  *
  * Shows the league invite key with a copy-to-clipboard button (REQ-LGE-003).
@@ -39,3 +39,5 @@ export function InviteKeyDisplay({ inviteKey }: InviteKeyDisplayProps) {
     </div>
   );
 }
+
+export default InviteKeyDisplay;

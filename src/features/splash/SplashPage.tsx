@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SplashPage
  *
  * Landing page with "Create a League" and "Join a League" options.
@@ -26,3 +26,5 @@ export function SplashPage() {
     </div>
   );
 }
+
+export default SplashPage;

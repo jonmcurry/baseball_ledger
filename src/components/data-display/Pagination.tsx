@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Pagination
  *
  * Previous/Next page navigation with boundary disabling.
@@ -52,3 +52,5 @@ export function Pagination({
     </nav>
   );
 }
+
+export default Pagination;
