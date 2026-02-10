@@ -42,6 +42,7 @@ export {
   startDraft,
   submitPick,
   fetchDraftState,
+  autoPick,
 } from './draft-service';
 
 export {

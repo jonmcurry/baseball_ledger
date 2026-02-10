@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phases 17-18)
+
+### Phase 17: Manager AI Completion (REQ-AI-002)
+- Extended `GameSituation` with optional `bestBenchOps`, `batterOps`, `platoonAdvantage` fields
+- Added `evaluateHitAndRunDecision()` -- runner on 1B only, < 2 outs, baseFactor = contactRate
+- Added `evaluatePinchHitDecision()` -- bench OPS vs batter OPS, platoon advantage multiplier
+- Added `evaluateAggressiveBaserunning()` -- extra-base advance on singles, baseFactor = runnerSpeed
+- Integrated all 3 decisions into `game-runner.ts`:
+  - Hit-and-run: DP converted to GROUND_OUT_ADVANCE, runner advances extra base on single
+  - Pinch-hit: best bench player by OPS swaps into lineup permanently
+  - Aggressive baserunning: runner on 2B scores on single, runner on 1B advances to 3B
+- Added `homeBench`/`awayBench` to `RunGameConfig`, local mutable batter card copies for determinism
+
+### Phase 18: Draft Engine + AI Drafter (REQ-DFT-001/002/006/007/008, REQ-AI-008)
+- **Created `src/lib/draft/draft-engine.ts`** -- State machine composing draft-order + ai-strategy + roster-validator
+  - `initializeDraft()`, `getCurrentPickingTeam()`, `getAvailablePool()`, `submitDraftPick()`, `isDraftComplete()`, `completeDraft()`
+  - Turn validation, snake-draft order management, post-draft roster auto-fill
+- **Created `src/lib/draft/ai-drafter.ts`** -- Composes ai-strategy + template-draft-reasoning
+  - `makeAIPick()` selects player via AI strategy, generates template-based reasoning
+  - `runFullAIDraft()` iterates all picks for AI-controlled teams, skips human teams
+- **Updated `api/leagues/[id]/draft.ts`**:
+  - `handleStart` generates and stores draft order via `generateDraftOrder()`
+  - `handlePick` validates turn order via `getPickingTeam()`, checks for completion, transitions to `regular_season`
+  - Added `handleAutoPick` action for timer-expired auto-picks (commissioner-only)
+- **Updated `src/services/draft-service.ts`** -- added `autoPick()` function
+- **Updated `src/services/index.ts`** -- exported `autoPick`
+
+### Metrics
+- Vitest: 2,099 -> 2,173 (+74 tests, 185 test files)
+- New test files: `draft-engine.test.ts` (33), `ai-drafter.test.ts` (12)
+- Updated: `manager-ai.test.ts` (+17), `game-runner.test.ts` (+4), `draft.test.ts` (+5), `draft-service.test.ts` (+2)
+- TypeScript: clean build, no errors
+- Vite: production build succeeds
+
 ## 2026-02-10 - SRD Gap Closure (Phases 12-16)
 
 ### Phase 12: Database Schema + Config

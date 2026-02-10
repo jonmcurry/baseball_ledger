@@ -33,3 +33,11 @@ export async function fetchDraftState(leagueId: string): Promise<DraftState> {
   const response = await apiGet<DraftState>(`/api/leagues/${leagueId}/draft`);
   return response.data;
 }
+
+export async function autoPick(leagueId: string): Promise<{ status: string }> {
+  const response = await apiPost<{ status: string }>(
+    `/api/leagues/${leagueId}/draft`,
+    { action: 'auto-pick' },
+  );
+  return response.data;
+}

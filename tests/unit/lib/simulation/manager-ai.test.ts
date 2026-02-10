@@ -3,6 +3,9 @@ import {
   evaluateBuntDecision,
   evaluateIntentionalWalkDecision,
   evaluatePitcherPullDecision,
+  evaluateHitAndRunDecision,
+  evaluatePinchHitDecision,
+  evaluateAggressiveBaserunning,
   computeDecisionScore,
   getInningMultiplier,
   type GameSituation,
@@ -236,6 +239,218 @@ describe('evaluatePitcherPullDecision (REQ-AI-002)', () => {
     }
 
     expect(aggPulls).toBeGreaterThan(conPulls);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evaluateHitAndRunDecision (REQ-AI-002)
+// ---------------------------------------------------------------------------
+describe('evaluateHitAndRunDecision (REQ-AI-002)', () => {
+  it('never triggers without runner on 1B', () => {
+    const sit = baseSituation({ runnerOnFirst: false });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('never triggers with runner on 2B (only 1B valid)', () => {
+    const sit = baseSituation({ runnerOnFirst: false, runnerOnSecond: true });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('never triggers with runners on 1B and 2B', () => {
+    const sit = baseSituation({ runnerOnFirst: true, runnerOnSecond: true });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('never triggers with 2 outs', () => {
+    const sit = baseSituation({ outs: 2 });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('aggressive manager triggers more often than conservative', () => {
+    const sit = baseSituation({
+      inning: 7, runnerOnFirst: true, runnerOnSecond: false, runnerOnThird: false,
+      outs: 0, batterContactRate: 0.85, scoreDiff: 0,
+    });
+    let aggCount = 0;
+    let conCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))) aggCount++;
+      if (evaluateHitAndRunDecision(MANAGER_PROFILES.conservative, sit, new SeededRNG(i))) conCount++;
+    }
+
+    expect(aggCount).toBeGreaterThan(conCount);
+  });
+
+  it('higher contact rate increases likelihood', () => {
+    const sitHigh = baseSituation({
+      runnerOnFirst: true, runnerOnSecond: false, runnerOnThird: false,
+      outs: 0, batterContactRate: 0.95,
+    });
+    const sitLow = baseSituation({
+      runnerOnFirst: true, runnerOnSecond: false, runnerOnThird: false,
+      outs: 0, batterContactRate: 0.30,
+    });
+    let highCount = 0;
+    let lowCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluateHitAndRunDecision(MANAGER_PROFILES.balanced, sitHigh, new SeededRNG(i))) highCount++;
+      if (evaluateHitAndRunDecision(MANAGER_PROFILES.balanced, sitLow, new SeededRNG(i))) lowCount++;
+    }
+
+    expect(highCount).toBeGreaterThan(lowCount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evaluatePinchHitDecision (REQ-AI-002)
+// ---------------------------------------------------------------------------
+describe('evaluatePinchHitDecision (REQ-AI-002)', () => {
+  it('never triggers without bench OPS data', () => {
+    const sit = baseSituation({});
+    for (let i = 0; i < 50; i++) {
+      expect(evaluatePinchHitDecision(MANAGER_PROFILES.analytical, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('never triggers when bench OPS is not better than batter', () => {
+    const sit = baseSituation({ bestBenchOps: 0.700, batterOps: 0.750 });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluatePinchHitDecision(MANAGER_PROFILES.analytical, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('never triggers when bench OPS equals batter OPS', () => {
+    const sit = baseSituation({ bestBenchOps: 0.800, batterOps: 0.800 });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluatePinchHitDecision(MANAGER_PROFILES.analytical, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('analytical manager pinch-hits more often than conservative', () => {
+    const sit = baseSituation({
+      inning: 8, bestBenchOps: 0.900, batterOps: 0.650, platoonAdvantage: 1.2,
+    });
+    let anaCount = 0;
+    let conCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluatePinchHitDecision(MANAGER_PROFILES.analytical, sit, new SeededRNG(i))) anaCount++;
+      if (evaluatePinchHitDecision(MANAGER_PROFILES.conservative, sit, new SeededRNG(i))) conCount++;
+    }
+
+    expect(anaCount).toBeGreaterThan(conCount);
+  });
+
+  it('larger OPS differential increases likelihood', () => {
+    const sitBig = baseSituation({ bestBenchOps: 0.950, batterOps: 0.550, platoonAdvantage: 1.0 });
+    const sitSmall = baseSituation({ bestBenchOps: 0.800, batterOps: 0.750, platoonAdvantage: 1.0 });
+    let bigCount = 0;
+    let smallCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluatePinchHitDecision(MANAGER_PROFILES.balanced, sitBig, new SeededRNG(i))) bigCount++;
+      if (evaluatePinchHitDecision(MANAGER_PROFILES.balanced, sitSmall, new SeededRNG(i))) smallCount++;
+    }
+
+    expect(bigCount).toBeGreaterThan(smallCount);
+  });
+
+  it('platoon advantage increases likelihood', () => {
+    const sitPlatoon = baseSituation({
+      bestBenchOps: 0.850, batterOps: 0.700, platoonAdvantage: 1.3,
+    });
+    const sitNeutral = baseSituation({
+      bestBenchOps: 0.850, batterOps: 0.700, platoonAdvantage: 1.0,
+    });
+    let platoonCount = 0;
+    let neutralCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluatePinchHitDecision(MANAGER_PROFILES.balanced, sitPlatoon, new SeededRNG(i))) platoonCount++;
+      if (evaluatePinchHitDecision(MANAGER_PROFILES.balanced, sitNeutral, new SeededRNG(i))) neutralCount++;
+    }
+
+    expect(platoonCount).toBeGreaterThanOrEqual(neutralCount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evaluateAggressiveBaserunning (REQ-AI-002)
+// ---------------------------------------------------------------------------
+describe('evaluateAggressiveBaserunning (REQ-AI-002)', () => {
+  it('never triggers without runner on 1B or 2B', () => {
+    const sit = baseSituation({ runnerOnFirst: false, runnerOnSecond: false });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateAggressiveBaserunning(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('never triggers with 2 outs', () => {
+    const sit = baseSituation({ outs: 2 });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateAggressiveBaserunning(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))).toBe(false);
+    }
+  });
+
+  it('aggressive manager triggers more than conservative', () => {
+    const sit = baseSituation({
+      runnerOnFirst: true, outs: 0, runnerSpeed: 0.8,
+    });
+    let aggCount = 0;
+    let conCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluateAggressiveBaserunning(MANAGER_PROFILES.aggressive, sit, new SeededRNG(i))) aggCount++;
+      if (evaluateAggressiveBaserunning(MANAGER_PROFILES.conservative, sit, new SeededRNG(i))) conCount++;
+    }
+
+    expect(aggCount).toBeGreaterThan(conCount);
+  });
+
+  it('faster runner increases likelihood', () => {
+    const sitFast = baseSituation({ runnerOnFirst: true, outs: 0, runnerSpeed: 0.95 });
+    const sitSlow = baseSituation({ runnerOnFirst: true, outs: 0, runnerSpeed: 0.25 });
+    let fastCount = 0;
+    let slowCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluateAggressiveBaserunning(MANAGER_PROFILES.balanced, sitFast, new SeededRNG(i))) fastCount++;
+      if (evaluateAggressiveBaserunning(MANAGER_PROFILES.balanced, sitSlow, new SeededRNG(i))) slowCount++;
+    }
+
+    expect(fastCount).toBeGreaterThan(slowCount);
+  });
+
+  it('late innings increase likelihood via multiplier', () => {
+    const early = baseSituation({ runnerOnFirst: true, outs: 0, runnerSpeed: 0.7, inning: 3 });
+    const late = baseSituation({ runnerOnFirst: true, outs: 0, runnerSpeed: 0.7, inning: 8 });
+    let earlyCount = 0;
+    let lateCount = 0;
+    const trials = 500;
+
+    for (let i = 0; i < trials; i++) {
+      if (evaluateAggressiveBaserunning(MANAGER_PROFILES.balanced, early, new SeededRNG(i))) earlyCount++;
+      if (evaluateAggressiveBaserunning(MANAGER_PROFILES.balanced, late, new SeededRNG(i))) lateCount++;
+    }
+
+    expect(lateCount).toBeGreaterThanOrEqual(earlyCount);
   });
 });
 

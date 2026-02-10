@@ -38,7 +38,15 @@ import { resolvePlateAppearance } from './plate-appearance';
 import { resolveOutcome } from './outcome-resolver';
 import { computeEffectiveGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
 import type { PitcherGameState } from './pitching';
-import { evaluateStealDecision, evaluateBuntDecision, evaluateIntentionalWalkDecision, evaluatePitcherPullDecision } from './manager-ai';
+import {
+  evaluateStealDecision,
+  evaluateBuntDecision,
+  evaluateIntentionalWalkDecision,
+  evaluatePitcherPullDecision,
+  evaluateHitAndRunDecision,
+  evaluatePinchHitDecision,
+  evaluateAggressiveBaserunning,
+} from './manager-ai';
 import type { GameSituation } from './manager-ai';
 import { resolveBunt } from './bunt-resolver';
 import { attemptStolenBase, canAttemptStolenBase } from './stolen-base';
@@ -75,6 +83,8 @@ export interface RunGameConfig {
   awayCloser: PlayerCard | null;
   homeManagerStyle: ManagerStyle;
   awayManagerStyle: ManagerStyle;
+  homeBench?: PlayerCard[];
+  awayBench?: PlayerCard[];
 }
 
 /**
@@ -96,6 +106,9 @@ interface GameTracker {
   awayCloser: PlayerCard | null;
   homeBatterIndex: number;
   awayBatterIndex: number;
+  homeBenchAvailable: PlayerCard[];
+  awayBenchAvailable: PlayerCard[];
+  usedPinchHitters: Set<string>;
   homeHits: number;
   awayHits: number;
   homeErrors: number;
@@ -130,6 +143,13 @@ function isStrikeout(outcome: OutcomeCategory): boolean {
   );
 }
 
+function isSingleOutcome(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.SINGLE_CLEAN ||
+    outcome === OutcomeCategory.SINGLE_ADVANCE
+  );
+}
+
 function countRunnersOnBase(bases: BaseState): number {
   let count = 0;
   if (bases.first !== null) count++;
@@ -138,14 +158,27 @@ function countRunnersOnBase(bases: BaseState): number {
   return count;
 }
 
+/** Estimate OPS from card attributes (power, contactRate, discipline). */
+function estimateOps(card: PlayerCard): number {
+  return (card.contactRate * 0.4) + (card.power * 0.4) + (card.discipline * 0.2);
+}
+
 function buildGameSituation(
   state: GameState,
   batterCard: PlayerCard,
   pitcherState: PitcherGameState,
   pitcherCard: PlayerCard,
+  benchPlayers?: PlayerCard[],
 ): GameSituation {
   const startingGrade = pitcherCard.pitching?.grade ?? 1;
   const effectiveGrade = computeEffectiveGrade(pitcherCard, pitcherState.inningsPitched);
+
+  // Compute bench OPS for pinch-hit decisions
+  let bestBenchOps: number | undefined;
+  if (benchPlayers && benchPlayers.length > 0) {
+    bestBenchOps = Math.max(...benchPlayers.map(estimateOps));
+  }
+  const batterOps = estimateOps(batterCard);
 
   return {
     inning: state.inning,
@@ -162,6 +195,8 @@ function buildGameSituation(
     pitcherEffectiveGradePct: effectiveGrade / startingGrade,
     firstBaseOpen: state.bases.first === null,
     runnerInScoringPosition: state.bases.second !== null || state.bases.third !== null,
+    bestBenchOps,
+    batterOps,
   };
 }
 
@@ -227,6 +262,10 @@ function recordHitStats(battingLine: BattingLine, outcome: OutcomeCategory): voi
 export function runGame(config: RunGameConfig): GameResult {
   const rng = new SeededRNG(config.seed);
 
+  // Create local mutable copies of batter cards to allow pinch-hit swaps
+  const localHomeBatterCards = new Map(config.homeBatterCards);
+  const localAwayBatterCards = new Map(config.awayBatterCards);
+
   // Build initial TeamState objects
   const homeTeam: TeamState = {
     teamId: config.homeTeamId,
@@ -239,7 +278,7 @@ export function runGame(config: RunGameConfig): GameResult {
     currentPitcher: config.homeStartingPitcher,
     bullpen: [...config.homeBullpen],
     closer: config.homeCloser,
-    benchPlayers: [],
+    benchPlayers: config.homeBench ? [...config.homeBench] : [],
     pitcherStats: { IP: 0, H: 0, R: 0, ER: 0, BB: 0, SO: 0, HR: 0, BF: 0, pitchCount: 0 },
     pitchersUsed: [config.homeStartingPitcher],
   };
@@ -255,7 +294,7 @@ export function runGame(config: RunGameConfig): GameResult {
     currentPitcher: config.awayStartingPitcher,
     bullpen: [...config.awayBullpen],
     closer: config.awayCloser,
-    benchPlayers: [],
+    benchPlayers: config.awayBench ? [...config.awayBench] : [],
     pitcherStats: { IP: 0, H: 0, R: 0, ER: 0, BB: 0, SO: 0, HR: 0, BF: 0, pitchCount: 0 },
     pitchersUsed: [config.awayStartingPitcher],
   };
@@ -283,6 +322,9 @@ export function runGame(config: RunGameConfig): GameResult {
     awayCloser: config.awayCloser,
     homeBatterIndex: 0,
     awayBatterIndex: 0,
+    homeBenchAvailable: config.homeBench ? [...config.homeBench] : [],
+    awayBenchAvailable: config.awayBench ? [...config.awayBench] : [],
+    usedPinchHitters: new Set(),
     homeHits: 0,
     awayHits: 0,
     homeErrors: 0,
@@ -314,23 +356,24 @@ export function runGame(config: RunGameConfig): GameResult {
     tracker.consecutiveHitsWalks = 0;
 
     const isTopHalf = state.halfInning === 'top';
-    const batterCards = isTopHalf ? config.awayBatterCards : config.homeBatterCards;
+    const batterCards = isTopHalf ? localAwayBatterCards : localHomeBatterCards;
     const lineup = isTopHalf ? config.awayLineup : config.homeLineup;
     const fieldingPitcher = isTopHalf ? tracker.homeCurrentPitcher : tracker.awayCurrentPitcher;
     const fieldingPitcherState = isTopHalf ? tracker.homePitcherState : tracker.awayPitcherState;
     const fieldingProfile = isTopHalf ? homeProfile : awayProfile;
     const battingProfile = isTopHalf ? awayProfile : homeProfile;
     const fieldingSide: 'home' | 'away' = isTopHalf ? 'home' : 'away';
+    const battingBench = isTopHalf ? tracker.awayBenchAvailable : tracker.homeBenchAvailable;
 
     // Process plate appearances until 3 outs
     while (state.outs < 3 && !isGameOver(state) && totalPAs < MAX_PLATE_APPEARANCES) {
       const batterIdx = isTopHalf ? tracker.awayBatterIndex : tracker.homeBatterIndex;
-      const batterSlot = lineup[batterIdx];
-      const batterCard = batterCards.get(batterSlot.playerId);
+      let batterSlot = lineup[batterIdx];
+      let batterCard = batterCards.get(batterSlot.playerId);
       if (!batterCard) break;
 
       // -- Manager AI pre-pitch decisions --
-      const situation = buildGameSituation(state, batterCard, fieldingPitcherState, fieldingPitcher);
+      const situation = buildGameSituation(state, batterCard, fieldingPitcherState, fieldingPitcher, battingBench);
 
       // 1. Pitcher pull check (fielding team manager)
       if (evaluatePitcherPullDecision(fieldingProfile, situation, rng) &&
@@ -503,10 +546,56 @@ export function runGame(config: RunGameConfig): GameResult {
         continue;
       }
 
+      // 5. Hit-and-run check (batting team manager)
+      const hitAndRunActive = evaluateHitAndRunDecision(battingProfile, situation, rng);
+
+      // 6. Pinch-hit check (batting team manager)
+      if (battingBench.length > 0 && evaluatePinchHitDecision(battingProfile, situation, rng)) {
+        // Select best bench player by estimated OPS
+        let bestIdx = 0;
+        let bestOps = estimateOps(battingBench[0]);
+        for (let bi = 1; bi < battingBench.length; bi++) {
+          const ops = estimateOps(battingBench[bi]);
+          if (ops > bestOps) { bestOps = ops; bestIdx = bi; }
+        }
+        const phCard = battingBench[bestIdx];
+        if (!tracker.usedPinchHitters.has(phCard.playerId)) {
+          tracker.usedPinchHitters.add(phCard.playerId);
+          // Remove from bench
+          if (isTopHalf) {
+            tracker.awayBenchAvailable = tracker.awayBenchAvailable.filter((_, i) => i !== bestIdx);
+          } else {
+            tracker.homeBenchAvailable = tracker.homeBenchAvailable.filter((_, i) => i !== bestIdx);
+          }
+          // Swap batter for this PA (and future PAs in this lineup slot)
+          batterCard = phCard;
+          batterCards.set(batterSlot.playerId, phCard);
+          batterSlot = { ...batterSlot, playerId: phCard.playerId, playerName: `${phCard.nameFirst} ${phCard.nameLast}` };
+        }
+      }
+
       // -- Standard plate appearance --
       const effectiveGrade = computeEffectiveGrade(currentPitcher, currentPitcherState.inningsPitched);
       const paResult = resolvePlateAppearance(batterCard.card, effectiveGrade, rng);
-      const outcome = paResult.outcome;
+      let outcome = paResult.outcome;
+
+      // Hit-and-run modifiers
+      if (hitAndRunActive) {
+        // On strikeout during H&R, runner is caught stealing
+        if (isStrikeout(outcome) && state.bases.first !== null) {
+          const runnerBattingLine = getOrCreateBattingLine(tracker, state.bases.first);
+          runnerBattingLine.CS++;
+          state = {
+            ...state,
+            bases: { first: null, second: state.bases.second, third: state.bases.third },
+            outs: state.outs + 1,
+          };
+        }
+        // Convert double play to ground out advance (runner avoids DP)
+        if (outcome === OutcomeCategory.DOUBLE_PLAY || outcome === OutcomeCategory.DOUBLE_PLAY_LINE) {
+          outcome = OutcomeCategory.GROUND_OUT_ADVANCE;
+        }
+      }
 
       // Resolve outcome against base/out state
       const resolution = resolveOutcome(outcome, state.bases, state.outs, batterSlot.playerId);
@@ -592,6 +681,50 @@ export function runGame(config: RunGameConfig): GameResult {
         homeScore: isTopHalf ? state.homeScore : state.homeScore + resolution.runsScored,
         awayScore: isTopHalf ? state.awayScore + resolution.runsScored : state.awayScore,
       };
+
+      // Hit-and-run: advance runner from 1B to 3B on single (instead of 2B)
+      if (hitAndRunActive && isSingleOutcome(outcome) && state.bases.second !== null && state.bases.third === null) {
+        state = {
+          ...state,
+          bases: { ...state.bases, second: null, third: state.bases.second },
+        };
+      }
+
+      // Aggressive baserunning: extra-base advance on singles/doubles
+      if (isHitOutcome(outcome) && !isStrikeout(outcome) && state.outs < 3) {
+        const aggrSituation: GameSituation = {
+          ...situation,
+          runnerOnFirst: state.bases.first !== null,
+          runnerOnSecond: state.bases.second !== null,
+          runnerOnThird: state.bases.third !== null,
+          outs: state.outs,
+        };
+        if (evaluateAggressiveBaserunning(battingProfile, aggrSituation, rng)) {
+          // Runner on 2B advances to home on single
+          if (isSingleOutcome(outcome) && state.bases.second !== null) {
+            const runnerId = state.bases.second;
+            const runnerLine = getOrCreateBattingLine(tracker, runnerId);
+            runnerLine.R++;
+            state = {
+              ...state,
+              bases: { ...state.bases, second: null },
+              homeScore: isTopHalf ? state.homeScore : state.homeScore + 1,
+              awayScore: isTopHalf ? state.awayScore + 1 : state.awayScore,
+            };
+            tracker.currentHalfInningRuns++;
+            currentPitcherState.earnedRuns++;
+            currentPitcherState.isShutout = false;
+            battingLine.RBI++;
+          }
+          // Runner on 1B advances to 3B on single
+          else if (isSingleOutcome(outcome) && state.bases.first !== null && state.bases.third === null) {
+            state = {
+              ...state,
+              bases: { ...state.bases, first: null, third: state.bases.first },
+            };
+          }
+        }
+      }
 
       // Record play-by-play
       tracker.playByPlay.push({

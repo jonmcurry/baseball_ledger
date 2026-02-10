@@ -17,6 +17,7 @@ import {
   startDraft,
   submitPick,
   fetchDraftState,
+  autoPick,
 } from '../../../src/services/draft-service';
 import { apiGet, apiPost } from '../../../src/services/api-client';
 
@@ -74,5 +75,21 @@ describe('draft-service', () => {
 
     expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft', { action: 'start' });
     expect(mockApiPost.mock.calls[0]).toHaveLength(2);
+  });
+
+  it('autoPick calls apiPost with auto-pick action', async () => {
+    const autoPickResult = { status: 'triggered' };
+    mockApiPost.mockResolvedValue({ data: autoPickResult, meta: defaultMeta });
+
+    const result = await autoPick('lg-1');
+
+    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1/draft', { action: 'auto-pick' });
+    expect(result).toEqual(autoPickResult);
+  });
+
+  it('autoPick propagates errors', async () => {
+    mockApiPost.mockRejectedValue(new Error('Network error'));
+
+    await expect(autoPick('lg-1')).rejects.toThrow('Network error');
   });
 });

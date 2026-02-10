@@ -376,5 +376,82 @@ describe('game-runner', () => {
       );
       expect(homePitchers.length).toBeGreaterThan(1);
     });
+
+    it('runs games with aggressive manager and hit-and-run enabled (REQ-AI-002)', () => {
+      // Run many games with aggressive managers -- H&R should occur and not crash
+      for (let seed = 1; seed <= 10; seed++) {
+        const config = makeDefaultConfig(seed);
+        config.homeManagerStyle = 'aggressive';
+        config.awayManagerStyle = 'aggressive';
+        const result = runGame(config);
+        expect(result.innings).toBeGreaterThanOrEqual(9);
+        expect(result.homeScore).not.toBe(result.awayScore);
+      }
+    });
+
+    it('runs games with bench players for pinch-hit decisions (REQ-AI-002)', () => {
+      // Provide bench players and use analytical manager (highest PH threshold)
+      const config = makeDefaultConfig(42);
+      config.homeManagerStyle = 'analytical';
+      config.awayManagerStyle = 'analytical';
+      config.homeBench = [
+        makePlayerCard({
+          playerId: 'home-bench-1',
+          nameFirst: 'PH',
+          nameLast: 'Slugger',
+          contactRate: 0.95,
+          power: 0.90,
+          discipline: 0.85,
+          speed: 0.3,
+        }),
+      ];
+      config.awayBench = [
+        makePlayerCard({
+          playerId: 'away-bench-1',
+          nameFirst: 'PH',
+          nameLast: 'Swatter',
+          contactRate: 0.92,
+          power: 0.88,
+          discipline: 0.80,
+          speed: 0.4,
+        }),
+      ];
+
+      const result = runGame(config);
+      expect(result.innings).toBeGreaterThanOrEqual(9);
+      expect(result.homeScore).not.toBe(result.awayScore);
+    });
+
+    it('games with aggressive baserunning produce valid results (REQ-AI-002)', () => {
+      // Run games with aggressive manager -- aggressive baserunning is now active
+      for (let seed = 1; seed <= 10; seed++) {
+        const config = makeDefaultConfig(seed);
+        config.homeManagerStyle = 'aggressive';
+        config.awayManagerStyle = 'aggressive';
+        const result = runGame(config);
+
+        // Validate box score consistency
+        const awayLineTotal = result.boxScore.lineScore.away.reduce((a, b) => a + b, 0);
+        const homeLineTotal = result.boxScore.lineScore.home.reduce((a, b) => a + b, 0);
+        expect(awayLineTotal).toBe(result.awayScore);
+        expect(homeLineTotal).toBe(result.homeScore);
+      }
+    });
+
+    it('remains deterministic with new decision integrations (REQ-NFR-007)', () => {
+      const config = makeDefaultConfig(99);
+      config.homeManagerStyle = 'aggressive';
+      config.awayManagerStyle = 'analytical';
+      config.homeBench = [makePlayerCard({ playerId: 'home-bench-1', contactRate: 0.95, power: 0.9, discipline: 0.8 })];
+      config.awayBench = [makePlayerCard({ playerId: 'away-bench-1', contactRate: 0.90, power: 0.85, discipline: 0.75 })];
+
+      const result1 = runGame(config);
+      const result2 = runGame(config);
+
+      expect(result1.homeScore).toBe(result2.homeScore);
+      expect(result1.awayScore).toBe(result2.awayScore);
+      expect(result1.innings).toBe(result2.innings);
+      expect(result1.playByPlay.length).toBe(result2.playByPlay.length);
+    });
   });
 });

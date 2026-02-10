@@ -45,6 +45,9 @@ export interface GameSituation {
   pitcherEffectiveGradePct: number; // effectiveGrade / startingGrade, 0-1
   firstBaseOpen: boolean;
   runnerInScoringPosition: boolean;
+  bestBenchOps?: number;        // OPS of best available bench player
+  batterOps?: number;           // Current batter's OPS
+  platoonAdvantage?: number;    // 1.0 neutral, >1.0 if platoon applies
 }
 
 /**
@@ -171,6 +174,80 @@ export function evaluatePitcherPullDecision(
   const pullAggressiveness = 1 - profile.pitcherPullThreshold;
   const multiplier = getInningMultiplier(profile, sit.inning);
   const score = computeDecisionScore(fatigueFactor, pullAggressiveness, multiplier);
+
+  return rng.nextFloat() < score;
+}
+
+/**
+ * Evaluate whether to call a hit-and-run.
+ *
+ * Per REQ-AI-002:
+ * - Requires runner on 1B only (not 2B or 3B -- too risky)
+ * - Requires < 2 outs
+ * - Base factor = batter.contactRate (high contact hitters make H&R safer)
+ */
+export function evaluateHitAndRunDecision(
+  profile: ManagerProfile,
+  sit: GameSituation,
+  rng: SeededRNG,
+): boolean {
+  // Prerequisites: runner on 1B only, no other bases occupied, < 2 outs
+  if (!sit.runnerOnFirst) return false;
+  if (sit.runnerOnSecond || sit.runnerOnThird) return false;
+  if (sit.outs >= 2) return false;
+
+  const baseFactor = sit.batterContactRate;
+  const multiplier = getInningMultiplier(profile, sit.inning);
+  const score = computeDecisionScore(baseFactor, profile.hitAndRunThreshold, multiplier);
+
+  return rng.nextFloat() < score;
+}
+
+/**
+ * Evaluate whether to pinch-hit for the current batter.
+ *
+ * Per REQ-AI-002:
+ * - Requires bench OPS data (bestBenchOps and batterOps must be provided)
+ * - Bench player must be better than current batter
+ * - Base factor = (benchOPS - batterOPS) / benchOPS * platoonAdvantage
+ */
+export function evaluatePinchHitDecision(
+  profile: ManagerProfile,
+  sit: GameSituation,
+  rng: SeededRNG,
+): boolean {
+  if (sit.bestBenchOps === undefined || sit.batterOps === undefined) return false;
+  if (sit.bestBenchOps <= sit.batterOps) return false;
+
+  const opsDiff = (sit.bestBenchOps - sit.batterOps) / sit.bestBenchOps;
+  const platoonFactor = sit.platoonAdvantage ?? 1.0;
+  const baseFactor = opsDiff * platoonFactor;
+  const multiplier = getInningMultiplier(profile, sit.inning);
+  const score = computeDecisionScore(baseFactor, profile.pinchHitThreshold, multiplier);
+
+  return rng.nextFloat() < score;
+}
+
+/**
+ * Evaluate whether to attempt aggressive baserunning (take extra base).
+ *
+ * Used after hit resolution to decide if a runner takes an extra base
+ * (e.g., 1B->3B on a single, 2B->home on a single).
+ *
+ * - Requires runner on 1B or 2B, < 2 outs
+ * - Base factor = runner speed
+ */
+export function evaluateAggressiveBaserunning(
+  profile: ManagerProfile,
+  sit: GameSituation,
+  rng: SeededRNG,
+): boolean {
+  if (!sit.runnerOnFirst && !sit.runnerOnSecond) return false;
+  if (sit.outs >= 2) return false;
+
+  const baseFactor = sit.runnerSpeed;
+  const multiplier = getInningMultiplier(profile, sit.inning);
+  const score = computeDecisionScore(baseFactor, profile.aggressiveBaserunning, multiplier);
 
   return rng.nextFloat() < score;
 }

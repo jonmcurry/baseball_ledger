@@ -301,14 +301,23 @@ describe('POST /api/leagues/:id/draft (action=start)', () => {
   });
 
   it('returns 200 with draft state on success', async () => {
-    const builder = createMockQueryBuilder({
+    const leaguesBuilder = createMockQueryBuilder({
       data: { commissioner_id: 'user-123', status: 'setup' },
       error: null,
       count: null,
     });
-    mockCreateServerClient.mockReturnValue({
-      from: vi.fn().mockReturnValue(builder),
-    } as never);
+    const teamsBuilder = createMockQueryBuilder({
+      data: [{ id: 'team-1' }, { id: 'team-2' }],
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
 
     const req = createMockRequest({
       method: 'POST',
@@ -511,6 +520,45 @@ describe('POST /api/leagues/:id/draft (action=pick)', () => {
     });
   });
 
+  it('returns 201 with isComplete field on success', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: { status: 'drafting', team_count: 4, draft_order: null },
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: 'team-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({
+      data: null,
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(res._body.data).toHaveProperty('isComplete');
+  });
+
   it('returns 409 when player already drafted (duplicate key)', async () => {
     const leaguesBuilder = createMockQueryBuilder({
       data: { status: 'drafting' },
@@ -549,6 +597,166 @@ describe('POST /api/leagues/:id/draft (action=pick)', () => {
     expect(res._status).toBe(409);
     expect(res._body).toMatchObject({
       error: { code: 'PLAYER_ALREADY_DRAFTED' },
+    });
+  });
+});
+
+// ---------- POST action=start: Draft order generation ----------
+
+describe('POST /api/leagues/:id/draft (start generates draft order)', () => {
+  it('generates and stores draft order in league on start', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: { commissioner_id: 'user-123', status: 'setup' },
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: [{ id: 'team-a' }, { id: 'team-b' }, { id: 'team-c' }],
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { action: 'start' },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    // Draft order should be returned containing all team IDs
+    const data = res._body.data;
+    expect(data.draftOrder).toBeDefined();
+    expect(data.draftOrder).toHaveLength(3);
+    expect(new Set(data.draftOrder)).toEqual(new Set(['team-a', 'team-b', 'team-c']));
+  });
+
+  it('returns 400 when no teams found', async () => {
+    const leaguesBuilder = createMockQueryBuilder({
+      data: { commissioner_id: 'user-123', status: 'setup' },
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: [],
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { action: 'start' },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body).toMatchObject({
+      error: { code: 'NO_TEAMS' },
+    });
+  });
+});
+
+// ---------- POST action=auto-pick ----------
+
+describe('POST /api/leagues/:id/draft (action=auto-pick)', () => {
+  it('returns 403 when user is not commissioner', async () => {
+    const builder = createMockQueryBuilder({
+      data: { commissioner_id: 'other-user', status: 'drafting', team_count: 4, draft_order: ['t1', 't2'] },
+      error: null,
+      count: null,
+    });
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(builder),
+    } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { action: 'auto-pick' },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(403);
+    expect(res._body).toMatchObject({
+      error: { code: 'NOT_COMMISSIONER' },
+    });
+  });
+
+  it('returns 400 when league is not drafting', async () => {
+    const builder = createMockQueryBuilder({
+      data: { commissioner_id: 'user-123', status: 'setup', team_count: 4, draft_order: null },
+      error: null,
+      count: null,
+    });
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(builder),
+    } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { action: 'auto-pick' },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body).toMatchObject({
+      error: { code: 'NOT_DRAFTING' },
+    });
+  });
+
+  it('returns 200 when triggered by commissioner', async () => {
+    const builder = createMockQueryBuilder({
+      data: { commissioner_id: 'user-123', status: 'drafting', team_count: 4, draft_order: ['t1', 't2', 't3', 't4'] },
+      error: null,
+      count: null,
+    });
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(builder),
+    } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: { action: 'auto-pick' },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toMatchObject({
+      leagueId: 'league-1',
+      action: 'auto-pick',
+      status: 'triggered',
     });
   });
 });
