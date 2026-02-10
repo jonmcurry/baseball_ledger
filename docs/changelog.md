@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-10 - Schedule Generation Wiring (Phase 28)
+
+### Phase 28: Wire Schedule Generation into Draft Completion
+
+The schedule generator (`src/lib/schedule/generator.ts`) existed as Layer 1 pure logic with 19 tests but was never called. When the draft completed, the league transitioned to `regular_season` with an empty schedule table, leaving simulation with no games to run.
+
+- **Created `api/_lib/generate-schedule-rows.ts`** (Layer 2 helper)
+  - Fetches teams from DB, maps to `TeamSummary[]`, calls `generateSchedule()`
+  - Flattens `ScheduleDay[]` into schedule table rows and batch-inserts them
+  - Uses `SeededRNG(Date.now())` for deterministic-per-invocation scheduling
+  - 7 tests in `generate-schedule-rows.test.ts`
+- **Modified `api/leagues/[id]/draft.ts`** (draft completion path)
+  - Added `generateAndInsertSchedule(supabase, leagueId)` call before status transition
+  - Schedule generation runs BEFORE `regular_season` update -- if it fails, league stays in `drafting`
+  - 2 new tests in `draft.test.ts` (completion wiring + error propagation)
+
+**REQ-SCH-001 through REQ-SCH-004**: Schedule is now populated when the draft completes.
+**2,417 tests** across 212 files pass. TypeScript clean.
+
 ## 2026-02-10 - API Route Consolidation (Phase 27)
 
 ### Phase 27: API Route Consolidation -- Vercel Hobby Limit

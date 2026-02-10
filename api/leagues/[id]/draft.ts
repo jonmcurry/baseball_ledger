@@ -21,6 +21,7 @@ import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '@lib/supabase/server';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '@lib/draft/draft-order';
 import { SeededRNG } from '@lib/rng/seeded-rng';
+import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
 
 // ---------- Schemas ----------
 
@@ -295,6 +296,7 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
 
     if (next === null) {
       isComplete = true;
+      await generateAndInsertSchedule(supabase, leagueId);
       await supabase
         .from('leagues')
         .update({ status: 'regular_season' })
