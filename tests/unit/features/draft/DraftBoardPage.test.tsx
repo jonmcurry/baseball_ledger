@@ -10,8 +10,9 @@ import {
   createMockAvailablePlayer,
 } from '../../../fixtures/mock-draft';
 
-const { mockFetchDraftState, mockSubmitPick, mockUseDraft } = vi.hoisted(() => {
+const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockUseDraft } = vi.hoisted(() => {
   const mockFetchDraftState = vi.fn();
+  const mockFetchAvailablePlayers = vi.fn();
   const mockSubmitPick = vi.fn();
   const mockUseDraft = vi.fn().mockReturnValue({
     draftState: null,
@@ -24,8 +25,9 @@ const { mockFetchDraftState, mockSubmitPick, mockUseDraft } = vi.hoisted(() => {
     timeRemaining: 60,
     submitPick: mockSubmitPick,
     fetchDraftState: mockFetchDraftState,
+    fetchAvailablePlayers: mockFetchAvailablePlayers,
   });
-  return { mockFetchDraftState, mockSubmitPick, mockUseDraft };
+  return { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockUseDraft };
 });
 
 vi.mock('@hooks/useLeague', () => ({
@@ -67,6 +69,7 @@ describe('DraftBoardPage', () => {
       timeRemaining: 60,
       submitPick: mockSubmitPick,
       fetchDraftState: mockFetchDraftState,
+      fetchAvailablePlayers: mockFetchAvailablePlayers,
     });
   });
 
@@ -87,6 +90,7 @@ describe('DraftBoardPage', () => {
       timeRemaining: 60,
       submitPick: mockSubmitPick,
       fetchDraftState: mockFetchDraftState,
+      fetchAvailablePlayers: mockFetchAvailablePlayers,
     });
     render(<DraftBoardPage />);
     expect(screen.getByText('Loading draft board...')).toBeInTheDocument();
@@ -109,6 +113,7 @@ describe('DraftBoardPage', () => {
       timeRemaining: 0,
       submitPick: mockSubmitPick,
       fetchDraftState: mockFetchDraftState,
+      fetchAvailablePlayers: mockFetchAvailablePlayers,
     });
     render(<DraftBoardPage />);
     expect(screen.getByText('Draft Complete')).toBeInTheDocument();
@@ -126,6 +131,7 @@ describe('DraftBoardPage', () => {
       timeRemaining: 45,
       submitPick: mockSubmitPick,
       fetchDraftState: mockFetchDraftState,
+      fetchAvailablePlayers: mockFetchAvailablePlayers,
     });
     render(<DraftBoardPage />);
     expect(screen.getByText(/Your turn to pick!/)).toBeInTheDocument();
@@ -143,6 +149,7 @@ describe('DraftBoardPage', () => {
       timeRemaining: 60,
       submitPick: mockSubmitPick,
       fetchDraftState: mockFetchDraftState,
+      fetchAvailablePlayers: mockFetchAvailablePlayers,
     });
     render(<DraftBoardPage />);
     expect(screen.getByText('Failed to load draft')).toBeInTheDocument();

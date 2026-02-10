@@ -55,3 +55,6 @@ export {
   qualifiesAsBatter,
   qualifiesAsPitcher,
 } from './player-pool';
+
+export type { CsvPipelineInput, CsvPipelineResult } from './load-pipeline';
+export { runCsvPipeline } from './load-pipeline';

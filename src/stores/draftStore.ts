@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { DraftState, DraftPickResult } from '@lib/types/draft';
 import type { PlayerCard } from '@lib/types/player';
+import type { PlayerFilterOptions } from '@services/draft-service';
 import * as draftService from '@services/draft-service';
 
 export interface AvailablePlayer {
@@ -32,6 +33,7 @@ export interface DraftStoreState {
 
 export interface DraftStoreActions {
   fetchDraftState: (leagueId: string) => Promise<void>;
+  fetchAvailablePlayers: (leagueId: string, filters?: PlayerFilterOptions) => Promise<void>;
   submitPick: (leagueId: string, player: AvailablePlayer) => Promise<void>;
   setAvailablePlayers: (players: AvailablePlayer[]) => void;
   tickTimer: () => void;
@@ -66,6 +68,30 @@ export const useDraftStore = create<DraftStoreType>()(
             isLoading: false,
             error: err instanceof Error ? err.message : 'Failed to fetch draft state',
           }, false, 'fetchDraftState/error');
+        }
+      },
+
+      fetchAvailablePlayers: async (leagueId, filters) => {
+        set({ isLoading: true, error: null }, false, 'fetchAvailablePlayers/start');
+        try {
+          const rows = await draftService.fetchAvailablePlayers(leagueId, filters);
+          const players: AvailablePlayer[] = rows.map((row) => {
+            const card = row.player_card as unknown as PlayerCard;
+            return {
+              playerId: card.playerId ?? row.player_id,
+              nameFirst: card.nameFirst ?? '',
+              nameLast: card.nameLast ?? '',
+              seasonYear: card.seasonYear ?? row.season_year,
+              primaryPosition: card.primaryPosition ?? 'DH',
+              playerCard: card,
+            };
+          });
+          set({ availablePlayers: players, isLoading: false }, false, 'fetchAvailablePlayers/success');
+        } catch (err) {
+          set({
+            isLoading: false,
+            error: err instanceof Error ? err.message : 'Failed to fetch available players',
+          }, false, 'fetchAvailablePlayers/error');
         }
       },
 

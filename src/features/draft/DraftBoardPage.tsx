@@ -36,13 +36,15 @@ export function DraftBoardPage() {
     timeRemaining,
     submitPick,
     fetchDraftState,
+    fetchAvailablePlayers,
   } = useDraft();
 
   useEffect(() => {
     if (league?.id) {
       fetchDraftState(league.id);
+      fetchAvailablePlayers(league.id);
     }
-  }, [league?.id, fetchDraftState]);
+  }, [league?.id, fetchDraftState, fetchAvailablePlayers]);
 
   if (isLoading) {
     return <LoadingLedger message="Loading draft board..." />;

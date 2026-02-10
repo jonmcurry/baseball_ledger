@@ -29,6 +29,7 @@ export type LeagueRow = {
   current_day: number;
   season_year: number;
   playoff_bracket: Record<string, unknown> | null;
+  player_name_cache: Record<string, string>;
   created_at: string;
 }
 
@@ -112,6 +113,17 @@ export type ArchiveRow = {
   created_at: string;
 }
 
+export type PlayerPoolRow = {
+  id: string;
+  league_id: string;
+  player_id: string;
+  season_year: number;
+  player_card: Record<string, unknown>;
+  is_drafted: boolean;
+  drafted_by_team_id: string | null;
+  created_at: string;
+}
+
 export type SimulationProgressRow = {
   league_id: string;
   status: 'idle' | 'running' | 'completed' | 'error';
@@ -141,6 +153,7 @@ export type LeagueInsert = {
   current_day?: number;
   season_year?: number;
   playoff_bracket?: Record<string, unknown> | null;
+  player_name_cache?: Record<string, string>;
 }
 
 export type TeamInsert = {
@@ -221,6 +234,16 @@ export type ArchiveInsert = {
   stats_storage_path?: string | null;
 }
 
+export type PlayerPoolInsert = {
+  id?: string;
+  league_id: string;
+  player_id: string;
+  season_year: number;
+  player_card: Record<string, unknown>;
+  is_drafted?: boolean;
+  drafted_by_team_id?: string | null;
+}
+
 export type SimulationProgressInsert = {
   league_id: string;
   status?: SimulationProgressRow['status'];
@@ -242,6 +265,7 @@ export type ScheduleUpdate = Partial<Omit<ScheduleRow, 'id' | 'league_id'>>;
 export type SeasonStatsUpdate = Partial<Omit<SeasonStatsRow, 'id' | 'league_id'>>;
 export type GameLogUpdate = Partial<Omit<GameLogRow, 'id' | 'league_id' | 'created_at'>>;
 export type ArchiveUpdate = Partial<Omit<ArchiveRow, 'id' | 'league_id' | 'created_at'>>;
+export type PlayerPoolUpdate = Partial<Omit<PlayerPoolRow, 'id' | 'league_id' | 'created_at'>>;
 export type SimulationProgressUpdate = Partial<Omit<SimulationProgressRow, 'league_id'>>;
 
 // ===================================================================
@@ -308,6 +332,15 @@ export type Database = {
         Update: ArchiveUpdate;
         Relationships: [
           { foreignKeyName: 'archives_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+        ];
+      };
+      player_pool: {
+        Row: PlayerPoolRow;
+        Insert: PlayerPoolInsert;
+        Update: PlayerPoolUpdate;
+        Relationships: [
+          { foreignKeyName: 'player_pool_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+          { foreignKeyName: 'player_pool_drafted_by_team_id_fkey'; columns: ['drafted_by_team_id']; isOneToOne: false; referencedRelation: 'teams'; referencedColumns: ['id'] },
         ];
       };
       simulation_progress: {

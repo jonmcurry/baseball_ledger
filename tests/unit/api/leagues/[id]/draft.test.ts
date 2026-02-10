@@ -760,3 +760,140 @@ describe('POST /api/leagues/:id/draft (action=auto-pick)', () => {
     });
   });
 });
+
+// ---------- POST action=pick: Player pool marking ----------
+
+describe('POST /api/leagues/:id/draft (pick marks player_pool)', () => {
+  it('marks player as drafted in player_pool after successful pick', async () => {
+    const playerPoolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const leaguesBuilder = createMockQueryBuilder({
+      data: { status: 'drafting' },
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: 'team-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({
+      data: null,
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return playerPoolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(mockFrom).toHaveBeenCalledWith('player_pool');
+    expect(playerPoolBuilder.update).toHaveBeenCalledWith({
+      is_drafted: true,
+      drafted_by_team_id: 'team-1',
+    });
+  });
+
+  it('marks all seasons of player (filters by player_id, not season_year)', async () => {
+    const playerPoolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const leaguesBuilder = createMockQueryBuilder({
+      data: { status: 'drafting' },
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: 'team-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({
+      data: null,
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return playerPoolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    // Should filter by league_id and player_id (marks all seasons)
+    expect(playerPoolBuilder.eq).toHaveBeenCalledWith('league_id', 'league-1');
+    expect(playerPoolBuilder.eq).toHaveBeenCalledWith('player_id', 'player-1');
+  });
+
+  it('does not fail the pick when player_pool update fails', async () => {
+    const playerPoolBuilder = createMockQueryBuilder({
+      data: null,
+      error: { message: 'Pool update failed', code: '42000' },
+      count: null,
+    });
+    const leaguesBuilder = createMockQueryBuilder({
+      data: { status: 'drafting' },
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: 'team-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({
+      data: null,
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leaguesBuilder;
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return playerPoolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    // Pick should still succeed despite pool update failure
+    expect(res._status).toBe(201);
+    expect(res._body.data.playerId).toBe('player-1');
+  });
+});

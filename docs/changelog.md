@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-02-10 - League Creation Pipeline (Phase 25)
+
+### Phase 25: League Creation Pipeline -- MVP Blocker (REQ-DATA-002, REQ-DFT-001)
+
+Wires together all existing pieces (CSV parsers, player pool builder, card generator) into an end-to-end pipeline that executes during league creation. Without this phase, the draft board had no players to display.
+
+- **Database: player_pool table** (Step 25.1)
+  - Migration `00016_create_player_pool.sql`: UUID PK, league_id FK, player_id, season_year, player_card JSONB, is_drafted, drafted_by_team_id
+  - Migration `00017_player_pool_rls.sql`: RLS policies + player_name_cache column on leagues
+  - TypeScript types: PlayerPoolRow, PlayerPoolInsert, PlayerPoolUpdate in database.ts
+  - 3 tests
+- **CSV pipeline orchestrator** (Step 25.2)
+  - `src/lib/csv/load-pipeline.ts`: `runCsvPipeline()` -- pure L1 function orchestrating CSV loading -> pool building -> card generation
+  - Reuses all existing loaders (people, batting, pitching, fielding), buildPlayerPool, computeLeagueAverages, generateAllCards
+  - Returns pool, leagueAverages, playerNameCache, cards, errors
+  - 10 tests
+- **CSV file reader** (Step 25.3)
+  - `api/_lib/load-csvs.ts`: `loadCsvFiles()` -- reads 4 Lahman CSVs from data_files/ via Node.js fs
+  - Only file that touches filesystem for CSV loading
+  - 4 tests
+- **League creation wiring** (Step 25.4)
+  - Modified `api/leagues/index.ts`: after league insert, calls loadCsvFiles -> runCsvPipeline -> batch inserts (1000/batch) to player_pool -> updates league with player_name_cache
+  - Graceful degradation: CSV pipeline failure does not fail league creation
+  - 6 new tests (13 total)
+- **Available players endpoint** (Step 25.5)
+  - `api/leagues/[id]/players.ts`: GET with pagination, position filter, name search, sorting
+  - Query params: drafted, page, pageSize, position, search, sortBy, sortOrder
+  - 10 tests
+- **Draft store wiring** (Step 25.6)
+  - Added `fetchAvailablePlayers` to draft-service.ts and draftStore.ts
+  - Transforms PlayerPoolRow[] to AvailablePlayer[] from player_card JSONB
+  - 5 tests
+- **Draft board wiring** (Step 25.7)
+  - `DraftBoardPage.tsx` now calls `fetchAvailablePlayers(league.id)` alongside `fetchDraftState` on mount
+  - Updated DraftBoardPage test mocks to include fetchAvailablePlayers
+- **Draft pick marks player as drafted** (Step 25.8)
+  - `api/leagues/[id]/draft.ts`: after roster insert, updates player_pool `is_drafted=true` for all seasons of the player
+  - Non-fatal: pool update failure does not fail the pick
+  - 3 new tests (26 total)
+
+### Metrics
+- Vitest: 2,354 -> 2,394 (+40 tests, 213 test files)
+- New source files: 3 (load-pipeline.ts, load-csvs.ts, players.ts)
+- New test files: 5
+- Modified source files: 5 (database.ts, leagues/index.ts, draft.ts, draft-service.ts, draftStore.ts, useDraft.ts, DraftBoardPage.tsx, csv/index.ts)
+- Modified test files: 2 (leagues/index.test.ts, draft.test.ts, DraftBoardPage.test.tsx)
+- New migrations: 2 (00016, 00017)
+- TypeScript: clean build, no errors
+
 ## 2026-02-10 - SRD Gap Closure (Phase 24)
 
 ### Phase 24: AI Service Wiring (REQ-AI-006, REQ-AI-007, REQ-AI-008)

@@ -208,3 +208,15 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-AI-006 Manager decisions | `tests/unit/lib/ai/decision-detector.test.ts`, `tests/unit/hooks/useManagerExplanations.test.ts`, `tests/unit/features/game-viewer/ManagerDecisionsPanel.test.tsx` |
 | REQ-AI-007 AI opt-in per item | All 5 `useManager*`/`use*` hook tests verify enhance/fetch is optional |
 | REQ-AI-008 Graceful degradation | `tests/unit/hooks/useManagerExplanations.test.ts` (failure keeps template), all hook tests |
+
+## Phase 25: League Creation Pipeline
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-DATA-002 Player pool table | `tests/unit/lib/types/player-pool-db.test.ts` |
+| REQ-DATA-002 CSV pipeline orchestrator | `tests/unit/lib/csv/load-pipeline.test.ts` |
+| REQ-DATA-002 CSV file reader | `tests/unit/api/_lib/load-csvs.test.ts` |
+| REQ-DATA-002 League creation pipeline | `tests/unit/api/leagues/index.test.ts` (pipeline tests) |
+| REQ-DATA-002 Available players endpoint | `tests/unit/api/leagues/[id]/players.test.ts` |
+| REQ-DATA-002 Draft store fetch players | `tests/unit/stores/draftStore-players.test.ts` |
+| REQ-DFT-001 Draft marks player_pool | `tests/unit/api/leagues/[id]/draft.test.ts` (player_pool marking tests) |

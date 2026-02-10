@@ -211,6 +211,14 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     throw { category: 'DATA', code: 'INSERT_FAILED', message: insertError.message };
   }
 
+  // Mark player as drafted in player_pool (all seasons of this physical player)
+  // Non-fatal: pool update failure does not fail the pick
+  await supabase
+    .from('player_pool')
+    .update({ is_drafted: true, drafted_by_team_id: userTeam.id })
+    .eq('league_id', leagueId)
+    .eq('player_id', body.playerId);
+
   // Check if draft is complete after this pick
   let isComplete = false;
   if (league.draft_order && Array.isArray(league.draft_order)) {

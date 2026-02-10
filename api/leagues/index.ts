@@ -2,6 +2,7 @@
  * POST /api/leagues -- Create a new league
  *
  * Creates a league with the authenticated user as commissioner.
+ * After league insert, generates player pool from Lahman CSVs (REQ-DATA-002).
  * Returns 201 Created with LeagueSummary.
  */
 
@@ -14,6 +15,10 @@ import { created } from '../_lib/response';
 import { handleApiError } from '../_lib/errors';
 import { snakeToCamel } from '../_lib/transform';
 import { createServerClient } from '@lib/supabase/server';
+import { loadCsvFiles } from '../_lib/load-csvs';
+import { runCsvPipeline } from '@lib/csv/load-pipeline';
+
+const BATCH_SIZE = 1000;
 
 const CreateLeagueSchema = z.object({
   name: z.string().min(1).max(100),
@@ -50,6 +55,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error || !data) {
       throw { category: 'DATA', code: 'INSERT_FAILED', message: error?.message ?? 'Insert failed' };
+    }
+
+    // Generate player pool from CSVs (REQ-DATA-002, REQ-DATA-005, REQ-DATA-006)
+    try {
+      const csvFiles = loadCsvFiles();
+      const pipeline = runCsvPipeline({
+        ...csvFiles,
+        yearRangeStart: body.yearRangeStart,
+        yearRangeEnd: body.yearRangeEnd,
+      });
+
+      // Batch insert cards into player_pool table
+      if (pipeline.cards.length > 0) {
+        const poolRecords = pipeline.cards.map((card) => ({
+          league_id: data.id,
+          player_id: card.playerId,
+          season_year: card.seasonYear,
+          player_card: card as unknown as Record<string, unknown>,
+        }));
+
+        for (let i = 0; i < poolRecords.length; i += BATCH_SIZE) {
+          const batch = poolRecords.slice(i, i + BATCH_SIZE);
+          const { error: poolError } = await supabase
+            .from('player_pool')
+            .insert(batch);
+
+          if (poolError) {
+            console.error(`Player pool batch insert failed for league ${data.id}:`, poolError.message);
+          }
+        }
+      }
+
+      // Update league with player name cache (REQ-DATA-003)
+      await supabase
+        .from('leagues')
+        .update({ player_name_cache: pipeline.playerNameCache })
+        .eq('id', data.id);
+    } catch (poolErr) {
+      // Graceful degradation: league is created, pool generation failed.
+      // Pool can be regenerated later.
+      console.error(`Player pool generation failed for league ${data.id}:`, poolErr);
     }
 
     const league = snakeToCamel(data);

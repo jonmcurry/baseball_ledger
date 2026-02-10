@@ -22,6 +22,7 @@ export function useDraft() {
   const pickTimerSeconds = useDraftStore((s) => s.pickTimerSeconds);
   const submitPick = useDraftStore((s) => s.submitPick);
   const fetchDraftState = useDraftStore((s) => s.fetchDraftState);
+  const fetchAvailablePlayers = useDraftStore((s) => s.fetchAvailablePlayers);
 
   const myTeam = useMemo(() => {
     if (!user) return null;
@@ -50,5 +51,6 @@ export function useDraft() {
     timeRemaining: pickTimerSeconds,
     submitPick,
     fetchDraftState,
+    fetchAvailablePlayers,
   };
 }
