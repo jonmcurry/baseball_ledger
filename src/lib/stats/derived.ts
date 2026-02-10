@@ -12,6 +12,7 @@
  *   WHIP = (BB + H) / IP
  *   K/9 = SO * 9 / IP
  *   BB/9 = BB * 9 / IP
+ *   FIP = ((13*HR) + (3*(BB+HBP)) - (2*SO)) / IP + 3.15
  *
  * IP uses baseball convention: .1 = 1/3 inning, .2 = 2/3 inning.
  *
@@ -135,6 +136,24 @@ export function computeBB9(bb: number, ip: number): number {
 }
 
 /**
+ * Compute FIP (Fielding Independent Pitching).
+ * FIP = ((13*HR) + (3*(BB+HBP)) - (2*SO)) / IP + 3.15
+ *
+ * REQ-STS-005: Advanced pitching metric.
+ */
+export function computeFIP(
+  hr: number,
+  bb: number,
+  hbp: number,
+  so: number,
+  ip: number,
+): number {
+  const decimalIP = ipToDecimal(ip);
+  if (decimalIP === 0) return 0;
+  return ((13 * hr) + (3 * (bb + hbp)) - (2 * so)) / decimalIP + 3.15;
+}
+
+/**
  * Apply all derived fields to a BattingStats object.
  * Returns a new object with BA, OBP, SLG, OPS computed.
  */
@@ -148,10 +167,11 @@ export function computeDerivedBatting(stats: BattingStats): BattingStats {
 
 /**
  * Apply all derived fields to a PitchingStats object.
- * Returns a new object with ERA, WHIP computed.
+ * Returns a new object with ERA, WHIP, FIP computed.
  */
 export function computeDerivedPitching(stats: PitchingStats): PitchingStats {
   const era = computeERA(stats.ER, stats.IP);
   const whip = computeWHIP(stats.BB, stats.H, stats.IP);
-  return { ...stats, ERA: era, WHIP: whip };
+  const fip = computeFIP(stats.HR, stats.BB, stats.HBP, stats.SO, stats.IP);
+  return { ...stats, ERA: era, WHIP: whip, FIP: fip };
 }

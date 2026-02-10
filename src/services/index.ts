@@ -54,6 +54,13 @@ export {
 } from './api-client';
 
 export {
+  dropPlayer,
+  addPlayer,
+  submitTrade,
+  fetchTransactionHistory,
+} from './transaction-service';
+
+export {
   generateCommentary,
   generateGameSummary,
   evaluateTrade,

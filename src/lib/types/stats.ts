@@ -47,4 +47,5 @@ export interface PitchingStats {
   // Derived
   ERA: number;
   WHIP: number;
+  FIP: number;
 }

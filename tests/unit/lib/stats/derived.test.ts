@@ -15,6 +15,7 @@ import {
   computeWHIP,
   computeK9,
   computeBB9,
+  computeFIP,
   ipToDecimal,
   addIP,
   computeDerivedBatting,
@@ -217,6 +218,50 @@ describe('computeBB9', () => {
 });
 
 // ---------------------------------------------------------------------------
+// computeFIP
+// ---------------------------------------------------------------------------
+
+describe('computeFIP', () => {
+  it('computes FIP with standard formula', () => {
+    // FIP = ((13*20) + (3*(50+5)) - (2*200)) / 200 + 3.15
+    // = (260 + 165 - 400) / 200 + 3.15 = 25/200 + 3.15 = 0.125 + 3.15 = 3.275
+    expect(computeFIP(20, 50, 5, 200, 200.0)).toBeCloseTo(3.275, 2);
+  });
+
+  it('returns 0 when IP is 0', () => {
+    expect(computeFIP(5, 10, 2, 50, 0.0)).toBe(0);
+  });
+
+  it('handles fractional IP (baseball notation)', () => {
+    // 6.1 IP = 6.333 decimal
+    // FIP = ((13*2) + (3*(3+1)) - (2*5)) / 6.333 + 3.15
+    // = (26 + 12 - 10) / 6.333 + 3.15 = 28/6.333 + 3.15 = 4.421 + 3.15 = 7.571
+    expect(computeFIP(2, 3, 1, 5, 6.1)).toBeCloseTo(
+      (26 + 12 - 10) / (6 + 1 / 3) + 3.15,
+      2,
+    );
+  });
+
+  it('handles high-HR pitcher', () => {
+    // FIP = ((13*35) + (3*(60+8)) - (2*150)) / 180 + 3.15
+    // = (455 + 204 - 300) / 180 + 3.15 = 359/180 + 3.15 = 1.994 + 3.15 = 5.144
+    expect(computeFIP(35, 60, 8, 150, 180.0)).toBeCloseTo(
+      (455 + 204 - 300) / 180 + 3.15,
+      2,
+    );
+  });
+
+  it('handles elite pitcher (low FIP)', () => {
+    // FIP = ((13*5) + (3*(20+2)) - (2*250)) / 220 + 3.15
+    // = (65 + 66 - 500) / 220 + 3.15 = -369/220 + 3.15 = -1.677 + 3.15 = 1.473
+    expect(computeFIP(5, 20, 2, 250, 220.0)).toBeCloseTo(
+      (65 + 66 - 500) / 220 + 3.15,
+      2,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // computeDerivedBatting
 // ---------------------------------------------------------------------------
 
@@ -247,10 +292,15 @@ describe('computeDerivedPitching', () => {
       G: 30, GS: 30, W: 15, L: 8, SV: 0, IP: 200.0, H: 180, R: 80, ER: 70,
       HR: 20, BB: 50, SO: 200, HBP: 5, BF: 850, WP: 3, BK: 0, CG: 2, SHO: 1,
       HLD: 0, BS: 0,
-      ERA: 0, WHIP: 0,
+      ERA: 0, WHIP: 0, FIP: 0,
     };
     const result = computeDerivedPitching(stats);
     expect(result.ERA).toBeCloseTo(70 * 9 / 200, 2);
     expect(result.WHIP).toBeCloseTo((50 + 180) / 200, 2);
+    // FIP = ((13*20) + (3*(50+5)) - (2*200)) / 200 + 3.15 = 3.275
+    expect(result.FIP).toBeCloseTo(
+      ((13 * 20) + (3 * (50 + 5)) - (2 * 200)) / 200 + 3.15,
+      2,
+    );
   });
 });

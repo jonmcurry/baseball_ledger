@@ -12,6 +12,9 @@ import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { SimulationControls } from './SimulationControls';
 import { ScheduleView } from './ScheduleView';
+import { ResultsTicker } from './ResultsTicker';
+import type { TickerResult } from './ResultsTicker';
+import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
 
 const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
   day: 1,
@@ -36,6 +39,25 @@ export function DashboardPage() {
 
   const todaySchedule = schedule.find((d) => d.dayNumber === currentDay) ?? null;
 
+  // Build ticker results from the most recent completed games
+  const teamMap = new Map(teams.map((t) => [t.id, t]));
+  const recentResults: TickerResult[] = [];
+  for (const day of schedule) {
+    for (const game of day.games) {
+      if (game.isComplete && game.homeScore !== null && game.awayScore !== null) {
+        const home = teamMap.get(game.homeTeamId);
+        const away = teamMap.get(game.awayTeamId);
+        recentResults.push({
+          gameId: game.id,
+          homeName: home?.name ?? game.homeTeamId,
+          awayName: away?.name ?? game.awayTeamId,
+          homeScore: game.homeScore,
+          awayScore: game.awayScore,
+        });
+      }
+    }
+  }
+
   return (
     <div className="space-y-gutter-lg">
       {error && <ErrorBanner severity="error" message={error} />}
@@ -50,6 +72,14 @@ export function DashboardPage() {
           </p>
         )}
       </div>
+
+      {league?.status === 'setup' && league.inviteKey && (
+        <InviteKeyDisplay inviteKey={league.inviteKey} />
+      )}
+
+      {recentResults.length > 0 && (
+        <ResultsTicker results={recentResults} />
+      )}
 
       <SimulationControls
         isRunning={isRunning}

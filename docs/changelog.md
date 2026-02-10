@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-10 - SRD Gap Closure (Phases 19-20)
+
+### Phase 19: Transaction Service + UI Wiring (REQ-RST-005)
+- **Created `src/services/transaction-service.ts`** -- thin wrappers for drop/add/trade/history
+  - `dropPlayer()`, `addPlayer()`, `submitTrade()`, `fetchTransactionHistory()`
+- **Updated `src/features/transactions/TransactionsPage.tsx`** -- wired real service calls
+  - `handleDrop` calls dropPlayer, refreshes roster
+  - `handleTargetChange` loads target team roster via fetchRoster
+  - `handleTrade` calls submitTrade, refreshes roster and history
+  - Transaction history loaded on mount via useEffect
+
+### Phase 20: Dashboard + League UI + FIP (REQ-LGE-010/003, REQ-UI-007, REQ-STS-005)
+- **Added FIP (Fielding Independent Pitching)** to stats system:
+  - Added `FIP` field to `PitchingStats` interface
+  - Added `computeFIP(hr, bb, hbp, so, ip)` to `src/lib/stats/derived.ts`
+  - Updated `computeDerivedPitching()` to include FIP
+  - Updated `computePitchingDerived()` in pitching-loader to compute FIP from CSV data
+  - Added FIP column to `PITCHING_COLUMNS_ADVANCED` in StatColumnConfigs
+- **Created `src/features/dashboard/ResultsTicker.tsx`** (REQ-UI-007)
+  - Horizontal scrolling game results feed with clickable game cards
+- **Created `src/features/league/InviteKeyDisplay.tsx`** (REQ-LGE-003)
+  - Displays invite key with copy-to-clipboard functionality
+- **Created `src/features/league/DeleteLeagueButton.tsx`** (REQ-LGE-010)
+  - Destructive action with typed-name confirmation dialog
+- **Updated `DashboardPage.tsx`** -- integrated ResultsTicker and InviteKeyDisplay (setup status)
+- **Updated `LeagueConfigPage.tsx`** -- shows InviteKeyDisplay after league creation
+
+### Metrics
+- Vitest: 2,173 -> 2,201 (+28 tests, 189 test files)
+- New test files: `ResultsTicker.test.tsx` (5), `InviteKeyDisplay.test.tsx` (4), `DeleteLeagueButton.test.tsx` (5)
+- Updated: `derived.test.ts` (+5 FIP), `pitching-loader.test.ts` (+2 FIP), `transaction-service.test.ts` (7)
+- TypeScript: clean build, no errors
+- Vite: production build succeeds
+
 ## 2026-02-10 - SRD Gap Closure (Phases 17-18)
 
 ### Phase 17: Manager AI Completion (REQ-AI-002)

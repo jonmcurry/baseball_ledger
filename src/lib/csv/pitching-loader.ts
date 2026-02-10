@@ -55,7 +55,7 @@ function ipoutsToDecimalIP(ipouts: number): number {
 }
 
 /**
- * Compute derived pitching stats (ERA, WHIP) from raw counting stats.
+ * Compute derived pitching stats (ERA, WHIP, FIP) from raw counting stats.
  * Uses true decimal IP internally for accurate calculations.
  */
 export function computePitchingDerived(stats: {
@@ -63,17 +63,21 @@ export function computePitchingDerived(stats: {
   ipouts: number;
   H: number;
   BB: number;
-}): { ERA: number; WHIP: number } {
+  HR: number;
+  HBP: number;
+  SO: number;
+}): { ERA: number; WHIP: number; FIP: number } {
   const decimalIP = ipoutsToDecimalIP(stats.ipouts);
 
   if (decimalIP === 0) {
-    return { ERA: 99.99, WHIP: 99.99 };
+    return { ERA: 99.99, WHIP: 99.99, FIP: 99.99 };
   }
 
   const ERA = (9 * stats.ER) / decimalIP;
   const WHIP = (stats.H + stats.BB) / decimalIP;
+  const FIP = ((13 * stats.HR) + (3 * (stats.BB + stats.HBP)) - (2 * stats.SO)) / decimalIP + 3.15;
 
-  return { ERA, WHIP };
+  return { ERA, WHIP, FIP };
 }
 
 /**
@@ -144,7 +148,7 @@ export function aggregatePitchingStints(
   const SHO = stints.reduce((sum, s) => sum + s.SHO, 0);
 
   const IP = ipoutsToIP(totalIpouts);
-  const derived = computePitchingDerived({ ER, ipouts: totalIpouts, H, BB });
+  const derived = computePitchingDerived({ ER, ipouts: totalIpouts, H, BB, HR, HBP, SO });
 
   return {
     playerID: first.playerID,

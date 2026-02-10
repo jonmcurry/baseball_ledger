@@ -52,28 +52,40 @@ describe('ipoutsToIP', () => {
 describe('computePitchingDerived', () => {
   it('computes ERA = 9 * ER / IP', () => {
     // Vida Blue 1971: 63 ER, 936 IPouts -> 312 IP -> ERA = 9*63/312 = 1.817
-    const d = computePitchingDerived({ ER: 63, ipouts: 936, H: 209, BB: 88 });
+    const d = computePitchingDerived({ ER: 63, ipouts: 936, H: 209, BB: 88, HR: 14, HBP: 3, SO: 301 });
     expect(d.ERA).toBeCloseTo(1.817, 2);
   });
 
   it('computes WHIP = (H + BB) / IP', () => {
     // Vida Blue: (209 + 88) / 312 = 0.952
-    const d = computePitchingDerived({ ER: 63, ipouts: 936, H: 209, BB: 88 });
+    const d = computePitchingDerived({ ER: 63, ipouts: 936, H: 209, BB: 88, HR: 14, HBP: 3, SO: 301 });
     expect(d.WHIP).toBeCloseTo(0.952, 2);
   });
 
+  it('computes FIP = ((13*HR) + (3*(BB+HBP)) - (2*SO)) / IP + 3.15', () => {
+    // Vida Blue: ((13*14) + (3*(88+3)) - (2*301)) / 312 + 3.15
+    // = (182 + 273 - 602) / 312 + 3.15 = -147/312 + 3.15 = -0.4712 + 3.15 = 2.679
+    const d = computePitchingDerived({ ER: 63, ipouts: 936, H: 209, BB: 88, HR: 14, HBP: 3, SO: 301 });
+    expect(d.FIP).toBeCloseTo((182 + 273 - 602) / 312 + 3.15, 2);
+  });
+
   it('caps ERA at 99.99 when IP is 0', () => {
-    const d = computePitchingDerived({ ER: 5, ipouts: 0, H: 3, BB: 2 });
+    const d = computePitchingDerived({ ER: 5, ipouts: 0, H: 3, BB: 2, HR: 1, HBP: 0, SO: 0 });
     expect(d.ERA).toBe(99.99);
   });
 
   it('caps WHIP at 99.99 when IP is 0', () => {
-    const d = computePitchingDerived({ ER: 0, ipouts: 0, H: 3, BB: 2 });
+    const d = computePitchingDerived({ ER: 0, ipouts: 0, H: 3, BB: 2, HR: 0, HBP: 0, SO: 0 });
     expect(d.WHIP).toBe(99.99);
   });
 
+  it('caps FIP at 99.99 when IP is 0', () => {
+    const d = computePitchingDerived({ ER: 0, ipouts: 0, H: 3, BB: 2, HR: 1, HBP: 0, SO: 5 });
+    expect(d.FIP).toBe(99.99);
+  });
+
   it('returns 0 ERA when ER is 0 and IP > 0', () => {
-    const d = computePitchingDerived({ ER: 0, ipouts: 27, H: 5, BB: 2 });
+    const d = computePitchingDerived({ ER: 0, ipouts: 27, H: 5, BB: 2, HR: 0, HBP: 0, SO: 9 });
     expect(d.ERA).toBe(0);
   });
 });

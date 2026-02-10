@@ -85,6 +85,7 @@ export const PITCHING_COLUMNS_ADVANCED: StatColumn<PitchingLeaderEntry>[] = [
   { key: 'SO', header: 'SO', getValue: (r) => r.stats.SO, numeric: true },
   { key: 'BB', header: 'BB', getValue: (r) => r.stats.BB, numeric: true },
   { key: 'WHIP', header: 'WHIP', getValue: (r) => r.stats.WHIP.toFixed(2), numeric: true },
+  { key: 'FIP', header: 'FIP', getValue: (r) => r.stats.FIP.toFixed(2), numeric: true },
   {
     key: 'K9',
     header: 'K/9',

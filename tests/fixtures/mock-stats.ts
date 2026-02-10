@@ -40,7 +40,7 @@ export function createMockPitchingLeader(
     stats: {
       G: 33, GS: 33, W: 18, L: 6, SV: 0, IP: 220.1, H: 180, R: 70,
       ER: 60, HR: 15, BB: 45, SO: 210, HBP: 5, BF: 880, WP: 3, BK: 0,
-      CG: 4, SHO: 2, HLD: 0, BS: 0, ERA: 2.45, WHIP: 1.02,
+      CG: 4, SHO: 2, HLD: 0, BS: 0, ERA: 2.45, WHIP: 1.02, FIP: 2.80,
     },
     ...overrides,
   };
@@ -48,9 +48,9 @@ export function createMockPitchingLeader(
 
 export function createMockPitchingLeaders(): PitchingLeaderEntry[] {
   return [
-    createMockPitchingLeader({ playerId: 'pp-1', teamId: 'nl-e1', leagueDivision: 'NL', stats: { G: 35, GS: 35, W: 20, L: 4, SV: 0, IP: 240.2, H: 170, R: 55, ER: 48, HR: 10, BB: 35, SO: 250, HBP: 3, BF: 920, WP: 2, BK: 0, CG: 6, SHO: 3, HLD: 0, BS: 0, ERA: 1.80, WHIP: 0.85 } }),
-    createMockPitchingLeader({ playerId: 'pp-2', teamId: 'al-e1', stats: { G: 33, GS: 33, W: 18, L: 6, SV: 0, IP: 220.1, H: 180, R: 70, ER: 60, HR: 15, BB: 45, SO: 210, HBP: 5, BF: 880, WP: 3, BK: 0, CG: 4, SHO: 2, HLD: 0, BS: 0, ERA: 2.45, WHIP: 1.02 } }),
-    createMockPitchingLeader({ playerId: 'pp-3', teamId: 'al-w1', stats: { G: 32, GS: 32, W: 15, L: 8, SV: 0, IP: 210.0, H: 190, R: 80, ER: 72, HR: 18, BB: 50, SO: 195, HBP: 4, BF: 870, WP: 5, BK: 1, CG: 2, SHO: 1, HLD: 0, BS: 0, ERA: 3.09, WHIP: 1.14 } }),
+    createMockPitchingLeader({ playerId: 'pp-1', teamId: 'nl-e1', leagueDivision: 'NL', stats: { G: 35, GS: 35, W: 20, L: 4, SV: 0, IP: 240.2, H: 170, R: 55, ER: 48, HR: 10, BB: 35, SO: 250, HBP: 3, BF: 920, WP: 2, BK: 0, CG: 6, SHO: 3, HLD: 0, BS: 0, ERA: 1.80, WHIP: 0.85, FIP: 1.60 } }),
+    createMockPitchingLeader({ playerId: 'pp-2', teamId: 'al-e1', stats: { G: 33, GS: 33, W: 18, L: 6, SV: 0, IP: 220.1, H: 180, R: 70, ER: 60, HR: 15, BB: 45, SO: 210, HBP: 5, BF: 880, WP: 3, BK: 0, CG: 4, SHO: 2, HLD: 0, BS: 0, ERA: 2.45, WHIP: 1.02, FIP: 2.80 } }),
+    createMockPitchingLeader({ playerId: 'pp-3', teamId: 'al-w1', stats: { G: 32, GS: 32, W: 15, L: 8, SV: 0, IP: 210.0, H: 190, R: 80, ER: 72, HR: 18, BB: 50, SO: 195, HBP: 4, BF: 870, WP: 5, BK: 1, CG: 2, SHO: 1, HLD: 0, BS: 0, ERA: 3.09, WHIP: 1.14, FIP: 3.25 } }),
   ];
 }
 

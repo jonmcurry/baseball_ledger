@@ -34,7 +34,7 @@ export function createEmptyPitchingStats(): PitchingStats {
     G: 0, GS: 0, W: 0, L: 0, SV: 0, IP: 0, H: 0, R: 0, ER: 0,
     HR: 0, BB: 0, SO: 0, HBP: 0, BF: 0, WP: 0, BK: 0, CG: 0, SHO: 0,
     HLD: 0, BS: 0,
-    ERA: 0, WHIP: 0,
+    ERA: 0, WHIP: 0, FIP: 0,
   };
 }
 
@@ -103,7 +103,7 @@ export function accumulatePitching(
     SHO: season.SHO,
     HLD: season.HLD + (line.decision === 'HLD' ? 1 : 0),
     BS: season.BS + (line.decision === 'BS' ? 1 : 0),
-    ERA: 0, WHIP: 0,
+    ERA: 0, WHIP: 0, FIP: 0,
   };
   return computeDerivedPitching(updated);
 }

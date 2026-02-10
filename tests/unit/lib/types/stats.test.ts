@@ -23,7 +23,7 @@ describe('Stats types', () => {
         BB: 58, SO: 239, HBP: 3,
         BF: 1366, WP: 5, BK: 0,
         CG: 30, SHO: 4, HLD: 0, BS: 0,
-        ERA: 2.26, WHIP: 0.930,
+        ERA: 2.26, WHIP: 0.930, FIP: 2.10,
       };
       expect(stats.W).toBe(31);
       expect(stats.ERA).toBeCloseTo(2.26);

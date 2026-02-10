@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LeagueConfigForm } from './LeagueConfigForm';
+import { InviteKeyDisplay } from './InviteKeyDisplay';
 import type { LeagueFormData } from './LeagueConfigForm';
 import * as leagueService from '@services/league-service';
 
@@ -20,6 +21,7 @@ export function LeagueConfigPage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdInviteKey, setCreatedInviteKey] = useState<string | null>(null);
 
   async function handleSubmit(config: LeagueFormData) {
     if (!user) return;
@@ -33,6 +35,7 @@ export function LeagueConfigPage() {
         yearRangeEnd: config.yearRangeEnd,
         injuriesEnabled: config.injuriesEnabled,
       });
+      setCreatedInviteKey(league.inviteKey ?? null);
       navigate(`/leagues/${league.id}/dashboard`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create league');
@@ -46,6 +49,10 @@ export function LeagueConfigPage() {
       <h2 className="font-headline text-2xl font-bold text-ballpark">Create a League</h2>
 
       {error && <ErrorBanner severity="error" message={error} />}
+
+      {createdInviteKey && (
+        <InviteKeyDisplay inviteKey={createdInviteKey} />
+      )}
 
       <LeagueConfigForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
     </div>
