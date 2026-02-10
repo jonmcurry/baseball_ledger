@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-02-10 - Post-Draft Lineup Auto-Generation (Phase 30)
+
+### Phase 30: Post-Draft Lineup Auto-Generation (REQ-RST-001)
+
+After the draft, all roster entries had `roster_slot: 'bench'` with NULL lineup data. The simulation engine's `loadTeamConfig()` filters by `roster_slot === 'starter'`, so an empty lineup caused simulation failures. This phase auto-generates lineups and pitcher assignments when the draft completes.
+
+- **Fixed `api/_lib/load-team-config.ts`** -- Changed fallback pitcher `primaryPosition`/`eligiblePositions` from `'P'` to `'SP'` to match the `Position` type union (TS2322 fix)
+- **Created `src/lib/roster/estimate-batting-stats.ts`** (Layer 1 pure function)
+  - Approximates OPS/OBP/SLG from PlayerCard fields (`contactRate`, `power`, `discipline`)
+  - Only relative ordering matters for lineup slot assignment
+  - 4 tests in `estimate-batting-stats.test.ts`
+- **Created `api/_lib/generate-lineup-rows.ts`** (Layer 2 helper)
+  - `generateAndInsertLineups(supabase, leagueId)` fetches teams and rosters, splits position players from pitchers
+  - Position players: sorted by estimated OPS, top 9 fed to `generateLineup()`, assigned `roster_slot='starter'` with `lineup_order` and `lineup_position`
+  - Pitchers: assigned by `pitching.role` to `'rotation'`, `'bullpen'`, or `'closer'`
+  - 9 tests in `generate-lineup-rows.test.ts`
+- **Modified `api/leagues/[id]/draft.ts`** (draft completion path)
+  - Added `generateAndInsertLineups(supabase, leagueId)` call BEFORE `generateAndInsertSchedule`
+  - If lineup generation fails, schedule generation and status transition are skipped
+  - 2 new tests in `draft.test.ts` (ordering verification + error propagation)
+
+**REQ-RST-001**: Rosters are now playable immediately after draft completion.
+**2,440 tests** across 214 files pass. TypeScript clean.
+
 ## 2026-02-10 - Lineup Update API Endpoint (Phase 29)
 
 ### Phase 29: Lineup Update API Endpoint (REQ-RST-002)

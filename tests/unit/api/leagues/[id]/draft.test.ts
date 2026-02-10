@@ -10,12 +10,16 @@ vi.mock('../../../../../api/_lib/validate', () => ({
 vi.mock('../../../../../api/_lib/generate-schedule-rows', () => ({
   generateAndInsertSchedule: vi.fn(),
 }));
+vi.mock('../../../../../api/_lib/generate-lineup-rows', () => ({
+  generateAndInsertLineups: vi.fn(),
+}));
 
 import handler from '../../../../../api/leagues/[id]/draft';
 import { createServerClient } from '@lib/supabase/server';
 import { requireAuth } from '../../../../../api/_lib/auth';
 import { validateBody } from '../../../../../api/_lib/validate';
 import { generateAndInsertSchedule } from '../../../../../api/_lib/generate-schedule-rows';
+import { generateAndInsertLineups } from '../../../../../api/_lib/generate-lineup-rows';
 import {
   createMockRequest,
   createMockResponse,
@@ -26,12 +30,14 @@ const mockCreateServerClient = vi.mocked(createServerClient);
 const mockRequireAuth = vi.mocked(requireAuth);
 const mockValidateBody = vi.mocked(validateBody);
 const mockGenerateSchedule = vi.mocked(generateAndInsertSchedule);
+const mockGenerateLineups = vi.mocked(generateAndInsertLineups);
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockRequireAuth.mockResolvedValue({ userId: 'user-123', email: 'test@example.com' });
   mockValidateBody.mockImplementation((req) => req.body as any);
   mockGenerateSchedule.mockResolvedValue({ totalDays: 162, totalGames: 1296 });
+  mockGenerateLineups.mockResolvedValue({ teamsProcessed: 8, playersUpdated: 168 });
 });
 
 // ---------- General ----------
@@ -991,6 +997,56 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
     // Should return an error, not 201
     expect(res._status).toBe(500);
     // leagues.update should NOT have been called with regular_season
+    expect(leaguesBuilder.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'regular_season' }),
+    );
+  });
+
+  it('calls generateAndInsertLineups before schedule when draft completes', async () => {
+    setupDraftCompletionMocks();
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(res._body.data.isComplete).toBe(true);
+    expect(mockGenerateLineups).toHaveBeenCalledWith(
+      expect.anything(),
+      'league-1',
+    );
+    // Lineup generation should be called before schedule generation
+    const lineupsOrder = mockGenerateLineups.mock.invocationCallOrder[0];
+    const scheduleOrder = mockGenerateSchedule.mock.invocationCallOrder[0];
+    expect(lineupsOrder).toBeLessThan(scheduleOrder);
+  });
+
+  it('does not call schedule generation if lineup generation fails', async () => {
+    const { leaguesBuilder } = setupDraftCompletionMocks();
+    mockGenerateLineups.mockRejectedValue({
+      category: 'DATA',
+      code: 'INSERT_FAILED',
+      message: 'Lineup generation failed',
+    });
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(500);
+    expect(mockGenerateSchedule).not.toHaveBeenCalled();
     expect(leaguesBuilder.update).not.toHaveBeenCalledWith(
       expect.objectContaining({ status: 'regular_season' }),
     );

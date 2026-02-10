@@ -22,6 +22,7 @@ import { createServerClient } from '@lib/supabase/server';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '@lib/draft/draft-order';
 import { SeededRNG } from '@lib/rng/seeded-rng';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
+import { generateAndInsertLineups } from '../../_lib/generate-lineup-rows';
 
 // ---------- Schemas ----------
 
@@ -296,6 +297,7 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
 
     if (next === null) {
       isComplete = true;
+      await generateAndInsertLineups(supabase, leagueId);
       await generateAndInsertSchedule(supabase, leagueId);
       await supabase
         .from('leagues')
