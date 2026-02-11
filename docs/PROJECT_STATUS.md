@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,773 tests across 244 files (all passing)
+**Test suite:** 2,786 tests across 245 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -401,6 +401,19 @@ Seven-layer architecture with strict downward-only imports:
 - All locally-implementable SRD requirements complete
 - 9 new tests
 
+### Phase 60 -- Blowout Pitcher Removal + Season Benchmark (REQ-SIM-011, REQ-NFR-002, REQ-COMP-008)
+- REQ-SIM-011 trigger #4: `runDeficit` field on PitcherGameState, blowout removal (5+ after 6th)
+- REQ-NFR-002: Full season benchmark (1,296 games in ~0.12s, target < 60s)
+- REQ-COMP-008: Dashboard loading/progress composition structural tests
+- Fixed TRACEABILITY.md mislabeling of REQ-SIM-011
+- 8 new tests
+
+### Phase 61 -- Arrow Key Navigation + Global API Error Handler (REQ-COMP-012, REQ-ERR-009)
+- DiamondField: ArrowRight/Down to next position, ArrowLeft/Up to previous (wrapping)
+- `withApiHandler`: defense-in-depth wrapper with requestId, ERROR logging, structured 500 response
+- Structural test: all API handlers import handleApiError
+- 13 new tests (5 component + 6 wrapper + 2 structural)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -481,9 +494,9 @@ require external infrastructure (Docker, Supabase Cloud, Vercel deployment).
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 59 |
-| Test files | 244 |
-| Total tests | 2,773 |
+| Phases completed | 61 |
+| Test files | 245 |
+| Total tests | 2,786 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |

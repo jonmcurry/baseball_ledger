@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-02-11 - Arrow Key Navigation + Global API Error Handler (Phase 61)
+
+### Phase 61: REQ-COMP-012, REQ-ERR-009
+
+Closes two remaining code-level SRD gaps: DiamondField keyboard navigation
+and a defense-in-depth API error handler wrapper.
+
+- **REQ-COMP-012: DiamondField Arrow key navigation**
+  - Added ArrowRight/ArrowDown to cycle to next position, ArrowLeft/ArrowUp for previous
+  - Wraps from last (DH) to first (C) and vice versa
+  - Uses refs for direct focus management within the SVG position markers
+  - 5 new component tests (Enter activation + 4 arrow key navigation)
+
+- **REQ-ERR-009: `withApiHandler` global error wrapper**
+  - Created `api/_lib/with-api-handler.ts`: generates requestId, wraps handler in try/catch
+  - Logs at ERROR level with requestId and operation context on unhandled errors
+  - Returns structured 500 ApiErrorResponse via `handleApiError()`
+  - 6 new unit tests + 2 structural tests (wrapper exists, all handlers import handleApiError)
+
+**Test count**: 2,786 across 245 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - Simulation Gaps + Performance Benchmark (Phase 60)
 
 ### Phase 60: REQ-SIM-011, REQ-NFR-002, REQ-COMP-008

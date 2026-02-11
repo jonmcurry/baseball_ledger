@@ -8,6 +8,7 @@
  * Layer 6: Presentational component. No store or hook imports.
  */
 
+import { useRef, useCallback } from 'react';
 import type { BaseState } from '@lib/types/game';
 
 export interface FieldPosition {
@@ -48,6 +49,9 @@ function baseClass(occupied: boolean): string {
   return occupied ? 'fill-ballpark' : 'fill-sandstone/30';
 }
 
+/** Ordered position keys for arrow key navigation */
+const POSITION_KEYS = Object.keys(POSITION_COORDS);
+
 export function DiamondField({
   positions,
   isEditable = false,
@@ -56,6 +60,27 @@ export function DiamondField({
   outs,
 }: DiamondFieldProps) {
   const posMap = new Map(positions.map((p) => [p.position, p.playerName]));
+  const positionRefs = useRef<(SVGGElement | null)[]>([]);
+
+  const handleArrowKey = useCallback((e: React.KeyboardEvent, index: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const pos = POSITION_KEYS[index];
+      onPositionClick?.(pos);
+      return;
+    }
+
+    let nextIndex = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      nextIndex = (index + 1) % POSITION_KEYS.length;
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      nextIndex = (index - 1 + POSITION_KEYS.length) % POSITION_KEYS.length;
+    }
+
+    if (nextIndex >= 0) {
+      e.preventDefault();
+      positionRefs.current[nextIndex]?.focus();
+    }
+  }, [onPositionClick]);
 
   return (
     <svg
@@ -118,7 +143,7 @@ export function DiamondField({
       )}
 
       {/* Position markers */}
-      {Object.entries(POSITION_COORDS).map(([pos, coords]) => {
+      {Object.entries(POSITION_COORDS).map(([pos, coords], idx) => {
         const playerName = posMap.get(pos) ?? '';
         const hasPlayer = playerName.length > 0;
 
@@ -126,11 +151,12 @@ export function DiamondField({
           <g key={pos}>
             {isEditable ? (
               <g
+                ref={(el) => { positionRefs.current[idx] = el; }}
                 role="button"
                 tabIndex={0}
                 aria-label={`${pos}: ${playerName || 'empty'}`}
                 onClick={() => onPositionClick?.(pos)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onPositionClick?.(pos); }}
+                onKeyDown={(e) => handleArrowKey(e, idx)}
                 className="cursor-pointer"
               >
                 <circle cx={coords.x} cy={coords.y} r={20}

@@ -113,4 +113,41 @@ describe('API contracts and infrastructure', () => {
       expect(content).toContain('requirements:');
     }
   });
+
+  // -----------------------------------------------------------------------
+  // REQ-ERR-009: Global API error handler
+  // -----------------------------------------------------------------------
+
+  it('REQ-ERR-009: withApiHandler wrapper exists in api/_lib/', () => {
+    const content = readFileSync(resolve(API_DIR, '_lib', 'with-api-handler.ts'), 'utf-8');
+    expect(content).toContain('export function withApiHandler');
+    expect(content).toContain('handleApiError');
+    expect(content).toContain('logger.error');
+  });
+
+  it('REQ-ERR-009: all API handler files import handleApiError', () => {
+    // Scan all top-level .ts files and [id]/*.ts files in the api/ directory
+    const handlerDirs = [
+      resolve(API_DIR, 'leagues'),
+      resolve(API_DIR, 'leagues', '[id]'),
+      resolve(API_DIR, 'ai'),
+    ];
+
+    const handlerFiles: string[] = [];
+    for (const dir of handlerDirs) {
+      if (!existsSync(dir)) continue;
+      const files = readdirSync(dir)
+        .filter((f) => f.endsWith('.ts') && !f.startsWith('_'));
+      for (const f of files) {
+        handlerFiles.push(resolve(dir, f));
+      }
+    }
+
+    expect(handlerFiles.length).toBeGreaterThan(0);
+
+    for (const file of handlerFiles) {
+      const content = readFileSync(file, 'utf-8');
+      expect(content).toMatch(/handleApiError/);
+    }
+  });
 });

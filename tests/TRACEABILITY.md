@@ -355,7 +355,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | Requirement | Test File(s) |
 |-------------|-------------|
 | REQ-COMP-012 ConfirmDialog alertdialog role | `tests/unit/components/forms/ConfirmDialog.test.tsx` (alertdialog ARIA test) |
-| REQ-COMP-012 DiamondField group role | `tests/unit/components/baseball/DiamondField.test.tsx` (group role + lineup label) |
+| REQ-COMP-012 DiamondField group role + arrow keys | `tests/unit/components/baseball/DiamondField.test.tsx` (group role + lineup label + arrow key navigation) |
 | REQ-COMP-012 LineScore table caption | `tests/unit/components/baseball/LineScore.test.tsx` (caption accessibility) |
 | REQ-COMP-012 Pagination aria-current | `tests/unit/components/data-display/Pagination.test.tsx` (aria-current="page") |
 | REQ-COMP-012 StatTable grid role | `tests/unit/components/data-display/StatTable.test.tsx` (grid role, aria-sort="none") |
@@ -521,7 +521,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-ERR-003 ApiErrorResponse envelope | `tests/unit/api/_lib/errors.test.ts` |
 | REQ-ERR-004 X-Request-Id header | `tests/unit/api/_lib/response.test.ts` (requestId in all responses) |
 | REQ-ERR-007 Zod to AppError | `tests/unit/api/_lib/validate.test.ts` (validation -> structured error) |
-| REQ-ERR-009 Two error boundaries | `tests/unit/components/feedback/ErrorBoundary.test.tsx`, `src/router.tsx` |
+| REQ-ERR-009 Two error boundaries | `tests/unit/components/feedback/ErrorBoundary.test.tsx`, `src/router.tsx`, `tests/unit/api/_lib/with-api-handler.test.ts`, `tests/unit/config/api-contracts.test.ts` |
 | REQ-ERR-012 ErrorBanner for user actions | `tests/unit/components/feedback/ErrorBanner.test.tsx` |
 | REQ-ERR-017 Graceful degradation | `tests/unit/hooks/useManagerExplanations.test.ts` (AI failure keeps template) |
 
