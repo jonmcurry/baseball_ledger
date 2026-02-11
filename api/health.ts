@@ -1,21 +1,39 @@
 /**
- * GET /api/health -- Health check endpoint
+ * GET /api/health -- Import diagnostic
  *
- * Returns 200 if the serverless function can load and execute.
- * Used to diagnose deployment issues.
+ * Uses the same imports as api/leagues/index.ts to identify
+ * which one causes FUNCTION_INVOCATION_FAILED.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { z } from 'zod';
+import { checkMethod } from './_lib/method-guard';
+import { requireAuth } from './_lib/auth';
+import { validateBody } from './_lib/validate';
+import { ok, created } from './_lib/response';
+import { handleApiError } from './_lib/errors';
+import { snakeToCamel } from './_lib/transform';
+import { createServerClient } from '@lib/supabase/server';
+import type { Json } from '@lib/types/database';
+import { loadCsvFiles } from './_lib/load-csvs';
+import { runCsvPipeline } from '@lib/csv/load-pipeline';
 
-export default function handler(_req: VercelRequest, res: VercelResponse) {
+export default function handler(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({
-    status: 'ok',
+    status: 'imports-ok',
     timestamp: new Date().toISOString(),
-    env: {
-      hasSupabaseUrl: !!process.env.SUPABASE_URL,
-      hasViteSupabaseUrl: !!process.env.VITE_SUPABASE_URL,
-      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      nodeVersion: process.version,
+    modules: {
+      zod: typeof z.object === 'function',
+      checkMethod: typeof checkMethod === 'function',
+      requireAuth: typeof requireAuth === 'function',
+      validateBody: typeof validateBody === 'function',
+      ok: typeof ok === 'function',
+      created: typeof created === 'function',
+      handleApiError: typeof handleApiError === 'function',
+      snakeToCamel: typeof snakeToCamel === 'function',
+      createServerClient: typeof createServerClient === 'function',
+      loadCsvFiles: typeof loadCsvFiles === 'function',
+      runCsvPipeline: typeof runCsvPipeline === 'function',
     },
   });
 }
