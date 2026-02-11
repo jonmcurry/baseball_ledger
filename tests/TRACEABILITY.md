@@ -229,3 +229,142 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-NFR-014 Atomic commit via RPC | `tests/unit/api/_lib/simulate-day.test.ts`, `tests/unit/api/leagues/[id]/simulate.test.ts` |
 | REQ-LGE-008 Shared team config loader | `tests/unit/api/_lib/load-team-config.test.ts` |
 | REQ-LGE-008 Playoff shared module | `tests/unit/api/_lib/simulate-playoff-game.test.ts` |
+
+## Phase 27: API Route Consolidation
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-API-002 Consolidated teams endpoint | `tests/unit/api/leagues/[id]/teams.test.ts` (GET, PATCH, POST) |
+| REQ-API-005 Consolidated stats endpoint | `tests/unit/api/leagues/[id]/stats.test.ts` (batting, pitching, team, standings) |
+| REQ-API-003 Consolidated draft endpoint | `tests/unit/api/leagues/[id]/draft.test.ts` (state, pick, available players) |
+
+## Phase 28: Schedule Generation Wiring
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SCH-001 Schedule generation on draft completion | `tests/unit/api/_lib/generate-schedule-rows.test.ts` |
+| REQ-SCH-002 Schedule fetch + day filter | `tests/unit/api/leagues/[id]/schedule.test.ts` (GET handler) |
+
+## Phase 29: Lineup Update API
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-002 Lineup save via PATCH | `tests/unit/api/leagues/[id]/teams.test.ts` (PATCH lineup update tests) |
+| REQ-RST-003 Lineup slot/order/position | `tests/unit/api/leagues/[id]/teams.test.ts` (roster slot assignment tests) |
+
+## Phase 30: Post-Draft Lineup Auto-Generation
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-002 Auto-generated lineups | `tests/unit/api/_lib/generate-lineup-rows.test.ts` |
+| REQ-RST-003 Estimated batting stats | `tests/unit/api/_lib/generate-lineup-rows.test.ts` (estimateBattingStats tests) |
+
+## Phase 31: Client-Driven Multi-Day Simulation
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-010 Simulation store | `tests/unit/stores/simulationStore.test.ts` |
+| REQ-STATE-011 Async simulation actions | `tests/unit/stores/simulationStore-async.test.ts` |
+| REQ-NFR-021 Chunked client-driven sim | `tests/unit/stores/simulationStore-async.test.ts` (day loop, progress tracking) |
+
+## Phase 32: Post-Simulation Dashboard Refresh
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-014 Cache invalidation on sim complete | `tests/unit/hooks/useRealtimeProgress.test.ts` (fetchLeagueData on completion) |
+| REQ-SCH-007 Simulation notification | `tests/unit/features/dashboard/SimulationNotification.test.tsx` |
+| REQ-UI-007 Results ticker | `tests/unit/features/dashboard/ResultsTicker.test.tsx` |
+
+## Phase 33: Season Completion Ceremony
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SCH-009 Season complete detection | `tests/unit/features/dashboard/SeasonCompletePanel.test.tsx` |
+| REQ-LGE-009 Champion announcement | `tests/unit/features/dashboard/SeasonCompletePanel.test.tsx` (StampAnimation, champion display) |
+
+## Phase 34: Playoff Dashboard Integration
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-LGE-009 Playoff status panel | `tests/unit/features/dashboard/PlayoffStatusPanel.test.tsx` |
+| REQ-SCH-007 Playoff simulation notifications | `tests/unit/features/dashboard/SimulationNotification.test.tsx` (playoff message override) |
+
+## Phase 35: Draft Pick Timer Enforcement
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-DFT-004 Draft timer hook | `tests/unit/features/draft/hooks/useDraftTimer.test.ts` |
+| REQ-DFT-004 Timer UI component | `tests/unit/features/draft/PickTimer.test.tsx` |
+| REQ-DFT-004 Auto-pick on expiry | `tests/unit/lib/draft/auto-pick-selector.test.ts` (selectBestAvailable) |
+
+## Phase 36: Free Agent Pickup Flow
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-005 Add/drop form | `tests/unit/features/transactions/AddDropForm.test.tsx` |
+| REQ-RST-005 Player pool transform | `tests/unit/lib/transforms/player-pool-transform.test.ts` (transformPoolRows) |
+
+## Phase 37: Transaction History Persistence
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-005 Transaction row transform | `tests/unit/lib/transforms/transaction-transform.test.ts` (transformTransactionRows) |
+| REQ-RST-005 Transaction API write + read | `tests/unit/api/leagues/[id]/teams.test.ts` (transaction insertion, history fetch) |
+
+## Phase 38: CPU Trade Auto-Evaluation
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-005 Trade eval request builder | `tests/unit/lib/transforms/trade-eval-request-builder.test.ts` (buildTradeEvalRequest) |
+| REQ-AI-006 CPU manager trade evaluation | `tests/unit/api/leagues/[id]/teams.test.ts` (CPU trade accept/reject/counter) |
+
+## Phase 39: Season Archive Enrichment
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SCH-009 Archive data builder | `tests/unit/lib/transforms/archive-builder.test.ts` (buildArchiveData) |
+| REQ-SCH-009 Archive API snapshot | `tests/unit/api/leagues/[id]/archive.test.ts` (champion, standings, leaders) |
+
+## Phase 40: Start New Season Flow
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SCH-009 Season start validator | `tests/unit/lib/validators/season-start.test.ts` (canStartSeason) |
+| REQ-SCH-009 New season panel | `tests/unit/features/dashboard/NewSeasonPanel.test.tsx` |
+| REQ-SCH-009 Start season API | `tests/unit/api/leagues/[id]/schedule.test.ts` (POST handler) |
+
+## Phase 41: Persist Migration Infrastructure
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-009 Store migration config | `tests/unit/stores/persist-migration.test.ts` (createMigrationConfig) |
+| REQ-STATE-009 Sequential migration runner | `tests/unit/stores/persist-migration.test.ts` (version chaining, fallback) |
+
+## Phase 42: Accessibility Focus Trap + Page Titles
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-COMP-012 Focus trap hook | `tests/unit/hooks/useFocusTrap.test.ts` (Tab/Shift+Tab cycling, Escape, focus save/restore) |
+| REQ-COMP-013 Page title hook | `tests/unit/hooks/usePageTitle.test.ts` (document.title with suffix, restore on unmount) |
+| REQ-COMP-012 ConfirmDialog focus trap | `tests/unit/components/forms/ConfirmDialog.test.tsx` (Tab wrap, focus restore) |
+| REQ-COMP-012 PlayerProfileModal focus | `tests/unit/components/baseball/PlayerProfileModal.test.tsx` (Escape, first element focus) |
+
+## Phase 43: WCAG ARIA Compliance Audit
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-COMP-012 ConfirmDialog alertdialog role | `tests/unit/components/forms/ConfirmDialog.test.tsx` (alertdialog ARIA test) |
+| REQ-COMP-012 DiamondField group role | `tests/unit/components/baseball/DiamondField.test.tsx` (group role + lineup label) |
+| REQ-COMP-012 LineScore table caption | `tests/unit/components/baseball/LineScore.test.tsx` (caption accessibility) |
+| REQ-COMP-012 Pagination aria-current | `tests/unit/components/data-display/Pagination.test.tsx` (aria-current="page") |
+| REQ-COMP-012 StatTable grid role | `tests/unit/components/data-display/StatTable.test.tsx` (grid role, aria-sort="none") |
+| REQ-COMP-012 LoadingLedger aria-label | `tests/unit/components/feedback/LoadingLedger.test.tsx` (aria-label matching message) |
+| REQ-COMP-012 DraftTicker aria-live | `tests/unit/features/draft/DraftTicker.test.tsx` (aria-live="polite", label) |
+
+## Phase 44: Feature-Level Error Boundaries
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ERR-010 Per-feature error boundary | `tests/unit/components/feedback/ErrorBoundary.test.tsx` (chunk-load failure test) |
+| REQ-ERR-011 Error recovery UI | `tests/unit/components/feedback/ErrorBoundary.test.tsx` (Try Again, Return to Dashboard) |
+| REQ-COMP-007 ErrorBoundary wraps Suspense | `src/router.tsx` (LazyPage wrapper: ErrorBoundary > Suspense > lazy component) |

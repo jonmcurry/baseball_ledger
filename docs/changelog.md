@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-11 - Traceability Matrix Update (Phase 45)
+
+### Phase 45: Traceability Matrix Update (REQ-TEST-011)
+
+Updated requirement-to-test traceability matrix covering Phases 27-44 (18 phases).
+
+- **Updated `tests/TRACEABILITY.md`**
+  - Added 18 phase sections (Phase 27 through Phase 44)
+  - Mapped ~50 requirement-to-test entries across all phases
+  - Covers: API consolidation, schedule/lineup wiring, simulation store, dashboard panels,
+    draft timer, free agent flow, transaction history, trade eval, archive enrichment,
+    new season flow, persist migrations, focus trap, page titles, ARIA audit, error boundaries
+
+- **Updated `docs/PROJECT_STATUS.md`**
+  - REQ-NFR-017: Marked as VERIFIED (143KB gzipped, under 200KB target)
+  - REQ-TEST-011: Marked as CURRENT (traceability through Phase 44)
+  - REQ-TEST count: 14 -> 15 of 18
+
+**Tests:** 2,613 tests across 229 files (no changes, documentation only)
+
 ## 2026-02-11 - Feature-Level Error Boundaries (Phase 44)
 
 ### Phase 44: Feature-Level Error Boundaries (REQ-ERR-010, REQ-ERR-011, REQ-COMP-007)

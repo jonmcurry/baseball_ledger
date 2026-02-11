@@ -322,7 +322,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
-| REQ-TEST | 14 of 18 | Mostly done | 2,554 tests, TDD, traceability, E2E, benchmarks |
+| REQ-TEST | 15 of 18 | Mostly done | 2,613 tests, TDD, traceability current, E2E, benchmarks |
 | REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json |
 
 ### UI Pages (REQ-UI)
@@ -360,18 +360,18 @@ Seven-layer architecture with strict downward-only imports:
    - leagueStore uses immer, but other stores with nested state updates could benefit
    - Low priority since current stores work correctly
 
-4. **REQ-NFR-017: Bundle size < 200KB gzipped**
+4. **REQ-NFR-017: Bundle size < 200KB gzipped** -- VERIFIED
    - Route-level code splitting with React.lazy + Suspense in place
    - Manual chunk splitting configured (vendor/simulation/supabase)
-   - Actual bundle size not yet measured against target
+   - Measured: 143KB gzipped initial load (index 64KB + vendor 33KB + supabase 45KB)
 
 5. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds**
    - Global thresholds set (60% stmt, 50% branch)
    - Per-directory thresholds (e.g., rng/ 100%) not yet enforced in CI
 
-6. **REQ-TEST-011: Traceability matrix maintenance**
-   - TRACEABILITY.md exists but behind after Phases 27-42
-   - Needs update to map all recent requirements to tests
+6. **REQ-TEST-011: Traceability matrix maintenance** -- CURRENT
+   - TRACEABILITY.md updated through Phase 44
+   - All phases have mapped requirement-to-test entries
 
 ### Lower Priority (Nice-to-Have / Future)
 
