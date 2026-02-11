@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-02-11 - Auth Lifecycle + npm Scripts Verification (Phase 54)
+
+### Phase 54: Auth Lifecycle (REQ-STATE-015) + npm Scripts Verification (REQ-TEST-018)
+
+Completes the auth lifecycle flow per REQ-STATE-015 and adds structural
+validation of required npm scripts per REQ-TEST-018.
+
+- **Modified `src/stores/authStore.ts`**
+  - `initialize()` with session: triggers background refetch of leagueStore
+    and rosterStore when persisted IDs exist
+  - `initialize()` no session: resets all cached stores (league, roster, stats)
+  - `onAuthStateChange` signout: resets all stores (league, roster, stats, simulation)
+
+- **Modified `tests/unit/stores/authStore-async.test.ts`** (4 new tests)
+  - Session + persisted leagueId triggers background fetchLeagueData + fetchRoster
+  - Session + no teamId skips roster refetch
+  - No session clears all cached stores
+  - onAuthStateChange signout resets all stores
+
+- **Created `tests/unit/config/npm-scripts.test.ts`** (7 tests)
+  - Verifies all 7 SRD-required test scripts exist with correct commands
+
+**Tests:** 2,704 tests across 235 files (11 new)
+
 ## 2026-02-11 - Cache Invalidation (Phase 53)
 
 ### Phase 53: Stale-While-Revalidate Cache Invalidation (REQ-STATE-011, REQ-STATE-012)

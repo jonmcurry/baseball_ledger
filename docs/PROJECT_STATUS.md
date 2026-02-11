@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,693 tests across 234 files (all passing)
+**Test suite:** 2,704 tests across 235 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--53)
+## Completed Phases (1--54)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -357,6 +357,13 @@ Seven-layer architecture with strict downward-only imports:
 - Stale data preserved during background refetch (stale-while-revalidate pattern)
 - 25 new tests (5 cross-store + 7 sync + 11 async + 2 existing modified)
 
+### Phase 54 -- Auth Lifecycle + npm Scripts Verification (REQ-STATE-015, REQ-TEST-018)
+- Auth init with session triggers background refetch of league/roster when IDs persisted
+- Auth init without session clears all cached stores
+- onAuthStateChange signout resets all stores
+- Structural test validates all 7 required npm scripts
+- 11 new tests (4 auth lifecycle + 7 npm scripts)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -381,7 +388,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
-| REQ-TEST | 17 of 18 | Mostly done | 2,613 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks |
+| REQ-TEST | 18 | Done | 2,704 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
 | REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json |
 
 ### UI Pages (REQ-UI)
@@ -477,9 +484,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 53 |
-| Test files | 234 |
-| Total tests | 2,693 |
+| Phases completed | 54 |
+| Test files | 235 |
+| Total tests | 2,704 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |

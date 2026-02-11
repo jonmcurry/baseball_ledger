@@ -92,7 +92,21 @@ export const useAuthStore = create<AuthStore>()(
               },
               isInitialized: true,
             }, false, 'initialize');
+
+            // REQ-STATE-015: Background refetch if persisted IDs exist
+            const leagueId = useLeagueStore.getState().activeLeagueId;
+            if (leagueId) {
+              useLeagueStore.getState().fetchLeagueData(leagueId);
+              const teamId = useRosterStore.getState().activeTeamId;
+              if (teamId) {
+                useRosterStore.getState().fetchRoster(leagueId, teamId);
+              }
+            }
           } else {
+            // REQ-STATE-015: Clear cached stores when no session found
+            useLeagueStore.getState().reset();
+            useRosterStore.getState().reset();
+            useStatsStore.getState().reset();
             set({ isInitialized: true }, false, 'initialize/no-session');
           }
 
@@ -112,6 +126,11 @@ export const useAuthStore = create<AuthStore>()(
               }, false, 'authStateChange');
             } else {
               set({ user: null, session: null }, false, 'authStateChange/signout');
+              // REQ-STATE-015: Clear all cached stores on session loss
+              useLeagueStore.getState().reset();
+              useRosterStore.getState().reset();
+              useStatsStore.getState().reset();
+              useSimulationStore.getState().reset();
             }
           });
         } catch (err) {
