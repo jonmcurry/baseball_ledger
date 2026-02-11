@@ -1,4 +1,4 @@
-﻿/**
+/**
  * LeagueConfigPage
  *
  * League creation and configuration page.
@@ -15,8 +15,10 @@ import { LeagueConfigForm } from './LeagueConfigForm';
 import { InviteKeyDisplay } from './InviteKeyDisplay';
 import type { LeagueFormData } from './LeagueConfigForm';
 import * as leagueService from '@services/league-service';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function LeagueConfigPage() {
+  usePageTitle('League Setup');
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * RosterPage
  *
  * Team roster management with lineup configuration.
@@ -19,8 +19,10 @@ import { PitchingRotation } from './PitchingRotation';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import type { RosterEntry } from '@lib/types/roster';
 import type { PlayerCard } from '@lib/types/player';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function RosterPage() {
+  usePageTitle('Roster');
   const { league } = useLeague();
   const { myTeam, roster, starters, bench, isRosterLoading, rosterError } = useTeam();
   const fetchRoster = useRosterStore((s) => s.fetchRoster);

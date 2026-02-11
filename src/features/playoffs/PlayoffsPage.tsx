@@ -16,8 +16,10 @@ import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayoffBracketView } from './PlayoffBracketView';
 import { SeriesCard } from './SeriesCard';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function PlayoffsPage() {
+  usePageTitle('Playoffs');
   const { teams, playoffBracket, isLoading, error, leagueStatus } = useLeague();
   usePostseasonTheme();
 

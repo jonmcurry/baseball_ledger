@@ -1,4 +1,4 @@
-﻿/**
+/**
  * StatsPage
  *
  * League statistics with batting/pitching leader boards.
@@ -17,6 +17,7 @@ import {
   PITCHING_COLUMNS_TRADITIONAL,
   PITCHING_COLUMNS_ADVANCED,
 } from './StatColumnConfigs';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 const LEAGUE_FILTERS = ['combined', 'AL', 'NL'] as const;
 
@@ -34,6 +35,7 @@ function resolveSortValue(obj: unknown, key: string): unknown {
 }
 
 export function StatsPage() {
+  usePageTitle('Statistics');
   const battingLeaders = useStatsStore((s) => s.battingLeaders);
   const pitchingLeaders = useStatsStore((s) => s.pitchingLeaders);
   const activeTab = useStatsStore((s) => s.activeTab);

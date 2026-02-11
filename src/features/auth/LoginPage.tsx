@@ -1,8 +1,10 @@
 ﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function LoginPage() {
+  usePageTitle('Sign In');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);

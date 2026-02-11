@@ -3,11 +3,14 @@
  *
  * "Digital Baseball Card" popup (REQ-UI-009).
  * Displays player attributes, card ratings, and defensive stats.
+ * REQ-COMP-012: Focus trapping via useFocusTrap hook.
  *
- * Layer 6: Presentational component. No store or hook imports.
+ * Layer 6: Presentational component.
  */
 
+import { useRef } from 'react';
 import type { PlayerCard } from '@lib/types/player';
+import { useFocusTrap } from '@hooks/useFocusTrap';
 
 export interface PlayerProfileModalProps {
   player: PlayerCard;
@@ -40,6 +43,9 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
 }
 
 export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileModalProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, isOpen, onClose);
+
   if (!isOpen) return null;
 
   const powerLabel = POWER_LABELS[player.powerRating] ?? String(player.powerRating);
@@ -54,7 +60,7 @@ export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileMod
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-sm rounded-card border-2 border-sandstone bg-old-lace shadow-ledger">
+      <div ref={containerRef} className="w-full max-w-sm rounded-card border-2 border-sandstone bg-old-lace shadow-ledger">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-sandstone px-gutter-lg py-3">
           <div>

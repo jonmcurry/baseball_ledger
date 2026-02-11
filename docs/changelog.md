@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-02-11 - Accessibility: Focus Trap + Page Titles (Phase 42)
+
+### Phase 42: Accessibility Focus Trap + Page Titles (REQ-COMP-012, REQ-COMP-013)
+
+WCAG 2.1 Level AA focus management for modals and page titles for all feature pages.
+
+- **Created `src/hooks/useFocusTrap.ts` (L5 hook)**
+  - Encapsulates Tab/Shift+Tab cycling within a container, Escape key handling, focus save/restore
+  - Replaces duplicated focus logic in modal components
+  - 5 tests in `useFocusTrap.test.ts`
+
+- **Created `src/hooks/usePageTitle.ts` (L5 hook)**
+  - Sets `document.title` with "Page | Baseball Ledger" format
+  - Restores previous title on unmount
+  - 3 tests in `usePageTitle.test.ts`
+
+- **Modified `src/components/forms/ConfirmDialog.tsx`**
+  - Replaced manual focus management with `useFocusTrap` hook
+  - 2 new tests (Tab wrap, focus restore)
+
+- **Modified `src/components/baseball/PlayerCardDisplay.tsx`**
+  - Replaced manual focus management with `useFocusTrap` hook
+
+- **Modified `src/components/baseball/PlayerProfileModal.tsx`**
+  - Added focus management via `useFocusTrap` (previously had none)
+  - 2 new tests (Escape key, focus on open)
+
+- **Added `usePageTitle` to all 13 feature pages**
+  - Home, Sign In, Join League, League Setup, Dashboard, Draft Board, Roster, Statistics, Standings, Game Viewer, Playoffs, Season Archive, Transactions
+
+**Tests:** 12 new (5 focus trap + 3 page title + 2 ConfirmDialog + 2 PlayerProfileModal)
+**Total:** 2,604 tests across 229 files
+
 ## 2026-02-11 - Persist Migration Infrastructure (Phase 41)
 
 ### Phase 41: Persist Migration Infrastructure (REQ-STATE-009)

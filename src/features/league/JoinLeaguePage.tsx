@@ -1,4 +1,4 @@
-﻿/**
+/**
  * JoinLeaguePage
  *
  * Page for joining an existing league via invite code.
@@ -13,8 +13,10 @@ import { Input } from '@components/forms/Input';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import * as leagueService from '@services/league-service';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function JoinLeaguePage() {
+  usePageTitle('Join League');
   const { user, isInitialized } = useAuth();
   const navigate = useNavigate();
   const [inviteCode, setInviteCode] = useState('');

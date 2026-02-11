@@ -3,12 +3,14 @@
  *
  * Modal displaying a "Digital Baseball Card" with vintage styling.
  * Shows player identity, position, key stats, and card ratings.
+ * REQ-COMP-012: Focus trapping via useFocusTrap hook.
  *
- * Layer 6: Presentational component. No store or hook imports.
+ * Layer 6: Presentational component.
  */
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import type { PlayerCard } from '@lib/types/player';
+import { useFocusTrap } from '@hooks/useFocusTrap';
 
 export interface PlayerCardDisplayProps {
   player: PlayerCard;
@@ -28,27 +30,8 @@ const POWER_LABELS: Record<number, string> = {
 };
 
 export function PlayerCardDisplay({ player, isOpen, onClose }: PlayerCardDisplayProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const previousFocus = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      previousFocus.current = document.activeElement as HTMLElement;
-      closeRef.current?.focus();
-    } else if (previousFocus.current) {
-      previousFocus.current.focus();
-      previousFocus.current = null;
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -63,7 +46,7 @@ export function PlayerCardDisplay({ player, isOpen, onClose }: PlayerCardDisplay
       aria-label={`${player.nameFirst} ${player.nameLast} player card`}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-sm rounded-card border-2 border-sandstone bg-old-lace shadow-ledger">
+      <div ref={containerRef} className="w-full max-w-sm rounded-card border-2 border-sandstone bg-old-lace shadow-ledger">
         {/* Card header */}
         <div className="flex items-center justify-between border-b-2 border-sandstone bg-ballpark px-gutter py-3">
           <div>
@@ -75,7 +58,6 @@ export function PlayerCardDisplay({ player, isOpen, onClose }: PlayerCardDisplay
             </p>
           </div>
           <button
-            ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label="Close player card"

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * DraftBoardPage
  *
  * Live draft board with pick timer and player pool.
@@ -24,8 +24,10 @@ import { RosterPreviewPanel } from './RosterPreviewPanel';
 import type { AvailablePlayer } from '@stores/draftStore';
 import type { PlayerCard } from '@lib/types/player';
 import type { DraftReasoningRequest } from '@lib/types/ai';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function DraftBoardPage() {
+  usePageTitle('Draft Board');
   const { league } = useLeague();
   const {
     draftState,

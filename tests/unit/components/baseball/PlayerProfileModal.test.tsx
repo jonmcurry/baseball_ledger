@@ -134,4 +134,21 @@ describe('PlayerProfileModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('calls onClose when Escape is pressed', () => {
+    const onClose = vi.fn();
+    render(
+      <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={onClose} />,
+    );
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('focuses first focusable element on open', () => {
+    render(
+      <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
+    );
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    expect(document.activeElement).toBe(closeButton);
+  });
 });

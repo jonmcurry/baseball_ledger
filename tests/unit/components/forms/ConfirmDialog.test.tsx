@@ -53,4 +53,36 @@ describe('ConfirmDialog', () => {
     await user.keyboard('{Escape}');
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('traps focus within dialog on Tab wrap', () => {
+    render(<ConfirmDialog {...defaultProps} />);
+
+    const buttons = screen.getAllByRole('button');
+    const lastButton = buttons[buttons.length - 1];
+
+    lastButton.focus();
+
+    const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+    Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+    document.dispatchEvent(event);
+
+    expect(document.activeElement).toBe(buttons[0]);
+  });
+
+  it('restores focus to trigger element on close', () => {
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Open';
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    const { rerender } = render(<ConfirmDialog {...defaultProps} isOpen={true} />);
+
+    const dialogButtons = screen.getAllByRole('button');
+    expect(dialogButtons).toContain(document.activeElement);
+
+    rerender(<ConfirmDialog {...defaultProps} isOpen={false} />);
+
+    expect(document.activeElement).toBe(trigger);
+    document.body.removeChild(trigger);
+  });
 });

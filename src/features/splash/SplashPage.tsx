@@ -4,7 +4,11 @@
  * Landing page with "Create a League" and "Join a League" options.
  */
 
+import { usePageTitle } from '@hooks/usePageTitle';
+
 export function SplashPage() {
+  usePageTitle('Home');
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-old-lace p-gutter-xl">
       <h1 className="font-headline text-4xl font-bold text-ballpark">Baseball Ledger</h1>

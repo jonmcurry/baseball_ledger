@@ -1,4 +1,4 @@
-﻿/**
+/**
  * GameViewerPage
  *
  * Play-by-play game viewer with line score and box score.
@@ -21,10 +21,12 @@ import { GameSummaryPanel } from './GameSummaryPanel';
 import { ManagerDecisionsPanel } from './ManagerDecisionsPanel';
 import { detectDecisions } from '@lib/ai/decision-detector';
 import type { GameSummaryRequest } from '@lib/types/ai';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 type ViewTab = 'play-by-play' | 'box-score';
 
 export function GameViewerPage() {
+  usePageTitle('Game Viewer');
   const { gameId } = useParams<{ gameId: string }>();
   const { teams } = useLeague();
   const simulationResults = useSimulationStore((s) => s.results);

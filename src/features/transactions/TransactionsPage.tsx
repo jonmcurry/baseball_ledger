@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TransactionsPage
  *
  * Player transactions, trades, and waiver wire.
@@ -23,6 +23,7 @@ import type { TradePlayer, TradePayload } from './TradeForm';
 import type { RosterEntry } from '@lib/types/roster';
 import type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 import { transformPoolRows } from '@lib/transforms/player-pool-transform';
+import { usePageTitle } from '@hooks/usePageTitle';
 import { buildTradeEvalRequest } from '@lib/transforms/trade-eval-request-builder';
 import { MANAGER_PROFILES } from '@lib/simulation/manager-profiles';
 import type { ManagerStyle } from '@lib/simulation/manager-profiles';
@@ -39,6 +40,7 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export function TransactionsPage() {
+  usePageTitle('Transactions');
   const { league, teams, isLoading: leagueLoading, error: leagueError } = useLeague();
   const { myTeam, roster, isRosterLoading, rosterError } = useTeam();
   const fetchMyRoster = useRosterStore((s) => s.fetchRoster);

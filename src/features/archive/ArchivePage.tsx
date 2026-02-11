@@ -17,8 +17,10 @@ import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { StampAnimation } from '@components/feedback/StampAnimation';
 import { SeasonList } from './SeasonList';
 import { SeasonDetail } from './SeasonDetail';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 export function ArchivePage() {
+  usePageTitle('Season Archive');
   const { league, isLoading, error, leagueStatus } = useLeague();
   const {
     seasons: archivedSeasons,

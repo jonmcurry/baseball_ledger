@@ -28,6 +28,7 @@ import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
 import { apiPost } from '@services/api-client';
 import { useLeagueStore } from '@stores/leagueStore';
 import { buildPlayoffGameMessage } from '@lib/schedule/playoff-display';
+import { usePageTitle } from '@hooks/usePageTitle';
 
 const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
   day: 1,
@@ -37,6 +38,7 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 };
 
 export function DashboardPage() {
+  usePageTitle('Dashboard');
   const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
   const { status, totalDays, completedGames, isRunning, progressPct, runSimulation, lastPlayoffResult } = useSimulation();
 
