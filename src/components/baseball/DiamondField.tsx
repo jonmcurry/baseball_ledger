@@ -59,8 +59,8 @@ export function DiamondField({
 
   return (
     <svg
-      role="img"
-      aria-label="Baseball diamond"
+      role="group"
+      aria-label="Baseball diamond lineup"
       viewBox="0 0 400 360"
       className="mx-auto w-full max-w-md"
     >

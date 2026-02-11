@@ -37,7 +37,7 @@ export function Pagination({
       >
         Previous
       </button>
-      <span className="font-stat text-sm text-ink">
+      <span className="font-stat text-sm text-ink" aria-current="page">
         {currentPage} / {totalPages}
       </span>
       <button

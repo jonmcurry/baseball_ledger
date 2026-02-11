@@ -14,7 +14,7 @@ export interface DraftTickerProps {
 
 export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
   return (
-    <div className="space-y-1" role="log" aria-label="Draft picks">
+    <div className="space-y-1" role="log" aria-live="polite" aria-label="Draft pick feed">
       <h3 className="font-headline text-sm font-bold text-ballpark">Draft Ticker</h3>
       {picks.length === 0 && (
         <p className="text-xs text-muted">No picks yet</p>

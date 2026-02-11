@@ -21,7 +21,7 @@ describe('LineupDiamond', () => {
     render(
       <LineupDiamond starters={[]} roster={[]} isEditable onAssign={mockOnAssign} />,
     );
-    expect(screen.getByLabelText('Baseball diamond')).toBeInTheDocument();
+    expect(screen.getByLabelText('Baseball diamond lineup')).toBeInTheDocument();
   });
 
   it('displays starter names with lineup order', () => {
@@ -65,7 +65,7 @@ describe('LineupDiamond', () => {
       <LineupDiamond starters={[]} roster={[]} isEditable onAssign={mockOnAssign} />,
     );
     // The diamond field should render with positions
-    const diamond = screen.getByLabelText('Baseball diamond');
+    const diamond = screen.getByLabelText('Baseball diamond lineup');
     expect(diamond).toBeInTheDocument();
   });
 });

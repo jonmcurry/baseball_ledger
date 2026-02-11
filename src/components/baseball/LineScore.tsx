@@ -36,6 +36,7 @@ export function LineScore({
   return (
     <div className="overflow-x-auto">
       <table className="font-stat text-sm" role="table">
+        <caption className="sr-only">{awayTeamName} vs {homeTeamName}</caption>
         <thead>
           <tr className="border-b-2 border-sandstone text-ink">
             <th className="px-2 py-1 text-left font-medium min-w-[80px]" />

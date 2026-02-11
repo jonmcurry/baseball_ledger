@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-11 - WCAG ARIA Compliance Audit (Phase 43)
+
+### Phase 43: WCAG ARIA Compliance Audit (REQ-COMP-012)
+
+Audited all shared components against SRD ARIA specification table and fixed 8 gaps.
+
+- **ConfirmDialog**: Changed `role="dialog"` to `role="alertdialog"` per ARIA spec for destructive confirmations
+- **DiamondField**: Changed `role="img"` to `role="group"` with `aria-label="Baseball diamond lineup"`
+- **LineScore**: Added `<caption>` describing game matchup (sr-only)
+- **Pagination**: Added `aria-current="page"` on current page indicator
+- **StatTable**: Changed `role="table"` to `role="grid"`, added `aria-sort="none"` for unsorted columns
+- **LoadingLedger**: Added `aria-label` matching the `message` prop
+- **DraftTicker**: Added `aria-live="polite"`, changed label to "Draft pick feed"
+- Updated all affected test files (StatTable, StatsPage, DiamondField, LineupDiamond)
+
+**Tests:** 8 new ARIA compliance tests + existing test updates
+**Total:** 2,612 tests across 229 files
+
 ## 2026-02-11 - Accessibility: Focus Trap + Page Titles (Phase 42)
 
 ### Phase 42: Accessibility Focus Trap + Page Titles (REQ-COMP-012, REQ-COMP-013)

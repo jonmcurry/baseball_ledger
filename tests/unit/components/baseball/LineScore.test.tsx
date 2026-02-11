@@ -21,6 +21,22 @@ const sampleInnings: InningScore[] = [
 ];
 
 describe('LineScore', () => {
+  it('renders table caption describing the matchup (REQ-COMP-012)', () => {
+    render(
+      <LineScore
+        awayTeamName="Red Sox"
+        homeTeamName="Yankees"
+        innings={sampleInnings}
+        awayTotal={{ R: 4, H: 8, E: 1 }}
+        homeTotal={{ R: 4, H: 7, E: 0 }}
+      />,
+    );
+    const caption = screen.getByRole('table').querySelector('caption');
+    expect(caption).toBeInTheDocument();
+    expect(caption?.textContent).toContain('Red Sox');
+    expect(caption?.textContent).toContain('Yankees');
+  });
+
   it('renders team names', () => {
     render(
       <LineScore

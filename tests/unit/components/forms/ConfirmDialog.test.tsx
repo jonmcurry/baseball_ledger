@@ -16,6 +16,11 @@ describe('ConfirmDialog', () => {
     onCancel: vi.fn(),
   };
 
+  it('uses alertdialog role for destructive confirmations (REQ-COMP-012)', () => {
+    render(<ConfirmDialog {...defaultProps} />);
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+  });
+
   it('renders nothing when closed', () => {
     render(<ConfirmDialog {...defaultProps} isOpen={false} />);
     expect(screen.queryByText('Drop Player')).not.toBeInTheDocument();

@@ -78,7 +78,7 @@ describe('StatsPage', () => {
     // NL player (p-3) should not be visible; AL players (p-1, p-2) remain
     // 3 total leaders, 2 are AL, 1 is NL
     // The table should show 2 data rows
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('grid');
     const tbody = table.querySelector('tbody')!;
     const rows = tbody.querySelectorAll('tr');
     expect(rows).toHaveLength(2);
@@ -91,7 +91,7 @@ describe('StatsPage', () => {
     render(<StatsPage />);
     await user.click(screen.getByText('NL'));
 
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('grid');
     const tbody = table.querySelector('tbody')!;
     const rows = tbody.querySelectorAll('tr');
     expect(rows).toHaveLength(1);
@@ -147,7 +147,7 @@ describe('StatsPage', () => {
 
   describe('sorting', () => {
     function getDataRows(): HTMLElement[] {
-      const table = screen.getByRole('table');
+      const table = screen.getByRole('grid');
       const tbody = table.querySelector('tbody')!;
       return Array.from(tbody.querySelectorAll('tr'));
     }

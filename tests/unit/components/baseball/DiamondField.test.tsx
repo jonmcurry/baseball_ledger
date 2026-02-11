@@ -20,9 +20,9 @@ const POSITIONS = [
 ];
 
 describe('DiamondField', () => {
-  it('renders SVG diamond with aria-label', () => {
+  it('uses group role with lineup aria-label (REQ-COMP-012)', () => {
     render(<DiamondField positions={POSITIONS} />);
-    expect(screen.getByRole('img', { name: 'Baseball diamond' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Baseball diamond lineup' })).toBeInTheDocument();
   });
 
   it('displays player names at positions', () => {

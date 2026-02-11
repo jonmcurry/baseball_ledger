@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,592 tests across 227 files (all passing)
+**Test suite:** 2,612 tests across 229 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -19,13 +19,13 @@ Seven-layer architecture with strict downward-only imports:
 | L2 -- API Helpers | Server-side utilities (auth, validation, DB) | 18 files |
 | L3 -- Services | HTTP client wrappers for API calls | 9 files |
 | L4 -- Stores | Zustand state management | 6 stores |
-| L5 -- Hooks | React hooks composing stores | 14 hooks |
+| L5 -- Hooks | React hooks composing stores | 16 hooks |
 | L6 -- Components | Shared UI components | 20+ files |
 | L7 -- Features | Page-level feature modules | 15 feature dirs, 40+ files |
 
 ---
 
-## Completed Phases (1--41)
+## Completed Phases (1--43)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -281,6 +281,18 @@ Seven-layer architecture with strict downward-only imports:
 - All 3 persisted stores (leagueStore, statsStore, rosterStore) wired with version=1 + migrate
 - Safe schema evolution path for production state changes
 
+### Phase 42 -- Accessibility: Focus Trap + Page Titles (REQ-COMP-012, REQ-COMP-013)
+- `useFocusTrap` L5 hook (Tab/Shift+Tab cycling, Escape key, focus save/restore)
+- `usePageTitle` L5 hook (document.title with "Page | Baseball Ledger" format)
+- 3 modal components refactored to use useFocusTrap (ConfirmDialog, PlayerCardDisplay, PlayerProfileModal)
+- 13 feature pages wired with usePageTitle
+
+### Phase 43 -- WCAG ARIA Compliance Audit (REQ-COMP-012)
+- 8 components audited against SRD ARIA specification table
+- ConfirmDialog: alertdialog role, DiamondField: group role, LineScore: caption
+- StatTable: grid role + aria-sort="none", Pagination: aria-current
+- LoadingLedger: aria-label, DraftTicker: aria-live + corrected label
+
 ---
 
 ## REQ-* Coverage by Category
@@ -302,7 +314,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-API | 10 of 11 | Mostly done | Endpoints, envelope format, pagination, error codes |
 | REQ-ERR | 18 of 20 | Mostly done | AppError, Zod validation, error boundaries, structured logging |
 | REQ-STATE | 15 of 16 | Mostly done | All stores, persist + migration, devtools, Realtime infra, cache invalidation |
-| REQ-COMP | 11 of 13 | Mostly done | Design tokens, components, routing, accessibility |
+| REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
 | REQ-TEST | 14 of 18 | Mostly done | 2,554 tests, TDD, traceability, E2E, benchmarks |
@@ -343,56 +355,51 @@ Seven-layer architecture with strict downward-only imports:
    - leagueStore uses immer, but other stores with nested state updates could benefit
    - Low priority since current stores work correctly
 
-4. **REQ-COMP-012 / REQ-COMP-013: WCAG 2.1 AA compliance**
-   - Skip links, aria-labels, semantic HTML largely in place
-   - Full audit not yet performed
-   - Color contrast checks needed for theme colors
-
-5. **REQ-NFR-017: Bundle size < 200KB gzipped**
+4. **REQ-NFR-017: Bundle size < 200KB gzipped**
    - Route-level code splitting with React.lazy + Suspense in place
    - Manual chunk splitting configured (vendor/simulation/supabase)
    - Actual bundle size not yet measured against target
 
-6. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds**
+5. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds**
    - Global thresholds set (60% stmt, 50% branch)
    - Per-directory thresholds (e.g., rng/ 100%) not yet enforced in CI
 
-7. **REQ-TEST-011: Traceability matrix maintenance**
-   - TRACEABILITY.md exists but may be behind after Phases 23-41
+6. **REQ-TEST-011: Traceability matrix maintenance**
+   - TRACEABILITY.md exists but behind after Phases 27-42
    - Needs update to map all recent requirements to tests
 
 ### Lower Priority (Nice-to-Have / Future)
 
-8. **REQ-LGE-010: League deletion**
+7. **REQ-LGE-010: League deletion**
    - DeleteLeagueButton component exists
    - API endpoint exists (DELETE /api/leagues/:id)
    - Cascade deletion of all related data needs verification
 
-9. **REQ-MIG-009: Full pgTAP coverage**
+8. **REQ-MIG-009: Full pgTAP coverage**
    - 40 assertions exist across 6 test files
    - Some are stubs -- need real Docker-based testing
 
-10. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
-    - Local dev environment works
-    - Staging and production environments not yet set up
-    - Supabase project provisioning needed for deployment
+9. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
+   - Local dev environment works
+   - Staging and production environments not yet set up
+   - Supabase project provisioning needed for deployment
 
-11. **REQ-MIG-012: CI database migration validation**
+10. **REQ-MIG-012: CI database migration validation**
     - CI runs lint + type-check + vitest
     - Does not yet validate migrations against a real database
 
-12. **REQ-ENV-010: API key rotation policy**
+11. **REQ-ENV-010: API key rotation policy**
     - Documentation-level requirement, not yet documented
 
-13. **REQ-SCOPE requirements**
+12. **REQ-SCOPE requirements**
     - Mostly followed organically during development
     - No formal promotion audit performed
 
-14. **REQ-ERR-015 / REQ-ERR-016: Retry policies**
+13. **REQ-ERR-015 / REQ-ERR-016: Retry policies**
     - db-retry.ts handles Supabase retries
     - Other retry targets (AI, external services) use simpler patterns
 
-15. **Deployment to Vercel + Supabase Cloud**
+14. **Deployment to Vercel + Supabase Cloud**
     - All code is deployment-ready
     - vercel.json configured
     - Actual deployment not yet performed
@@ -404,9 +411,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 41 |
-| Test files | 227 |
-| Total tests | 2,592 |
+| Phases completed | 43 |
+| Test files | 229 |
+| Total tests | 2,612 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |

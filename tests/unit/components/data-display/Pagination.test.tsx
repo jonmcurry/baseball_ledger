@@ -10,6 +10,14 @@ import userEvent from '@testing-library/user-event';
 import { Pagination } from '@components/data-display/Pagination';
 
 describe('Pagination', () => {
+  it('marks current page indicator with aria-current (REQ-COMP-012)', () => {
+    render(
+      <Pagination currentPage={3} totalPages={10} onPageChange={vi.fn()} />,
+    );
+    const pageIndicator = screen.getByText('3 / 10');
+    expect(pageIndicator).toHaveAttribute('aria-current', 'page');
+  });
+
   it('renders current page and total pages', () => {
     render(
       <Pagination currentPage={3} totalPages={10} onPageChange={vi.fn()} />,

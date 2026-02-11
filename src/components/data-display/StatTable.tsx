@@ -88,7 +88,7 @@ function SimpleTable<T>({
 }: StatTableProps<T>) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full font-stat text-sm" role="table">
+      <table className="w-full font-stat text-sm" role="grid">
         <thead>
           <HeaderRow columns={columns} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
         </thead>
@@ -148,7 +148,7 @@ function VirtualizedTable<T>({
       data-testid="stat-table-scroll"
       className="max-h-[600px] overflow-x-auto overflow-y-auto"
     >
-      <table className="w-full font-stat text-sm" role="table">
+      <table className="w-full font-stat text-sm" role="grid">
         <thead className="sticky top-0 z-10 bg-old-lace">
           <HeaderRow columns={columns} sortBy={sortBy} sortOrder={sortOrder} onSort={onSort} />
         </thead>
@@ -220,7 +220,7 @@ function HeaderRow<T>({
                 ? sortOrder === 'asc'
                   ? 'ascending'
                   : 'descending'
-                : undefined
+                : 'none'
             }
             onClick={() => onSort(col.key)}
             className={`cursor-pointer select-none px-2 py-1.5 font-medium hover:bg-sandstone/20 ${

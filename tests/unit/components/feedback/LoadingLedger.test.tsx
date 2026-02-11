@@ -35,6 +35,16 @@ describe('LoadingLedger', () => {
     expect(dots).toHaveLength(3);
   });
 
+  it('has aria-label matching the message prop (REQ-COMP-012)', () => {
+    render(<LoadingLedger message="Loading stats..." />);
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Loading stats...');
+  });
+
+  it('has aria-label with default message when none provided (REQ-COMP-012)', () => {
+    render(<LoadingLedger />);
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'Processing Ledger...');
+  });
+
   it('uses font-headline class', () => {
     render(<LoadingLedger />);
     const container = screen.getByRole('status');

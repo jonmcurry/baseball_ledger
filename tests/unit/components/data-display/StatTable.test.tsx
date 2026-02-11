@@ -30,6 +30,37 @@ const sampleData: TestRow[] = [
 
 describe('StatTable', () => {
   // ---------------------------------------------------------------------------
+  // ARIA compliance (REQ-COMP-012)
+  // ---------------------------------------------------------------------------
+
+  it('uses grid role for interactive sortable table', () => {
+    render(
+      <StatTable
+        columns={columns}
+        data={sampleData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
+
+  it('sets aria-sort="none" on unsorted sortable columns', () => {
+    render(
+      <StatTable
+        columns={columns}
+        data={sampleData}
+        sortBy="hr"
+        sortOrder="desc"
+        onSort={vi.fn()}
+      />,
+    );
+    const nameHeader = screen.getByText('Name').closest('th');
+    expect(nameHeader).toHaveAttribute('aria-sort', 'none');
+  });
+
+  // ---------------------------------------------------------------------------
   // Rendering
   // ---------------------------------------------------------------------------
 
@@ -110,7 +141,7 @@ describe('StatTable', () => {
     expect(avgHeader).toHaveAttribute('aria-sort', 'ascending');
   });
 
-  it('does not set aria-sort on non-sorted columns', () => {
+  it('sets aria-sort="none" on non-sorted columns', () => {
     render(
       <StatTable
         columns={columns}
@@ -121,7 +152,7 @@ describe('StatTable', () => {
       />,
     );
     const nameHeader = screen.getByText('Name').closest('th');
-    expect(nameHeader).not.toHaveAttribute('aria-sort');
+    expect(nameHeader).toHaveAttribute('aria-sort', 'none');
   });
 
   it('calls onSort with column key when header is clicked', async () => {
@@ -183,7 +214,7 @@ describe('StatTable', () => {
         isLoading
       />,
     );
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('grid');
     expect(table.querySelectorAll('[data-loading-row]').length).toBeGreaterThan(0);
   });
 
@@ -238,7 +269,7 @@ describe('StatTable', () => {
         onSort={vi.fn()}
       />,
     );
-    expect(screen.getByRole('table').className).toContain('font-stat');
+    expect(screen.getByRole('grid').className).toContain('font-stat');
   });
 
   it('right-aligns numeric columns', () => {
@@ -269,7 +300,7 @@ describe('StatTable', () => {
         onSort={vi.fn()}
       />,
     );
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('grid');
     const rows = within(table).getAllByRole('row');
     // 1 header row + 3 data rows
     expect(rows).toHaveLength(4);
@@ -311,7 +342,7 @@ describe('StatTable', () => {
         onSort={vi.fn()}
       />,
     );
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('grid');
     const dataRows = within(table).getAllByRole('row').filter(
       (row) => !row.querySelector('th') && !row.hasAttribute('data-loading-row'),
     );
@@ -358,7 +389,7 @@ describe('StatTable', () => {
         onRowClick={vi.fn()}
       />,
     );
-    const table = screen.getByRole('table');
+    const table = screen.getByRole('grid');
     expect(table.querySelector('thead')).toBeInTheDocument();
     expect(table.querySelector('tbody')).toBeInTheDocument();
     // Header has sticky class for scroll context

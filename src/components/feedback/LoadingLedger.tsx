@@ -16,6 +16,7 @@ export function LoadingLedger({ message = 'Processing Ledger...' }: LoadingLedge
     <div
       role="status"
       aria-live="polite"
+      aria-label={message}
       className="flex flex-col items-center justify-center gap-3 py-gutter-xl font-headline text-ballpark"
     >
       <div className="flex gap-1.5" aria-hidden="true">

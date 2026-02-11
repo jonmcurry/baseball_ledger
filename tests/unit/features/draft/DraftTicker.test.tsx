@@ -8,6 +8,13 @@ import { DraftTicker } from '@features/draft/DraftTicker';
 import { createMockDraftPick } from '../../../fixtures/mock-draft';
 
 describe('DraftTicker', () => {
+  it('has aria-live="polite" and correct aria-label (REQ-COMP-012)', () => {
+    render(<DraftTicker picks={[]} currentPick={0} />);
+    const log = screen.getByRole('log');
+    expect(log).toHaveAttribute('aria-live', 'polite');
+    expect(log).toHaveAttribute('aria-label', 'Draft pick feed');
+  });
+
   it('renders heading', () => {
     render(<DraftTicker picks={[]} currentPick={0} />);
     expect(screen.getByText('Draft Ticker')).toBeInTheDocument();
