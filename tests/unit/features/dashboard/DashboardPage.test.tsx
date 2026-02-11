@@ -512,4 +512,44 @@ describe('DashboardPage', () => {
     expect(screen.queryByTestId('playoff-status-panel')).not.toBeInTheDocument();
     expect(screen.getByTestId('season-complete-panel')).toBeInTheDocument();
   });
+
+  // REQ-SCH-009: New season start flow
+  it('shows NewSeasonPanel when status=setup and seasonYear > 1', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'setup', seasonYear: 2 }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: null,
+      currentDay: 0,
+      isLoading: false,
+      error: null,
+      isCommissioner: true,
+      leagueStatus: 'setup',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.getByTestId('new-season-panel')).toBeInTheDocument();
+    expect(screen.getByText('Season 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /start season/i })).toBeInTheDocument();
+  });
+
+  it('shows InviteKeyDisplay when status=setup and seasonYear === 1', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'setup', seasonYear: 1, inviteKey: 'INV-KEY' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: null,
+      currentDay: 0,
+      isLoading: false,
+      error: null,
+      isCommissioner: true,
+      leagueStatus: 'setup',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.queryByTestId('new-season-panel')).not.toBeInTheDocument();
+    expect(screen.getByText('INV-KEY')).toBeInTheDocument();
+  });
 });

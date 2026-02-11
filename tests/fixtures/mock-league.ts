@@ -18,6 +18,7 @@ export function createMockLeague(overrides?: Partial<LeagueSummary>): LeagueSumm
     yearRangeEnd: 1995,
     injuriesEnabled: true,
     status: 'regular_season',
+    seasonYear: 1,
     currentDay: 42,
     playoffBracket: null,
     ...overrides,

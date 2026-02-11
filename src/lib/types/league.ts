@@ -35,6 +35,7 @@ export interface LeagueSummary {
   readonly yearRangeEnd: number;
   readonly injuriesEnabled: boolean;
   readonly status: LeagueStatus;
+  readonly seasonYear: number;
   readonly currentDay: number;
   readonly playoffBracket: FullPlayoffBracket | null;
 }

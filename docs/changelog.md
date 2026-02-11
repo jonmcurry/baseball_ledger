@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-02-11 - Start New Season Flow (Phase 40)
+
+### Phase 40: Start New Season Flow (REQ-SCH-009 completion)
+
+After archiving a season, the commissioner can now start a new season with existing rosters. Generates fresh lineups and a 162-game schedule without requiring a new draft.
+
+- **Created `src/lib/validators/season-start.ts` (L1 validator)**
+  - `canStartSeason()` pure function validates preconditions: setup status, seasonYear > 1 (post-archive), team count >= 2, full rosters (21 players)
+  - 5 tests in `season-start.test.ts`
+
+- **Modified `api/leagues/[id]/schedule.ts` -- added POST handler**
+  - POST generates lineups + schedule for returning seasons (no new serverless function slot)
+  - Commissioner-only, validates via `canStartSeason()`
+  - Calls existing `generateAndInsertLineups()` and `generateAndInsertSchedule()` helpers
+  - Transitions league: `status='regular_season'`, `current_day=1`
+  - Returns 201 with `{ totalDays, totalGames }`
+  - 6 new tests (10 total in `schedule.test.ts`)
+
+- **Created `src/features/dashboard/NewSeasonPanel.tsx` (L7 component)**
+  - Commissioner sees "Start Season" button with loading state
+  - Non-commissioners see waiting message
+  - Displays season year and roster carryover note
+  - 4 tests in `NewSeasonPanel.test.tsx`
+
+- **Modified `src/features/dashboard/DashboardPage.tsx`**
+  - Setup status now branches: `seasonYear > 1` shows NewSeasonPanel, `seasonYear === 1` shows InviteKeyDisplay
+  - Added `handleStartSeason` handler (POST to schedule endpoint + refresh)
+  - 2 new tests in `DashboardPage.test.tsx`
+
+- **Modified `src/lib/types/league.ts`**
+  - Added `seasonYear` to `LeagueSummary` interface (already present in DB/API response via `snakeToCamel`)
+
+- **Tests**: 2,584 passing across 226 files. TypeScript clean.
+
+---
+
 ## 2026-02-10 - Season Archive Enrichment (Phase 39)
 
 ### Phase 39: Season Archive Enrichment (REQ-SCH-009)

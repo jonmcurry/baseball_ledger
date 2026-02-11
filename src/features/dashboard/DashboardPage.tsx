@@ -22,6 +22,7 @@ import { ResultsTicker } from './ResultsTicker';
 import type { TickerResult } from './ResultsTicker';
 import { SimulationNotification } from './SimulationNotification';
 import { SeasonCompletePanel } from './SeasonCompletePanel';
+import { NewSeasonPanel } from './NewSeasonPanel';
 import { PlayoffStatusPanel } from './PlayoffStatusPanel';
 import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
 import { apiPost } from '@services/api-client';
@@ -44,6 +45,7 @@ export function DashboardPage() {
 
   // REQ-SCH-009: Season completion ceremony
   const [isArchiving, setIsArchiving] = useState(false);
+  const [isStartingSeason, setIsStartingSeason] = useState(false);
 
   const championName = useMemo(() => {
     if (!playoffBracket?.worldSeriesChampionId) return 'Unknown';
@@ -77,6 +79,19 @@ export function DashboardPage() {
       // Error reflected in league store
     } finally {
       setIsArchiving(false);
+    }
+  };
+
+  const handleStartSeason = async () => {
+    if (!league) return;
+    setIsStartingSeason(true);
+    try {
+      await apiPost(`/api/leagues/${league.id}/schedule`);
+      await useLeagueStore.getState().fetchLeagueData(league.id);
+    } catch {
+      // Error reflected in league store
+    } finally {
+      setIsStartingSeason(false);
     }
   };
 
@@ -137,8 +152,17 @@ export function DashboardPage() {
         )}
       </div>
 
-      {league?.status === 'setup' && league.inviteKey && (
-        <InviteKeyDisplay inviteKey={league.inviteKey} />
+      {league?.status === 'setup' && (
+        league.seasonYear > 1 ? (
+          <NewSeasonPanel
+            seasonYear={league.seasonYear}
+            isCommissioner={isCommissioner}
+            onStartSeason={handleStartSeason}
+            isStarting={isStartingSeason}
+          />
+        ) : league.inviteKey ? (
+          <InviteKeyDisplay inviteKey={league.inviteKey} />
+        ) : null
       )}
 
       {recentResults.length > 0 && (
