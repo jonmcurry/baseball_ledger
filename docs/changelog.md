@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-02-11 - Navigation Fix (Phase 67)
+
+### Phase 67: Show full navigation in all league phases
+
+Navigation bar was completely hidden during `setup` and `draft` phases because
+the Header component only rendered nav links when `leagueStatus` was in
+`regular_season`, `playoffs`, or `offseason`. Users could not navigate to any
+pages (Draft Board, Roster, Stats, etc.) after creating a league.
+
+**Fixes:**
+- Removed `ACTIVE_STATUSES` gate -- navigation is now always visible regardless
+  of league phase (setup, draft, regular_season, playoffs, offseason).
+- Added missing nav items: Draft Board, Playoffs, Transactions, Archive.
+- Fixed League Config route from `/league-config` to `/config` (matching the
+  actual router path).
+- Hamburger menu now always available on narrow viewports.
+
+**Files changed:** `Header.tsx`, `Header.test.tsx`, `responsive.test.tsx`
+
+**Test count:** 2,792 across 245 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - Vercel Serverless Fix + Form Improvements (Phase 66)
 
 ### Phase 66: Fix FUNCTION_INVOCATION_FAILED on Vercel

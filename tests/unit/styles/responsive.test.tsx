@@ -170,9 +170,9 @@ describe('Header responsive (REQ-COMP-010)', () => {
     expect(desktopSpan).toBeDefined();
   });
 
-  it('does not show hamburger when league is not active', () => {
+  it('shows hamburger even when league is in setup', () => {
     render(<Header {...headerProps} leagueStatus="setup" />);
-    expect(screen.queryByRole('button', { name: /open menu/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open menu/i })).toBeInTheDocument();
   });
 });
 

@@ -42,10 +42,10 @@ describe('Header', () => {
     expect(screen.getByText(/stats/i)).toBeInTheDocument();
   });
 
-  it('hides nav links when leagueStatus is "setup"', () => {
+  it('shows nav links even when leagueStatus is "setup"', () => {
     render(<Header {...defaultProps} leagueStatus="setup" />);
-    expect(screen.queryByText(/dashboard/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/roster/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/roster/i)).toBeInTheDocument();
   });
 
   it('calls onNavigate with route when nav link clicked', async () => {

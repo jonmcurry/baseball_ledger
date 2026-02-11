@@ -2,7 +2,7 @@
  * Header
  *
  * Navigation header with league info, user display, and nav links.
- * Nav links visible only when league is active (regular_season or playoffs).
+ * All nav items visible in every league phase so users can always navigate.
  * Playoff variant styling when status is "playoffs".
  * Collapsed hamburger menu on narrow viewports (REQ-COMP-010).
  *
@@ -30,13 +30,15 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', route: '/dashboard' },
+  { label: 'Draft Board', route: '/draft' },
   { label: 'Roster', route: '/roster' },
   { label: 'Stats', route: '/stats' },
   { label: 'Standings', route: '/standings' },
-  { label: 'League Config', route: '/league-config', commissionerOnly: true },
+  { label: 'Playoffs', route: '/playoffs' },
+  { label: 'Transactions', route: '/transactions' },
+  { label: 'Archive', route: '/archive' },
+  { label: 'League Config', route: '/config', commissionerOnly: true },
 ];
-
-const ACTIVE_STATUSES = new Set<LeagueStatus>(['regular_season', 'playoffs', 'offseason']);
 
 export function Header({
   leagueName,
@@ -47,7 +49,6 @@ export function Header({
   onLogout,
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isActive = ACTIVE_STATUSES.has(leagueStatus);
   const isPlayoff = leagueStatus === 'playoffs';
 
   const visibleNavItems = NAV_ITEMS.filter(
@@ -82,14 +83,13 @@ export function Header({
           >
             Log Out
           </button>
-          {isActive && (
-            <button
-              type="button"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="hidden max-md:block rounded-button border border-current px-2 py-1"
-            >
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+            className="hidden max-md:block rounded-button border border-current px-2 py-1"
+          >
               <svg
                 width="20"
                 height="20"
@@ -112,42 +112,39 @@ export function Header({
                 )}
               </svg>
             </button>
-          )}
         </div>
       </div>
-      {isActive && (
-        <nav
-          className={`mt-2 flex gap-gutter ${
-            mobileMenuOpen
-              ? 'max-md:flex max-md:flex-col max-md:gap-1'
-              : 'max-md:hidden'
-          }`}
-          role="navigation"
-        >
-          {visibleNavItems.map((item) => (
-            <button
-              key={item.route}
-              type="button"
-              onClick={() => handleNavigate(item.route)}
-              className="text-sm hover:underline max-md:py-1 max-md:text-left"
-            >
-              {item.label}
-            </button>
-          ))}
-          {/* Mobile-only: user info and logout */}
-          <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-current/20 max-md:pt-2 max-md:mt-1">
-            <span className="text-sm">{userName}</span>
-            <button
-              type="button"
-              onClick={onLogout}
-              aria-label="Log out"
-              className="rounded-button border border-current px-3 py-1 text-xs hover:opacity-80"
-            >
-              Log Out
-            </button>
-          </div>
-        </nav>
-      )}
+      <nav
+        className={`mt-2 flex flex-wrap gap-gutter ${
+          mobileMenuOpen
+            ? 'max-md:flex max-md:flex-col max-md:gap-1'
+            : 'max-md:hidden'
+        }`}
+        role="navigation"
+      >
+        {visibleNavItems.map((item) => (
+          <button
+            key={item.route}
+            type="button"
+            onClick={() => handleNavigate(item.route)}
+            className="text-sm hover:underline max-md:py-1 max-md:text-left"
+          >
+            {item.label}
+          </button>
+        ))}
+        {/* Mobile-only: user info and logout */}
+        <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-current/20 max-md:pt-2 max-md:mt-1">
+          <span className="text-sm">{userName}</span>
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Log out"
+            className="rounded-button border border-current px-3 py-1 text-xs hover:opacity-80"
+          >
+            Log Out
+          </button>
+        </div>
+      </nav>
     </header>
   );
 }
