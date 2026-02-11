@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LeagueConfigForm } from './LeagueConfigForm';
-import { InviteKeyDisplay } from './InviteKeyDisplay';
+import { InviteKeyDisplay } from '@components/data-display/InviteKeyDisplay';
 import type { LeagueFormData } from './LeagueConfigForm';
 import * as leagueService from '@services/league-service';
 import { usePageTitle } from '@hooks/usePageTitle';

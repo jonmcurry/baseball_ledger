@@ -6,7 +6,7 @@
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
+import { InviteKeyDisplay } from '@components/data-display/InviteKeyDisplay';
 
 describe('InviteKeyDisplay', () => {
   beforeEach(() => {

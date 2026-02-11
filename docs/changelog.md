@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-02-11 - Architecture + Scope + Environment Verification (Phase 56)
+
+### Phase 56: Structural Tests + Traceability Backfill (REQ-ARCH, REQ-SCOPE, REQ-ENV, REQ-TEST-011)
+
+Adds 28 structural tests verifying architectural rules, code scoping,
+and environment configuration. Comprehensive traceability matrix update
+covering 80+ previously-untracked implemented requirements.
+
+- **Created `tests/unit/config/architecture.test.ts`** (14 tests)
+  - REQ-ARCH-001: 7 layer directories verified
+  - REQ-ARCH-002: No upward imports (stores->features, services->stores, lib->services)
+  - REQ-ARCH-003: 7 path aliases in tsconfig.json
+  - REQ-ARCH-004: Naming conventions (PascalCase components, use*.ts hooks, *Store.ts stores)
+  - REQ-ARCH-005: File size limits by layer (stores<300, services<200, hooks<200, lib<1000)
+
+- **Created `tests/unit/config/scope-rules.test.ts`** (5 tests)
+  - REQ-SCOPE-003: No cross-feature imports
+  - REQ-SCOPE-005: Fixed-home artifacts in correct locations
+  - REQ-SCOPE-002: Feature-scoped hooks naming
+  - REQ-SCOPE-007: Test directory mirrors source structure
+
+- **Created `tests/unit/config/environment.test.ts`** (9 tests)
+  - REQ-ENV-002: .env.example exists with all vars, no real credentials
+  - REQ-ENV-003/005: Client and server config modules exist
+  - REQ-ENV-006: vite-env.d.ts declares ImportMetaEnv
+  - REQ-ENV-007: vercel.json with rewrites and headers
+  - REQ-ENV-008: .gitignore excludes .env.local but not .env.example
+
+- **Promoted `InviteKeyDisplay`** from `features/league/` to `components/data-display/`
+  - REQ-SCOPE-004: Had 2 consumers (LeagueConfigPage + DashboardPage)
+  - Updated imports in both consumers and test file
+
+- **Updated `tests/TRACEABILITY.md`**: 80+ requirement entries backfilled
+  - Covers REQ-AUTH, REQ-AI, REQ-DATA, REQ-DFT, REQ-ERR, REQ-LGE, REQ-RST,
+    REQ-SCH, REQ-SIM, REQ-STATE, REQ-NFR, REQ-TEST, REQ-UI
+
+**Tests:** 2,738 tests across 239 files (28 new)
+
 ## 2026-02-11 - Pagination Fix + DB Constraint + Traceability (Phase 55)
 
 ### Phase 55: pageSize Alignment (REQ-NFR-019), One-User-Per-Team (REQ-LGE-007), Playoff Enforcement (REQ-LGE-009)

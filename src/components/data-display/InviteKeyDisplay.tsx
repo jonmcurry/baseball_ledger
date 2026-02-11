@@ -1,7 +1,8 @@
-﻿/**
+/**
  * InviteKeyDisplay
  *
  * Shows the league invite key with a copy-to-clipboard button (REQ-LGE-003).
+ * Promoted to shared component per REQ-SCOPE-004 (used by league + dashboard).
  *
  * Layer 6: Presentational component. No store or hook imports.
  */

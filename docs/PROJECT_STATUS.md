@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,710 tests across 236 files (all passing)
+**Test suite:** 2,738 tests across 239 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--55)
+## Completed Phases (1--56)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -372,6 +372,14 @@ Seven-layer architecture with strict downward-only imports:
 - TRACEABILITY.md updated through Phase 55
 - 6 new tests (3 migration + 2 statsStore + 1 simulate)
 
+### Phase 56 -- Architecture + Scope + Environment Verification (REQ-ARCH, REQ-SCOPE, REQ-ENV, REQ-TEST-011)
+- 14 structural architecture tests (7 layers, no upward imports, naming, file size limits)
+- 5 code scoping tests (no cross-feature imports, fixed-home artifacts)
+- 9 environment tests (.env.example, config modules, vite-env.d.ts, vercel.json, .gitignore)
+- InviteKeyDisplay promoted from feature to shared per REQ-SCOPE-004
+- Comprehensive TRACEABILITY.md backfill: 80+ requirement entries added
+- 28 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -396,8 +404,9 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 12 of 13 | Mostly done | 19 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 18 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim, server-side pagination |
-| REQ-TEST | 18 | Done | 2,710 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
-| REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json |
+| REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
+| REQ-TEST | 18 | Done | 2,738 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
+| REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore |
 
 ### UI Pages (REQ-UI)
 
@@ -492,9 +501,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 55 |
-| Test files | 236 |
-| Total tests | 2,710 |
+| Phases completed | 56 |
+| Test files | 239 |
+| Total tests | 2,738 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |

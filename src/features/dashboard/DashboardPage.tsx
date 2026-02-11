@@ -24,7 +24,7 @@ import { SimulationNotification } from './SimulationNotification';
 import { SeasonCompletePanel } from './SeasonCompletePanel';
 import { NewSeasonPanel } from './NewSeasonPanel';
 import { PlayoffStatusPanel } from './PlayoffStatusPanel';
-import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
+import { InviteKeyDisplay } from '@components/data-display/InviteKeyDisplay';
 import { apiPost } from '@services/api-client';
 import { useLeagueStore } from '@stores/leagueStore';
 import { buildPlayoffGameMessage } from '@lib/schedule/playoff-display';

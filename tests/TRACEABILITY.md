@@ -449,3 +449,155 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-NFR-019 Server-side pagination alignment | `tests/unit/stores/statsStore.test.ts` (pageSize=50, version=2) |
 | REQ-LGE-007 One user per team per league | `tests/unit/migrations/unique-owner-per-league.test.ts` (unique index, partial WHERE, file count) |
 | REQ-LGE-009 Playoff one-game-at-a-time | `tests/unit/api/leagues/[id]/simulate.test.ts` (REQ-LGE-009 explicit test) |
+
+## Phase 56: Architecture + Scope + Environment Structural Tests
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ARCH-001 Seven-layer architecture | `tests/unit/config/architecture.test.ts` (7 expected layer dirs) |
+| REQ-ARCH-002 No upward imports | `tests/unit/config/architecture.test.ts` (stores !-> features, services !-> stores/features, lib !-> stores/services/features) |
+| REQ-ARCH-003 Path aliases | `tests/unit/config/architecture.test.ts` (7 aliases in tsconfig.json) |
+| REQ-ARCH-004 Naming conventions | `tests/unit/config/architecture.test.ts` (PascalCase components, use*.ts hooks, *Store.ts stores) |
+| REQ-ARCH-004a Default exports | `tests/unit/config/architecture.test.ts` (all .tsx files have export default) |
+| REQ-ARCH-005 No God files | `tests/unit/config/architecture.test.ts` (stores<300, services<200, hooks<200, lib<1000) |
+| REQ-SCOPE-002 Feature-scoped naming | `tests/unit/config/scope-rules.test.ts` (feature hooks follow use*.ts) |
+| REQ-SCOPE-003 No cross-feature imports | `tests/unit/config/scope-rules.test.ts` (no @features/x from @features/y) |
+| REQ-SCOPE-004 Promotion on 2nd consumer | InviteKeyDisplay promoted from league to shared (Phase 56) |
+| REQ-SCOPE-005 Fixed-home artifacts | `tests/unit/config/scope-rules.test.ts` (services in src/services/, stores in src/stores/) |
+| REQ-SCOPE-007 Tests mirror source | `tests/unit/config/scope-rules.test.ts` (test dirs mirror src layers) |
+| REQ-ENV-002 .env.example | `tests/unit/config/environment.test.ts` (exists, all vars, no real creds) |
+| REQ-ENV-003 Client config module | `tests/unit/config/environment.test.ts` (src/lib/config.ts exists) |
+| REQ-ENV-005 Server config module | `tests/unit/config/environment.test.ts` (api/_lib/config.ts exists) |
+| REQ-ENV-006 vite-env.d.ts | `tests/unit/config/environment.test.ts` (ImportMetaEnv, VITE_SUPABASE_*) |
+| REQ-ENV-007 vercel.json | `tests/unit/config/environment.test.ts` (rewrites, headers) |
+| REQ-ENV-008 .gitignore secrets | `tests/unit/config/environment.test.ts` (.env.local excluded, .env.example not) |
+
+## Previously Implemented Requirements (Traceability Backfill)
+
+### Authentication (REQ-AUTH)
+
+| Requirement | Test File(s) / Implementation |
+|-------------|-------------|
+| REQ-AUTH-001 Supabase email/password auth | `tests/unit/stores/authStore.test.ts`, `tests/unit/stores/authStore-async.test.ts` |
+| REQ-AUTH-002 Permission model | `tests/unit/api/_lib/auth.test.ts` (requireAuth middleware) |
+| REQ-AUTH-003 Invite key validation | `tests/unit/api/leagues/[id]/index.test.ts` (join league tests) |
+
+### AI (REQ-AI)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-AI-001 Manager profiles | `tests/unit/lib/simulation/manager-ai.test.ts` (4 profiles tested) |
+| REQ-AI-003 Reliever selection | `tests/unit/lib/simulation/pitching.test.ts` (reliever/closer selection) |
+| REQ-AI-004 Stolen base decisions | `tests/unit/lib/simulation/manager-ai.test.ts` (steal decision tests) |
+| REQ-AI-005 CPU manager usage | `tests/unit/lib/simulation/manager-ai.test.ts` (profile-driven decisions) |
+
+### Data (REQ-DATA)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-DATA-001 CSV file loading | `tests/unit/lib/csv/parser.test.ts`, `tests/unit/lib/csv/batting-loader.test.ts`, etc. |
+| REQ-DATA-003 Name cache | `tests/unit/lib/csv/people-loader.test.ts` (playerID -> name mapping) |
+| REQ-DATA-004 PlayerCard generation | `tests/unit/lib/card-generator/generator.test.ts` |
+| REQ-DATA-005 Card algorithm | `tests/unit/lib/card-generator/value-mapper.test.ts`, `tests/unit/lib/card-generator/rate-calculator.test.ts` |
+| REQ-DATA-005a Pitcher grade | `tests/unit/lib/card-generator/pitcher-grade.test.ts` |
+| REQ-DATA-006 League averages | `tests/unit/lib/card-generator/generator.test.ts` (normalization) |
+| REQ-DATA-007 Database schema + RLS | `supabase/migrations/`, `supabase/tests/` (40 pgTAP assertions) |
+| REQ-DATA-008 Batting stats tracked | `tests/unit/lib/stats/derived.test.ts` (BA, OBP, SLG, OPS, etc.) |
+| REQ-DATA-009 Pitching stats tracked | `tests/unit/lib/stats/derived.test.ts` (ERA, WHIP, K/9, FIP, etc.) |
+
+### Draft (REQ-DFT)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-DFT-003 Vertical scrolling ticker | `tests/unit/features/draft/DraftTicker.test.tsx` |
+| REQ-DFT-008 Post-draft roster validation | `tests/unit/lib/draft/draft-engine.test.ts` (completion validation) |
+
+### Error Handling (REQ-ERR)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ERR-001 AppError instances | `tests/unit/lib/types/errors.test.ts`, `tests/unit/api/_lib/errors.test.ts` |
+| REQ-ERR-002 ErrorCode union | `src/lib/types/errors.ts` (type definition) |
+| REQ-ERR-003 ApiErrorResponse envelope | `tests/unit/api/_lib/errors.test.ts` |
+| REQ-ERR-004 X-Request-Id header | `tests/unit/api/_lib/response.test.ts` (requestId in all responses) |
+| REQ-ERR-007 Zod to AppError | `tests/unit/api/_lib/validate.test.ts` (validation -> structured error) |
+| REQ-ERR-009 Two error boundaries | `tests/unit/components/feedback/ErrorBoundary.test.tsx`, `src/router.tsx` |
+| REQ-ERR-012 ErrorBanner for user actions | `tests/unit/components/feedback/ErrorBanner.test.tsx` |
+| REQ-ERR-017 Graceful degradation | `tests/unit/hooks/useManagerExplanations.test.ts` (AI failure keeps template) |
+
+### League (REQ-LGE)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-LGE-001 League creation form | `tests/unit/features/league/LeagueConfigPage.test.tsx` |
+| REQ-LGE-002 Commissioner | `tests/unit/api/leagues/index.test.ts` (creating user = commissioner) |
+| REQ-LGE-004 Auto-generate team names | `tests/unit/lib/draft/draft-engine.test.ts` (team name generation) |
+| REQ-LGE-005 Division assignment | `tests/unit/lib/draft/draft-engine.test.ts` (AL/NL, 4 divisions) |
+| REQ-LGE-006 Join via invite key | `tests/unit/features/league/JoinLeaguePage.test.tsx`, `tests/unit/api/leagues/[id]/index.test.ts` |
+
+### Roster (REQ-RST)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-001 21-player roster | `tests/unit/lib/validation/roster-schemas.test.ts` |
+| REQ-RST-004 Lineup validation | `tests/unit/lib/validation/roster-schemas.test.ts`, `tests/unit/api/leagues/[id]/teams.test.ts` |
+
+### Schedule (REQ-SCH)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SCH-003 Round-robin schedule | `tests/unit/lib/schedule/generator.test.ts` (162-game balanced) |
+| REQ-SCH-004 Every team plays each day | `tests/unit/lib/schedule/generator.test.ts` (daily assignments) |
+| REQ-SCH-005 Simulation buttons | `tests/unit/features/dashboard/SimulationControls.test.tsx` (Day/Week/Month/Season) |
+| REQ-SCH-006 Post-sim stat updates | `tests/unit/hooks/useRealtimeProgress.test.ts` (fetchLeagueData on completion) |
+| REQ-SCH-008 Playoff transition | `tests/unit/api/_lib/playoff-transition.test.ts` |
+
+### Simulation Detail (REQ-SIM)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SIM-003a Outcome index mapping | `tests/unit/lib/simulation/outcome-table.test.ts` |
+| REQ-SIM-004a Direct card value fallback | `tests/unit/lib/simulation/plate-appearance.test.ts` |
+| REQ-SIM-004b Platoon adjustment | `tests/unit/lib/simulation/platoon.test.ts` |
+| REQ-SIM-004c Bunt resolution | `tests/unit/lib/simulation/bunt-resolver.test.ts` |
+
+### State Management (REQ-STATE)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-004 Async action pattern | `tests/unit/stores/leagueStore-async.test.ts`, all *-async.test.ts files |
+| REQ-STATE-006 Atomic selectors | `src/hooks/useLeague.ts`, `src/hooks/useAuth.ts` (selector patterns) |
+| REQ-STATE-007 Derived state in hooks | `src/hooks/` (14 hooks compose stores, no derived state in stores) |
+| REQ-STATE-008 Persist middleware | `tests/unit/stores/persist-migration.test.ts`, `tests/unit/stores/statsStore.test.ts` |
+| REQ-STATE-013 Realtime in hooks | `tests/unit/hooks/useRealtimeProgress.test.ts` |
+
+### NFR (additional)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-NFR-004 Virtualized scrolling | `src/components/data-display/StatTable.tsx` (TanStack Virtual) |
+| REQ-NFR-005 Data scoping via RLS | `supabase/migrations/00010_enable_rls.sql`, `supabase/migrations/00011_create_rls_policies.sql` |
+| REQ-NFR-006 Claude API timeout | `tests/unit/services/ai-service.test.ts` (10s timeout) |
+| REQ-NFR-012 Cards from Supabase | `tests/unit/api/leagues/[id]/draft.test.ts` (player pool from DB) |
+| REQ-NFR-013 Zustand persist cache | `tests/unit/stores/persist-migration.test.ts` |
+| REQ-NFR-015 Database indexes | `supabase/migrations/00009_create_indexes.sql` |
+| REQ-NFR-016 Standings on teams table | `supabase/migrations/00002_create_teams.sql` (wins/losses/runs columns) |
+
+### Test Strategy (REQ-TEST)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-TEST-001 Three-layer pyramid | `vitest.config.ts`, `playwright.config.ts`, `tests/bench/` |
+| REQ-TEST-005 Mock rules | All test files follow layer-appropriate mocking |
+| REQ-TEST-006 Pure logic zero mocks | `tests/unit/lib/simulation/*.test.ts` (no mocks in pure logic tests) |
+| REQ-TEST-008 Test fixtures | `tests/fixtures/` (mock data factories) |
+| REQ-TEST-013 Benchmarks non-blocking | `.github/workflows/ci.yml` (benchmarks run as separate step) |
+| REQ-TEST-015 CI pipeline | `.github/workflows/ci.yml` (lint, type-check, vitest, bench, e2e) |
+| REQ-TEST-016 Vitest config | `vitest.config.ts` (globals, path aliases, coverage thresholds) |
+
+### UI Pages (additional)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-UI-011 Season Archive Page | `tests/unit/features/archive/ArchivePage.test.tsx`, `tests/unit/features/archive/SeasonDetail.test.tsx` |
+| REQ-UI-012 Playoff Theme Switch | `tests/unit/hooks/usePostseasonTheme.test.ts`, `src/styles/globals.css` |
