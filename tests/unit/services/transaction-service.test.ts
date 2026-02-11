@@ -117,7 +117,7 @@ describe('transaction-service', () => {
 
       const result = await fetchTransactionHistory('lg-1');
 
-      expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/teams');
+      expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/teams?include=history');
       expect(result).toEqual(history);
     });
 

@@ -136,6 +136,15 @@ export type SimulationProgressRow = {
   error_message: string | null;
 }
 
+export type TransactionRow = {
+  id: string;
+  league_id: string;
+  team_id: string;
+  type: 'add' | 'drop' | 'trade';
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
 // ===================================================================
 // INSERT TYPES (what INSERT accepts, omitting auto-generated fields)
 // ===================================================================
@@ -256,6 +265,14 @@ export type SimulationProgressInsert = {
   error_message?: string | null;
 }
 
+export type TransactionInsert = {
+  id?: string;
+  league_id: string;
+  team_id: string;
+  type: TransactionRow['type'];
+  details?: Record<string, unknown>;
+}
+
 // ===================================================================
 // UPDATE TYPES (all fields optional except where noted)
 // ===================================================================
@@ -269,6 +286,7 @@ export type GameLogUpdate = Partial<Omit<GameLogRow, 'id' | 'league_id' | 'creat
 export type ArchiveUpdate = Partial<Omit<ArchiveRow, 'id' | 'league_id' | 'created_at'>>;
 export type PlayerPoolUpdate = Partial<Omit<PlayerPoolRow, 'id' | 'league_id' | 'created_at'>>;
 export type SimulationProgressUpdate = Partial<Omit<SimulationProgressRow, 'league_id'>>;
+export type TransactionUpdate = Partial<Omit<TransactionRow, 'id' | 'league_id' | 'created_at'>>;
 
 // ===================================================================
 // DATABASE INTERFACE (Supabase gen types format)
@@ -351,6 +369,15 @@ export type Database = {
         Update: SimulationProgressUpdate;
         Relationships: [
           { foreignKeyName: 'simulation_progress_league_id_fkey'; columns: ['league_id']; isOneToOne: true; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+        ];
+      };
+      transactions: {
+        Row: TransactionRow;
+        Insert: TransactionInsert;
+        Update: TransactionUpdate;
+        Relationships: [
+          { foreignKeyName: 'transactions_league_id_fkey'; columns: ['league_id']; isOneToOne: false; referencedRelation: 'leagues'; referencedColumns: ['id'] },
+          { foreignKeyName: 'transactions_team_id_fkey'; columns: ['team_id']; isOneToOne: false; referencedRelation: 'teams'; referencedColumns: ['id'] },
         ];
       };
     };

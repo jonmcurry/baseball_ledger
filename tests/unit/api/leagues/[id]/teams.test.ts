@@ -1108,5 +1108,171 @@ describe('POST /api/leagues/:id/teams (transactions)', () => {
         ['p-2'],
       );
     });
+
+    it('inserts a transaction row for a trade', async () => {
+      const { mockFrom } = setupTradeEnv();
+
+      const req = createMockRequest({
+        method: 'POST',
+        query: { id: 'league-1' },
+        body: {
+          type: 'trade',
+          teamId: TEAM_A_ID,
+          targetTeamId: TEAM_B_ID,
+          playersFromMe: ['p-1'],
+          playersFromThem: ['p-2'],
+        },
+        headers: { authorization: 'Bearer token' },
+      });
+      const res = createMockResponse();
+
+      await handler(req as any, res as any);
+
+      expect(res._status).toBe(201);
+      expect(mockFrom).toHaveBeenCalledWith('transactions');
+    });
+  });
+
+  // REQ-RST-005: Transaction audit log
+
+  it('inserts a transaction row on add', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const txBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      if (table === 'transactions') return txBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToAdd: [{
+          playerId: 'player-1',
+          playerName: 'Babe Ruth',
+          seasonYear: 1927,
+          playerCard: { power: 21 },
+        }],
+        playersToDrop: [],
+      },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(mockFrom).toHaveBeenCalledWith('transactions');
+    expect(txBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        league_id: 'league-1',
+        team_id: '550e8400-e29b-41d4-a716-446655440000',
+        type: 'add',
+      }),
+    );
+  });
+
+  it('inserts a transaction row on drop', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const txBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      if (table === 'transactions') return txBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'drop',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToDrop: ['player-x'],
+        playersToAdd: [],
+      },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(mockFrom).toHaveBeenCalledWith('transactions');
+    expect(txBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        league_id: 'league-1',
+        team_id: '550e8400-e29b-41d4-a716-446655440000',
+        type: 'drop',
+      }),
+    );
+  });
+});
+
+// ---------- GET: Transaction history ----------
+
+describe('GET /api/leagues/:id/teams?include=history', () => {
+  it('returns transformed transaction entries', async () => {
+    const txData = [
+      {
+        id: 'tx-1',
+        league_id: 'league-1',
+        team_id: 'team-1',
+        type: 'add',
+        details: { playersAdded: [{ playerId: 'p-1', playerName: 'Babe Ruth' }] },
+        created_at: '2026-02-10T12:00:00Z',
+      },
+    ];
+
+    const builder = createMockQueryBuilder({ data: txData, error: null, count: null });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(builder) } as never);
+
+    const req = createMockRequest({ method: 'GET', query: { id: 'league-1', include: 'history' } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toHaveLength(1);
+    expect(res._body.data[0]).toMatchObject({
+      type: 'add',
+      playerName: 'Babe Ruth',
+      details: 'Added from free agents',
+    });
+  });
+
+  it('returns empty array when no transactions', async () => {
+    const builder = createMockQueryBuilder({ data: [], error: null, count: null });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(builder) } as never);
+
+    const req = createMockRequest({ method: 'GET', query: { id: 'league-1', include: 'history' } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toEqual([]);
   });
 });

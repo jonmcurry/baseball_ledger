@@ -1,16 +1,13 @@
-﻿/**
+/**
  * TransactionLog
  *
  * History list of transactions.
  * Feature-scoped sub-component. No store imports.
  */
 
-export interface TransactionEntry {
-  readonly type: 'add' | 'drop' | 'trade';
-  readonly playerName: string;
-  readonly date: string;
-  readonly details: string;
-}
+import type { TransactionEntry } from '@lib/transforms/transaction-transform';
+
+export type { TransactionEntry };
 
 export interface TransactionLogProps {
   readonly transactions: readonly TransactionEntry[];

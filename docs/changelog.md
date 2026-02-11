@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-02-10 - Transaction History Persistence (Phase 37)
+
+### Phase 37: Transaction History Persistence (REQ-RST-005)
+
+Transaction history is now persisted to a `transactions` table and displayed in the History tab. Every add, drop, and trade operation logs an audit entry with JSONB details.
+
+- **Created `supabase/migrations/00018_create_transactions.sql`**
+  - `transactions` table with id, league_id, team_id, type, details (JSONB), created_at
+  - Index on (league_id, created_at DESC) for efficient history queries
+  - RLS policies: league members can read, team owners can insert
+
+- **Modified `src/lib/types/database.ts` -- TransactionRow/Insert/Update types**
+  - Added to Database['public']['Tables'] for Supabase type safety
+
+- **Created `src/lib/transforms/transaction-transform.ts` (L1 helper)**
+  - `transformTransactionRows()` converts TransactionRow[] to TransactionEntry[]
+  - Formats add/drop/trade details into human-readable playerName + details strings
+  - 5 tests in `transaction-transform.test.ts`
+
+- **Modified `api/leagues/[id]/teams.ts` -- write + read transactions**
+  - `handleTransaction()` inserts audit row after each add/drop
+  - `handleTrade()` inserts audit row after each trade
+  - GET `?include=history` returns last 100 transactions transformed to TransactionEntry[]
+  - 5 new tests in `teams.test.ts`
+
+- **Modified `src/services/transaction-service.ts` -- fixed URL**
+  - `fetchTransactionHistory()` now calls `?include=history` query param
+  - 1 updated test in `transaction-service.test.ts`
+
+- **Fixed layer violation: TransactionEntry type moved to L1**
+  - Defined in `transaction-transform.ts`, re-exported from `TransactionLog.tsx`
+  - Service no longer imports from L7 feature component
+
+- **New tests: 10 total** (5 transform + 5 API)
+- **Test suite: 2,544 tests across 222 files (all passing)**
+
 ## 2026-02-10 - Free Agent Pickup Flow (Phase 36)
 
 ### Phase 36: Free Agent Pickup Flow (REQ-RST-005)

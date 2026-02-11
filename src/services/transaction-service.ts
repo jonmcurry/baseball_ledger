@@ -8,7 +8,7 @@
  * Layer 3: Real service module.
  */
 
-import type { TransactionEntry } from '@features/transactions/TransactionLog';
+import type { TransactionEntry } from '@lib/transforms/transaction-transform';
 import { apiGet, apiPost } from './api-client';
 
 /** Result from a transaction operation. */
@@ -92,7 +92,7 @@ export async function fetchTransactionHistory(
   leagueId: string,
 ): Promise<TransactionEntry[]> {
   const response = await apiGet<TransactionEntry[]>(
-    `/api/leagues/${leagueId}/teams`,
+    `/api/leagues/${leagueId}/teams?include=history`,
   );
   return response.data;
 }

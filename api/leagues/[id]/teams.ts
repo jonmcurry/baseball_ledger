@@ -21,6 +21,7 @@ import { snakeToCamel, camelToSnake } from '../../_lib/transform';
 import { createServerClient } from '@lib/supabase/server';
 import type { Database } from '@lib/types/database';
 import { validateTradeRosters } from '@lib/draft/trade-validator';
+import { transformTransactionRows } from '@lib/transforms/transaction-transform';
 import type { RosterEntry } from '@lib/types/roster';
 import type { PlayerCard } from '@lib/types/player';
 
@@ -68,6 +69,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       await requireAuth(req);
       const supabase = createServerClient();
+
+      if (include === 'history') {
+        // REQ-RST-005: Transaction history
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('league_id', leagueId)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (error) {
+          throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
+        }
+
+        const entries = transformTransactionRows(data ?? []);
+        ok(res, entries, requestId);
+        return;
+      }
 
       if (tid && include === 'roster') {
         // Get roster for a specific team
@@ -315,6 +334,17 @@ async function handleTransaction(req: VercelRequest, res: VercelResponse, reques
     completedAt: new Date().toISOString(),
   };
 
+  // REQ-RST-005: Log transaction for audit history
+  await supabase.from('transactions').insert({
+    league_id: leagueId,
+    team_id: body.teamId,
+    type: body.type,
+    details: {
+      playersAdded: addedPlayers,
+      playersDropped: body.playersToDrop,
+    },
+  });
+
   created(res, result, requestId, `/api/leagues/${leagueId}/teams`);
 }
 
@@ -436,6 +466,18 @@ async function handleTrade(
     playersFromThem: body.playersFromThem,
     completedAt: new Date().toISOString(),
   };
+
+  // REQ-RST-005: Log trade for audit history
+  await supabase.from('transactions').insert({
+    league_id: leagueId,
+    team_id: body.teamId,
+    type: 'trade',
+    details: {
+      targetTeamId: body.targetTeamId,
+      playersFromMe: body.playersFromMe,
+      playersFromThem: body.playersFromThem,
+    },
+  });
 
   created(res, result, requestId, `/api/leagues/${leagueId}/teams`);
 }
