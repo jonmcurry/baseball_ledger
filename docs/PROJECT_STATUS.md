@@ -436,7 +436,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
 | REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, stale-while-revalidate cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
-| REQ-MIG | 12 of 13 | Done* | 19 migrations, RLS, seed data, pgTAP stubs (*REQ-MIG-013 needs Docker for auto-gen) |
+| REQ-MIG | 12 of 13 | Done* | 19 migrations, RLS, seed data, pgTAP stubs (*REQ-MIG-013 needs `supabase gen types`) |
 | REQ-NFR | 21 | Done | Performance, determinism, Web Worker, chunked sim, pagination, Realtime infra ready |
 | REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
 | REQ-TEST | 18 | Done | 2,773 tests, TDD, traceability current, meta-coverage test, per-dir thresholds, E2E, benchmarks |
@@ -462,31 +462,31 @@ Seven-layer architecture with strict downward-only imports:
 ## What Still Needs Work
 
 All locally-implementable SRD requirements are complete. The remaining items
-require external infrastructure (Docker, Supabase Cloud, Vercel deployment).
+require Supabase Cloud provisioning and Vercel deployment (no Docker needed).
 
-### Infrastructure-Dependent (Requires External Services)
+### Infrastructure-Dependent (Supabase Cloud + Vercel)
 
 1. **REQ-MIG-009: Full pgTAP coverage**
    - 40 assertions exist across 6 test files
-   - Some are stubs -- need real Docker-based testing
+   - Some are stubs -- need `supabase db test` against a live Supabase project
 
 2. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
    - Local dev environment works
-   - Staging and production environments not yet set up
-   - Supabase project provisioning needed for deployment
+   - Staging and production Supabase projects not yet provisioned
+   - Recommended: create separate Supabase projects per environment
 
 3. **REQ-MIG-012: CI database migration validation**
    - CI runs lint + type-check + vitest
-   - Does not yet validate migrations against a real database
+   - Add `supabase db push --dry-run` step to CI for migration validation
 
 4. **REQ-MIG-013: Auto-generated database.ts**
-   - Currently manually authored; auto-generation requires Docker + Supabase CLI
+   - Currently manually authored
+   - Run `supabase gen types typescript` against live project to auto-generate
 
 5. **Deployment to Vercel + Supabase Cloud**
    - All code is deployment-ready
    - vercel.json configured
-   - Actual deployment not yet performed
-   - Need to provision Supabase project, set env vars, push migrations
+   - Steps: provision Supabase project, set Vercel env vars, push 19 migrations, deploy
 
 ---
 

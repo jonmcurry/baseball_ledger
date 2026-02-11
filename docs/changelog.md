@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-02-11 - PROJECT_STATUS Docker Cleanup (Phase 62)
+
+### Phase 62: Documentation cleanup
+
+Removed Docker references from PROJECT_STATUS.md per user clarification.
+Infrastructure uses Supabase Cloud + Vercel only (no Docker).
+
+- Reframed "What Still Needs Work" section for Supabase Cloud workflow
+- Replaced Docker-based pgTAP testing with `supabase db test`
+- Replaced Docker-based type generation with `supabase gen types typescript`
+- Replaced Docker-based CI migration validation with `supabase db push --dry-run`
+- Full SRD gap analysis confirmed: all code-level requirements complete (209/213, 4 are infra-only)
+
 ## 2026-02-11 - Arrow Key Navigation + Global API Error Handler (Phase 61)
 
 ### Phase 61: REQ-COMP-012, REQ-ERR-009
