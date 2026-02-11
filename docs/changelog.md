@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-11 - Persist Migration Infrastructure (Phase 41)
+
+### Phase 41: Persist Migration Infrastructure (REQ-STATE-009)
+
+All 3 persisted Zustand stores now have version/migrate configuration for safe schema evolution. When persisted state version < current version, migrations run sequentially with defaultState fallback.
+
+- **Created `src/stores/persist-migration.ts` (L4 helper)**
+  - `createMigrationConfig<T>()` factory returns `{ version, migrate }` for Zustand persist options
+  - Sequential migration runner: version N-1 -> N for each step
+  - Falls back to defaultState when any migration step is missing (safe reset)
+  - 5 tests in `persist-migration.test.ts`
+
+- **Modified `src/stores/leagueStore.ts`**
+  - Added `...createMigrationConfig(1, initialState)` to persist config
+  - 1 new test verifying persist config has version and migrate
+
+- **Modified `src/stores/statsStore.ts`**
+  - Added `...createMigrationConfig(1, initialState)` to persist config
+  - 1 new test verifying persist config has version and migrate
+
+- **Modified `src/stores/rosterStore.ts`**
+  - Added `...createMigrationConfig(1, initialState)` to persist config
+  - 1 new test verifying persist config has version and migrate
+
+- **Updated `docs/PROJECT_STATUS.md`**
+  - Added Phases 39-41 to completed phases
+  - Updated metrics: 41 phases, 227 test files, 2,592 tests
+  - REQ-SCH-009: Done, REQ-STATE-009: Done
+  - schedule.ts endpoint now shows GET, POST
+  - Renumbered "What Still Needs Work" section
+
+**Tests:** 8 new (5 migration helper + 3 store persist config)
+**Total:** 2,592 tests across 227 files
+
 ## 2026-02-11 - Start New Season Flow (Phase 40)
 
 ### Phase 40: Start New Season Flow (REQ-SCH-009 completion)

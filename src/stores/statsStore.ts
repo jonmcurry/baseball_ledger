@@ -10,6 +10,7 @@ import { devtools, persist } from 'zustand/middleware';
 import type { BattingLeaderEntry, PitchingLeaderEntry, TeamAggregateStats } from '@lib/stats/leaders';
 import * as statsService from '@services/stats-service';
 import { createSafeStorage } from './storage-factory';
+import { createMigrationConfig } from './persist-migration';
 
 export type StatView = 'traditional' | 'advanced';
 
@@ -125,6 +126,7 @@ export const useStatsStore = create<StatsStore>()(
       }),
       {
         name: 'bl-stats-v1',
+        ...createMigrationConfig(1, initialState),
         storage: {
           getItem: (name) => {
             const storage = createSafeStorage();

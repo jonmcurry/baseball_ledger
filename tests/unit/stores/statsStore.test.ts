@@ -75,6 +75,13 @@ describe('statsStore', () => {
     expect(useStatsStore.getState().error).toBe('Stats fetch failed');
   });
 
+  it('persist config includes version and migrate', () => {
+    // REQ-STATE-009: Persist migration for safe schema evolution
+    const persistOptions = (useStatsStore as unknown as { persist: { getOptions: () => { version: number; migrate: unknown } } }).persist.getOptions();
+    expect(persistOptions.version).toBe(1);
+    expect(typeof persistOptions.migrate).toBe('function');
+  });
+
   it('reset restores initial state', () => {
     const store = useStatsStore.getState();
     store.setBattingLeaders(createMockBattingLeaders());

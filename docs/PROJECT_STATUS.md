@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
-**Last updated:** 2026-02-10
-**Test suite:** 2,554 tests across 223 files (all passing)
+**Last updated:** 2026-02-11
+**Test suite:** 2,592 tests across 227 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--35)
+## Completed Phases (1--41)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -262,6 +262,25 @@ Seven-layer architecture with strict downward-only imports:
 - Client eval preview uses target team's actual manager profile
 - Trade rejection displayed via ErrorBanner with manager reasoning
 
+### Phase 39 -- Season Archive Enrichment (REQ-SCH-009)
+- Archive API stores full snapshot: standings, leaders, champion, schedule summary
+- Archive detail view with champion banner, standings table, top performers
+- Season reset: stats cleared, rosters retained, new schedule on start
+- Full archive-to-new-season lifecycle wired
+
+### Phase 40 -- Start New Season Flow (REQ-SCH-009)
+- `canStartSeason` L1 validator (status, seasonYear, teamCount, rosterSize checks)
+- POST handler added to schedule.ts (no new serverless slot consumed)
+- Commissioner-only: generates lineups + schedule, transitions to regular_season
+- NewSeasonPanel component for post-archive setup screen
+- DashboardPage branches setup display: seasonYear>1 -> NewSeasonPanel, seasonYear=1 -> InviteKeyDisplay
+
+### Phase 41 -- Persist Migration Infrastructure (REQ-STATE-009)
+- `createMigrationConfig` L1 helper (version/migrate factory for Zustand persist)
+- Sequential migration runner with defaultState fallback for missing steps
+- All 3 persisted stores (leagueStore, statsStore, rosterStore) wired with version=1 + migrate
+- Safe schema evolution path for production state changes
+
 ---
 
 ## REQ-* Coverage by Category
@@ -276,13 +295,13 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-LGE | 8 of 10 | Mostly done | Creation, join, invite keys, divisions, playoffs, commissioner |
 | REQ-DFT | 8 | Done | Snake draft, AI drafter, valuation, timer, roster validation |
 | REQ-RST | 6 | Done | Lineup gen, lineup update, roster validation, add/drop, trade eval, transactions |
-| REQ-SCH | 7 of 9 | Mostly done | Schedule gen, simulate buttons, standings update, playoff transition |
+| REQ-SCH | 9 | Done | Schedule gen, simulate buttons, standings update, playoff transition, archive, new season |
 | REQ-STS | 5 | Done | Accumulation, derived stats, leaders, team stats, trad/adv toggle |
 | REQ-AI | 8 | Done | 4 manager profiles, Claude API, 5 AI features, template fallbacks |
 | REQ-AUTH | 3 | Done | Supabase Auth, RLS, invite keys |
 | REQ-API | 10 of 11 | Mostly done | Endpoints, envelope format, pagination, error codes |
 | REQ-ERR | 18 of 20 | Mostly done | AppError, Zod validation, error boundaries, structured logging |
-| REQ-STATE | 14 of 16 | Mostly done | All stores, persist, devtools, Realtime infra, cache invalidation |
+| REQ-STATE | 15 of 16 | Mostly done | All stores, persist + migration, devtools, Realtime infra, cache invalidation |
 | REQ-COMP | 11 of 13 | Mostly done | Design tokens, components, routing, accessibility |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
@@ -308,83 +327,72 @@ Seven-layer architecture with strict downward-only imports:
 
 ## What Still Needs Work
 
-### High Priority (Core Functionality Gaps)
-
-1. **REQ-SCH-009: Season archive persistence + season reset**
-   - SeasonCompletePanel with archive button exists (Phase 33)
-   - Archive API and storage exist but full persistence to Supabase Storage needs verification
-   - Reset-for-new-season flow (stats reset, rosters remain, new schedule) not fully wired
-
 ### Medium Priority (Polish & NFR Compliance)
 
-6. **REQ-NFR-008: Web Worker for bulk simulation**
+1. **REQ-NFR-008: Web Worker for bulk simulation**
    - Worker exists and works for single-game replay in GameViewer
    - Multi-day simulation currently runs in main thread via store loop
    - Could move day simulation to worker for smoother progress bar
 
-7. **REQ-NFR-020: Supabase Realtime for simulation progress**
+2. **REQ-NFR-020: Supabase Realtime for simulation progress**
    - Infrastructure exists (simulation_progress table, useRealtimeProgress hook, subscribeToSimProgress)
    - Not actively used since Phase 31 moved to client-driven approach
    - Could be useful for multi-player leagues where one user watches another simulate
 
-8. **REQ-STATE-005: Immer middleware**
+3. **REQ-STATE-005: Immer middleware**
    - leagueStore uses immer, but other stores with nested state updates could benefit
    - Low priority since current stores work correctly
 
-9. **REQ-STATE-009: Persist migration functions**
-   - Stores use persist middleware but lack version/migrate for schema changes
-   - Will matter when schema changes in production
+4. **REQ-COMP-012 / REQ-COMP-013: WCAG 2.1 AA compliance**
+   - Skip links, aria-labels, semantic HTML largely in place
+   - Full audit not yet performed
+   - Color contrast checks needed for theme colors
 
-10. **REQ-COMP-012 / REQ-COMP-013: WCAG 2.1 AA compliance**
-    - Skip links, aria-labels, semantic HTML largely in place
-    - Full audit not yet performed
-    - Color contrast checks needed for theme colors
+5. **REQ-NFR-017: Bundle size < 200KB gzipped**
+   - Route-level code splitting with React.lazy + Suspense in place
+   - Manual chunk splitting configured (vendor/simulation/supabase)
+   - Actual bundle size not yet measured against target
 
-11. **REQ-NFR-017: Bundle size < 200KB gzipped**
-    - Route-level code splitting with React.lazy + Suspense in place
-    - Manual chunk splitting configured (vendor/simulation/supabase)
-    - Actual bundle size not yet measured against target
+6. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds**
+   - Global thresholds set (60% stmt, 50% branch)
+   - Per-directory thresholds (e.g., rng/ 100%) not yet enforced in CI
 
-12. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds**
-    - Global thresholds set (60% stmt, 50% branch)
-    - Per-directory thresholds (e.g., rng/ 100%) not yet enforced in CI
-
-13. **REQ-TEST-011: Traceability matrix maintenance**
-    - TRACEABILITY.md exists but may be behind after Phases 23-31
-    - Needs update to map all recent requirements to tests
+7. **REQ-TEST-011: Traceability matrix maintenance**
+   - TRACEABILITY.md exists but may be behind after Phases 23-41
+   - Needs update to map all recent requirements to tests
 
 ### Lower Priority (Nice-to-Have / Future)
 
-14. **REQ-LGE-010: League deletion**
-    - DeleteLeagueButton component exists
-    - API endpoint exists (DELETE /api/leagues/:id)
-    - Cascade deletion of all related data needs verification
+8. **REQ-LGE-010: League deletion**
+   - DeleteLeagueButton component exists
+   - API endpoint exists (DELETE /api/leagues/:id)
+   - Cascade deletion of all related data needs verification
 
-15. **REQ-MIG-009: Full pgTAP coverage**
-    - 40 assertions exist across 6 test files
-    - Some are stubs -- need real Docker-based testing
+9. **REQ-MIG-009: Full pgTAP coverage**
+   - 40 assertions exist across 6 test files
+   - Some are stubs -- need real Docker-based testing
 
-16. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
+10. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
     - Local dev environment works
     - Staging and production environments not yet set up
     - Supabase project provisioning needed for deployment
 
-17. **REQ-MIG-012: CI database migration validation**
+11. **REQ-MIG-012: CI database migration validation**
     - CI runs lint + type-check + vitest
     - Does not yet validate migrations against a real database
 
-18. **REQ-ENV-010: API key rotation policy**
+12. **REQ-ENV-010: API key rotation policy**
     - Documentation-level requirement, not yet documented
 
-19. **REQ-SCOPE requirements**
+13. **REQ-SCOPE requirements**
     - Mostly followed organically during development
     - No formal promotion audit performed
 
-20. **REQ-ERR-015 / REQ-ERR-016: Retry policies**
+14. **REQ-ERR-015 / REQ-ERR-016: Retry policies**
     - db-retry.ts handles Supabase retries
     - Other retry targets (AI, external services) use simpler patterns
 
-21. **Deployment to Vercel + Supabase Cloud**
+15. **Deployment to Vercel + Supabase Cloud**
     - All code is deployment-ready
     - vercel.json configured
     - Actual deployment not yet performed
@@ -396,9 +404,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 38 |
-| Test files | 223 |
-| Total tests | 2,554 |
+| Phases completed | 41 |
+| Test files | 227 |
+| Total tests | 2,592 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |
@@ -425,7 +433,7 @@ Seven-layer architecture with strict downward-only imports:
 | 4 | `api/leagues/[id]/archive.ts` | GET, POST | Season archives |
 | 5 | `api/leagues/[id]/draft.ts` | GET, POST | Draft state, picks, player pool |
 | 6 | `api/leagues/[id]/games/[gid].ts` | GET | Individual game details |
-| 7 | `api/leagues/[id]/schedule.ts` | GET | Schedule with day filter |
+| 7 | `api/leagues/[id]/schedule.ts` | GET, POST | Schedule with day filter, start new season |
 | 8 | `api/leagues/[id]/simulate.ts` | POST | Single-day simulation |
 | 9 | `api/leagues/[id]/stats.ts` | GET | Batting, pitching, team stats, standings |
 | 10 | `api/leagues/[id]/teams.ts` | GET, PATCH, POST | Teams, rosters, lineups, transactions |

@@ -89,6 +89,13 @@ describe('leagueStore', () => {
     expect(teams.every((t) => t.wins !== 99)).toBe(true);
   });
 
+  it('persist config includes version and migrate', () => {
+    // REQ-STATE-009: Persist migration for safe schema evolution
+    const persistOptions = (useLeagueStore as unknown as { persist: { getOptions: () => { version: number; migrate: unknown } } }).persist.getOptions();
+    expect(persistOptions.version).toBe(1);
+    expect(typeof persistOptions.migrate).toBe('function');
+  });
+
   it('reset restores initial state', () => {
     const store = useLeagueStore.getState();
     store.setActiveLeague(createMockLeague());

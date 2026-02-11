@@ -12,6 +12,7 @@ import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/l
 import type { ScheduleDay, FullPlayoffBracket } from '@lib/types/schedule';
 import * as leagueService from '@services/league-service';
 import { createSafeStorage } from './storage-factory';
+import { createMigrationConfig } from './persist-migration';
 
 export interface LeagueState {
   activeLeagueId: string | null;
@@ -209,6 +210,7 @@ export const useLeagueStore = create<LeagueStore>()(
       })),
       {
         name: 'bl-league-v1',
+        ...createMigrationConfig(1, initialState),
         storage: {
           getItem: (name) => {
             const storage = createSafeStorage();

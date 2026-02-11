@@ -11,6 +11,7 @@ import { immer } from 'zustand/middleware/immer';
 import type { RosterEntry } from '@lib/types/roster';
 import * as rosterService from '@services/roster-service';
 import { createSafeStorage } from './storage-factory';
+import { createMigrationConfig } from './persist-migration';
 
 export interface RosterState {
   activeTeamId: string | null;
@@ -148,6 +149,7 @@ export const useRosterStore = create<RosterStore>()(
       })),
       {
         name: 'bl-roster-v1',
+        ...createMigrationConfig(1, initialState),
         storage: {
           getItem: (name) => {
             const storage = createSafeStorage();
