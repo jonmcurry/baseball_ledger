@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-02-11 - Per-Directory Coverage Thresholds (Phase 46)
+
+### Phase 46: Per-Directory Coverage Thresholds (REQ-TEST-003, REQ-TEST-004)
+
+Configured vitest.config.ts with SRD-specified per-directory coverage thresholds.
+
+- **Modified `vitest.config.ts`**
+  - Added `coverage.include` for 6 source directory patterns (src/lib, services, stores, hooks, workers, api)
+  - Added `coverage.exclude` for type definition files
+  - Set global floor: 85% lines, 80% branches, 85% statements, 80% functions
+  - Added 9 per-directory threshold overrides:
+    - `src/lib/rng/**`: 100% all metrics (determinism is non-negotiable)
+    - `src/lib/simulation/**`, `src/lib/card-generator/**`: 95%/90% (core engine)
+    - `src/lib/draft/**`, `src/lib/stats/**`: 90%/85% (user-visible accuracy)
+    - `src/lib/csv/**`, `src/lib/schedule/**`: 85%/80%
+    - `api/**`: 80%/75%, `src/services/**`: 75%/70%
+  - Added `all: true` to track files not directly imported by tests
+  - Documented Node 24 + Windows V8 coverage known issue
+
+- **Added `@vitest/coverage-istanbul` as fallback provider**
+
+- CI already runs `npm run test:coverage` (ubuntu-latest, Node 20) with artifact upload
+
+**Tests:** 2,613 tests across 229 files (no changes, configuration only)
+
 ## 2026-02-11 - Traceability Matrix Update (Phase 45)
 
 ### Phase 45: Traceability Matrix Update (REQ-TEST-011)

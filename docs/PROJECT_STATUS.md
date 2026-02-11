@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--44)
+## Completed Phases (1--46)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -298,6 +298,18 @@ Seven-layer architecture with strict downward-only imports:
 - All 11 lazy-loaded routes have isolated per-feature error boundaries
 - Chunk-load failures and render errors caught with Try Again + Return to Dashboard
 
+### Phase 45 -- Traceability Matrix Update (REQ-TEST-011)
+- TRACEABILITY.md updated with 18 phase sections (Phases 27-44)
+- ~50 requirement-to-test entries added
+- REQ-NFR-017 verified: 143KB gzipped initial load (under 200KB target)
+
+### Phase 46 -- Per-Directory Coverage Thresholds (REQ-TEST-003, REQ-TEST-004)
+- vitest.config.ts configured with 9 per-directory coverage thresholds per SRD
+- Global floor: 85% lines / 80% branches
+- Critical directories: rng/ 100%, simulation/ 95%, card-generator/ 95%
+- CI already runs `npm run test:coverage` with artifact upload
+- @vitest/coverage-istanbul added as V8 fallback
+
 ---
 
 ## REQ-* Coverage by Category
@@ -322,7 +334,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
-| REQ-TEST | 15 of 18 | Mostly done | 2,613 tests, TDD, traceability current, E2E, benchmarks |
+| REQ-TEST | 17 of 18 | Mostly done | 2,613 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks |
 | REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json |
 
 ### UI Pages (REQ-UI)
@@ -365,9 +377,9 @@ Seven-layer architecture with strict downward-only imports:
    - Manual chunk splitting configured (vendor/simulation/supabase)
    - Measured: 143KB gzipped initial load (index 64KB + vendor 33KB + supabase 45KB)
 
-5. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds**
-   - Global thresholds set (60% stmt, 50% branch)
-   - Per-directory thresholds (e.g., rng/ 100%) not yet enforced in CI
+5. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds** -- CONFIGURED
+   - 9 per-directory thresholds in vitest.config.ts per SRD
+   - CI runs `npm run test:coverage` which enforces thresholds
 
 6. **REQ-TEST-011: Traceability matrix maintenance** -- CURRENT
    - TRACEABILITY.md updated through Phase 44
@@ -416,7 +428,7 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 44 |
+| Phases completed | 46 |
 | Test files | 229 |
 | Total tests | 2,613 |
 | Source files | ~300+ |
