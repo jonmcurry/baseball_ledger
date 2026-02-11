@@ -22,9 +22,11 @@ import { ResultsTicker } from './ResultsTicker';
 import type { TickerResult } from './ResultsTicker';
 import { SimulationNotification } from './SimulationNotification';
 import { SeasonCompletePanel } from './SeasonCompletePanel';
+import { PlayoffStatusPanel } from './PlayoffStatusPanel';
 import { InviteKeyDisplay } from '@features/league/InviteKeyDisplay';
 import { apiPost } from '@services/api-client';
 import { useLeagueStore } from '@stores/leagueStore';
+import { buildPlayoffGameMessage } from '@lib/schedule/playoff-display';
 
 const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
   day: 1,
@@ -35,7 +37,7 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 
 export function DashboardPage() {
   const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
-  const { status, totalDays, completedGames, isRunning, progressPct, runSimulation } = useSimulation();
+  const { status, totalDays, completedGames, isRunning, progressPct, runSimulation, lastPlayoffResult } = useSimulation();
 
   // REQ-STATE-014: Cache invalidation on simulation completion
   useRealtimeProgress(league?.id ?? null);
@@ -48,6 +50,22 @@ export function DashboardPage() {
     const team = teams.find((t) => t.id === playoffBracket.worldSeriesChampionId);
     return team ? `${team.city} ${team.name}` : 'Unknown';
   }, [playoffBracket, teams]);
+
+  // REQ-LGE-009: Playoff notification message
+  const playoffMessage = useMemo(() => {
+    if (!lastPlayoffResult) return undefined;
+    const home = teams.find((t) => t.id === lastPlayoffResult.homeTeamId);
+    const away = teams.find((t) => t.id === lastPlayoffResult.awayTeamId);
+    return buildPlayoffGameMessage({
+      round: lastPlayoffResult.round,
+      gameNumber: lastPlayoffResult.gameNumber,
+      homeTeamName: home?.name ?? lastPlayoffResult.homeTeamId,
+      awayTeamName: away?.name ?? lastPlayoffResult.awayTeamId,
+      homeScore: lastPlayoffResult.homeScore,
+      awayScore: lastPlayoffResult.awayScore,
+      isPlayoffsComplete: lastPlayoffResult.isPlayoffsComplete,
+    });
+  }, [lastPlayoffResult, teams]);
 
   const handleArchive = async () => {
     if (!league) return;
@@ -149,6 +167,7 @@ export function DashboardPage() {
           gamesCompleted={completedGames}
           isVisible={showNotification}
           onDismiss={() => setShowNotification(false)}
+          playoffMessage={playoffMessage}
         />
       )}
 
@@ -164,7 +183,15 @@ export function DashboardPage() {
           />
         </div>
         <div>
-          <ScheduleView day={todaySchedule} teams={teams} />
+          {leagueStatus === 'playoffs' && playoffBracket ? (
+            <PlayoffStatusPanel
+              playoffBracket={playoffBracket}
+              teams={teams}
+              lastGameResult={lastPlayoffResult}
+            />
+          ) : (
+            <ScheduleView day={todaySchedule} teams={teams} />
+          )}
         </div>
       </div>
     </div>

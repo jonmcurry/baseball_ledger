@@ -6,6 +6,7 @@
  */
 
 import type { PlayoffBracket } from '@lib/types/schedule';
+import { formatPlayoffRoundName } from '@lib/schedule/playoff-display';
 import { SeriesCard } from './SeriesCard';
 
 export interface PlayoffBracketViewProps {
@@ -33,7 +34,7 @@ export function PlayoffBracketView({ bracket, teams }: PlayoffBracketViewProps) 
       {bracket.rounds.map((round) => (
         <div key={round.name} className="space-y-2">
           <h4 className="text-xs font-medium text-muted">
-            {round.name.replace(/([A-Z])/g, ' $1').trim()}
+            {formatPlayoffRoundName(round.name)}
           </h4>
           <div className="grid gap-2 sm:grid-cols-2">
             {round.series.map((series) => (

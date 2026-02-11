@@ -7,7 +7,8 @@
 
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DashboardPage } from '@features/dashboard/DashboardPage';
-import { createMockLeague, createMockTeams, createMockStandings, createMockScheduleDay, createMockGame } from '../../../../tests/fixtures/mock-league';
+import { createMockLeague, createMockTeams, createMockStandings, createMockScheduleDay, createMockGame, createMockPlayoffBracket } from '../../../../tests/fixtures/mock-league';
+import type { PlayoffGameResult } from '@stores/simulationStore';
 
 vi.mock('@hooks/useLeague', () => ({
   useLeague: vi.fn(),
@@ -40,6 +41,7 @@ function defaultSimulationMock(overrides: Record<string, unknown> = {}) {
     error: null,
     progressPct: 0,
     isRunning: false,
+    lastPlayoffResult: null as PlayoffGameResult | null,
     startSimulation: vi.fn(),
     runSimulation: vi.fn(),
     reset: vi.fn(),
@@ -392,5 +394,122 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
     expect(screen.getByText('Sim Day')).toBeInTheDocument();
     expect(screen.queryByTestId('season-complete-panel')).not.toBeInTheDocument();
+  });
+
+  // REQ-LGE-009: Playoff dashboard integration
+  it('renders PlayoffStatusPanel instead of ScheduleView during playoffs', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'playoffs' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: createMockPlayoffBracket(),
+      currentDay: 163,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'playoffs',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.getByTestId('playoff-status-panel')).toBeInTheDocument();
+    expect(screen.queryByText('No games scheduled')).not.toBeInTheDocument();
+  });
+
+  it('renders ScheduleView during regular_season, not PlayoffStatusPanel', () => {
+    render(<DashboardPage />);
+    expect(screen.queryByTestId('playoff-status-panel')).not.toBeInTheDocument();
+  });
+
+  it('passes playoffMessage to SimulationNotification from lastPlayoffResult', () => {
+    vi.useFakeTimers();
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'playoffs' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: createMockPlayoffBracket(),
+      currentDay: 163,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'playoffs',
+    });
+
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
+      status: 'complete',
+      totalDays: 1,
+      completedGames: 1,
+      lastPlayoffResult: {
+        round: 'ChampionshipSeries',
+        seriesId: 'alcs-1',
+        gameNumber: 3,
+        isPlayoffsComplete: false,
+        homeTeamId: 'al-e1',
+        awayTeamId: 'al-w1',
+        homeScore: 5,
+        awayScore: 3,
+      } as PlayoffGameResult,
+    }));
+
+    render(<DashboardPage />);
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    const notification = screen.getByTestId('simulation-notification');
+    expect(notification.textContent).toContain('Championship Series Game 3');
+    vi.useRealTimers();
+  });
+
+  it('shows PlayoffStatusPanel with last game result after playoff sim', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'playoffs' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: createMockPlayoffBracket(),
+      currentDay: 163,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'playoffs',
+    });
+
+    mockUseSimulation.mockReturnValue(defaultSimulationMock({
+      lastPlayoffResult: {
+        round: 'ChampionshipSeries',
+        seriesId: 'alcs-1',
+        gameNumber: 3,
+        isPlayoffsComplete: false,
+        homeTeamId: 'al-e1',
+        awayTeamId: 'al-w1',
+        homeScore: 5,
+        awayScore: 3,
+      } as PlayoffGameResult,
+    }));
+
+    render(<DashboardPage />);
+    expect(screen.getByTestId('last-game-result')).toBeInTheDocument();
+  });
+
+  it('does not render PlayoffStatusPanel during completed status', () => {
+    mockUseLeague.mockReturnValue({
+      league: createMockLeague({ status: 'completed' }),
+      teams: createMockTeams(),
+      standings: createMockStandings(),
+      schedule: [],
+      playoffBracket: { worldSeriesChampionId: 'al-e1' } as any,
+      currentDay: 162,
+      isLoading: false,
+      error: null,
+      isCommissioner: false,
+      leagueStatus: 'completed',
+    });
+
+    render(<DashboardPage />);
+    expect(screen.queryByTestId('playoff-status-panel')).not.toBeInTheDocument();
+    expect(screen.getByTestId('season-complete-panel')).toBeInTheDocument();
   });
 });

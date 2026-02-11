@@ -95,6 +95,27 @@ describe('SimulationNotification', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  it('renders playoffMessage instead of generic message when provided', () => {
+    render(
+      <SimulationNotification
+        daysSimulated={1}
+        gamesCompleted={1}
+        isVisible={true}
+        onDismiss={vi.fn()}
+        playoffMessage="Championship Series Game 3: Hawks 3, Eagles 5"
+      />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+
+    const statusEl = screen.getByRole('status');
+    expect(statusEl.textContent).toContain('Championship Series Game 3');
+    expect(statusEl.textContent).toContain('Hawks 3');
+    expect(statusEl.textContent).not.toContain('game simulated');
+  });
+
   it('shows game count in message', () => {
     render(
       <SimulationNotification

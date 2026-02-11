@@ -18,6 +18,7 @@ export function useSimulation() {
   const error = useSimulationStore((s) => s.error);
   const startSimulation = useSimulationStore((s) => s.startSimulation);
   const runSimulation = useSimulationStore((s) => s.runSimulation);
+  const lastPlayoffResult = useSimulationStore((s) => s.lastPlayoffResult);
   const reset = useSimulationStore((s) => s.reset);
 
   const progressPct = totalDays > 0
@@ -35,6 +36,7 @@ export function useSimulation() {
     error,
     progressPct,
     isRunning,
+    lastPlayoffResult,
     startSimulation,
     runSimulation,
     reset,

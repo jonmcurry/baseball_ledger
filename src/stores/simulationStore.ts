@@ -19,6 +19,17 @@ export interface SimulationResult {
   awayScore: number;
 }
 
+export interface PlayoffGameResult {
+  round: string;
+  seriesId: string;
+  gameNumber: number;
+  isPlayoffsComplete: boolean;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeScore: number;
+  awayScore: number;
+}
+
 export interface SimulationState {
   status: SimulationStatus;
   totalGames: number;
@@ -27,6 +38,7 @@ export interface SimulationState {
   currentDay: number;
   results: SimulationResult[];
   error: string | null;
+  lastPlayoffResult: PlayoffGameResult | null;
 }
 
 export interface SimulationActions {
@@ -50,6 +62,7 @@ const initialState: SimulationState = {
   currentDay: 0,
   results: [],
   error: null,
+  lastPlayoffResult: null,
 };
 
 export const useSimulationStore = create<SimulationStore>()(
@@ -95,6 +108,7 @@ export const useSimulationStore = create<SimulationStore>()(
         set({
           status: 'running', totalDays: maxDays, currentDay: 0,
           completedGames: 0, totalGames: 0, results: [], error: null,
+          lastPlayoffResult: null,
         }, false, 'runSimulation/start');
 
         try {
@@ -109,6 +123,25 @@ export const useSimulationStore = create<SimulationStore>()(
               currentDay: daysDone,
               completedGames: state.completedGames + result.games.length,
             }), false, 'runSimulation/dayComplete');
+
+            if (result.playoff && result.games.length > 0) {
+              const game = result.games[0] as {
+                homeTeamId?: string; awayTeamId?: string;
+                homeScore?: number; awayScore?: number;
+              };
+              set({
+                lastPlayoffResult: {
+                  round: result.playoff.round,
+                  seriesId: result.playoff.seriesId,
+                  gameNumber: result.playoff.gameNumber,
+                  isPlayoffsComplete: result.playoff.isPlayoffsComplete,
+                  homeTeamId: game.homeTeamId ?? '',
+                  awayTeamId: game.awayTeamId ?? '',
+                  homeScore: game.homeScore ?? 0,
+                  awayScore: game.awayScore ?? 0,
+                },
+              }, false, 'runSimulation/playoffResult');
+            }
           }
 
           set({ status: 'complete', currentDay: daysDone, totalDays: daysDone },

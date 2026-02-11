@@ -15,6 +15,7 @@ export interface SimulationNotificationProps {
   gamesCompleted: number;
   isVisible: boolean;
   onDismiss: () => void;
+  playoffMessage?: string;
 }
 
 const AUTO_DISMISS_MS = 4000;
@@ -31,6 +32,7 @@ export function SimulationNotification({
   gamesCompleted,
   isVisible,
   onDismiss,
+  playoffMessage,
 }: SimulationNotificationProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onDismissRef = useRef(onDismiss);
@@ -50,7 +52,7 @@ export function SimulationNotification({
 
   if (!isVisible) return null;
 
-  const message = buildMessage(daysSimulated, gamesCompleted);
+  const message = playoffMessage ?? buildMessage(daysSimulated, gamesCompleted);
 
   return (
     <div

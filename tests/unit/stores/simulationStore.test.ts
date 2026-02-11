@@ -69,6 +69,11 @@ describe('simulationStore', () => {
     expect(state.error).toBe('Simulation failed');
   });
 
+  it('initial state has lastPlayoffResult as null', () => {
+    const state = useSimulationStore.getState();
+    expect(state.lastPlayoffResult).toBeNull();
+  });
+
   it('reset returns to initial state', () => {
     const store = useSimulationStore.getState();
     store.startSimulation(10);

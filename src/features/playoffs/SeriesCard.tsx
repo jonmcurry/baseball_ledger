@@ -6,6 +6,7 @@
  */
 
 import type { PlayoffSeries } from '@lib/types/schedule';
+import { formatPlayoffRoundName } from '@lib/schedule/playoff-display';
 
 export interface SeriesCardProps {
   readonly series: PlayoffSeries;
@@ -23,7 +24,7 @@ export function SeriesCard({ series, homeTeam, awayTeam }: SeriesCardProps) {
       }`}
     >
       <p className="text-[10px] font-bold text-muted">
-        {series.round.replace(/([A-Z])/g, ' $1').trim()} - Best of {series.bestOf}
+        {formatPlayoffRoundName(series.round)} - Best of {series.bestOf}
       </p>
 
       <div className="mt-1 space-y-0.5">

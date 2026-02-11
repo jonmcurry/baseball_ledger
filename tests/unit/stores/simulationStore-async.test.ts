@@ -169,6 +169,78 @@ describe('simulationStore async actions', () => {
   });
 
   // -----------------------------------------------------------------------
+  // runSimulation -- playoff result tracking
+  // -----------------------------------------------------------------------
+
+  it('runSimulation stores lastPlayoffResult when playoff metadata present', async () => {
+    vi.mocked(simulationService.startSimulation).mockResolvedValue({
+      dayNumber: 163,
+      games: [{ homeTeamId: 'al-e1', awayTeamId: 'nl-e1', homeScore: 5, awayScore: 3 }],
+      playoff: {
+        round: 'WorldSeries',
+        seriesId: 'ws-1',
+        gameNumber: 3,
+        isPlayoffsComplete: false,
+      },
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 1);
+
+    const state = useSimulationStore.getState();
+    expect(state.lastPlayoffResult).toEqual({
+      round: 'WorldSeries',
+      seriesId: 'ws-1',
+      gameNumber: 3,
+      isPlayoffsComplete: false,
+      homeTeamId: 'al-e1',
+      awayTeamId: 'nl-e1',
+      homeScore: 5,
+      awayScore: 3,
+    });
+  });
+
+  it('runSimulation keeps lastPlayoffResult null when no playoff metadata', async () => {
+    vi.mocked(simulationService.startSimulation).mockResolvedValue(
+      { dayNumber: 42, games: [{ id: 'g1' }] },
+    );
+
+    await useSimulationStore.getState().runSimulation('league-1', 1);
+
+    expect(useSimulationStore.getState().lastPlayoffResult).toBeNull();
+  });
+
+  it('runSimulation clears lastPlayoffResult at start', async () => {
+    // Set up a previous playoff result
+    vi.mocked(simulationService.startSimulation).mockResolvedValue({
+      dayNumber: 163,
+      games: [{ homeTeamId: 'al-e1', awayTeamId: 'nl-e1', homeScore: 5, awayScore: 3 }],
+      playoff: {
+        round: 'WorldSeries',
+        seriesId: 'ws-1',
+        gameNumber: 3,
+        isPlayoffsComplete: false,
+      },
+    });
+    await useSimulationStore.getState().runSimulation('league-1', 1);
+    expect(useSimulationStore.getState().lastPlayoffResult).not.toBeNull();
+
+    // Start a new sim without playoff data
+    vi.mocked(simulationService.startSimulation).mockResolvedValue(
+      { dayNumber: 42, games: [] },
+    );
+
+    // Capture state during running phase
+    let runningPlayoffResult: unknown = 'not-checked';
+    vi.mocked(simulationService.startSimulation).mockImplementation(async () => {
+      runningPlayoffResult = useSimulationStore.getState().lastPlayoffResult;
+      return { dayNumber: 42, games: [] };
+    });
+
+    await useSimulationStore.getState().runSimulation('league-1', 1);
+    expect(runningPlayoffResult).toBeNull();
+  });
+
+  // -----------------------------------------------------------------------
   // subscribeToSimProgress
   // -----------------------------------------------------------------------
 

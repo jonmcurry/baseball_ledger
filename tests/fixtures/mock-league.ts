@@ -5,7 +5,7 @@
  */
 
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';
-import type { ScheduleDay, ScheduleGameSummary } from '@lib/types/schedule';
+import type { ScheduleDay, ScheduleGameSummary, FullPlayoffBracket } from '@lib/types/schedule';
 
 export function createMockLeague(overrides?: Partial<LeagueSummary>): LeagueSummary {
   return {
@@ -109,5 +109,70 @@ export function createMockScheduleDay(
       createMockGame({ id: `g-${dayNumber}-2`, homeTeamId: 'nl-e1', awayTeamId: 'nl-e2' }),
       createMockGame({ id: `g-${dayNumber}-3`, homeTeamId: 'nl-w1', awayTeamId: 'nl-w2' }),
     ],
+  };
+}
+
+export function createMockPlayoffBracket(): FullPlayoffBracket {
+  return {
+    leagueId: 'league-1',
+    al: {
+      leagueId: 'league-1',
+      rounds: [{
+        name: 'ChampionshipSeries',
+        bestOf: 7,
+        series: [{
+          id: 'alcs-1',
+          round: 'ChampionshipSeries',
+          leagueDivision: 'AL',
+          higherSeed: { teamId: 'al-e1', seed: 1, record: { wins: 55, losses: 35 } },
+          lowerSeed: { teamId: 'al-w1', seed: 2, record: { wins: 52, losses: 38 } },
+          bestOf: 7,
+          games: [
+            { gameNumber: 1, homeTeamId: 'al-e1', awayTeamId: 'al-w1', homeScore: 5, awayScore: 3, isComplete: true },
+            { gameNumber: 2, homeTeamId: 'al-e1', awayTeamId: 'al-w1', homeScore: 4, awayScore: 2, isComplete: true },
+          ],
+          higherSeedWins: 2,
+          lowerSeedWins: 0,
+          isComplete: false,
+          winnerId: null,
+        }],
+      }],
+      championId: null,
+    },
+    nl: {
+      leagueId: 'league-1',
+      rounds: [{
+        name: 'ChampionshipSeries',
+        bestOf: 7,
+        series: [{
+          id: 'nlcs-1',
+          round: 'ChampionshipSeries',
+          leagueDivision: 'NL',
+          higherSeed: { teamId: 'nl-e1', seed: 1, record: { wins: 58, losses: 32 } },
+          lowerSeed: { teamId: 'nl-w1', seed: 2, record: { wins: 50, losses: 40 } },
+          bestOf: 7,
+          games: [],
+          higherSeedWins: 0,
+          lowerSeedWins: 0,
+          isComplete: false,
+          winnerId: null,
+        }],
+      }],
+      championId: null,
+    },
+    worldSeries: {
+      id: 'ws-1',
+      round: 'WorldSeries',
+      leagueDivision: 'MLB',
+      higherSeed: null,
+      lowerSeed: null,
+      bestOf: 7,
+      games: [],
+      higherSeedWins: 0,
+      lowerSeedWins: 0,
+      isComplete: false,
+      winnerId: null,
+    },
+    worldSeriesChampionId: null,
   };
 }

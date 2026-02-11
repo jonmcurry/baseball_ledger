@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-02-10 - Playoff Dashboard Integration (Phase 34)
+
+### Phase 34: Playoff Dashboard Integration (REQ-LGE-009, REQ-SCH-007)
+
+During playoffs, the dashboard now shows playoff context instead of "No games scheduled". After simulating a playoff game, the notification displays the specific result (e.g., "Championship Series Game 3: Wolves 3, Eagles 5") instead of the generic "1 game simulated".
+
+- **Created `src/lib/schedule/playoff-display.ts` (L1 pure helpers)**
+  - `formatPlayoffRoundName()` converts PascalCase round names to human-readable
+  - `buildPlayoffGameMessage()` builds notification text from playoff game data
+  - Deduplicated inline formatting from `SeriesCard.tsx` and `PlayoffBracketView.tsx`
+  - 7 tests in `playoff-display.test.ts`
+
+- **Modified `src/stores/simulationStore.ts` -- track playoff results**
+  - Added `PlayoffGameResult` interface and `lastPlayoffResult` field to state
+  - `runSimulation` loop captures `result.playoff` + `result.games[0]` data
+  - Cleared on new simulation start
+  - 4 new tests across store test files
+
+- **Modified `src/features/dashboard/SimulationNotification.tsx`**
+  - Added optional `playoffMessage` prop; when set, replaces the generic message
+  - 1 new test
+
+- **Created `src/features/dashboard/PlayoffStatusPanel.tsx` (REQ-LGE-009)**
+  - Dashboard right-column panel during playoffs
+  - Shows last game result, active series with win counts, next game preview
+  - Uses `getNextFullBracketGame()` for "Up Next" display
+  - 7 tests in `PlayoffStatusPanel.test.tsx`
+
+- **Modified `src/features/dashboard/DashboardPage.tsx`**
+  - Conditionally renders `PlayoffStatusPanel` instead of `ScheduleView` during playoffs
+  - Builds `playoffMessage` from `lastPlayoffResult` + team names via `useMemo`
+  - Passes `playoffMessage` to `SimulationNotification`
+  - 5 new tests in `DashboardPage.test.tsx`
+
+- **Modified `tests/fixtures/mock-league.ts`**
+  - Added `createMockPlayoffBracket()` factory function
+
+**Tests:** 2,496 across 218 files. TypeScript clean.
+
+---
+
 ## 2026-02-10 - Season Completion Ceremony and Playoff Sim Fix (Phase 33)
 
 ### Phase 33: Season Completion Ceremony and Playoff Sim Fix (REQ-SCH-009, REQ-LGE-009)
