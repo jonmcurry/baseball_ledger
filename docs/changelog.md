@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-11 - Supabase Deployment + Type Generation (Phase 64)
+
+### Phase 64: Supabase Cloud deployment and auto-generated types
+
+Linked project to Supabase Cloud, pushed all 20 migrations, and switched to
+auto-generated database types from the live schema.
+
+- **Supabase Cloud**: Linked project `kdqptbbfhdopfujmwlws`, pushed migrations 00001-00020
+- **Migration 00020**: Added `draft_order JSONB` column to leagues (REQ-DFT-001)
+- **Auto-generated types**: `npm run db:types` now generates `src/lib/types/database.ts` from live schema
+  - All 10 tables present: archives, game_logs, leagues, player_pool, rosters, schedule, season_stats, simulation_progress, teams, transactions
+  - Custom type aliases (`PlayerPoolRow`, `TransactionRow`) appended after generation
+- **API type fixes**: Stricter `Json` type from auto-generated types required `as unknown as Json` casts
+  - Fixed: `api/leagues/index.ts`, `api/leagues/[id]/teams.ts`, `api/leagues/[id]/archive.ts`, `api/leagues/[id]/draft.ts`
+  - Fixed: `src/lib/transforms/transaction-transform.ts` type narrowing
+- **Migration count tests**: Updated from 19 to 20 in cascade-delete and unique-owner tests
+
+**Test count**: 2,792 across 245 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - pgTAP Full Coverage + CI Migration Validation (Phase 63)
 
 ### Phase 63: REQ-MIG-009, REQ-MIG-012, REQ-MIG-013, REQ-TEST-018

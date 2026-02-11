@@ -170,6 +170,7 @@ export type Database = {
           commissioner_id: string
           created_at: string
           current_day: number
+          draft_order: Json | null
           id: string
           injuries_enabled: boolean
           invite_key: string
@@ -187,6 +188,7 @@ export type Database = {
           commissioner_id: string
           created_at?: string
           current_day?: number
+          draft_order?: Json | null
           id?: string
           injuries_enabled?: boolean
           invite_key: string
@@ -204,6 +206,7 @@ export type Database = {
           commissioner_id?: string
           created_at?: string
           current_day?: number
+          draft_order?: Json | null
           id?: string
           injuries_enabled?: boolean
           invite_key?: string

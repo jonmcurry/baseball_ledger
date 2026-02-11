@@ -19,7 +19,7 @@ import { ok, created } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel, camelToSnake } from '../../_lib/transform';
 import { createServerClient } from '@lib/supabase/server';
-import type { Database } from '@lib/types/database';
+import type { Database, Json } from '@lib/types/database';
 import { validateTradeRosters } from '@lib/draft/trade-validator';
 import { transformTransactionRows } from '@lib/transforms/transaction-transform';
 import { buildTradeEvalRequest } from '@lib/transforms/trade-eval-request-builder';
@@ -312,7 +312,7 @@ async function handleTransaction(req: VercelRequest, res: VercelResponse, reques
         team_id: body.teamId,
         player_id: player.playerId,
         season_year: player.seasonYear,
-        player_card: player.playerCard,
+        player_card: player.playerCard as unknown as Json,
         roster_slot: 'bench',
       });
 
@@ -346,7 +346,7 @@ async function handleTransaction(req: VercelRequest, res: VercelResponse, reques
     details: {
       playersAdded: addedPlayers,
       playersDropped: body.playersToDrop,
-    },
+    } as unknown as Json,
   });
 
   created(res, result, requestId, `/api/leagues/${leagueId}/teams`);
@@ -446,7 +446,7 @@ async function handleTrade(
           playersFromThem: body.playersFromThem,
           status: 'rejected',
           evaluation,
-        },
+        } as unknown as Json,
       });
 
       throw {
@@ -487,7 +487,7 @@ async function handleTrade(
       team_id: body.targetTeamId!,
       player_id: row.player_id as string,
       season_year: row.season_year as number,
-      player_card: row.player_card as Record<string, unknown>,
+      player_card: row.player_card as Json,
       roster_slot: 'bench' as const,
     });
   }
@@ -496,7 +496,7 @@ async function handleTrade(
       team_id: body.teamId,
       player_id: row.player_id as string,
       season_year: row.season_year as number,
-      player_card: row.player_card as Record<string, unknown>,
+      player_card: row.player_card as Json,
       roster_slot: 'bench' as const,
     });
   }
@@ -520,7 +520,7 @@ async function handleTrade(
       targetTeamId: body.targetTeamId,
       playersFromMe: body.playersFromMe,
       playersFromThem: body.playersFromThem,
-    },
+    } as unknown as Json,
   });
 
   created(res, result, requestId, `/api/leagues/${leagueId}/teams`);

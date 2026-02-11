@@ -19,6 +19,7 @@ import { validateBody } from '../../_lib/validate';
 import { ok, created, paginated } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '@lib/supabase/server';
+import type { Json } from '@lib/types/database';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '@lib/draft/draft-order';
 import { SeededRNG } from '@lib/rng/seeded-rng';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
@@ -270,7 +271,7 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
       team_id: userTeam.id,
       player_id: body.playerId,
       season_year: body.seasonYear,
-      player_card: body.playerCard,
+      player_card: body.playerCard as unknown as Json,
       roster_slot: 'bench',
     });
 

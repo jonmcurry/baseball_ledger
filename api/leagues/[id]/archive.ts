@@ -11,6 +11,7 @@ import { ok, noContent } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel } from '../../_lib/transform';
 import { createServerClient } from '@lib/supabase/server';
+import type { Json } from '@lib/types/database';
 import { buildArchiveData } from '@lib/transforms/archive-builder';
 import type { FullPlayoffBracket } from '@lib/types/schedule';
 
@@ -102,10 +103,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await supabase.from('archives').insert({
         league_id: leagueId,
         season_number: league.season_year,
-        standings: { teams: teams ?? [] },
+        standings: { teams: teams ?? [] } as unknown as Json,
         champion: archiveData.champion,
-        playoff_results: archiveData.playoffResults as Record<string, unknown> | null,
-        league_leaders: archiveData.leagueLeaders as unknown as Record<string, unknown>,
+        playoff_results: archiveData.playoffResults as unknown as Json,
+        league_leaders: archiveData.leagueLeaders as unknown as Json,
       });
 
       // Clean up season data for fresh start

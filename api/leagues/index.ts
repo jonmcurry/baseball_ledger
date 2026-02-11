@@ -15,6 +15,7 @@ import { created } from '../_lib/response';
 import { handleApiError } from '../_lib/errors';
 import { snakeToCamel } from '../_lib/transform';
 import { createServerClient } from '@lib/supabase/server';
+import type { Json } from '@lib/types/database';
 import { loadCsvFiles } from '../_lib/load-csvs';
 import { runCsvPipeline } from '@lib/csv/load-pipeline';
 
@@ -72,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           league_id: data.id,
           player_id: card.playerId,
           season_year: card.seasonYear,
-          player_card: card as unknown as Record<string, unknown>,
+          player_card: card as unknown as Json,
         }));
 
         for (let i = 0; i < poolRecords.length; i += BATCH_SIZE) {
