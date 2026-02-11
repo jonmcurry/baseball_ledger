@@ -1,15 +1,15 @@
 # Changelog
 
-## 2026-02-11 - Navigation Fix (Phase 67)
+## 2026-02-11 - Navigation + Hooks Fix (Phase 67)
 
-### Phase 67: Show full navigation in all league phases
+### Phase 67: Show full navigation in all league phases + fix React error #300
 
 Navigation bar was completely hidden during `setup` and `draft` phases because
 the Header component only rendered nav links when `leagueStatus` was in
 `regular_season`, `playoffs`, or `offseason`. Users could not navigate to any
 pages (Draft Board, Roster, Stats, etc.) after creating a league.
 
-**Fixes:**
+**Navigation fixes:**
 - Removed `ACTIVE_STATUSES` gate -- navigation is now always visible regardless
   of league phase (setup, draft, regular_season, playoffs, offseason).
 - Added missing nav items: Draft Board, Playoffs, Transactions, Archive.
@@ -17,7 +17,13 @@ pages (Draft Board, Roster, Stats, etc.) after creating a league.
   actual router path).
 - Hamburger menu now always available on narrow viewports.
 
-**Files changed:** `Header.tsx`, `Header.test.tsx`, `responsive.test.tsx`
+**React error #300 fix (DraftBoardPage):**
+- `useState` and `useMemo` hooks were called after an early `return` for
+  loading state, violating React's Rules of Hooks ("Rendered fewer hooks
+  than expected"). Moved all hooks above the early return.
+
+**Files changed:** `Header.tsx`, `Header.test.tsx`, `responsive.test.tsx`,
+`DraftBoardPage.tsx`
 
 **Test count:** 2,792 across 245 files (all passing). TypeScript clean.
 

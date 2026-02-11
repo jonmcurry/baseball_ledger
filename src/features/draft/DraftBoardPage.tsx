@@ -61,34 +61,7 @@ export function DraftBoardPage() {
     }
   }, [league?.id, availablePlayers, submitPick]);
 
-  // REQ-DFT-004: 60-second pick timer
-  useDraftTimer({
-    isActive: isMyPick && draftState?.status === 'in_progress',
-    currentTeamId: draftState?.currentTeamId ?? null,
-    pickTimerSeconds: timeRemaining,
-    tickTimer,
-    resetTimer,
-    onExpire: handleAutoPickOnExpire,
-  });
-
-  if (isLoading) {
-    return <LoadingLedger message="Loading draft board..." />;
-  }
-
   const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
-
-  const handlePlayerClick = (player: AvailablePlayer) => {
-    setProfilePlayer(player.playerCard);
-  };
-
-  const handlePlayerSelect = (player: AvailablePlayer) => {
-    if (!league?.id || !myTeam) return;
-    submitPick(league.id, player);
-  };
-
-  const isDraftComplete = draftState?.status === 'completed';
-  const isDraftNotStarted = !draftState || draftState.status === 'not_started';
-  const isDraftActive = draftState?.status === 'in_progress';
 
   // Build reasoning request from the last completed pick
   const lastPickRequest = useMemo((): DraftReasoningRequest | null => {
@@ -111,6 +84,33 @@ export function DraftBoardPage() {
       teamNeeds: [],
     };
   }, [draftState?.picks, currentTeamName, availablePlayers]);
+
+  // REQ-DFT-004: 60-second pick timer
+  useDraftTimer({
+    isActive: isMyPick && draftState?.status === 'in_progress',
+    currentTeamId: draftState?.currentTeamId ?? null,
+    pickTimerSeconds: timeRemaining,
+    tickTimer,
+    resetTimer,
+    onExpire: handleAutoPickOnExpire,
+  });
+
+  if (isLoading) {
+    return <LoadingLedger message="Loading draft board..." />;
+  }
+
+  const handlePlayerClick = (player: AvailablePlayer) => {
+    setProfilePlayer(player.playerCard);
+  };
+
+  const handlePlayerSelect = (player: AvailablePlayer) => {
+    if (!league?.id || !myTeam) return;
+    submitPick(league.id, player);
+  };
+
+  const isDraftComplete = draftState?.status === 'completed';
+  const isDraftNotStarted = !draftState || draftState.status === 'not_started';
+  const isDraftActive = draftState?.status === 'in_progress';
 
   return (
     <div className="space-y-gutter-lg">
