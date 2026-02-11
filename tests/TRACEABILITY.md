@@ -501,7 +501,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-DATA-005 Card algorithm | `tests/unit/lib/card-generator/value-mapper.test.ts`, `tests/unit/lib/card-generator/rate-calculator.test.ts` |
 | REQ-DATA-005a Pitcher grade | `tests/unit/lib/card-generator/pitcher-grade.test.ts` |
 | REQ-DATA-006 League averages | `tests/unit/lib/card-generator/generator.test.ts` (normalization) |
-| REQ-DATA-007 Database schema + RLS | `supabase/migrations/`, `supabase/tests/` (40 pgTAP assertions) |
+| REQ-DATA-007 Database schema + RLS | `supabase/migrations/`, `supabase/tests/` (54 pgTAP assertions across 8 test files) |
 | REQ-DATA-008 Batting stats tracked | `tests/unit/lib/stats/derived.test.ts` (BA, OBP, SLG, OPS, etc.) |
 | REQ-DATA-009 Pitching stats tracked | `tests/unit/lib/stats/derived.test.ts` (ERA, WHIP, K/9, FIP, etc.) |
 
@@ -671,7 +671,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 
 | Requirement | Test File(s) |
 |-------------|-------------|
-| REQ-MIG-001 Local Supabase via Docker | Infrastructure requirement: `supabase/config.toml` |
+| REQ-MIG-001 Local Supabase CLI | Infrastructure requirement: `supabase/config.toml` |
 | REQ-MIG-004 SQL style rules | `tests/unit/migrations/migration-standards.test.ts` (header verification) |
 | REQ-MIG-005 Schema change workflow | Process requirement: all migrations follow create-write-test-commit |
 | REQ-MIG-006 Forward-only rollback strategy | Process requirement: no down migrations |
@@ -699,3 +699,21 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-API-011 Server-side batch simulation | Replaced by REQ-NFR-021 client-driven chunked approach (Phase 31) |
 | REQ-NFR-008 Web Worker for bulk simulation | Done: Worker for GameViewer single-game; multi-day uses chunked approach |
 | REQ-NFR-020 Supabase Realtime progress | Done: Infrastructure ready (table, hook, subscription); activates on deployment |
+
+## Phase 63: pgTAP Full Coverage + CI Migration Validation + Supabase CLI
+
+### pgTAP RLS Coverage (REQ-MIG-009)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-MIG-009 pgTAP full RLS coverage | `supabase/tests/player_pool_rls.test.sql` (6 assertions), `supabase/tests/transactions_rls.test.sql` (8 assertions) |
+| REQ-MIG-009 structural: every RLS table has pgTAP test | `tests/unit/migrations/migration-standards.test.ts` |
+| REQ-MIG-009 structural: pgTAP file format | `tests/unit/migrations/migration-standards.test.ts` |
+
+### CI + Tooling (REQ-MIG-012, REQ-MIG-013, REQ-TEST-018)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-MIG-012 CI migration validation | `.github/workflows/ci.yml` (conditional `supabase db push --dry-run` step) |
+| REQ-MIG-013 Auto-generated types | `npm run db:types` script (`package.json`) |
+| REQ-TEST-018 npm scripts (db:*) | `tests/unit/config/npm-scripts.test.ts` (4 new db script assertions) |

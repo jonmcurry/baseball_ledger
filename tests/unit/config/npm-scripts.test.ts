@@ -1,7 +1,7 @@
 /**
  * Structural test: Required npm scripts (REQ-TEST-018)
  *
- * Verifies all 7 test-related npm scripts from the SRD exist in package.json.
+ * Verifies all required npm scripts from the SRD exist in package.json.
  */
 
 import { readFileSync } from 'fs';
@@ -19,6 +19,10 @@ const REQUIRED_SCRIPTS: Record<string, string> = {
   'test:e2e': 'playwright test',
   'test:e2e:ui': 'playwright test --ui',
   'test:ci': 'vitest run --coverage && vitest bench && playwright test',
+  'db:test': 'supabase test db',
+  'db:types': 'supabase gen types typescript --linked > src/lib/types/database.ts',
+  'db:push': 'supabase db push',
+  'db:push:dry': 'supabase db push --dry-run',
 };
 
 describe('Required npm scripts (REQ-TEST-018)', () => {

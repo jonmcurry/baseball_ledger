@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,786 tests across 245 files (all passing)
+**Test suite:** 2,792 tests across 245 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -414,6 +414,19 @@ Seven-layer architecture with strict downward-only imports:
 - Structural test: all API handlers import handleApiError
 - 13 new tests (5 component + 6 wrapper + 2 structural)
 
+### Phase 62 -- PROJECT_STATUS Docker Cleanup
+- Removed Docker references, reframed for Supabase Cloud + Vercel only
+
+### Phase 63 -- pgTAP Full Coverage + CI Migration Validation + Supabase CLI (REQ-MIG-009, REQ-MIG-012, REQ-MIG-013)
+- 2 new pgTAP test files: `player_pool_rls.test.sql` (6 tests), `transactions_rls.test.sql` (8 tests)
+- All 8 RLS-enabled tables now have pgTAP tests (54 total assertions)
+- `supabase/config.toml` for Supabase CLI tooling
+- CI workflow: conditional `supabase db push --dry-run` step (activated when SUPABASE_ACCESS_TOKEN secret set)
+- 4 new npm scripts: `db:test`, `db:types`, `db:push`, `db:push:dry`
+- 2 structural tests (every RLS table has pgTAP test, test file format validation)
+- 4 npm script tests for new db:* scripts
+- 6 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -436,10 +449,10 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
 | REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, stale-while-revalidate cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
-| REQ-MIG | 12 of 13 | Done* | 19 migrations, RLS, seed data, pgTAP stubs (*REQ-MIG-013 needs `supabase gen types`) |
+| REQ-MIG | 12 of 13 | Done* | 19 migrations, RLS, seed data, 54 pgTAP assertions, CI validation ready (*REQ-MIG-013 needs `npm run db:types`) |
 | REQ-NFR | 21 | Done | Performance, determinism, Web Worker, chunked sim, pagination, Realtime infra ready |
 | REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
-| REQ-TEST | 18 | Done | 2,773 tests, TDD, traceability current, meta-coverage test, per-dir thresholds, E2E, benchmarks |
+| REQ-TEST | 18 | Done | 2,792 tests, TDD, traceability current, meta-coverage test, per-dir thresholds, E2E, benchmarks |
 | REQ-ENV | 10 | Done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore, secrets management, rotation policy |
 
 ### UI Pages (REQ-UI)
@@ -466,27 +479,27 @@ require Supabase Cloud provisioning and Vercel deployment (no Docker needed).
 
 ### Infrastructure-Dependent (Supabase Cloud + Vercel)
 
-1. **REQ-MIG-009: Full pgTAP coverage**
-   - 40 assertions exist across 6 test files
-   - Some are stubs -- need `supabase db test` against a live Supabase project
+1. **REQ-MIG-009: Run pgTAP tests against live database**
+   - 54 assertions across 8 test files (all tables with RLS covered)
+   - Tests written and validated structurally; need `npm run db:test` against a Supabase project
 
 2. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
    - Local dev environment works
    - Staging and production Supabase projects not yet provisioned
    - Recommended: create separate Supabase projects per environment
 
-3. **REQ-MIG-012: CI database migration validation**
-   - CI runs lint + type-check + vitest
-   - Add `supabase db push --dry-run` step to CI for migration validation
+3. **REQ-MIG-012: Activate CI migration validation**
+   - CI workflow has conditional `supabase db push --dry-run` step
+   - Activates automatically when `SUPABASE_ACCESS_TOKEN` secret is set in GitHub repo
 
-4. **REQ-MIG-013: Auto-generated database.ts**
+4. **REQ-MIG-013: Auto-generate database.ts**
    - Currently manually authored
-   - Run `supabase gen types typescript` against live project to auto-generate
+   - Run `npm run db:types` after linking Supabase project
 
 5. **Deployment to Vercel + Supabase Cloud**
    - All code is deployment-ready
-   - vercel.json configured
-   - Steps: provision Supabase project, set Vercel env vars, push 19 migrations, deploy
+   - vercel.json configured, `supabase/config.toml` created
+   - Steps: provision Supabase project, `supabase link`, set Vercel env vars, `npm run db:push`, deploy
 
 ---
 
@@ -494,9 +507,9 @@ require Supabase Cloud provisioning and Vercel deployment (no Docker needed).
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 61 |
+| Phases completed | 63 |
 | Test files | 245 |
-| Total tests | 2,786 |
+| Total tests | 2,792 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |
@@ -504,7 +517,7 @@ require Supabase Cloud provisioning and Vercel deployment (no Docker needed).
 | React hooks | 14 |
 | Feature directories | 15 |
 | E2E specs | 9 files, 35 tests |
-| pgTAP assertions | 40 |
+| pgTAP assertions | 54 (8 test files) |
 | Performance benchmarks | 3 files |
 | AI features | 5 (template + Claude) |
 | Manager AI profiles | 4 |

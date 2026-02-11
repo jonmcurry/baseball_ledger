@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-02-11 - pgTAP Full Coverage + CI Migration Validation (Phase 63)
+
+### Phase 63: REQ-MIG-009, REQ-MIG-012, REQ-MIG-013, REQ-TEST-018
+
+Completes all code-level pgTAP test coverage, adds CI migration validation,
+and provides Supabase CLI tooling for deployment workflow.
+
+- **REQ-MIG-009: Full pgTAP coverage** (all 8 RLS-enabled tables)
+  - New: `player_pool_rls.test.sql` (6 assertions: SELECT for members, no INSERT/UPDATE/DELETE for authenticated)
+  - New: `transactions_rls.test.sql` (8 assertions: SELECT for members, INSERT for owner only, no UPDATE/DELETE)
+  - Total: 54 pgTAP assertions across 8 test files (was 40 across 6)
+  - 2 structural tests: every RLS table has test file + test file format validation
+
+- **REQ-MIG-012: CI migration validation**
+  - Added conditional `supabase db push --dry-run` step to `.github/workflows/ci.yml`
+  - Activates when `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` secrets are configured
+
+- **REQ-MIG-013: Type generation tooling**
+  - `npm run db:types` runs `supabase gen types typescript --linked > src/lib/types/database.ts`
+
+- **Supabase CLI config**: Created `supabase/config.toml` for CLI tooling
+- **npm scripts**: `db:test`, `db:types`, `db:push`, `db:push:dry` (4 new, 4 test assertions)
+
+**Test count**: 2,792 across 245 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - PROJECT_STATUS Docker Cleanup (Phase 62)
 
 ### Phase 62: Documentation cleanup

@@ -6,7 +6,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
-import { resolve, basename } from 'path';
+import { resolve } from 'path';
 
 const ROOT_DIR = resolve(__dirname, '..', '..', '..');
 const MIGRATIONS_DIR = resolve(ROOT_DIR, 'supabase', 'migrations');
@@ -117,6 +117,51 @@ describe('Migration file standards (REQ-MIG)', () => {
     for (let i = 0; i < insertBlocks.length; i++) {
       // Each block from INSERT to next INSERT (or EOF) should contain ON CONFLICT
       expect(insertBlocks[i]).toContain('ON CONFLICT');
+    }
+  });
+
+  // -----------------------------------------------------------------------
+  // REQ-MIG-009: Every RLS-enabled table has a pgTAP test file
+  // -----------------------------------------------------------------------
+
+  it('REQ-MIG-009: every table with ENABLE ROW LEVEL SECURITY has a pgTAP test', () => {
+    const TESTS_DIR = resolve(ROOT_DIR, 'supabase', 'tests');
+    const files = getMigrationFiles();
+
+    // Find all tables that have RLS enabled
+    const rlsTables: string[] = [];
+    for (const f of files) {
+      const content = readFileSync(resolve(MIGRATIONS_DIR, f), 'utf-8');
+      const matches = content.matchAll(/ALTER\s+TABLE\s+public\.(\w+)\s+ENABLE\s+ROW\s+LEVEL\s+SECURITY/gi);
+      for (const m of matches) {
+        if (!rlsTables.includes(m[1])) {
+          rlsTables.push(m[1]);
+        }
+      }
+    }
+
+    expect(rlsTables.length).toBeGreaterThan(0);
+
+    // Each RLS-enabled table should have a corresponding pgTAP test file
+    const testFiles = readdirSync(TESTS_DIR).filter((f) => f.endsWith('.test.sql'));
+    for (const table of rlsTables) {
+      const hasTest = testFiles.some((tf) => tf.includes(table));
+      expect(hasTest).toBe(true);
+    }
+  });
+
+  it('REQ-MIG-009: pgTAP test files use SELECT plan() and finish()', () => {
+    const TESTS_DIR = resolve(ROOT_DIR, 'supabase', 'tests');
+    const testFiles = readdirSync(TESTS_DIR).filter((f) => f.endsWith('.test.sql'));
+
+    expect(testFiles.length).toBeGreaterThanOrEqual(8);
+
+    for (const f of testFiles) {
+      const content = readFileSync(resolve(TESTS_DIR, f), 'utf-8');
+      expect(content).toContain('SELECT plan(');
+      expect(content).toContain('SELECT * FROM finish()');
+      expect(content).toContain('BEGIN;');
+      expect(content).toContain('ROLLBACK;');
     }
   });
 });
