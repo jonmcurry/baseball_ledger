@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-11 - Vercel Serverless Fix + Form Improvements (Phase 66)
+
+### Phase 66: Fix FUNCTION_INVOCATION_FAILED on Vercel
+
+All API endpoints were returning 500 FUNCTION_INVOCATION_FAILED on Vercel because
+the serverless function bundler (ncc) does not resolve tsconfig path aliases.
+Also updated league creation form defaults per user feedback.
+
+- **Root cause**: Vercel serverless functions ignore tsconfig `paths` mappings.
+  Imports like `@lib/supabase/server` compiled successfully but failed at runtime
+  with `ERR_MODULE_NOT_FOUND` because ncc does not rewrite path aliases.
+- **Fix**: Converted all 62 `@lib/*` imports across 25 API files to relative paths
+  (e.g., `../../src/lib/supabase/server`). No functional change to the code.
+- **League form**: Team count options now 4, 8, 16, 24, 32 (was 4, 6, 8).
+  Year range defaults to 1901-2025 with proper validation bounds.
+- **vercel.json**: Added `includeFiles: "data_files/**"` so Lahman CSV files
+  are bundled into serverless function deployments.
+- **Diagnostic endpoint**: `GET /api/health` tests each import with try/catch
+  for ongoing deployment verification. Will be removed once stable.
+
+**Test count**: 2,792 across 245 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - Production App Wiring (Phase 65)
 
 ### Phase 65: Fix Create League + Join League flows for production

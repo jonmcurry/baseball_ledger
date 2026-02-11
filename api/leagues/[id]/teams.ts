@@ -18,16 +18,16 @@ import { validateBody } from '../../_lib/validate';
 import { ok, created } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel, camelToSnake } from '../../_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
-import type { Database, Json } from '@lib/types/database';
-import { validateTradeRosters } from '@lib/draft/trade-validator';
-import { transformTransactionRows } from '@lib/transforms/transaction-transform';
-import { buildTradeEvalRequest } from '@lib/transforms/trade-eval-request-builder';
-import { evaluateTradeTemplate } from '@lib/ai/template-trade-eval';
-import { MANAGER_PROFILES } from '@lib/simulation/manager-profiles';
-import type { ManagerStyle } from '@lib/simulation/manager-profiles';
-import type { RosterEntry } from '@lib/types/roster';
-import type { PlayerCard } from '@lib/types/player';
+import { createServerClient } from '../../../src/lib/supabase/server';
+import type { Database, Json } from '../../../src/lib/types/database';
+import { validateTradeRosters } from '../../../src/lib/draft/trade-validator';
+import { transformTransactionRows } from '../../../src/lib/transforms/transaction-transform';
+import { buildTradeEvalRequest } from '../../../src/lib/transforms/trade-eval-request-builder';
+import { evaluateTradeTemplate } from '../../../src/lib/ai/template-trade-eval';
+import { MANAGER_PROFILES } from '../../../src/lib/simulation/manager-profiles';
+import type { ManagerStyle } from '../../../src/lib/simulation/manager-profiles';
+import type { RosterEntry } from '../../../src/lib/types/roster';
+import type { PlayerCard } from '../../../src/lib/types/player';
 
 const UpdateTeamSchema = z.object({
   name: z.string().min(1).max(100).optional(),

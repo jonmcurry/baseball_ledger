@@ -8,8 +8,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { PlayerCard, Position } from '@lib/types/player';
-import type { ManagerStyle } from '@lib/simulation/manager-profiles';
+import type { PlayerCard, Position } from '../../src/lib/types/player';
+import type { ManagerStyle } from '../../src/lib/simulation/manager-profiles';
 
 export interface TeamConfig {
   lineup: { playerId: string; playerName: string; position: Position }[];

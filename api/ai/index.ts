@@ -18,11 +18,11 @@ import { buildGameSummaryPrompt } from '../_lib/prompts/game-summary-prompt';
 import { buildTradeEvalPrompt } from '../_lib/prompts/trade-eval-prompt';
 import { buildDraftReasoningPrompt } from '../_lib/prompts/draft-reasoning-prompt';
 import { buildManagerExplanationPrompt } from '../_lib/prompts/manager-explanation-prompt';
-import { generateTemplateCommentary } from '@lib/ai/template-commentary';
-import { generateTemplateSummary } from '@lib/ai/template-game-summary';
-import { evaluateTradeTemplate } from '@lib/ai/template-trade-eval';
-import { generateDraftReasoningTemplate } from '@lib/ai/template-draft-reasoning';
-import { generateManagerExplanationTemplate } from '@lib/ai/template-manager-explanation';
+import { generateTemplateCommentary } from '../../src/lib/ai/template-commentary';
+import { generateTemplateSummary } from '../../src/lib/ai/template-game-summary';
+import { evaluateTradeTemplate } from '../../src/lib/ai/template-trade-eval';
+import { generateDraftReasoningTemplate } from '../../src/lib/ai/template-draft-reasoning';
+import { generateManagerExplanationTemplate } from '../../src/lib/ai/template-manager-explanation';
 import type {
   CommentaryRequest,
   GameSummaryRequest,
@@ -30,7 +30,7 @@ import type {
   DraftReasoningRequest,
   ManagerExplanationRequest,
   AiSource,
-} from '@lib/types/ai';
+} from '../../src/lib/types/ai';
 
 // ---------- Schemas ----------
 

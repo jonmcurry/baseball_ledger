@@ -10,7 +10,7 @@ import { requireAuth } from '../../_lib/auth';
 import { ok, paginated } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel } from '../../_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
+import { createServerClient } from '../../../src/lib/supabase/server';
 
 const PAGE_SIZE = 50;
 

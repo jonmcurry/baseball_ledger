@@ -6,7 +6,7 @@
  * Layer 2: API infrastructure.
  */
 
-import type { CommentaryRequest } from '@lib/types/ai';
+import type { CommentaryRequest } from '../../../src/lib/types/ai';
 import type { ClaudeRequest } from '../claude-client';
 
 const STYLE_INSTRUCTIONS: Record<string, string> = {

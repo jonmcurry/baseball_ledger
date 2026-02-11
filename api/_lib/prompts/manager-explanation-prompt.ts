@@ -6,7 +6,7 @@
  * Layer 2: API infrastructure.
  */
 
-import type { ManagerExplanationRequest } from '@lib/types/ai';
+import type { ManagerExplanationRequest } from '../../../src/lib/types/ai';
 import type { ClaudeRequest } from '../claude-client';
 
 const DECISION_LABELS: Record<string, string> = {

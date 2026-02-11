@@ -6,7 +6,7 @@
  * Layer 2: API infrastructure.
  */
 
-import type { TradeEvaluationRequest } from '@lib/types/ai';
+import type { TradeEvaluationRequest } from '../../../src/lib/types/ai';
 import type { ClaudeRequest } from '../claude-client';
 
 const STYLE_DESCRIPTIONS: Record<string, string> = {

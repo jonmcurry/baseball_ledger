@@ -8,7 +8,7 @@
  */
 
 import type { VercelRequest } from '@vercel/node';
-import { createServerClient } from '@lib/supabase/server';
+import { createServerClient } from '../../src/lib/supabase/server';
 
 interface AuthResult {
   userId: string;

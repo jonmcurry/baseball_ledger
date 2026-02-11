@@ -67,16 +67,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     results.loadCsvs = e instanceof Error ? e.message : String(e);
   }
 
-  // The @lib/* path alias imports -- most likely culprits
+  // The ../src/lib/* path alias imports -- most likely culprits
   try {
-    await import('@lib/supabase/server');
+    await import('../src/lib/supabase/server');
     results.supabaseServer = 'ok';
   } catch (e: unknown) {
     results.supabaseServer = e instanceof Error ? e.message : String(e);
   }
 
   try {
-    await import('@lib/csv/load-pipeline');
+    await import('../src/lib/csv/load-pipeline');
     results.csvPipeline = 'ok';
   } catch (e: unknown) {
     results.csvPipeline = e instanceof Error ? e.message : String(e);

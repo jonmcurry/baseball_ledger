@@ -18,10 +18,10 @@ import { requireAuth } from '../../_lib/auth';
 import { validateBody } from '../../_lib/validate';
 import { ok, created, paginated } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
-import { createServerClient } from '@lib/supabase/server';
-import type { Json } from '@lib/types/database';
-import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '@lib/draft/draft-order';
-import { SeededRNG } from '@lib/rng/seeded-rng';
+import { createServerClient } from '../../../src/lib/supabase/server';
+import type { Json } from '../../../src/lib/types/database';
+import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '../../../src/lib/draft/draft-order';
+import { SeededRNG } from '../../../src/lib/rng/seeded-rng';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
 import { generateAndInsertLineups } from '../../_lib/generate-lineup-rows';
 

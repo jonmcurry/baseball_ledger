@@ -12,8 +12,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { runDay } from '@lib/simulation/season-runner';
-import type { DayGameConfig, DayResult } from '@lib/simulation/season-runner';
+import { runDay } from '../../src/lib/simulation/season-runner';
+import type { DayGameConfig, DayResult } from '../../src/lib/simulation/season-runner';
 
 /**
  * Simulate a day's games on the server and commit results atomically.

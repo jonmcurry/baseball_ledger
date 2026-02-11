@@ -12,7 +12,7 @@ import { validateBody } from '../../_lib/validate';
 import { ok, noContent } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel } from '../../_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
+import { createServerClient } from '../../../src/lib/supabase/server';
 
 const JoinLeagueSchema = z.object({
   inviteKey: z.string().min(1),

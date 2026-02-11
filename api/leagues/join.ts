@@ -12,7 +12,7 @@ import { requireAuth } from '../_lib/auth';
 import { validateBody } from '../_lib/validate';
 import { ok } from '../_lib/response';
 import { handleApiError } from '../_lib/errors';
-import { createServerClient } from '@lib/supabase/server';
+import { createServerClient } from '../../src/lib/supabase/server';
 
 const JoinByKeySchema = z.object({
   inviteKey: z.string().min(1),

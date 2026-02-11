@@ -17,16 +17,16 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { FullPlayoffBracket, PlayoffRoundName } from '@lib/types/schedule';
-import { runGame } from '@lib/simulation/game-runner';
-import type { RunGameConfig } from '@lib/simulation/game-runner';
+import type { FullPlayoffBracket, PlayoffRoundName } from '../../src/lib/types/schedule';
+import { runGame } from '../../src/lib/simulation/game-runner';
+import type { RunGameConfig } from '../../src/lib/simulation/game-runner';
 import { loadTeamConfig } from './load-team-config';
 import {
   getNextFullBracketGame,
   recordFullBracketGameResult,
   advanceFullBracketWinners,
   isFullBracketComplete,
-} from '@lib/schedule/playoff-bracket';
+} from '../../src/lib/schedule/playoff-bracket';
 
 export interface PlayoffGameSimResult {
   homeTeamId: string;

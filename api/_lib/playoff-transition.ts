@@ -8,8 +8,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { DivisionStandings, TeamSummary } from '@lib/types/league';
-import { generateFullPlayoffBracket } from '@lib/schedule/playoff-bracket';
+import type { DivisionStandings, TeamSummary } from '../../src/lib/types/league';
+import { generateFullPlayoffBracket } from '../../src/lib/schedule/playoff-bracket';
 
 const REGULAR_SEASON_DAYS = 162;
 

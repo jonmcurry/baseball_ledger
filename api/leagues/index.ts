@@ -14,10 +14,10 @@ import { validateBody } from '../_lib/validate';
 import { created } from '../_lib/response';
 import { handleApiError } from '../_lib/errors';
 import { snakeToCamel } from '../_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
-import type { Json } from '@lib/types/database';
+import { createServerClient } from '../../src/lib/supabase/server';
+import type { Json } from '../../src/lib/types/database';
 import { loadCsvFiles } from '../_lib/load-csvs';
-import { runCsvPipeline } from '@lib/csv/load-pipeline';
+import { runCsvPipeline } from '../../src/lib/csv/load-pipeline';
 
 const BATCH_SIZE = 1000;
 

@@ -10,10 +10,10 @@ import { requireAuth } from '../../_lib/auth';
 import { ok, noContent } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel } from '../../_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
-import type { Json } from '@lib/types/database';
-import { buildArchiveData } from '@lib/transforms/archive-builder';
-import type { FullPlayoffBracket } from '@lib/types/schedule';
+import { createServerClient } from '../../../src/lib/supabase/server';
+import type { Json } from '../../../src/lib/types/database';
+import { buildArchiveData } from '../../../src/lib/transforms/archive-builder';
+import type { FullPlayoffBracket } from '../../../src/lib/types/schedule';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!checkMethod(req, res, ['GET', 'POST'])) return;

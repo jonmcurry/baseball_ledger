@@ -6,7 +6,7 @@
  * Layer 2: API infrastructure.
  */
 
-import type { GameSummaryRequest } from '@lib/types/ai';
+import type { GameSummaryRequest } from '../../../src/lib/types/ai';
 import type { ClaudeRequest } from '../claude-client';
 
 export function buildGameSummaryPrompt(request: GameSummaryRequest): ClaudeRequest {

@@ -11,9 +11,9 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { generateSchedule } from '@lib/schedule/generator';
-import { SeededRNG } from '@lib/rng/seeded-rng';
-import type { TeamSummary } from '@lib/types/league';
+import { generateSchedule } from '../../src/lib/schedule/generator';
+import { SeededRNG } from '../../src/lib/rng/seeded-rng';
+import type { TeamSummary } from '../../src/lib/types/league';
 
 /**
  * Generate a full regular-season schedule and insert all games into the

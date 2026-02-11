@@ -11,10 +11,10 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { generateLineup } from '@lib/roster/lineup-generator';
-import type { LineupInput } from '@lib/roster/lineup-generator';
-import { estimateBattingStats } from '@lib/roster/estimate-batting-stats';
-import type { PlayerCard } from '@lib/types/player';
+import { generateLineup } from '../../src/lib/roster/lineup-generator';
+import type { LineupInput } from '../../src/lib/roster/lineup-generator';
+import { estimateBattingStats } from '../../src/lib/roster/estimate-batting-stats';
+import type { PlayerCard } from '../../src/lib/types/player';
 
 /**
  * Generate lineups and pitcher assignments for all teams in a league,

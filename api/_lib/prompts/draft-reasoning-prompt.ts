@@ -6,7 +6,7 @@
  * Layer 2: API infrastructure.
  */
 
-import type { DraftReasoningRequest } from '@lib/types/ai';
+import type { DraftReasoningRequest } from '../../../src/lib/types/ai';
 import type { ClaudeRequest } from '../claude-client';
 
 export function buildDraftReasoningPrompt(request: DraftReasoningRequest): ClaudeRequest {

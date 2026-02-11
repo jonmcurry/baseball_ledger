@@ -14,10 +14,10 @@ import { requireAuth } from '../../_lib/auth';
 import { ok, created } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel } from '../../_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
+import { createServerClient } from '../../../src/lib/supabase/server';
 import { generateAndInsertLineups } from '../../_lib/generate-lineup-rows';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
-import { canStartSeason } from '@lib/validators/season-start';
+import { canStartSeason } from '../../../src/lib/validators/season-start';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!checkMethod(req, res, ['GET', 'POST'])) return;

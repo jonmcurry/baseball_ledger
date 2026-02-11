@@ -16,12 +16,12 @@ import { requireAuth } from '../../_lib/auth';
 import { validateBody } from '../../_lib/validate';
 import { ok } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
-import { createServerClient } from '@lib/supabase/server';
+import { createServerClient } from '../../../src/lib/supabase/server';
 import { simulateDayOnServer } from '../../_lib/simulate-day';
 import { simulatePlayoffGame } from '../../_lib/simulate-playoff-game';
 import { checkAndTransitionToPlayoffs } from '../../_lib/playoff-transition';
 import { loadTeamConfig, selectStartingPitcher } from '../../_lib/load-team-config';
-import type { DayGameConfig } from '@lib/simulation/season-runner';
+import type { DayGameConfig } from '../../../src/lib/simulation/season-runner';
 
 const SimulateSchema = z.object({
   days: z.literal(1),

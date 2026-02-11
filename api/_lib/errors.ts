@@ -8,7 +8,7 @@
  */
 
 import type { VercelResponse } from '@vercel/node';
-import type { ErrorCategory } from '@lib/types/errors';
+import type { ErrorCategory } from '../../src/lib/types/errors';
 
 interface ApiErrorBody {
   error: {
