@@ -601,3 +601,21 @@ REQ-TEST-011: All requirements have mapped test cases.
 |-------------|-------------|
 | REQ-UI-011 Season Archive Page | `tests/unit/features/archive/ArchivePage.test.tsx`, `tests/unit/features/archive/SeasonDetail.test.tsx` |
 | REQ-UI-012 Playoff Theme Switch | `tests/unit/hooks/usePostseasonTheme.test.ts`, `src/styles/globals.css` |
+
+## Phase 57: Secrets Management + Migration Standards
+
+### Environment (REQ-ENV-009, REQ-ENV-010)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ENV-009 Three-environment secret storage | `tests/unit/config/environment.test.ts` (secrets-management.md structure) |
+| REQ-ENV-010 API key rotation policy | `tests/unit/config/environment.test.ts` (rotation documentation) |
+
+### Migration Standards (REQ-MIG-002, REQ-MIG-003, REQ-MIG-007, REQ-MIG-008)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-MIG-002 5-digit prefix + snake_case naming | `tests/unit/migrations/migration-standards.test.ts` |
+| REQ-MIG-003 Header comment block | `tests/unit/migrations/migration-standards.test.ts` |
+| REQ-MIG-007 Seed data (users, league, teams, schedule) | `tests/unit/migrations/migration-standards.test.ts` |
+| REQ-MIG-008 Idempotent ON CONFLICT seeds | `tests/unit/migrations/migration-standards.test.ts` |

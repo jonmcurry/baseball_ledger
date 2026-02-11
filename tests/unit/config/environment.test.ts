@@ -1,8 +1,8 @@
 /**
- * Structural tests: Environment configuration (REQ-ENV-002 through REQ-ENV-008)
+ * Structural tests: Environment configuration (REQ-ENV-002 through REQ-ENV-010)
  *
  * Verifies .env.example, vite-env.d.ts, vercel.json, .gitignore,
- * and configuration modules exist with correct content.
+ * configuration modules, and secrets management documentation.
  */
 
 import { readFileSync, existsSync } from 'fs';
@@ -93,5 +93,42 @@ describe('Environment configuration (REQ-ENV)', () => {
     // Lines starting with .env.example should not be present as exclusions
     const lines = content.split('\n').map((l) => l.trim());
     expect(lines).not.toContain('.env.example');
+  });
+
+  // -----------------------------------------------------------------------
+  // REQ-ENV-009: Secrets stored in exactly three locations
+  // -----------------------------------------------------------------------
+
+  it('REQ-ENV-009: secrets-management.md documents all three environments', () => {
+    const content = readFileSync(resolve(ROOT_DIR, 'docs', 'secrets-management.md'), 'utf-8');
+    expect(content).toContain('REQ-ENV-009');
+    expect(content).toContain('Local');
+    expect(content).toContain('Staging');
+    expect(content).toContain('Production');
+    expect(content).toContain('.env.local');
+    expect(content).toContain('Vercel env vars');
+  });
+
+  it('REQ-ENV-009: secrets-management.md lists all managed secrets', () => {
+    const content = readFileSync(resolve(ROOT_DIR, 'docs', 'secrets-management.md'), 'utf-8');
+    expect(content).toContain('SUPABASE_SERVICE_ROLE_KEY');
+    expect(content).toContain('SUPABASE_DB_URL');
+    expect(content).toContain('ANTHROPIC_API_KEY');
+  });
+
+  // -----------------------------------------------------------------------
+  // REQ-ENV-010: API key rotation policy
+  // -----------------------------------------------------------------------
+
+  it('REQ-ENV-010: secrets-management.md documents rotation for each secret', () => {
+    const content = readFileSync(resolve(ROOT_DIR, 'docs', 'secrets-management.md'), 'utf-8');
+    expect(content).toContain('REQ-ENV-010');
+    expect(content).toContain('Rotation Policy');
+    // Each key should have rotation instructions
+    expect(content).toContain('SUPABASE_SERVICE_ROLE_KEY');
+    expect(content).toContain('ANTHROPIC_API_KEY');
+    expect(content).toContain('SUPABASE_DB_URL');
+    // Should mention how to rotate
+    expect(content).toContain('How to rotate');
   });
 });

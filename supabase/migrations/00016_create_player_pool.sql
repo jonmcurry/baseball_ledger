@@ -1,6 +1,9 @@
 -- Migration: 00016_create_player_pool.sql
 -- Purpose:   Create player_pool table for league-specific draftable players (REQ-DATA-002)
+-- Author:    Baseball Ledger
+-- Date:      2026-02-10
 -- Depends:   00001_create_leagues.sql, 00002_create_teams.sql
+-- ---------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS public.player_pool (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),

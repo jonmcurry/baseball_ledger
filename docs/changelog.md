@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-11 - Secrets Management + Migration Standards (Phase 57)
+
+### Phase 57: REQ-ENV-009, REQ-ENV-010, REQ-MIG-002, REQ-MIG-003, REQ-MIG-007, REQ-MIG-008
+
+Completes all REQ-ENV requirements (10/10) with secrets management documentation
+and API key rotation policy. Adds structural tests for migration file standards
+including naming, headers, seed data, and idempotency.
+
+- **Created `docs/secrets-management.md`**
+  - REQ-ENV-009: Three-environment secret storage locations (local, staging, production)
+  - REQ-ENV-010: Rotation procedures for SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, SUPABASE_DB_URL
+
+- **Created `tests/unit/migrations/migration-standards.test.ts`** (8 tests)
+  - REQ-MIG-002: 5-digit sequential prefix + snake_case naming verification
+  - REQ-MIG-003: Header comment block (Migration, Purpose, Author, Date, Depends)
+  - REQ-MIG-007: seed.sql contains all required data categories
+  - REQ-MIG-008: All INSERT statements use ON CONFLICT for idempotency
+
+- **Updated `tests/unit/config/environment.test.ts`** (+3 tests, now 12 total)
+  - REQ-ENV-009: Verifies secrets-management.md documents all environments and secrets
+  - REQ-ENV-010: Verifies rotation policy documentation exists
+
+- **Fixed migration headers**: 00015, 00016, 00017 now conform to REQ-MIG-003 standard
+
+- **Cleaned up PROJECT_STATUS.md**: Removed stale completed items, REQ-NFR updated to 19/21, REQ-ENV now 10/10 Done
+
 ## 2026-02-11 - Architecture + Scope + Environment Verification (Phase 56)
 
 ### Phase 56: Structural Tests + Traceability Backfill (REQ-ARCH, REQ-SCOPE, REQ-ENV, REQ-TEST-011)

@@ -1,6 +1,9 @@
 -- Migration: 00017_player_pool_rls.sql
 -- Purpose:   RLS policies for player_pool table
+-- Author:    Baseball Ledger
+-- Date:      2026-02-10
 -- Depends:   00016_create_player_pool.sql, 00010_enable_rls.sql
+-- ---------------------------------------------------------------
 
 ALTER TABLE public.player_pool ENABLE ROW LEVEL SECURITY;
 

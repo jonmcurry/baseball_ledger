@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,738 tests across 239 files (all passing)
+**Test suite:** 2,749 tests across 241 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -380,6 +380,13 @@ Seven-layer architecture with strict downward-only imports:
 - Comprehensive TRACEABILITY.md backfill: 80+ requirement entries added
 - 28 new tests
 
+### Phase 57 -- Secrets Management + Migration Standards (REQ-ENV-009, REQ-ENV-010, REQ-MIG-002, REQ-MIG-003, REQ-MIG-007, REQ-MIG-008)
+- `docs/secrets-management.md`: Three-environment secret storage locations + API key rotation policy
+- 8 migration structural tests (naming convention, sequential prefixes, header blocks, seed file)
+- 3 environment tests (secrets documentation exists, lists all environments, rotation procedures)
+- Fixed non-conforming headers on migrations 00015, 00016, 00017
+- 11 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -403,10 +410,10 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, stale-while-revalidate cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 12 of 13 | Mostly done | 19 migrations, RLS, seed data, pgTAP stubs |
-| REQ-NFR | 18 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim, server-side pagination |
+| REQ-NFR | 19 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim, server-side pagination |
 | REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
-| REQ-TEST | 18 | Done | 2,738 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
-| REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore |
+| REQ-TEST | 18 | Done | 2,749 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
+| REQ-ENV | 10 | Done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore, secrets management, rotation policy |
 
 ### UI Pages (REQ-UI)
 
@@ -427,73 +434,46 @@ Seven-layer architecture with strict downward-only imports:
 
 ## What Still Needs Work
 
-### Medium Priority (Polish & NFR Compliance)
+### Infrastructure-Dependent (Requires External Services)
 
-1. **REQ-NFR-008: Web Worker for bulk simulation**
-   - Worker exists and works for single-game replay in GameViewer
-   - Multi-day simulation currently runs in main thread via store loop
-   - Could move day simulation to worker for smoother progress bar
-
-2. **REQ-NFR-020: Supabase Realtime for simulation progress**
+1. **REQ-NFR-020: Supabase Realtime for simulation progress**
    - Infrastructure exists (simulation_progress table, useRealtimeProgress hook, subscribeToSimProgress)
    - Not actively used since Phase 31 moved to client-driven approach
    - Could be useful for multi-player leagues where one user watches another simulate
 
-3. **REQ-STATE-005: Immer middleware** -- DONE (Phase 48)
-   - leagueStore, rosterStore, draftStore all use immer
-   - statsStore, simulationStore, authStore correctly exempt (flat state per SRD)
-
-4. **REQ-NFR-017: Bundle size < 200KB gzipped** -- VERIFIED
-   - Route-level code splitting with React.lazy + Suspense in place
-   - Manual chunk splitting configured (vendor/simulation/supabase)
-   - Measured: 143KB gzipped initial load (index 64KB + vendor 33KB + supabase 45KB)
-
-5. **REQ-TEST-003 / REQ-TEST-004: Per-directory coverage thresholds** -- CONFIGURED
-   - 9 per-directory thresholds in vitest.config.ts per SRD
-   - CI runs `npm run test:coverage` which enforces thresholds
-
-6. **REQ-TEST-011: Traceability matrix maintenance** -- CURRENT
-   - TRACEABILITY.md updated through Phase 54
-   - All phases have mapped requirement-to-test entries
-
-### Lower Priority (Nice-to-Have / Future)
-
-7. **REQ-LGE-010: League deletion** -- VERIFIED (Phase 49)
-   - DeleteLeagueButton component exists with typed-name confirmation
-   - API endpoint exists (DELETE /api/leagues/:id, commissioner-only)
-   - All 9 child tables verified ON DELETE CASCADE via structural test
-
-8. **REQ-MIG-009: Full pgTAP coverage**
+2. **REQ-MIG-009: Full pgTAP coverage**
    - 40 assertions exist across 6 test files
    - Some are stubs -- need real Docker-based testing
 
-9. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
+3. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
    - Local dev environment works
    - Staging and production environments not yet set up
    - Supabase project provisioning needed for deployment
 
-10. **REQ-MIG-012: CI database migration validation**
-    - CI runs lint + type-check + vitest
-    - Does not yet validate migrations against a real database
+4. **REQ-MIG-012: CI database migration validation**
+   - CI runs lint + type-check + vitest
+   - Does not yet validate migrations against a real database
 
-11. **REQ-ENV-010: API key rotation policy**
-    - Documentation-level requirement, not yet documented
+5. **REQ-MIG-013: Auto-generated database.ts**
+   - Currently manually authored; auto-generation requires Docker + Supabase CLI
 
-12. **REQ-SCOPE requirements**
-    - Mostly followed organically during development
-    - No formal promotion audit performed
+6. **Deployment to Vercel + Supabase Cloud**
+   - All code is deployment-ready
+   - vercel.json configured
+   - Actual deployment not yet performed
+   - Need to provision Supabase project, set env vars, push migrations
 
-13. **REQ-ERR-015 / REQ-ERR-016: Retry policies** -- DONE
-    - db-retry.ts handles Supabase retries (server-side)
-    - api-client.ts fetchWithRetry handles client-side retries (2 retries, exponential 1s/3s)
-    - Retries on network errors, 5xx, 429; no retry on 4xx
-    - REQ-ERR-016: WARN per retry, ERROR on exhaustion
+### Design Decisions (Intentionally Deferred)
 
-14. **Deployment to Vercel + Supabase Cloud**
-    - All code is deployment-ready
-    - vercel.json configured
-    - Actual deployment not yet performed
-    - Need to provision Supabase project, set env vars, push migrations
+7. **REQ-NFR-008: Web Worker for multi-day simulation** -- PARTIALLY DONE
+   - Worker exists and works for single-game replay in GameViewer
+   - Multi-day simulation uses client-driven store loop (REQ-NFR-021)
+   - Main thread stays responsive via chunked approach; worker enhancement optional
+
+8. **REQ-API-011: Server-side batch simulation** -- INTENTIONALLY REPLACED
+   - SRD specifies server-side batch endpoint
+   - Replaced by REQ-NFR-021 client-driven chunked approach (Phase 31)
+   - More reliable on Vercel's 10s serverless function timeout limit
 
 ---
 
@@ -501,9 +481,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 56 |
-| Test files | 239 |
-| Total tests | 2,738 |
+| Phases completed | 57 |
+| Test files | 241 |
+| Total tests | 2,749 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |

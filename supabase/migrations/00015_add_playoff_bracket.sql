@@ -1,6 +1,11 @@
--- Migration 00015: Add playoff_bracket JSONB column to leagues table
+-- Migration: 00015_add_playoff_bracket.sql
+-- Purpose:   Add playoff_bracket JSONB column to leagues table (REQ-LGE-008)
+-- Author:    Baseball Ledger
+-- Date:      2026-02-10
+-- Depends:   00001_create_leagues.sql
+-- ---------------------------------------------------------------
 -- Stores the full playoff bracket (AL + NL + World Series) during playoffs status.
--- REQ-LGE-008: 2025 MLB playoff format persistence.
+-- 2025 MLB playoff format persistence.
 
 ALTER TABLE public.leagues ADD COLUMN IF NOT EXISTS playoff_bracket JSONB DEFAULT NULL;
 
