@@ -8,7 +8,7 @@
  * Per SRD 19.3: 13 routes covering all feature pages.
  */
 
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Link } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { SplashPage } from '@features/splash/SplashPage';
 import { LoginPage } from '@features/auth/LoginPage';
@@ -72,12 +72,12 @@ function NotFoundPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-old-lace p-gutter-xl">
       <h1 className="font-headline text-4xl font-bold text-stitch-red">404</h1>
       <p className="mt-gutter text-lg text-ink">Page not found</p>
-      <a
-        href="/"
+      <Link
+        to="/"
         className="mt-gutter-lg rounded-button bg-ballpark px-6 py-2 font-medium text-old-lace hover:opacity-90"
       >
         Return Home
-      </a>
+      </Link>
     </div>
   );
 }

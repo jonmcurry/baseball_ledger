@@ -18,6 +18,7 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 }
 
 export interface JoinLeagueResult {
+  readonly leagueId: string;
   readonly teamId: string;
   readonly teamName: string;
 }

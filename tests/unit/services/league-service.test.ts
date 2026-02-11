@@ -65,13 +65,13 @@ describe('league-service', () => {
     expect(mockApiDelete).toHaveBeenCalledWith('/api/leagues/lg-del');
   });
 
-  it('joinLeague calls apiPost with correct path and inviteKey body', async () => {
-    const joinResult = { teamId: 'team-1', leagueId: 'lg-1' };
+  it('joinLeague calls apiPost with invite key endpoint', async () => {
+    const joinResult = { leagueId: 'lg-1', teamId: 'team-1', teamName: 'Team 1' };
     mockApiPost.mockResolvedValue({ data: joinResult, meta: defaultMeta });
 
-    const result = await joinLeague('lg-1', 'secret-key');
+    const result = await joinLeague('SECRET01');
 
-    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/lg-1', { inviteKey: 'secret-key' });
+    expect(mockApiPost).toHaveBeenCalledWith('/api/leagues/join', { inviteKey: 'SECRET01' });
     expect(result).toEqual(joinResult);
   });
 

@@ -34,8 +34,8 @@ export function JoinLeaguePage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      await leagueService.joinLeague(inviteCode.trim(), inviteCode.trim());
-      navigate('/dashboard');
+      const result = await leagueService.joinLeague(inviteCode.trim());
+      navigate(`/leagues/${result.leagueId}/dashboard`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid invite code');
     } finally {

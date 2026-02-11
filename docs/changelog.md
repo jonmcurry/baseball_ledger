@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-11 - Production App Wiring (Phase 65)
+
+### Phase 65: Fix Create League + Join League flows for production
+
+Critical fixes to make the deployed app functional at baseball-ledger.vercel.app.
+
+- **Auth initialization**: App.tsx now calls `authStore.initialize()` on mount.
+  Without this, `isInitialized` stayed false and AuthGuard rendered nothing.
+- **SPA navigation**: SplashPage and NotFoundPage use React Router `Link`
+  instead of `<a href>` to avoid full page reloads.
+- **Join league API**: New `POST /api/leagues/join` endpoint looks up league by
+  invite key (users only have the invite code, not the league UUID).
+- **Join league frontend**: `leagueService.joinLeague()` takes a single invite
+  key argument; JoinLeaguePage navigates to `/leagues/{id}/dashboard` on success.
+- **AuthenticatedLayout**: Replaced mock data with real league data from
+  leagueStore. Reads `:leagueId` from URL params and fetches on mount.
+  Header shows actual league name, status, user name, and commissioner flag.
+  Navigation and logout are wired.
+- **JoinLeagueResult type**: Added `leagueId` field returned by new join endpoint.
+
+**Test count**: 2,792 across 245 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - Supabase Deployment + Type Generation (Phase 64)
 
 ### Phase 64: Supabase Cloud deployment and auto-generated types
