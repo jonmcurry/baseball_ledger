@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,660 tests across 232 files (all passing)
+**Test suite:** 2,668 tests across 233 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--51)
+## Completed Phases (1--52)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -345,6 +345,12 @@ Seven-layer architecture with strict downward-only imports:
 - Updated TRACEABILITY.md through Phase 51
 - 5 new tests (3 storage-factory + 2 AuthenticatedLayout)
 
+### Phase 52 -- DevTools Conditional + Responsive SimControls + WARN Logging (REQ-STATE-016, REQ-COMP-010, REQ-ERR-018)
+- All 6 Zustand stores: `enabled: import.meta.env.DEV` strips DevTools in production
+- SimulationControls: `max-md:grid max-md:grid-cols-2` for 2x2 mobile layout
+- storage-factory: `console.warn()` on in-memory fallback activation
+- 8 new tests (6 structural + 1 WARN log + 1 responsive)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -365,7 +371,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-AUTH | 3 | Done | Supabase Auth, RLS, invite keys |
 | REQ-API | 10 of 11 | Mostly done | Endpoints, envelope format, pagination, error codes |
 | REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
-| REQ-STATE | 15 of 16 | Mostly done | All stores, persist + migration, devtools, Realtime infra, cache invalidation |
+| REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
@@ -465,9 +471,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 51 |
-| Test files | 232 |
-| Total tests | 2,660 |
+| Phases completed | 52 |
+| Test files | 233 |
+| Total tests | 2,668 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |

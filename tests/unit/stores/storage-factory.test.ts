@@ -70,6 +70,30 @@ describe('isMemoryFallback (REQ-STATE-010)', () => {
     }
   });
 
+  it('logs WARN when falling back to memory storage (REQ-ERR-018)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const original = globalThis.localStorage;
+    Object.defineProperty(globalThis, 'localStorage', {
+      get() {
+        throw new DOMException('Storage disabled', 'SecurityError');
+      },
+      configurable: true,
+    });
+
+    try {
+      createSafeStorage();
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('Browser storage unavailable');
+    } finally {
+      Object.defineProperty(globalThis, 'localStorage', {
+        value: original,
+        configurable: true,
+        writable: true,
+      });
+      warnSpy.mockRestore();
+    }
+  });
+
   it('memory fallback storage still works correctly', () => {
     const original = globalThis.localStorage;
     Object.defineProperty(globalThis, 'localStorage', {

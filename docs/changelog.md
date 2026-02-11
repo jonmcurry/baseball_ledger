@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-02-11 - DevTools Conditional + Responsive SimControls + WARN Logging (Phase 52)
+
+### Phase 52: Store DevTools Conditional (REQ-STATE-016), SimulationControls Responsive (REQ-COMP-010), Fallback WARN Logging (REQ-ERR-018)
+
+Three polish items closing out remaining gaps in state management, responsive
+design, and error logging requirements.
+
+- **Modified all 6 stores** (`authStore`, `leagueStore`, `rosterStore`, `simulationStore`, `statsStore`, `draftStore`)
+  - Added `enabled: import.meta.env.DEV` to devtools middleware options
+  - DevTools middleware is now stripped from production builds (REQ-STATE-016)
+
+- **Modified `src/features/dashboard/SimulationControls.tsx`**
+  - Added `max-md:grid max-md:grid-cols-2` to button container
+  - Sim Day / Week / Month / Season render as 2x2 grid on narrow viewports (REQ-COMP-010)
+
+- **Modified `src/stores/storage-factory.ts`**
+  - Added `console.warn()` call when falling back to in-memory storage (REQ-ERR-018)
+
+- **Created `tests/unit/stores/devtools-conditional.test.ts`** (6 tests)
+  - Structural test reads each store source and verifies `enabled: import.meta.env.DEV`
+
+- **Modified `tests/unit/stores/storage-factory.test.ts`** (1 new test)
+  - Verifies WARN logged with "Browser storage unavailable" message on fallback
+
+- **Modified `tests/unit/features/dashboard/SimulationControls.test.tsx`** (1 new test)
+  - Verifies `max-md:grid max-md:grid-cols-2` classes on button container
+
+**Tests:** 2,668 tests across 233 files (8 new)
+
 ## 2026-02-11 - localStorage Fallback Warning + Traceability (Phase 51)
 
 ### Phase 51: localStorage Fallback Warning (REQ-STATE-010) + Traceability Update (REQ-TEST-011)

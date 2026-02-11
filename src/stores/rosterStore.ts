@@ -170,6 +170,6 @@ export const useRosterStore = create<RosterStore>()(
         } as RosterStore),
       },
     ),
-    { name: 'RosterStore' },
+    { name: 'RosterStore', enabled: import.meta.env.DEV },
   ),
 );

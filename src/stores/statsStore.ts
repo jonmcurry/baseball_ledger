@@ -150,6 +150,6 @@ export const useStatsStore = create<StatsStore>()(
         } as StatsStore),
       },
     ),
-    { name: 'StatsStore' },
+    { name: 'StatsStore', enabled: import.meta.env.DEV },
   ),
 );

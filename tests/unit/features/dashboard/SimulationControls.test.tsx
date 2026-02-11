@@ -107,4 +107,13 @@ describe('SimulationControls', () => {
     );
     expect(screen.getByText(/Playoff mode/)).toBeInTheDocument();
   });
+
+  it('button container has max-md:grid max-md:grid-cols-2 for 2x2 mobile layout (REQ-COMP-010)', () => {
+    render(
+      <SimulationControls isRunning={false} progressPct={0} onSimulate={vi.fn()} />,
+    );
+    const buttonContainer = screen.getByText('Sim Day').parentElement;
+    expect(buttonContainer?.className).toContain('max-md:grid');
+    expect(buttonContainer?.className).toContain('max-md:grid-cols-2');
+  });
 });

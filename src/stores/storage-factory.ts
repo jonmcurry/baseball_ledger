@@ -48,8 +48,9 @@ export function createSafeStorage(): SafeStorage {
     };
   }
 
-  // In-memory fallback
+  // In-memory fallback (REQ-ERR-018: log WARN on fallback activation)
   _isMemoryFallback = true;
+  console.warn('Browser storage unavailable -- falling back to in-memory storage. Data will not persist between sessions.');
   const store = new Map<string, string>();
   return {
     getItem: (name) => store.get(name) ?? null,

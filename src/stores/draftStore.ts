@@ -130,6 +130,6 @@ export const useDraftStore = create<DraftStoreType>()(
 
       reset: () => set((state) => { Object.assign(state, initialState); }, false, 'reset'),
     })),
-    { name: 'DraftStore' },
+    { name: 'DraftStore', enabled: import.meta.env.DEV },
   ),
 );

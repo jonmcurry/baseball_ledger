@@ -232,6 +232,6 @@ export const useLeagueStore = create<LeagueStore>()(
         } as LeagueStore),
       },
     ),
-    { name: 'LeagueStore' },
+    { name: 'LeagueStore', enabled: import.meta.env.DEV },
   ),
 );

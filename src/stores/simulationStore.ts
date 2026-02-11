@@ -169,6 +169,6 @@ export const useSimulationStore = create<SimulationStore>()(
         simulationService.unsubscribeFromProgress();
       },
     }),
-    { name: 'SimulationStore' },
+    { name: 'SimulationStore', enabled: import.meta.env.DEV },
   ),
 );

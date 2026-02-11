@@ -33,7 +33,7 @@ export function SimulationControls({
       {isPlayoffs && (
         <p className="text-xs font-medium text-muted">Playoff mode: single-game simulation only</p>
       )}
-      <div className="flex gap-2">
+      <div className="flex gap-2 max-md:grid max-md:grid-cols-2">
         {availableScopes.map(({ scope, label }) => (
           <button
             key={scope}
