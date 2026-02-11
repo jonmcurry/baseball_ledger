@@ -282,3 +282,219 @@ describe('handleResponse error mapping', () => {
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Retry logic (REQ-ERR-015, REQ-ERR-016)
+// ---------------------------------------------------------------------------
+
+describe('fetchWithRetry (REQ-ERR-015)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('retries on 500 server error and succeeds on retry', async () => {
+    const okPayload = {
+      data: { id: '1' },
+      meta: { requestId: 'r-1', timestamp: '2024-01-01T00:00:00Z' },
+    };
+
+    // First call: 500, second call: 200
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: vi.fn().mockResolvedValue({ error: { code: 'SERVER_ERROR', message: 'fail' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(okPayload),
+      });
+
+    const promise = apiGet('/api/test');
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await promise;
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(result).toEqual(okPayload);
+  });
+
+  it('retries up to 2 times on persistent 500 then returns error', async () => {
+    const errorResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: vi.fn().mockResolvedValue({ error: { code: 'SERVER_ERROR', message: 'fail' } }),
+    };
+
+    mockFetch.mockResolvedValue(errorResponse);
+
+    const promise = apiGet('/api/test');
+    // Prevent Node unhandled-rejection warning during timer flush
+    promise.catch(() => {});
+    await vi.advanceTimersByTimeAsync(1000); // retry 1
+    await vi.advanceTimersByTimeAsync(3000); // retry 2
+
+    try {
+      await promise;
+      expect.fail('Should throw');
+    } catch (err) {
+      const appError = err as AppError;
+      expect(appError.statusCode).toBe(500);
+    }
+
+    // Initial + 2 retries = 3 total calls
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('does NOT retry on 400 client error', async () => {
+    mockErrorResponse(400, 'Bad Request', {
+      code: 'VALIDATION_ERROR',
+      message: 'Bad request',
+    });
+
+    try {
+      await apiGet('/api/test');
+      expect.fail('Should throw');
+    } catch (err) {
+      const appError = err as AppError;
+      expect(appError.category).toBe('VALIDATION');
+    }
+
+    // Only 1 call -- no retries for 4xx
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT retry on 404', async () => {
+    mockErrorResponse(404, 'Not Found', {
+      code: 'NOT_FOUND',
+      message: 'Not found',
+    });
+
+    try {
+      await apiGet('/api/test');
+      expect.fail('Should throw');
+    } catch (err) {
+      const appError = err as AppError;
+      expect(appError.category).toBe('NOT_FOUND');
+    }
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries on network error (TypeError) and succeeds', async () => {
+    const okPayload = {
+      data: { id: '1' },
+      meta: { requestId: 'r-1', timestamp: '2024-01-01T00:00:00Z' },
+    };
+
+    mockFetch
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(okPayload),
+      });
+
+    const promise = apiGet('/api/test');
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await promise;
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(result).toEqual(okPayload);
+  });
+
+  it('throws network error after all retries exhausted', async () => {
+    mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const promise = apiGet('/api/test');
+    // Prevent Node unhandled-rejection warning during timer flush
+    promise.catch(() => {});
+    await vi.advanceTimersByTimeAsync(1000); // retry 1
+    await vi.advanceTimersByTimeAsync(3000); // retry 2
+
+    await expect(promise).rejects.toThrow('Failed to fetch');
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries on 429 rate limit', async () => {
+    const okPayload = {
+      data: { id: '1' },
+      meta: { requestId: 'r-1', timestamp: '2024-01-01T00:00:00Z' },
+    };
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: 'Too Many Requests',
+        json: vi.fn().mockResolvedValue({ error: { code: 'RATE_LIMIT', message: 'slow down' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(okPayload),
+      });
+
+    const promise = apiGet('/api/test');
+    await vi.advanceTimersByTimeAsync(1000);
+    const result = await promise;
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(result).toEqual(okPayload);
+  });
+
+  it('logs WARN on each retry attempt (REQ-ERR-016)', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      json: vi.fn().mockResolvedValue({ error: { code: 'ERR', message: 'fail' } }),
+    });
+
+    const promise = apiGet('/api/test');
+    // Prevent Node unhandled-rejection warning during timer flush
+    promise.catch(() => {});
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(3000);
+
+    try { await promise; } catch { /* expected */ }
+
+    // 2 WARN calls (one per retry attempt)
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+    expect(warnSpy.mock.calls[0][0]).toContain('Network retry 1/2');
+    expect(warnSpy.mock.calls[1][0]).toContain('Network retry 2/2');
+
+    // 1 ERROR call (final exhaustion)
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0][0]).toContain('All 2 network retries exhausted');
+
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it('succeeds on first try with no retries needed', async () => {
+    const okPayload = {
+      data: { id: '1' },
+      meta: { requestId: 'r-1', timestamp: '2024-01-01T00:00:00Z' },
+    };
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue(okPayload),
+    });
+
+    const result = await apiGet('/api/test');
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result).toEqual(okPayload);
+  });
+});

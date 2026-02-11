@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-02-11 - Client Network Request Retry (Phase 50)
+
+### Phase 50: Client Network Request Retry (REQ-ERR-015, REQ-ERR-016)
+
+Added automatic retry with exponential backoff to the API client for
+transient network failures.
+
+- **Modified `src/services/api-client.ts`**
+  - Added `fetchWithRetry` wrapper around `fetch` with 2 retries and
+    exponential backoff (1s, 3s)
+  - Retries on: network errors (TypeError), 5xx server errors, 429 rate limit
+  - Does NOT retry on 4xx client errors (400, 401, 403, 404)
+  - All 5 API methods (apiGet, apiGetPaginated, apiPost, apiPatch, apiDelete)
+    now route through `fetchWithRetry`
+  - REQ-ERR-016: logs WARN per retry attempt, ERROR on final exhaustion
+
+- **Modified `tests/unit/services/api-client.test.ts`** (9 new tests)
+  - Retry on 500, succeeds on second attempt
+  - Persistent 500 exhausts retries (3 total calls)
+  - No retry on 400 or 404 (client errors)
+  - Network error (TypeError) retry and exhaustion
+  - 429 rate limit retry
+  - WARN/ERROR logging verification
+  - First-try success (no unnecessary retries)
+
+**Tests:** 2,655 tests across 231 files (9 new)
+
 ## 2026-02-11 - League Deletion CASCADE Verification (Phase 49)
 
 ### Phase 49: League Deletion CASCADE Verification (REQ-LGE-010)

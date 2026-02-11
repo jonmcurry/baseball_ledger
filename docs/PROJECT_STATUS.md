@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,646 tests across 231 files (all passing)
+**Test suite:** 2,655 tests across 231 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--49)
+## Completed Phases (1--50)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -333,6 +333,13 @@ Seven-layer architecture with strict downward-only imports:
 - Rosters cascade via team_id -> teams -> leagues chain
 - 11 new tests
 
+### Phase 50 -- Client Network Request Retry (REQ-ERR-015, REQ-ERR-016)
+- Added `fetchWithRetry` wrapper to api-client.ts
+- 2 retries with exponential backoff (1s, 3s)
+- Retries on network errors (TypeError), 5xx, 429; no retry on 4xx
+- WARN per retry attempt, ERROR on final exhaustion
+- 9 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -435,9 +442,11 @@ Seven-layer architecture with strict downward-only imports:
     - Mostly followed organically during development
     - No formal promotion audit performed
 
-13. **REQ-ERR-015 / REQ-ERR-016: Retry policies**
-    - db-retry.ts handles Supabase retries
-    - Other retry targets (AI, external services) use simpler patterns
+13. **REQ-ERR-015 / REQ-ERR-016: Retry policies** -- DONE
+    - db-retry.ts handles Supabase retries (server-side)
+    - api-client.ts fetchWithRetry handles client-side retries (2 retries, exponential 1s/3s)
+    - Retries on network errors, 5xx, 429; no retry on 4xx
+    - REQ-ERR-016: WARN per retry, ERROR on exhaustion
 
 14. **Deployment to Vercel + Supabase Cloud**
     - All code is deployment-ready
