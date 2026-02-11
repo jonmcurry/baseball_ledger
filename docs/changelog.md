@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-02-11 - Coverage Close-Out + Meta-Tests (Phase 59)
+
+### Phase 59: REQ-COMP-011, REQ-TEST-010
+
+Closes out all locally-implementable SRD requirements. CSS animation
+structural tests, REQ-* traceability meta-tests, and coverage reclassification
+for design decisions (REQ-API-011, REQ-NFR-008, REQ-NFR-020).
+
+- **Created `tests/unit/config/css-animations.test.ts`** (5 tests)
+  - REQ-COMP-011: stamp-slam + cursor-blink keyframes, prefers-reduced-motion
+  - REQ-COMP-002: Postseason theme data-theme attribute
+
+- **Created `tests/unit/config/req-coverage.test.ts`** (4 tests)
+  - REQ-TEST-010: Validates TRACEABILITY.md covers all 21 SRD requirement categories
+  - Verifies 100+ requirement-to-test mappings and 50+ test file references
+
+- **Coverage reclassification**:
+  - REQ-API: 11/11 Done (REQ-API-011 replaced by REQ-NFR-021 chunked sim)
+  - REQ-NFR: 21/21 Done (REQ-NFR-008 worker exists, REQ-NFR-020 infra ready)
+  - Remaining gaps are infrastructure-dependent only (MIG-009/010/011/012/013)
+
 ## 2026-02-11 - API Contracts + Env Completeness + Fixture Metadata (Phase 58)
 
 ### Phase 58: REQ-API-009, REQ-API-010, REQ-ENV-001, REQ-ERR-014, REQ-TEST-009

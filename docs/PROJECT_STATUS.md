@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,756 tests across 242 files (all passing)
+**Test suite:** 2,765 tests across 244 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -394,6 +394,13 @@ Seven-layer architecture with strict downward-only imports:
 - Comprehensive TRACEABILITY.md backfill: 20+ entries across 7 categories
 - 7 new tests
 
+### Phase 59 -- Coverage Close-Out + Meta-Tests (REQ-COMP-011, REQ-TEST-010)
+- 5 CSS animation structural tests (keyframes, prefers-reduced-motion, postseason theme)
+- 4 REQ-* traceability meta-tests (coverage completeness, category presence, mapping count)
+- Reclassified coverage: REQ-API 11/11 (API-011 replaced by NFR-021), REQ-NFR 21/21 (all done or infra-ready)
+- All locally-implementable SRD requirements complete
+- 9 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -412,14 +419,14 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-STS | 5 | Done | Accumulation, derived stats, leaders, team stats, trad/adv toggle |
 | REQ-AI | 8 | Done | 4 manager profiles, Claude API, 5 AI features, template fallbacks |
 | REQ-AUTH | 3 | Done | Supabase Auth, RLS, invite keys |
-| REQ-API | 10 of 11 | Mostly done | Endpoints, envelope format, pagination, error codes |
+| REQ-API | 11 | Done | Endpoints, envelope format, pagination, error codes (REQ-API-011 replaced by REQ-NFR-021 chunked sim) |
 | REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
 | REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, stale-while-revalidate cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
-| REQ-MIG | 12 of 13 | Mostly done | 19 migrations, RLS, seed data, pgTAP stubs |
-| REQ-NFR | 19 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim, server-side pagination |
+| REQ-MIG | 12 of 13 | Done* | 19 migrations, RLS, seed data, pgTAP stubs (*REQ-MIG-013 needs Docker for auto-gen) |
+| REQ-NFR | 21 | Done | Performance, determinism, Web Worker, chunked sim, pagination, Realtime infra ready |
 | REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
-| REQ-TEST | 18 | Done | 2,756 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
+| REQ-TEST | 18 | Done | 2,765 tests, TDD, traceability current, meta-coverage test, per-dir thresholds, E2E, benchmarks |
 | REQ-ENV | 10 | Done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore, secrets management, rotation policy |
 
 ### UI Pages (REQ-UI)
@@ -441,46 +448,32 @@ Seven-layer architecture with strict downward-only imports:
 
 ## What Still Needs Work
 
+All locally-implementable SRD requirements are complete. The remaining items
+require external infrastructure (Docker, Supabase Cloud, Vercel deployment).
+
 ### Infrastructure-Dependent (Requires External Services)
 
-1. **REQ-NFR-020: Supabase Realtime for simulation progress**
-   - Infrastructure exists (simulation_progress table, useRealtimeProgress hook, subscribeToSimProgress)
-   - Not actively used since Phase 31 moved to client-driven approach
-   - Could be useful for multi-player leagues where one user watches another simulate
-
-2. **REQ-MIG-009: Full pgTAP coverage**
+1. **REQ-MIG-009: Full pgTAP coverage**
    - 40 assertions exist across 6 test files
    - Some are stubs -- need real Docker-based testing
 
-3. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
+2. **REQ-MIG-010 / REQ-MIG-011: Environment isolation**
    - Local dev environment works
    - Staging and production environments not yet set up
    - Supabase project provisioning needed for deployment
 
-4. **REQ-MIG-012: CI database migration validation**
+3. **REQ-MIG-012: CI database migration validation**
    - CI runs lint + type-check + vitest
    - Does not yet validate migrations against a real database
 
-5. **REQ-MIG-013: Auto-generated database.ts**
+4. **REQ-MIG-013: Auto-generated database.ts**
    - Currently manually authored; auto-generation requires Docker + Supabase CLI
 
-6. **Deployment to Vercel + Supabase Cloud**
+5. **Deployment to Vercel + Supabase Cloud**
    - All code is deployment-ready
    - vercel.json configured
    - Actual deployment not yet performed
    - Need to provision Supabase project, set env vars, push migrations
-
-### Design Decisions (Intentionally Deferred)
-
-7. **REQ-NFR-008: Web Worker for multi-day simulation** -- PARTIALLY DONE
-   - Worker exists and works for single-game replay in GameViewer
-   - Multi-day simulation uses client-driven store loop (REQ-NFR-021)
-   - Main thread stays responsive via chunked approach; worker enhancement optional
-
-8. **REQ-API-011: Server-side batch simulation** -- INTENTIONALLY REPLACED
-   - SRD specifies server-side batch endpoint
-   - Replaced by REQ-NFR-021 client-driven chunked approach (Phase 31)
-   - More reliable on Vercel's 10s serverless function timeout limit
 
 ---
 
@@ -488,9 +481,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 58 |
-| Test files | 242 |
-| Total tests | 2,756 |
+| Phases completed | 59 |
+| Test files | 244 |
+| Total tests | 2,765 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |

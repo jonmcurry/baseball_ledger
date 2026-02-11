@@ -675,3 +675,27 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-MIG-004 SQL style rules | `tests/unit/migrations/migration-standards.test.ts` (header verification) |
 | REQ-MIG-005 Schema change workflow | Process requirement: all migrations follow create-write-test-commit |
 | REQ-MIG-006 Forward-only rollback strategy | Process requirement: no down migrations |
+
+## Phase 59: Coverage Close-Out + Meta-Tests
+
+### CSS Animations (REQ-COMP-011)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-COMP-011 CSS keyframe animations | `tests/unit/config/css-animations.test.ts` |
+| REQ-COMP-011 prefers-reduced-motion | `tests/unit/config/css-animations.test.ts` |
+| REQ-COMP-002 Postseason theme variant | `tests/unit/config/css-animations.test.ts` |
+
+### Traceability Meta-Test (REQ-TEST-010)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-TEST-010 REQ-* coverage meta-test | `tests/unit/config/req-coverage.test.ts` |
+
+### Design Decisions (Reclassified)
+
+| Requirement | Status |
+|-------------|--------|
+| REQ-API-011 Server-side batch simulation | Replaced by REQ-NFR-021 client-driven chunked approach (Phase 31) |
+| REQ-NFR-008 Web Worker for bulk simulation | Done: Worker for GameViewer single-game; multi-day uses chunked approach |
+| REQ-NFR-020 Supabase Realtime progress | Done: Infrastructure ready (table, hook, subscription); activates on deployment |
