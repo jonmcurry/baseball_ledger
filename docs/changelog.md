@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-02-11 - Feature-Level Error Boundaries (Phase 44)
+
+### Phase 44: Feature-Level Error Boundaries (REQ-ERR-010, REQ-ERR-011, REQ-COMP-007)
+
+Per-route ErrorBoundary wrapping for all 11 lazy-loaded feature pages.
+
+- **Modified `src/router.tsx`**
+  - `LazyPage` now wraps children in `ErrorBoundary > Suspense` (was Suspense only)
+  - Each feature route gets its own error boundary for isolated crash recovery
+  - Chunk-load failures (dynamic import errors) are caught alongside render errors
+
+- **Updated `tests/unit/components/feedback/ErrorBoundary.test.tsx`**
+  - Added chunk-load failure test verifying fallback shows error message + recovery buttons
+
+**Tests:** 1 new test
+**Total:** 2,613 tests across 229 files
+
 ## 2026-02-11 - WCAG ARIA Compliance Audit (Phase 43)
 
 ### Phase 43: WCAG ARIA Compliance Audit (REQ-COMP-012)

@@ -3,7 +3,7 @@
  *
  * Application routing with lazy-loaded feature pages.
  * SplashPage and LoginPage are eagerly loaded.
- * All /leagues/* routes are lazy-loaded with Suspense + LoadingLedger.
+ * All /leagues/* routes are lazy-loaded with ErrorBoundary + Suspense + LoadingLedger.
  *
  * Per SRD 19.3: 13 routes covering all feature pages.
  */
@@ -15,6 +15,7 @@ import { LoginPage } from '@features/auth/LoginPage';
 import { AuthGuard } from '@features/auth/AuthGuard';
 import { AuthenticatedLayout } from '@features/auth/AuthenticatedLayout';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
+import { ErrorBoundary } from '@components/feedback/ErrorBoundary';
 
 // Lazy-loaded feature pages
 const DashboardPage = lazy(() =>
@@ -53,8 +54,17 @@ const TransactionsPage = lazy(() =>
   })),
 );
 
+/**
+ * Per REQ-COMP-007 / REQ-ERR-010: each lazy-loaded route is wrapped
+ * in both an ErrorBoundary (catches render errors + chunk-load failures)
+ * and Suspense (shows LoadingLedger while lazy chunk loads).
+ */
 function LazyPage({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<LoadingLedger />}>{children}</Suspense>;
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingLedger />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
 }
 
 function NotFoundPage() {

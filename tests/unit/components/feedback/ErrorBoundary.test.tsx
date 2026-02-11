@@ -111,6 +111,22 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Test error')).toBeInTheDocument();
   });
 
+  it('catches chunk-load failures when wrapping Suspense (REQ-COMP-007)', () => {
+    function FailingLazy() {
+      throw new Error('Failed to fetch dynamically imported module');
+    }
+
+    render(
+      <ErrorBoundary>
+        <FailingLazy />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+    expect(screen.getByText(/Failed to fetch dynamically imported module/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /return to dashboard/i })).toBeInTheDocument();
+  });
+
   it('has role="alert" on fallback', () => {
     render(
       <ErrorBoundary>

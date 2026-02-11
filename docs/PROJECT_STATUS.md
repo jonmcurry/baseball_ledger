@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,612 tests across 229 files (all passing)
+**Test suite:** 2,613 tests across 229 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--43)
+## Completed Phases (1--44)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -293,6 +293,11 @@ Seven-layer architecture with strict downward-only imports:
 - StatTable: grid role + aria-sort="none", Pagination: aria-current
 - LoadingLedger: aria-label, DraftTicker: aria-live + corrected label
 
+### Phase 44 -- Feature-Level Error Boundaries (REQ-ERR-010, REQ-ERR-011, REQ-COMP-007)
+- LazyPage wrapper now includes ErrorBoundary outside Suspense
+- All 11 lazy-loaded routes have isolated per-feature error boundaries
+- Chunk-load failures and render errors caught with Try Again + Return to Dashboard
+
 ---
 
 ## REQ-* Coverage by Category
@@ -312,7 +317,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-AI | 8 | Done | 4 manager profiles, Claude API, 5 AI features, template fallbacks |
 | REQ-AUTH | 3 | Done | Supabase Auth, RLS, invite keys |
 | REQ-API | 10 of 11 | Mostly done | Endpoints, envelope format, pagination, error codes |
-| REQ-ERR | 18 of 20 | Mostly done | AppError, Zod validation, error boundaries, structured logging |
+| REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
 | REQ-STATE | 15 of 16 | Mostly done | All stores, persist + migration, devtools, Realtime infra, cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
@@ -411,9 +416,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 43 |
+| Phases completed | 44 |
 | Test files | 229 |
-| Total tests | 2,612 |
+| Total tests | 2,613 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |
