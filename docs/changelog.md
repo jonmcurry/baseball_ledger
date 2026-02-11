@@ -4,21 +4,34 @@
 
 ### Phase 66: Fix FUNCTION_INVOCATION_FAILED on Vercel
 
-All API endpoints were returning 500 FUNCTION_INVOCATION_FAILED on Vercel because
-the serverless function bundler (ncc) does not resolve tsconfig path aliases.
-Also updated league creation form defaults per user feedback.
+All API endpoints were returning 500 FUNCTION_INVOCATION_FAILED on Vercel.
+Three cascading issues were identified and fixed through systematic diagnosis.
 
-- **Root cause**: Vercel serverless functions ignore tsconfig `paths` mappings.
-  Imports like `@lib/supabase/server` compiled successfully but failed at runtime
-  with `ERR_MODULE_NOT_FOUND` because ncc does not rewrite path aliases.
-- **Fix**: Converted all 62 `@lib/*` imports across 25 API files to relative paths
-  (e.g., `../../src/lib/supabase/server`). No functional change to the code.
+**Root causes (in order of discovery):**
+
+1. **tsconfig path aliases**: `@lib/*` imports compiled but were not resolved by
+   Vercel's function builder at runtime. Converted all 79 `@lib/*` imports to
+   relative paths across 37 files (25 in `api/`, 12 in `src/lib/`).
+
+2. **api/tsconfig.json module settings**: Changed from `ESNext`/`bundler` to
+   `CommonJS`/`node` for compatibility with `@vercel/node`'s TypeScript compiler.
+
+3. **"type": "module" in package.json** (the actual root cause): `@vercel/node@5.x`
+   compiles TypeScript to CJS (`require()`/`exports`) and deploys individual files
+   (not a single bundle). The root `"type": "module"` told Node.js to treat the
+   compiled `.js` files as ESM, causing `require is not defined in ES module scope`.
+   Removed `"type": "module"` from root package.json. Vite and vitest handle modules
+   internally and do not depend on this field.
+
+**Other changes:**
 - **League form**: Team count options now 4, 8, 16, 24, 32 (was 4, 6, 8).
   Year range defaults to 1901-2025 with proper validation bounds.
-- **vercel.json**: Added `includeFiles: "data_files/**"` so Lahman CSV files
-  are bundled into serverless function deployments.
-- **Diagnostic endpoint**: `GET /api/health` tests each import with try/catch
-  for ongoing deployment verification. Will be removed once stable.
+- **vercel.json**: Added `includeFiles: "data_files/**"` for CSV data bundling.
+- **api/package.json**: Added `"type": "commonjs"` as explicit CJS marker.
+- **Health endpoint**: `GET /api/health` for production monitoring.
+
+**Diagnosis method**: Used `vercel build` locally to inspect compiled output,
+confirmed CJS syntax in `.js` files conflicting with ESM `"type": "module"`.
 
 **Test count**: 2,792 across 245 files (all passing). TypeScript clean.
 
