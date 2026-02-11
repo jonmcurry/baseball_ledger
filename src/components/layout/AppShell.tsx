@@ -23,9 +23,9 @@ export function AppShell({ children }: AppShellProps) {
       >
         Skip to content
       </a>
-      <div className="mx-auto max-w-ledger border-l-spine border-l-sandstone shadow-ledger">
+      <div className="mx-auto max-w-ledger border-l-spine border-l-sandstone shadow-ledger max-md:max-w-none max-md:border-l-0 max-md:shadow-none">
         <ErrorBoundary>
-          <main id="main-content" className="p-gutter-xl">
+          <main id="main-content" className="p-gutter-xl max-md:px-gutter">
             {children}
           </main>
         </ErrorBoundary>

@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-02-11 - Responsive Design (Phase 47)
+
+### Phase 47: Responsive Design (REQ-UI-013, REQ-COMP-010)
+
+Desktop-first responsive layout with single breakpoint at 768px using `max-md:` prefix.
+
+- **Modified `src/components/layout/AppShell.tsx`**
+  - Added `max-md:max-w-none` to remove max-width on narrow viewports
+  - Added `max-md:border-l-0` to hide book-spine border on mobile
+  - Added `max-md:px-gutter` for tighter padding on mobile
+  - Added `max-md:shadow-none` to remove shadow on mobile
+
+- **Modified `src/components/layout/Header.tsx`**
+  - Added hamburger menu button (hidden on desktop, visible on mobile)
+  - SVG hamburger/X toggle icon with aria-expanded attribute
+  - Nav links collapse to vertical column on mobile
+  - User name and Log Out move into mobile menu
+  - `handleNavigate` auto-closes mobile menu on link click
+
+- **Modified `src/components/data-display/StandingsTable.tsx`**
+  - Added `max-md:hidden` to GB, RS, RA, DIFF header and data cells
+  - Mobile shows only Team, W, L, PCT columns
+
+- **Modified `src/components/data-display/StatTable.tsx`**
+  - First column header and data cells get `max-md:sticky max-md:left-0` for horizontal scroll
+
+- **Modified `src/components/baseball/DiamondField.tsx`**
+  - Added `max-md:min-w-[280px]` minimum width constraint for mobile
+  - Added `preserveAspectRatio="xMidYMid meet"` for proportional SVG scaling
+
+- **Modified `src/features/draft/DraftBoardPage.tsx`**
+  - Changed `lg:grid-cols-12` to `md:grid-cols-12` (correct 768px breakpoint)
+  - Changed all `lg:col-span-*` to `md:col-span-*`
+
+- **Modified `src/components/baseball/PlayerCardDisplay.tsx`**
+  - Changed `max-w-sm` (384px) to `max-w-[480px]` per SRD
+  - Added `max-md:mx-4 max-md:max-w-none` for full-width mobile
+
+- **Created `tests/unit/styles/responsive.test.tsx`** (20 tests)
+  - AppShell responsive classes (3 tests)
+  - Header hamburger menu (6 tests)
+  - StandingsTable column hiding (2 tests)
+  - StatTable sticky first column (3 tests)
+  - DiamondField mobile scaling (2 tests)
+  - PlayerCardDisplay mobile layout (3 tests)
+  - Font-display swap test (1 test)
+
+- **Modified `tests/unit/styles/fonts.test.ts`** (2 new tests)
+  - font-display: swap verification
+  - Latin unicode-range subsetting verification
+
+- **Modified `tests/unit/components/layout/Header.test.tsx`**
+  - Updated 2 tests for dual user name/logout button (desktop + mobile)
+
+**Tests:** 2,635 tests across 230 files (22 new, 2 updated)
+
 ## 2026-02-11 - Per-Directory Coverage Thresholds (Phase 46)
 
 ### Phase 46: Per-Directory Coverage Thresholds (REQ-TEST-003, REQ-TEST-004)

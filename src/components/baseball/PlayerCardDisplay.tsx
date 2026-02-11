@@ -46,7 +46,7 @@ export function PlayerCardDisplay({ player, isOpen, onClose }: PlayerCardDisplay
       aria-label={`${player.nameFirst} ${player.nameLast} player card`}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div ref={containerRef} className="w-full max-w-sm rounded-card border-2 border-sandstone bg-old-lace shadow-ledger">
+      <div ref={containerRef} className="w-full max-w-[480px] rounded-card border-2 border-sandstone bg-old-lace shadow-ledger max-md:mx-4 max-md:max-w-none">
         {/* Card header */}
         <div className="flex items-center justify-between border-b-2 border-sandstone bg-ballpark px-gutter py-3">
           <div>

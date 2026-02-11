@@ -23,4 +23,21 @@ describe('Self-hosted fonts (REQ-NFR-018)', () => {
     expect(html).not.toContain('fonts.googleapis.com');
     expect(html).not.toContain('fonts.gstatic.com');
   });
+
+  it('uses font-display: swap to prevent FOIT', () => {
+    const css = readFileSync(resolve(ROOT, 'src/styles/fonts.css'), 'utf-8');
+    const fontFaceBlocks = css.match(/@font-face\s*\{[^}]+\}/g) ?? [];
+    expect(fontFaceBlocks.length).toBeGreaterThanOrEqual(2);
+    for (const block of fontFaceBlocks) {
+      expect(block).toContain('font-display: swap');
+    }
+  });
+
+  it('uses Latin unicode-range subsetting', () => {
+    const css = readFileSync(resolve(ROOT, 'src/styles/fonts.css'), 'utf-8');
+    const fontFaceBlocks = css.match(/@font-face\s*\{[^}]+\}/g) ?? [];
+    for (const block of fontFaceBlocks) {
+      expect(block).toContain('unicode-range:');
+    }
+  });
 });

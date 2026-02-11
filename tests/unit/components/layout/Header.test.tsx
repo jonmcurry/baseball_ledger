@@ -26,7 +26,8 @@ describe('Header', () => {
 
   it('renders user name', () => {
     render(<Header {...defaultProps} />);
-    expect(screen.getByText('Player 1')).toBeInTheDocument();
+    const matches = screen.getAllByText('Player 1');
+    expect(matches.length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders navigation element', () => {
@@ -61,7 +62,8 @@ describe('Header', () => {
     const onLogout = vi.fn();
     render(<Header {...defaultProps} onLogout={onLogout} />);
 
-    await user.click(screen.getByRole('button', { name: /log out/i }));
+    const logoutButtons = screen.getAllByRole('button', { name: /log out/i });
+    await user.click(logoutButtons[0]);
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
 

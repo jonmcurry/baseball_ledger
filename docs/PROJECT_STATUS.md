@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,613 tests across 229 files (all passing)
+**Test suite:** 2,635 tests across 230 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--46)
+## Completed Phases (1--47)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -310,6 +310,18 @@ Seven-layer architecture with strict downward-only imports:
 - CI already runs `npm run test:coverage` with artifact upload
 - @vitest/coverage-istanbul added as V8 fallback
 
+### Phase 47 -- Responsive Design (REQ-UI-013, REQ-COMP-010)
+- Single breakpoint at 768px using `max-md:` prefix per SRD
+- AppShell: `max-md:max-w-none`, `max-md:border-l-0`, `max-md:px-gutter`
+- Header: hamburger menu with aria-expanded, mobile nav column, user info in menu
+- StandingsTable: GB/RS/RA/DIFF hidden on narrow viewports (Team/W/L/PCT only)
+- StatTable: sticky first column on narrow viewports
+- DiamondField: `min-w-[280px]` + `preserveAspectRatio` for mobile scaling
+- DraftBoardPage: corrected breakpoint from `lg:` to `md:` for 3-column layout
+- PlayerCardDisplay: `max-w-[480px]` desktop, `max-md:mx-4 max-md:max-w-none` mobile
+- Font optimization tests: font-display: swap + Latin unicode-range subsetting
+- 22 new tests (20 responsive + 2 font)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -350,7 +362,7 @@ Seven-layer architecture with strict downward-only imports:
 | Game Viewer | REQ-UI-010 | Done |
 | Season Archive | REQ-UI-011 | Done |
 | Playoff Theme | REQ-UI-012 | Done |
-| Responsive Design | REQ-UI-013 | Partial -- desktop-first done, mobile polish needed |
+| Responsive Design | REQ-UI-013, REQ-COMP-010 | Done -- single breakpoint (768px), max-md: prefix, hamburger menu |
 
 ---
 

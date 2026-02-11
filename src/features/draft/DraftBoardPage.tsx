@@ -153,8 +153,8 @@ export function DraftBoardPage() {
         </div>
       )}
 
-      <div className="grid gap-gutter lg:grid-cols-12">
-        <div className="lg:col-span-3 space-y-3">
+      <div className="grid gap-gutter md:grid-cols-12">
+        <div className="md:col-span-3 space-y-3">
           <DraftTicker
             picks={draftState?.picks ?? []}
             currentPick={draftState?.currentPick ?? 0}
@@ -162,7 +162,7 @@ export function DraftBoardPage() {
           <DraftReasoningPanel request={lastPickRequest} />
         </div>
 
-        <div className="lg:col-span-6">
+        <div className="md:col-span-6">
           <AvailablePlayersTable
             players={availablePlayers}
             onSelect={handlePlayerSelect}
@@ -171,7 +171,7 @@ export function DraftBoardPage() {
           />
         </div>
 
-        <div className="lg:col-span-3">
+        <div className="md:col-span-3">
           {myTeam && (
             <RosterPreviewPanel
               picks={draftState?.picks ?? []}

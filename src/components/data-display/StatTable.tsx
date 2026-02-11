@@ -210,8 +210,9 @@ function HeaderRow<T>({
 }) {
   return (
     <tr className="border-b-2 border-sandstone text-ink">
-      {columns.map((col) => {
+      {columns.map((col, colIdx) => {
         const isSorted = sortBy === col.key;
+        const stickyFirst = colIdx === 0 ? ' max-md:sticky max-md:left-0 max-md:z-10 max-md:bg-old-lace' : '';
         return (
           <th
             key={col.key}
@@ -225,7 +226,7 @@ function HeaderRow<T>({
             onClick={() => onSort(col.key)}
             className={`cursor-pointer select-none px-2 py-1.5 font-medium hover:bg-sandstone/20 ${
               col.numeric ? 'text-right' : 'text-left'
-            }`}
+            }${stickyFirst}`}
           >
             {col.header}
             {isSorted && (
@@ -258,14 +259,17 @@ function DataRow<T>({
         onRowClick ? 'cursor-pointer hover:bg-sandstone/20' : ''
       } ${isHighlighted ? 'bg-sandstone/30' : ''}`}
     >
-      {columns.map((col) => (
-        <td
-          key={col.key}
-          className={`px-2 py-1 ${col.numeric ? 'text-right' : 'text-left'}`}
-        >
-          {col.getValue(row)}
-        </td>
-      ))}
+      {columns.map((col, colIdx) => {
+        const stickyFirst = colIdx === 0 ? ' max-md:sticky max-md:left-0 max-md:z-10 max-md:bg-old-lace' : '';
+        return (
+          <td
+            key={col.key}
+            className={`px-2 py-1 ${col.numeric ? 'text-right' : 'text-left'}${stickyFirst}`}
+          >
+            {col.getValue(row)}
+          </td>
+        );
+      })}
     </tr>
   );
 }

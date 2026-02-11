@@ -62,7 +62,8 @@ export function DiamondField({
       role="group"
       aria-label="Baseball diamond lineup"
       viewBox="0 0 400 360"
-      className="mx-auto w-full max-w-md"
+      preserveAspectRatio="xMidYMid meet"
+      className="mx-auto w-full max-w-md max-md:min-w-[280px]"
     >
       {/* Outfield arc */}
       <path

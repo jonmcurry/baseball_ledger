@@ -39,10 +39,10 @@ export function StandingsTable({
                   <th className="px-2 py-1.5 text-right font-medium">W</th>
                   <th className="px-2 py-1.5 text-right font-medium">L</th>
                   <th className="px-2 py-1.5 text-right font-medium">PCT</th>
-                  <th className="px-2 py-1.5 text-right font-medium">GB</th>
-                  <th className="px-2 py-1.5 text-right font-medium">RS</th>
-                  <th className="px-2 py-1.5 text-right font-medium">RA</th>
-                  <th className="px-2 py-1.5 text-right font-medium">DIFF</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-md:hidden">GB</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-md:hidden">RS</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-md:hidden">RA</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-md:hidden">DIFF</th>
                 </tr>
               </thead>
               <tbody>
@@ -74,10 +74,10 @@ export function StandingsTable({
                       <td className="px-2 py-1 text-right">{team.wins}</td>
                       <td className="px-2 py-1 text-right">{team.losses}</td>
                       <td className="px-2 py-1 text-right">{pct.toFixed(3).slice(1)}</td>
-                      <td className="px-2 py-1 text-right">{gb}</td>
-                      <td className="px-2 py-1 text-right">{team.runsScored}</td>
-                      <td className="px-2 py-1 text-right">{team.runsAllowed}</td>
-                      <td className="px-2 py-1 text-right">
+                      <td className="px-2 py-1 text-right max-md:hidden">{gb}</td>
+                      <td className="px-2 py-1 text-right max-md:hidden">{team.runsScored}</td>
+                      <td className="px-2 py-1 text-right max-md:hidden">{team.runsAllowed}</td>
+                      <td className="px-2 py-1 text-right max-md:hidden">
                         {diff > 0 ? `+${diff}` : diff}
                       </td>
                     </tr>
