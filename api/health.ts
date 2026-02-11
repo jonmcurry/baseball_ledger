@@ -1,17 +1,13 @@
 /**
  * GET /api/health -- Isolate crash cause
  *
- * Test 2: Import npm package directly (not through src/lib wrapper).
- * If this works but ../src/lib/supabase/server doesn't, the issue
- * is with how Vercel bundles imports from outside api/.
+ * Test 3: Import from api/_lib/ (local file within api/).
+ * If this crashes, Vercel can't bundle ANY local imports.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { ok } from './_lib/response';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  res.status(200).json({
-    status: 'test-2-npm-direct',
-    hasCreateClient: typeof createClient === 'function',
-  });
+  ok(res, { status: 'test-3-local-lib' }, 'health-check');
 }
