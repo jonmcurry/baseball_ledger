@@ -49,3 +49,7 @@ export async function fetchSchedule(leagueId: string, day?: number): Promise<Sch
   const response = await apiGet<ScheduleDay[]>(`/api/leagues/${leagueId}/schedule${params}`);
   return response.data;
 }
+
+export async function startDraft(leagueId: string): Promise<void> {
+  await apiPost(`/api/leagues/${leagueId}/draft`, { action: 'start' });
+}

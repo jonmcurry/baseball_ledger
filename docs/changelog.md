@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-02-11 - League Setup Workflow (Phase 68)
+
+### Phase 68: Auto-generate teams on league creation + setup dashboard
+
+After creating a league, no teams existed because the team generation logic
+(`generateTeamNames`, `assignDivisions`) was never called from the API. Users
+saw only an invite key and sim buttons with no way to proceed to draft.
+
+**Backend (`api/leagues/index.ts`):**
+- Wire `generateTeamNames()` + `assignDivisions()` into `POST /api/leagues`
+- Auto-generate N teams with random city/mascot pairs and AL/NL divisions
+- Rotate manager profiles (balanced, conservative, aggressive, analytical)
+- Auto-assign first team to commissioner (REQ-LGE-007)
+
+**Frontend:**
+- New `TeamSetupPanel` component shows all teams by division during setup phase
+- Each team displays ownership badge: You / Player / CPU
+- Invite key integrated into the panel
+- Commissioner sees "Start Draft" button
+- Sim controls hidden during setup/drafting phases (no schedule to simulate)
+- Added `startDraft()` to league-service.ts
+
+**Files changed:** `api/leagues/index.ts`, `TeamSetupPanel.tsx` (new),
+`DashboardPage.tsx`, `league-service.ts`
+
+**Test count:** 2,799 across 246 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - Navigation + Hooks Fix (Phase 67)
 
 ### Phase 67: Show full navigation in all league phases + fix React error #300

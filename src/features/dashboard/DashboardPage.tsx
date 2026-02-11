@@ -24,9 +24,10 @@ import { SimulationNotification } from './SimulationNotification';
 import { SeasonCompletePanel } from './SeasonCompletePanel';
 import { NewSeasonPanel } from './NewSeasonPanel';
 import { PlayoffStatusPanel } from './PlayoffStatusPanel';
-import { InviteKeyDisplay } from '@components/data-display/InviteKeyDisplay';
+import { TeamSetupPanel } from './TeamSetupPanel';
 import { apiPost } from '@services/api-client';
 import { useLeagueStore } from '@stores/leagueStore';
+import { useAuth } from '@hooks/useAuth';
 import { buildPlayoffGameMessage } from '@lib/schedule/playoff-display';
 import { usePageTitle } from '@hooks/usePageTitle';
 
@@ -39,6 +40,7 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 
 export function DashboardPage() {
   usePageTitle('Dashboard');
+  const { user } = useAuth();
   const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
   const { status, totalDays, completedGames, isRunning, progressPct, runSimulation, lastPlayoffResult } = useSimulation();
 
@@ -48,6 +50,7 @@ export function DashboardPage() {
   // REQ-SCH-009: Season completion ceremony
   const [isArchiving, setIsArchiving] = useState(false);
   const [isStartingSeason, setIsStartingSeason] = useState(false);
+  const [isStartingDraft, setIsStartingDraft] = useState(false);
 
   const championName = useMemo(() => {
     if (!playoffBracket?.worldSeriesChampionId) return 'Unknown';
@@ -94,6 +97,19 @@ export function DashboardPage() {
       // Error reflected in league store
     } finally {
       setIsStartingSeason(false);
+    }
+  };
+
+  const handleStartDraft = async () => {
+    if (!league) return;
+    setIsStartingDraft(true);
+    try {
+      await apiPost(`/api/leagues/${league.id}/draft`, { action: 'start' });
+      await useLeagueStore.getState().fetchLeagueData(league.id);
+    } catch {
+      // Error reflected in league store
+    } finally {
+      setIsStartingDraft(false);
     }
   };
 
@@ -162,9 +178,16 @@ export function DashboardPage() {
             onStartSeason={handleStartSeason}
             isStarting={isStartingSeason}
           />
-        ) : league.inviteKey ? (
-          <InviteKeyDisplay inviteKey={league.inviteKey} />
-        ) : null
+        ) : (
+          <TeamSetupPanel
+            teams={teams}
+            isCommissioner={isCommissioner}
+            userId={user?.id ?? null}
+            onStartDraft={handleStartDraft}
+            isStartingDraft={isStartingDraft}
+            inviteKey={league.inviteKey}
+          />
+        )
       )}
 
       {recentResults.length > 0 && (
@@ -178,14 +201,14 @@ export function DashboardPage() {
           onArchive={handleArchive}
           isArchiving={isArchiving}
         />
-      ) : (
+      ) : (leagueStatus === 'regular_season' || leagueStatus === 'playoffs') ? (
         <SimulationControls
           isRunning={isRunning}
           progressPct={progressPct}
           onSimulate={handleSimulate}
           leagueStatus={leagueStatus}
         />
-      )}
+      ) : null}
 
       {showNotification && (
         <SimulationNotification
