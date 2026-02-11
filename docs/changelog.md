@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-02-10 - Season Archive Enrichment (Phase 39)
+
+### Phase 39: Season Archive Enrichment (REQ-SCH-009)
+
+Archives now store champion name, full playoff bracket results, and league leader boards. Season reset properly clears stats, schedule, game logs, and team records.
+
+- **Created `src/lib/transforms/archive-builder.ts` (L1 helper)**
+  - `buildArchiveData()` computes enriched archive fields from league state at season end
+  - Resolves champion name from `worldSeriesChampionId` via teams array
+  - Computes top 5 batting leaders (HR, RBI, BA, H, SB) and pitching leaders (W, SO, ERA, SV, WHIP) using existing `getBattingLeaders` / `getPitchingLeaders`
+  - Maps player IDs to display names via `playerNameCache`
+  - 5 tests in `archive-builder.test.ts`
+
+- **Modified `api/leagues/[id]/archive.ts` -- enriched archive + season reset**
+  - League query expanded to fetch `playoff_bracket` and `player_name_cache`
+  - New `season_stats` query fetches all player stats for leader computation
+  - Archive insert now includes `champion`, `playoff_results`, `league_leaders`
+  - Season reset: deletes `season_stats`, `schedule`, `game_logs` via parallel Promise.all
+  - Team records reset: `wins=0, losses=0, runs_scored=0, runs_allowed=0`
+  - League update clears `playoff_bracket` along with status reset
+  - GET with `seasonId` query param returns full single archive detail
+  - 7 new tests in `archive.test.ts`
+
+- **Modified `src/hooks/useArchive.ts` -- detail fetch support**
+  - Added `ArchiveDetail` interface with `standings`, `playoffResults`, `leagueLeaders`
+  - Added `fetchDetail(seasonId)` and `clearDetail()` functions
+  - Hook now returns `detail`, `detailLoading`, `fetchDetail`, `clearDetail`
+
+- **Modified `src/features/archive/SeasonDetail.tsx` -- enriched display**
+  - Props changed from `standings` to `playoffResults` and `leagueLeaders`
+  - Displays World Series completion status when playoff results available
+  - Renders batting and pitching leader tables (top 5 per category)
+  - Rate stats (BA, ERA, WHIP) formatted to 3 decimal places
+
+- **Modified `src/features/archive/ArchivePage.tsx` -- detail flow**
+  - Selecting a season fetches full detail via `fetchDetail()`
+  - Passes enriched data to `SeasonDetail`
+
+- **New tests: 12 total** (5 builder + 7 API)
+- **Test suite: 2,567 tests across 224 files (all passing)**
+
 ## 2026-02-10 - CPU Trade Auto-Evaluation (Phase 38)
 
 ### Phase 38: CPU Trade Auto-Evaluation (REQ-RST-005, REQ-AI-006)

@@ -34,6 +34,10 @@ describe('ArchivePage', () => {
       seasons: [],
       isLoading: false,
       error: null,
+      detail: null,
+      detailLoading: false,
+      fetchDetail: vi.fn(),
+      clearDetail: vi.fn(),
     });
   });
 
@@ -65,6 +69,10 @@ describe('ArchivePage', () => {
       seasons: [],
       isLoading: true,
       error: null,
+      detail: null,
+      detailLoading: false,
+      fetchDetail: vi.fn(),
+      clearDetail: vi.fn(),
     });
     render(<ArchivePage />);
     expect(screen.getByText('Loading archives...')).toBeInTheDocument();
@@ -77,6 +85,10 @@ describe('ArchivePage', () => {
       ],
       isLoading: false,
       error: null,
+      detail: null,
+      detailLoading: false,
+      fetchDetail: vi.fn(),
+      clearDetail: vi.fn(),
     });
 
     render(<ArchivePage />);
@@ -114,6 +126,10 @@ describe('ArchivePage', () => {
       seasons: [],
       isLoading: false,
       error: 'Failed to load archives',
+      detail: null,
+      detailLoading: false,
+      fetchDetail: vi.fn(),
+      clearDetail: vi.fn(),
     });
 
     render(<ArchivePage />);

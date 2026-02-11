@@ -1,10 +1,10 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-10
-**Test suite:** 2,516 tests across 220 files (all passing)
+**Test suite:** 2,554 tests across 223 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
-**SQL migrations:** 17
+**SQL migrations:** 18
 
 ---
 
@@ -243,6 +243,25 @@ Seven-layer architecture with strict downward-only imports:
 - API GET/POST draft response fixes (currentTeamId, round, pick, nextTeamId)
 - DraftBoardPage wired with timer + auto-pick
 
+### Phase 36 -- Free Agent Pickup Flow (REQ-RST-005)
+- AddDropForm with search-as-you-type free agent pool browsing
+- Add player service wiring (roster insert + player_pool status update)
+- Drop player pool sync (return all seasons to free agent pool)
+- Search endpoint reuse from draft available players
+
+### Phase 37 -- Transaction History Persistence (REQ-RST-005)
+- `transactions` table (migration 00018) with JSONB details
+- L1 transform (`transformTransactionRows`) for history display
+- API write (audit rows on add/drop/trade) + read (`?include=history`)
+- Transaction service URL fix, layer violation cleanup
+
+### Phase 38 -- CPU Trade Auto-Evaluation (REQ-RST-005, REQ-AI-006)
+- L1 `buildTradeEvalRequest` helper (shared by API + client)
+- API gates CPU trades (owner_id=null) behind `evaluateTradeTemplate()`
+- CPU managers use personality profile thresholds for accept/reject/counter
+- Client eval preview uses target team's actual manager profile
+- Trade rejection displayed via ErrorBanner with manager reasoning
+
 ---
 
 ## REQ-* Coverage by Category
@@ -256,7 +275,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-SIM | 16 | Done | Full APBA simulation engine, all mechanics ported |
 | REQ-LGE | 8 of 10 | Mostly done | Creation, join, invite keys, divisions, playoffs, commissioner |
 | REQ-DFT | 8 | Done | Snake draft, AI drafter, valuation, timer, roster validation |
-| REQ-RST | 5 of 6 | Mostly done | Lineup gen, lineup update, roster validation, pitcher assignments |
+| REQ-RST | 6 | Done | Lineup gen, lineup update, roster validation, add/drop, trade eval, transactions |
 | REQ-SCH | 7 of 9 | Mostly done | Schedule gen, simulate buttons, standings update, playoff transition |
 | REQ-STS | 5 | Done | Accumulation, derived stats, leaders, team stats, trad/adv toggle |
 | REQ-AI | 8 | Done | 4 manager profiles, Claude API, 5 AI features, template fallbacks |
@@ -267,7 +286,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-COMP | 11 of 13 | Mostly done | Design tokens, components, routing, accessibility |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
-| REQ-TEST | 14 of 18 | Mostly done | 2,449 tests, TDD, traceability, E2E, benchmarks |
+| REQ-TEST | 14 of 18 | Mostly done | 2,554 tests, TDD, traceability, E2E, benchmarks |
 | REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json |
 
 ### UI Pages (REQ-UI)
@@ -291,12 +310,10 @@ Seven-layer architecture with strict downward-only imports:
 
 ### High Priority (Core Functionality Gaps)
 
-1. **REQ-RST-005: Free agent add/drop + transaction history**
-   - Drop works, Add player UI is stubbed (onAdd callback is empty)
-   - No free agent pool browsing UI (available players endpoint exists from draft)
-   - No transactions table in DB -- history never persisted
-   - Trade acceptance flow for human-controlled teams not implemented
-   - CPU trade evaluation not wired (template evaluator exists)
+1. **REQ-SCH-009: Season archive persistence + season reset**
+   - SeasonCompletePanel with archive button exists (Phase 33)
+   - Archive API and storage exist but full persistence to Supabase Storage needs verification
+   - Reset-for-new-season flow (stats reset, rosters remain, new schedule) not fully wired
 
 ### Medium Priority (Polish & NFR Compliance)
 
@@ -379,12 +396,12 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 35 |
-| Test files | 220 |
-| Total tests | 2,516 |
+| Phases completed | 38 |
+| Test files | 223 |
+| Total tests | 2,554 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
-| SQL migrations | 17 |
+| SQL migrations | 18 |
 | Zustand stores | 6 |
 | React hooks | 14 |
 | Feature directories | 15 |

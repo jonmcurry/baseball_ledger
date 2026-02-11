@@ -1,14 +1,15 @@
-﻿/**
+/**
  * ArchivePage
  *
  * Historical season archive and records.
  * Fetches archived seasons via useArchive hook.
  * Shows StampAnimation when league status is 'completed'.
  *
+ * REQ-SCH-009: Archive detail with champion, playoff results, league leaders.
+ *
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useState } from 'react';
 import { useLeague } from '@hooks/useLeague';
 import { useArchive } from '@hooks/useArchive';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
@@ -18,9 +19,16 @@ import { SeasonList } from './SeasonList';
 import { SeasonDetail } from './SeasonDetail';
 
 export function ArchivePage() {
-  const { league, standings, isLoading, error, leagueStatus } = useLeague();
-  const { seasons: archivedSeasons, isLoading: archiveLoading, error: archiveError } = useArchive(league?.id ?? '');
-  const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
+  const { league, isLoading, error, leagueStatus } = useLeague();
+  const {
+    seasons: archivedSeasons,
+    isLoading: archiveLoading,
+    error: archiveError,
+    detail,
+    detailLoading,
+    fetchDetail,
+    clearDetail,
+  } = useArchive(league?.id ?? '');
 
   const loading = isLoading || archiveLoading;
   const displayError = error || archiveError;
@@ -37,7 +45,13 @@ export function ArchivePage() {
     runnerUp: '',
   }));
 
-  const selectedArchive = archivedSeasons.find((s) => s.id === selectedSeason);
+  const handleSelect = (seasonId: string) => {
+    fetchDetail(seasonId);
+  };
+
+  const handleBack = () => {
+    clearDetail();
+  };
 
   return (
     <div className="space-y-gutter-lg">
@@ -47,26 +61,29 @@ export function ArchivePage() {
 
       {displayError && <ErrorBanner severity="error" message={displayError} />}
 
-      {!selectedSeason && (
+      {!detail && (
         <SeasonList
           seasons={seasonListData}
-          onSelect={setSelectedSeason}
+          onSelect={handleSelect}
         />
       )}
 
-      {selectedSeason && (
+      {detailLoading && <LoadingLedger message="Loading season detail..." />}
+
+      {detail && !detailLoading && (
         <div className="space-y-3">
           <button
             type="button"
-            onClick={() => setSelectedSeason(null)}
+            onClick={handleBack}
             className="text-xs text-ballpark hover:underline"
           >
             Back to Archive
           </button>
           <SeasonDetail
-            year={selectedArchive?.seasonNumber ?? 0}
-            champion={selectedArchive?.champion ?? 'Unknown'}
-            standings={standings}
+            year={detail.seasonNumber}
+            champion={detail.champion ?? 'Unknown'}
+            playoffResults={detail.playoffResults}
+            leagueLeaders={detail.leagueLeaders}
           />
         </div>
       )}
