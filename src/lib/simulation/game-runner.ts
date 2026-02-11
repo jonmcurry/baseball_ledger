@@ -208,6 +208,7 @@ function initPitcherState(): PitcherGameState {
     currentInning: 1,
     isShutout: true,
     isNoHitter: true,
+    runDeficit: 0,
   };
 }
 
@@ -374,6 +375,9 @@ export function runGame(config: RunGameConfig): GameResult {
 
       // -- Manager AI pre-pitch decisions --
       const situation = buildGameSituation(state, batterCard, fieldingPitcherState, fieldingPitcher, battingBench);
+
+      // Update fielding pitcher's run deficit (REQ-SIM-011 trigger #4)
+      fieldingPitcherState.runDeficit = situation.scoreDiff;
 
       // 1. Pitcher pull check (fielding team manager)
       if (evaluatePitcherPullDecision(fieldingProfile, situation, rng) &&

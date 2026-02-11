@@ -56,6 +56,7 @@ function makePitcherState(overrides: Partial<PitcherGameState> = {}): PitcherGam
     currentInning: 1,
     isShutout: false,
     isNoHitter: false,
+    runDeficit: 0,
     ...overrides,
   };
 }
@@ -160,6 +161,46 @@ describe('shouldRemoveStarter (REQ-SIM-011)', () => {
       inningsPitched: 6,
       consecutiveHitsWalks: 2,
       currentInning: 6,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(false);
+  });
+
+  it('triggers when losing by 5+ runs after the 6th inning (trigger #4)', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 6,
+      currentInning: 7,
+      runDeficit: 5,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(true);
+  });
+
+  it('triggers when losing by more than 5 runs after the 6th', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 7,
+      currentInning: 8,
+      runDeficit: 8,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(true);
+  });
+
+  it('does not trigger for 5+ deficit in the 6th inning or earlier', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 5,
+      currentInning: 6,
+      runDeficit: 7,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(false);
+  });
+
+  it('does not trigger for < 5 run deficit after the 6th', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 6,
+      currentInning: 7,
+      runDeficit: 4,
     });
     expect(shouldRemoveStarter(pitcher, state)).toBe(false);
   });

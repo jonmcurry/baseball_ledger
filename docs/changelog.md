@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-02-11 - Simulation Gaps + Performance Benchmark (Phase 60)
+
+### Phase 60: REQ-SIM-011, REQ-NFR-002, REQ-COMP-008
+
+Closes the last simulation gap (pitcher removal trigger #4), adds a full-season
+performance benchmark, and verifies dashboard loading/progress composition.
+
+- **REQ-SIM-011 trigger #4: Blowout deficit pitcher removal**
+  - Added `runDeficit` field to `PitcherGameState` interface
+  - Implemented trigger #4 in `shouldRemoveStarter()`: losing by 5+ after 6th
+  - Game runner now updates `runDeficit` on pitcher state before pull checks
+  - 4 new tests: deficit >= 5 after 6th triggers, < 5 or <= 6th inning does not
+
+- **REQ-NFR-002: Full season benchmark test**
+  - Created `tests/unit/lib/simulation/benchmark-season.test.ts`
+  - Simulates 1,296 games (16 teams x 162 days x 8 games/day)
+  - Asserts < 60s wall-clock time; reports throughput (games/sec)
+  - Result: ~0.12s, ~10,800 games/sec on local machine
+
+- **REQ-COMP-008: Dashboard loading/progress structural tests**
+  - 3 new architecture tests verifying DashboardPage integrates LoadingLedger
+    and SimulationControls with accessible progressbar (ARIA attributes)
+
+**Test count**: 2,773 across 244 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - Coverage Close-Out + Meta-Tests (Phase 59)
 
 ### Phase 59: REQ-COMP-011, REQ-TEST-010

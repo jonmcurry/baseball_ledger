@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,765 tests across 244 files (all passing)
+**Test suite:** 2,773 tests across 244 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -426,7 +426,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-MIG | 12 of 13 | Done* | 19 migrations, RLS, seed data, pgTAP stubs (*REQ-MIG-013 needs Docker for auto-gen) |
 | REQ-NFR | 21 | Done | Performance, determinism, Web Worker, chunked sim, pagination, Realtime infra ready |
 | REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
-| REQ-TEST | 18 | Done | 2,765 tests, TDD, traceability current, meta-coverage test, per-dir thresholds, E2E, benchmarks |
+| REQ-TEST | 18 | Done | 2,773 tests, TDD, traceability current, meta-coverage test, per-dir thresholds, E2E, benchmarks |
 | REQ-ENV | 10 | Done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore, secrets management, rotation policy |
 
 ### UI Pages (REQ-UI)
@@ -483,7 +483,7 @@ require external infrastructure (Docker, Supabase Cloud, Vercel deployment).
 |--------|-------|
 | Phases completed | 59 |
 | Test files | 244 |
-| Total tests | 2,765 |
+| Total tests | 2,773 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |

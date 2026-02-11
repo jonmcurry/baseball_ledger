@@ -16,7 +16,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-SIM-008 Stolen bases | `tests/unit/lib/simulation/stolen-base.test.ts` |
 | REQ-SIM-009 Pitching management | `tests/unit/lib/simulation/pitching.test.ts` |
 | REQ-SIM-010 Manager AI | `tests/unit/lib/simulation/manager-ai.test.ts` |
-| REQ-SIM-011 Bunt resolution | `tests/unit/lib/simulation/bunt-resolver.test.ts` |
+| REQ-SIM-011 Starter removal triggers | `tests/unit/lib/simulation/pitching.test.ts`, `tests/unit/lib/simulation/bunt-resolver.test.ts` |
 | REQ-SIM-012 Archetype modifiers | `tests/unit/lib/simulation/archetype-modifier.test.ts` |
 | REQ-SIM-013 Platoon advantage | `tests/unit/lib/simulation/platoon.test.ts` |
 | REQ-SIM-014 Power rating | `tests/unit/lib/simulation/power-rating.test.ts` |
@@ -93,7 +93,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | Requirement | Test File(s) |
 |-------------|-------------|
 | REQ-NFR-001 Single game < 500ms | `tests/bench/simulation.bench.ts` |
-| REQ-NFR-002 Season < 60s | `tests/bench/simulation.bench.ts` |
+| REQ-NFR-002 Season < 60s | `tests/unit/lib/simulation/benchmark-season.test.ts`, `tests/bench/simulation.bench.ts` |
 | REQ-NFR-003 CSV parse < 10s | `tests/bench/csv-parse.bench.ts` |
 | REQ-NFR-007 Determinism | `tests/unit/lib/simulation/determinism.test.ts` |
 | REQ-NFR-008 Web Worker | `tests/unit/workers/simulation-worker.test.ts`, `tests/unit/lib/simulation/worker-api.test.ts` |

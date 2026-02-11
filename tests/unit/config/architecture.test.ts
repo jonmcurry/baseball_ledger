@@ -179,4 +179,37 @@ describe('Architecture requirements (REQ-ARCH)', () => {
       expect(lineCount).toBeLessThanOrEqual(1000);
     }
   });
+
+  // -----------------------------------------------------------------------
+  // REQ-COMP-008: Feature pages follow loading/error/empty/data pattern
+  // -----------------------------------------------------------------------
+
+  it('REQ-COMP-008: DashboardPage imports LoadingLedger for loading state', () => {
+    const dashSrc = readFileSync(
+      resolve(SRC_DIR, 'features', 'dashboard', 'DashboardPage.tsx'),
+      'utf-8',
+    );
+    expect(dashSrc).toContain("import { LoadingLedger }");
+    expect(dashSrc).toContain('<LoadingLedger');
+  });
+
+  it('REQ-COMP-008: DashboardPage imports SimulationControls with progress', () => {
+    const dashSrc = readFileSync(
+      resolve(SRC_DIR, 'features', 'dashboard', 'DashboardPage.tsx'),
+      'utf-8',
+    );
+    expect(dashSrc).toContain("import { SimulationControls }");
+    expect(dashSrc).toContain('progressPct');
+  });
+
+  it('REQ-COMP-008: SimulationControls renders an accessible progressbar', () => {
+    const ctrlSrc = readFileSync(
+      resolve(SRC_DIR, 'features', 'dashboard', 'SimulationControls.tsx'),
+      'utf-8',
+    );
+    expect(ctrlSrc).toContain('role="progressbar"');
+    expect(ctrlSrc).toContain('aria-valuenow');
+    expect(ctrlSrc).toContain('aria-valuemin');
+    expect(ctrlSrc).toContain('aria-valuemax');
+  });
 });

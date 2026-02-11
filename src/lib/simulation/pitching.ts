@@ -35,6 +35,12 @@ const CONSECUTIVE_HW_THRESHOLD = 3;
 /** Inning after which consecutive H/W trigger applies */
 const CONSECUTIVE_HW_INNING_MIN = 6;
 
+/** Run deficit threshold for blowout removal (REQ-SIM-011 trigger #4) */
+const BLOWOUT_DEFICIT_THRESHOLD = 5;
+
+/** Inning at which blowout removal applies (after the 6th = 7th+) */
+const BLOWOUT_INNING_MIN = 7;
+
 /** Maximum lead margin for closer entry */
 const CLOSER_MAX_LEAD = 3;
 
@@ -54,6 +60,8 @@ export interface PitcherGameState {
   currentInning: number;
   isShutout: boolean;
   isNoHitter: boolean;
+  /** How many runs the pitcher's team is losing by (positive = losing, 0 = tied/winning) */
+  runDeficit: number;
 }
 
 /**
@@ -93,7 +101,7 @@ export function computeEffectiveGrade(
  * 1. Effective grade has dropped to 50% or less of starting grade
  * 2. 4+ earned runs AND 4+ innings pitched
  * 3. 3 consecutive hits/walks in an inning after the 5th
- * 4. (Losing by 5+ handled at game engine level, not here)
+ * 4. Losing by 5+ runs after the 6th inning
  *
  * Per REQ-SIM-013 exception: do NOT pull if shutout or no-hitter in progress.
  */
@@ -126,6 +134,14 @@ export function shouldRemoveStarter(
   if (
     state.consecutiveHitsWalks >= CONSECUTIVE_HW_THRESHOLD &&
     state.currentInning >= CONSECUTIVE_HW_INNING_MIN
+  ) {
+    return true;
+  }
+
+  // Trigger 4: Losing by 5+ runs after the 6th inning
+  if (
+    state.runDeficit >= BLOWOUT_DEFICIT_THRESHOLD &&
+    state.currentInning >= BLOWOUT_INNING_MIN
   ) {
     return true;
   }
