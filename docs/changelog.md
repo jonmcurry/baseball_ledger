@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-11 - League Deletion CASCADE Verification (Phase 49)
+
+### Phase 49: League Deletion CASCADE Verification (REQ-LGE-010)
+
+Verified all migration files have proper ON DELETE CASCADE constraints
+for league deletion. Added structural test that reads migration SQL and
+validates the constraint chain.
+
+- **Created `tests/unit/migrations/cascade-delete.test.ts`** (11 tests)
+  - 8 tests verify league_id FK ON DELETE CASCADE (teams, schedule, season_stats,
+    game_logs, archives, simulation_progress, player_pool, transactions)
+  - 1 test verifies team_id FK ON DELETE CASCADE (rosters)
+  - 1 test verifies leagues table exists as root entity
+  - 1 test verifies expected migration file count (18)
+
+- All 9 child tables correctly cascade on league deletion
+- Storage cleanup not needed (stats_storage_path always null currently)
+
+**Tests:** 2,646 tests across 231 files (11 new)
+
 ## 2026-02-11 - Immer Middleware for draftStore (Phase 48)
 
 ### Phase 48: Immer Middleware for draftStore (REQ-STATE-005)

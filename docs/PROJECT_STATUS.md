@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,635 tests across 230 files (all passing)
+**Test suite:** 2,646 tests across 231 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--48)
+## Completed Phases (1--49)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -327,6 +327,12 @@ Seven-layer architecture with strict downward-only imports:
 - submitPick now uses direct mutations instead of manual spread-copy
 - All 3 stores with nested state now use immer: leagueStore, rosterStore, draftStore
 
+### Phase 49 -- League Deletion CASCADE Verification (REQ-LGE-010)
+- Verified all 9 child tables have ON DELETE CASCADE for league_id FK
+- Structural migration test reads SQL files and validates constraint chain
+- Rosters cascade via team_id -> teams -> leagues chain
+- 11 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -385,9 +391,9 @@ Seven-layer architecture with strict downward-only imports:
    - Not actively used since Phase 31 moved to client-driven approach
    - Could be useful for multi-player leagues where one user watches another simulate
 
-3. **REQ-STATE-005: Immer middleware**
-   - leagueStore uses immer, but other stores with nested state updates could benefit
-   - Low priority since current stores work correctly
+3. **REQ-STATE-005: Immer middleware** -- DONE (Phase 48)
+   - leagueStore, rosterStore, draftStore all use immer
+   - statsStore, simulationStore, authStore correctly exempt (flat state per SRD)
 
 4. **REQ-NFR-017: Bundle size < 200KB gzipped** -- VERIFIED
    - Route-level code splitting with React.lazy + Suspense in place
@@ -404,10 +410,10 @@ Seven-layer architecture with strict downward-only imports:
 
 ### Lower Priority (Nice-to-Have / Future)
 
-7. **REQ-LGE-010: League deletion**
-   - DeleteLeagueButton component exists
-   - API endpoint exists (DELETE /api/leagues/:id)
-   - Cascade deletion of all related data needs verification
+7. **REQ-LGE-010: League deletion** -- VERIFIED (Phase 49)
+   - DeleteLeagueButton component exists with typed-name confirmation
+   - API endpoint exists (DELETE /api/leagues/:id, commissioner-only)
+   - All 9 child tables verified ON DELETE CASCADE via structural test
 
 8. **REQ-MIG-009: Full pgTAP coverage**
    - 40 assertions exist across 6 test files
