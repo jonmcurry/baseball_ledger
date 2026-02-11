@@ -35,3 +35,7 @@ test-results/
 /BBW
 
 .vercel
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
