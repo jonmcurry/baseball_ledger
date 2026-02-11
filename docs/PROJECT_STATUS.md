@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--47)
+## Completed Phases (1--48)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -321,6 +321,11 @@ Seven-layer architecture with strict downward-only imports:
 - PlayerCardDisplay: `max-w-[480px]` desktop, `max-md:mx-4 max-md:max-w-none` mobile
 - Font optimization tests: font-display: swap + Latin unicode-range subsetting
 - 22 new tests (20 responsive + 2 font)
+
+### Phase 48 -- Immer Middleware for draftStore (REQ-STATE-005)
+- Added immer middleware to draftStore for clean nested-state mutations
+- submitPick now uses direct mutations instead of manual spread-copy
+- All 3 stores with nested state now use immer: leagueStore, rosterStore, draftStore
 
 ---
 

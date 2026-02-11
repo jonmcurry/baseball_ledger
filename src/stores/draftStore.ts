@@ -3,12 +3,14 @@
  *
  * Zustand store for draft state management.
  * No persistence -- draft state is transient.
+ * Uses immer middleware for clean nested-state mutations (REQ-STATE-005).
  *
  * Layer 4: State management. Uses draft-service for API calls.
  */
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 import type { DraftState, DraftPickResult } from '@lib/types/draft';
 import type { PlayerFilterOptions } from '@services/draft-service';
 import { transformPoolRows } from '@lib/transforms/player-pool-transform';
@@ -49,38 +51,38 @@ const initialState: DraftStoreState = {
 
 export const useDraftStore = create<DraftStoreType>()(
   devtools(
-    (set) => ({
+    immer((set) => ({
       ...initialState,
 
       fetchDraftState: async (leagueId) => {
-        set({ isLoading: true, error: null }, false, 'fetchDraftState/start');
+        set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchDraftState/start');
         try {
-          const state = await draftService.fetchDraftState(leagueId);
-          set({ draftState: state, isLoading: false }, false, 'fetchDraftState/success');
+          const data = await draftService.fetchDraftState(leagueId);
+          set((state) => { state.draftState = data; state.isLoading = false; }, false, 'fetchDraftState/success');
         } catch (err) {
-          set({
-            isLoading: false,
-            error: err instanceof Error ? err.message : 'Failed to fetch draft state',
+          set((state) => {
+            state.isLoading = false;
+            state.error = err instanceof Error ? err.message : 'Failed to fetch draft state';
           }, false, 'fetchDraftState/error');
         }
       },
 
       fetchAvailablePlayers: async (leagueId, filters) => {
-        set({ isLoading: true, error: null }, false, 'fetchAvailablePlayers/start');
+        set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchAvailablePlayers/start');
         try {
           const rows = await draftService.fetchAvailablePlayers(leagueId, filters);
           const players = transformPoolRows(rows);
-          set({ availablePlayers: players, isLoading: false }, false, 'fetchAvailablePlayers/success');
+          set((state) => { state.availablePlayers = players; state.isLoading = false; }, false, 'fetchAvailablePlayers/success');
         } catch (err) {
-          set({
-            isLoading: false,
-            error: err instanceof Error ? err.message : 'Failed to fetch available players',
+          set((state) => {
+            state.isLoading = false;
+            state.error = err instanceof Error ? err.message : 'Failed to fetch available players';
           }, false, 'fetchAvailablePlayers/error');
         }
       },
 
       submitPick: async (leagueId, player) => {
-        set({ isLoading: true, error: null }, false, 'submitPick/start');
+        set((state) => { state.isLoading = true; state.error = null; }, false, 'submitPick/start');
         try {
           const result: DraftPickResult = await draftService.submitPick(leagueId, {
             playerId: player.playerId,
@@ -89,44 +91,45 @@ export const useDraftStore = create<DraftStoreType>()(
             seasonYear: player.seasonYear,
             playerCard: player.playerCard as unknown as Record<string, unknown>,
           });
-          set((state) => ({
-            isLoading: false,
-            draftState: state.draftState ? {
-              ...state.draftState,
-              picks: [...state.draftState.picks, result],
-              currentPick: state.draftState.currentPick + 1,
-              currentTeamId: result.nextTeamId,
-              status: result.isComplete ? 'completed' : 'in_progress',
-            } : null,
-            availablePlayers: state.availablePlayers.filter((p) => p.playerId !== player.playerId),
-          }), false, 'submitPick/success');
+          set((state) => {
+            state.isLoading = false;
+            if (state.draftState) {
+              state.draftState.picks.push(result);
+              state.draftState.currentPick += 1;
+              state.draftState.currentTeamId = result.nextTeamId;
+              state.draftState.status = result.isComplete ? 'completed' : 'in_progress';
+            }
+            state.availablePlayers = state.availablePlayers.filter(
+              (p) => p.playerId !== player.playerId,
+            );
+          }, false, 'submitPick/success');
         } catch (err) {
-          set({
-            isLoading: false,
-            error: err instanceof Error ? err.message : 'Failed to submit pick',
+          set((state) => {
+            state.isLoading = false;
+            state.error = err instanceof Error ? err.message : 'Failed to submit pick';
           }, false, 'submitPick/error');
         }
       },
 
       setAvailablePlayers: (players) =>
-        set({ availablePlayers: players }, false, 'setAvailablePlayers'),
+        set((state) => { state.availablePlayers = players; }, false, 'setAvailablePlayers'),
 
       tickTimer: () =>
-        set((state) => ({
-          pickTimerSeconds: Math.max(0, state.pickTimerSeconds - 1),
-        }), false, 'tickTimer'),
+        set((state) => {
+          state.pickTimerSeconds = Math.max(0, state.pickTimerSeconds - 1);
+        }, false, 'tickTimer'),
 
       resetTimer: (seconds) =>
-        set({ pickTimerSeconds: seconds }, false, 'resetTimer'),
+        set((state) => { state.pickTimerSeconds = seconds; }, false, 'resetTimer'),
 
       setLoading: (loading) =>
-        set({ isLoading: loading }, false, 'setLoading'),
+        set((state) => { state.isLoading = loading; }, false, 'setLoading'),
 
       setError: (error) =>
-        set({ error }, false, 'setError'),
+        set((state) => { state.error = error; }, false, 'setError'),
 
-      reset: () => set(initialState, false, 'reset'),
-    }),
+      reset: () => set((state) => { Object.assign(state, initialState); }, false, 'reset'),
+    })),
     { name: 'DraftStore' },
   ),
 );

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-11 - Immer Middleware for draftStore (Phase 48)
+
+### Phase 48: Immer Middleware for draftStore (REQ-STATE-005)
+
+Added immer middleware to draftStore for clean nested-state mutations.
+
+- **Modified `src/stores/draftStore.ts`**
+  - Added `immer` middleware wrapping the store creator
+  - Converted `submitPick` from manual spread-copy to direct mutations (`state.draftState.picks.push(result)`, `state.draftState.currentPick += 1`, etc.)
+  - Converted all `set({...})` calls to immer mutation syntax for consistency
+  - Follows same pattern as leagueStore and rosterStore
+
+**Tests:** 2,635 tests across 230 files (all existing tests pass unchanged)
+
 ## 2026-02-11 - Responsive Design (Phase 47)
 
 ### Phase 47: Responsive Design (REQ-UI-013, REQ-COMP-010)
