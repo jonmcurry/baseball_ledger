@@ -10,12 +10,20 @@ vi.mock('../../../../../api/_lib/validate', () => ({
 vi.mock('@lib/draft/trade-validator', () => ({
   validateTradeRosters: vi.fn(),
 }));
+vi.mock('../../../../../src/lib/transforms/trade-eval-request-builder', () => ({
+  buildTradeEvalRequest: vi.fn(),
+}));
+vi.mock('../../../../../src/lib/ai/template-trade-eval', () => ({
+  evaluateTradeTemplate: vi.fn(),
+}));
 
 import handler from '../../../../../api/leagues/[id]/teams';
 import { createServerClient } from '@lib/supabase/server';
 import { requireAuth } from '../../../../../api/_lib/auth';
 import { validateBody } from '../../../../../api/_lib/validate';
 import { validateTradeRosters } from '@lib/draft/trade-validator';
+import { buildTradeEvalRequest } from '../../../../../src/lib/transforms/trade-eval-request-builder';
+import { evaluateTradeTemplate } from '../../../../../src/lib/ai/template-trade-eval';
 import {
   createMockRequest,
   createMockResponse,
@@ -26,11 +34,27 @@ const mockCreateServerClient = vi.mocked(createServerClient);
 const mockRequireAuth = vi.mocked(requireAuth);
 const mockValidateBody = vi.mocked(validateBody);
 const mockValidateTradeRosters = vi.mocked(validateTradeRosters);
+const mockBuildTradeEvalRequest = vi.mocked(buildTradeEvalRequest);
+const mockEvaluateTradeTemplate = vi.mocked(evaluateTradeTemplate);
 
 beforeEach(() => {
   vi.clearAllMocks();
   mockRequireAuth.mockResolvedValue({ userId: 'user-123', email: 'test@example.com' });
   mockValidateBody.mockImplementation((req) => req.body as any);
+  mockBuildTradeEvalRequest.mockReturnValue({
+    managerStyle: 'balanced',
+    managerName: 'Johnny McCoy',
+    teamName: 'Test Team',
+    playersOffered: [],
+    playersRequested: [],
+    teamNeeds: [],
+  });
+  mockEvaluateTradeTemplate.mockReturnValue({
+    recommendation: 'accept',
+    reasoning: 'Fair trade',
+    valueDiff: 0.05,
+    source: 'template',
+  });
 });
 
 // ---------- General ----------
@@ -1130,6 +1154,163 @@ describe('POST /api/leagues/:id/teams (transactions)', () => {
 
       expect(res._status).toBe(201);
       expect(mockFrom).toHaveBeenCalledWith('transactions');
+    });
+
+    // REQ-RST-005, REQ-AI-006: CPU trade auto-evaluation
+
+    function setupCpuTradeEnv(opts: {
+      targetOwner?: string | null;
+      managerProfile?: string;
+      evalResult?: { recommendation: string; reasoning: string; valueDiff: number; source: string };
+    } = {}) {
+      const teamsBuilder = createMockQueryBuilder();
+      teamsBuilder.single
+        .mockResolvedValueOnce({
+          data: { id: TEAM_A_ID, owner_id: 'user-123', league_id: 'league-1' },
+          error: null,
+          count: null,
+        })
+        .mockResolvedValueOnce({
+          data: {
+            id: TEAM_B_ID,
+            owner_id: opts.targetOwner !== undefined ? opts.targetOwner : null,
+            league_id: 'league-1',
+            manager_profile: opts.managerProfile ?? 'balanced',
+            name: 'Tigers',
+            city: 'Detroit',
+          },
+          error: null,
+          count: null,
+        });
+
+      const rostersBuilder = createMockQueryBuilder({ data: [], error: null, count: null });
+      const txBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+      const mockFrom = vi.fn().mockImplementation((table: string) => {
+        if (table === 'teams') return teamsBuilder;
+        if (table === 'rosters') return rostersBuilder;
+        if (table === 'transactions') return txBuilder;
+        return createMockQueryBuilder();
+      });
+      mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+      mockValidateTradeRosters.mockReturnValue({ valid: true, errors: [] });
+
+      if (opts.evalResult) {
+        mockEvaluateTradeTemplate.mockReturnValue(opts.evalResult as any);
+      }
+
+      return { mockFrom, txBuilder };
+    }
+
+    it('CPU team trade with accept executes trade (201)', async () => {
+      setupCpuTradeEnv({
+        targetOwner: null,
+        evalResult: { recommendation: 'accept', reasoning: 'Fair trade', valueDiff: 0.05, source: 'template' },
+      });
+
+      const req = createMockRequest({
+        method: 'POST',
+        query: { id: 'league-1' },
+        body: {
+          type: 'trade',
+          teamId: TEAM_A_ID,
+          targetTeamId: TEAM_B_ID,
+          playersFromMe: ['p-1'],
+          playersFromThem: ['p-2'],
+        },
+        headers: { authorization: 'Bearer token' },
+      });
+      const res = createMockResponse();
+
+      await handler(req as any, res as any);
+
+      expect(res._status).toBe(201);
+      expect(mockEvaluateTradeTemplate).toHaveBeenCalled();
+    });
+
+    it('CPU team trade with reject returns 409 with evaluation details', async () => {
+      setupCpuTradeEnv({
+        targetOwner: null,
+        evalResult: { recommendation: 'reject', reasoning: 'Not interested', valueDiff: -0.20, source: 'template' },
+      });
+
+      const req = createMockRequest({
+        method: 'POST',
+        query: { id: 'league-1' },
+        body: {
+          type: 'trade',
+          teamId: TEAM_A_ID,
+          targetTeamId: TEAM_B_ID,
+          playersFromMe: ['p-1'],
+          playersFromThem: ['p-2'],
+        },
+        headers: { authorization: 'Bearer token' },
+      });
+      const res = createMockResponse();
+
+      await handler(req as any, res as any);
+
+      expect(res._status).toBe(409);
+      expect(res._body.error).toHaveProperty('code', 'TRADE_REJECTED');
+      expect(res._body.error.message).toBe('Not interested');
+    });
+
+    it('CPU team trade uses target team manager_profile', async () => {
+      setupCpuTradeEnv({
+        targetOwner: null,
+        managerProfile: 'aggressive',
+        evalResult: { recommendation: 'accept', reasoning: 'Duke likes it', valueDiff: 0.01, source: 'template' },
+      });
+
+      const req = createMockRequest({
+        method: 'POST',
+        query: { id: 'league-1' },
+        body: {
+          type: 'trade',
+          teamId: TEAM_A_ID,
+          targetTeamId: TEAM_B_ID,
+          playersFromMe: ['p-1'],
+          playersFromThem: ['p-2'],
+        },
+        headers: { authorization: 'Bearer token' },
+      });
+      const res = createMockResponse();
+
+      await handler(req as any, res as any);
+
+      expect(res._status).toBe(201);
+      expect(mockBuildTradeEvalRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          managerStyle: 'aggressive',
+          managerName: 'Duke Robinson',
+          teamName: 'Detroit Tigers',
+        }),
+      );
+    });
+
+    it('human team trade executes immediately without evaluation', async () => {
+      setupCpuTradeEnv({ targetOwner: 'user-456' });
+
+      const req = createMockRequest({
+        method: 'POST',
+        query: { id: 'league-1' },
+        body: {
+          type: 'trade',
+          teamId: TEAM_A_ID,
+          targetTeamId: TEAM_B_ID,
+          playersFromMe: ['p-1'],
+          playersFromThem: ['p-2'],
+        },
+        headers: { authorization: 'Bearer token' },
+      });
+      const res = createMockResponse();
+
+      await handler(req as any, res as any);
+
+      expect(res._status).toBe(201);
+      expect(mockEvaluateTradeTemplate).not.toHaveBeenCalled();
+      expect(mockBuildTradeEvalRequest).not.toHaveBeenCalled();
     });
   });
 

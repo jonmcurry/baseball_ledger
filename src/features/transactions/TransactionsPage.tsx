@@ -20,10 +20,12 @@ import { TradeEvaluationPanel } from './TradeEvaluationPanel';
 import { TransactionLog } from './TransactionLog';
 import type { TransactionEntry } from './TransactionLog';
 import type { TradePlayer, TradePayload } from './TradeForm';
-import type { TradeEvaluationRequest } from '@lib/types/ai';
 import type { RosterEntry } from '@lib/types/roster';
 import type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 import { transformPoolRows } from '@lib/transforms/player-pool-transform';
+import { buildTradeEvalRequest } from '@lib/transforms/trade-eval-request-builder';
+import { MANAGER_PROFILES } from '@lib/simulation/manager-profiles';
+import type { ManagerStyle } from '@lib/simulation/manager-profiles';
 import * as transactionService from '@services/transaction-service';
 import { fetchAvailablePlayers as fetchFreeAgents } from '@services/draft-service';
 import { fetchRoster } from '@services/roster-service';
@@ -46,6 +48,7 @@ export function TransactionsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingTrade, setPendingTrade] = useState<TradePayload | null>(null);
   const [targetRosterEntries, setTargetRosterEntries] = useState<RosterEntry[]>([]);
+  const [selectedTargetTeamId, setSelectedTargetTeamId] = useState<string | null>(null);
   const [availablePlayers, setAvailablePlayers] = useState<AvailablePlayer[]>([]);
   const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
 
@@ -121,6 +124,7 @@ export function TransactionsPage() {
 
   const handleTargetChange = useCallback(async (targetTeamId: string) => {
     if (!leagueId) return;
+    setSelectedTargetTeamId(targetTeamId);
     setTargetRoster([]);
     setTargetRosterEntries([]);
     try {
@@ -159,8 +163,14 @@ export function TransactionsPage() {
       transactionService.fetchTransactionHistory(leagueId)
         .then(setTransactions)
         .catch(() => {});
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Failed to submit trade');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setActionError(err.message);
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        setActionError(String((err as Record<string, unknown>).message));
+      } else {
+        setActionError('Failed to submit trade');
+      }
     }
   }, [leagueId, teamId, fetchMyRoster]);
 
@@ -168,39 +178,27 @@ export function TransactionsPage() {
     setPendingTrade(payload);
   }, []);
 
-  const tradeEvalRequest = useMemo((): TradeEvaluationRequest | null => {
+  const tradeEvalRequest = useMemo(() => {
     if (!pendingTrade) return null;
 
-    const findMyEntry = (pid: string) => roster.find((r) => r.playerId === pid);
-    const findTheirEntry = (pid: string) => targetRosterEntries.find((r) => r.playerId === pid);
+    // REQ-RST-005: Use target team's actual manager profile for eval preview
+    const targetTeam = selectedTargetTeamId
+      ? teams.find((t) => t.id === selectedTargetTeamId)
+      : null;
+    const managerStyle = (targetTeam?.managerProfile ?? 'balanced') as ManagerStyle;
+    const managerName = MANAGER_PROFILES[managerStyle].name;
+    const teamName = targetTeam ? `${targetTeam.city} ${targetTeam.name}` : 'Target Team';
 
-    const playersOffered = pendingTrade.playersFromMe.map((pid) => {
-      const entry = findMyEntry(pid);
-      return {
-        name: entry ? `${entry.playerCard.nameFirst} ${entry.playerCard.nameLast}` : pid,
-        position: entry?.playerCard.eligiblePositions?.[0] ?? 'UT',
-        value: entry?.playerCard.card?.reduce((a: number, b: number) => a + b, 0) ?? 50,
-      };
+    return buildTradeEvalRequest({
+      managerStyle,
+      managerName,
+      teamName,
+      rosterA: roster,
+      rosterB: targetRosterEntries,
+      playersFromA: pendingTrade.playersFromMe,
+      playersFromB: pendingTrade.playersFromThem,
     });
-
-    const playersRequested = pendingTrade.playersFromThem.map((pid) => {
-      const entry = findTheirEntry(pid);
-      return {
-        name: entry ? `${entry.playerCard.nameFirst} ${entry.playerCard.nameLast}` : pid,
-        position: entry?.playerCard.eligiblePositions?.[0] ?? 'UT',
-        value: entry?.playerCard.card?.reduce((a: number, b: number) => a + b, 0) ?? 50,
-      };
-    });
-
-    return {
-      managerStyle: 'balanced',
-      managerName: 'Manager',
-      teamName: myTeam ? `${myTeam.city} ${myTeam.name}` : 'My Team',
-      playersOffered,
-      playersRequested,
-      teamNeeds: [],
-    };
-  }, [pendingTrade, roster, targetRosterEntries, myTeam]);
+  }, [pendingTrade, roster, targetRosterEntries, teams, selectedTargetTeamId]);
 
   if (leagueLoading || isRosterLoading) {
     return <LoadingLedger message="Loading transactions..." />;

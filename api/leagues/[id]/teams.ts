@@ -22,6 +22,10 @@ import { createServerClient } from '@lib/supabase/server';
 import type { Database } from '@lib/types/database';
 import { validateTradeRosters } from '@lib/draft/trade-validator';
 import { transformTransactionRows } from '@lib/transforms/transaction-transform';
+import { buildTradeEvalRequest } from '@lib/transforms/trade-eval-request-builder';
+import { evaluateTradeTemplate } from '@lib/ai/template-trade-eval';
+import { MANAGER_PROFILES } from '@lib/simulation/manager-profiles';
+import type { ManagerStyle } from '@lib/simulation/manager-profiles';
 import type { RosterEntry } from '@lib/types/roster';
 import type { PlayerCard } from '@lib/types/player';
 
@@ -365,7 +369,7 @@ async function handleTrade(
 
   const { data: targetTeam, error: targetError } = await supabase
     .from('teams')
-    .select('id, owner_id, league_id')
+    .select('id, owner_id, league_id, manager_profile, name, city')
     .eq('id', body.targetTeamId)
     .single();
 
@@ -411,6 +415,46 @@ async function handleTrade(
       code: 'TRADE_COMPOSITION_VIOLATION',
       message: validation.errors.join('; '),
     };
+  }
+
+  // REQ-RST-005, REQ-AI-006: CPU trade auto-evaluation
+  if (targetTeam.owner_id === null) {
+    const managerStyle = (targetTeam.manager_profile ?? 'balanced') as ManagerStyle;
+    const managerName = MANAGER_PROFILES[managerStyle].name;
+    const teamName = `${targetTeam.city} ${targetTeam.name}`;
+
+    const evalRequest = buildTradeEvalRequest({
+      managerStyle,
+      managerName,
+      teamName,
+      rosterA: entriesA,
+      rosterB: entriesB,
+      playersFromA: body.playersFromMe,
+      playersFromB: body.playersFromThem,
+    });
+
+    const evaluation = evaluateTradeTemplate(evalRequest);
+
+    if (evaluation.recommendation !== 'accept') {
+      await supabase.from('transactions').insert({
+        league_id: leagueId,
+        team_id: body.teamId,
+        type: 'trade',
+        details: {
+          targetTeamId: body.targetTeamId,
+          playersFromMe: body.playersFromMe,
+          playersFromThem: body.playersFromThem,
+          status: 'rejected',
+          evaluation,
+        },
+      });
+
+      throw {
+        category: 'CONFLICT' as const,
+        code: 'TRADE_REJECTED',
+        message: evaluation.reasoning,
+      };
+    }
   }
 
   const fromMeSet = new Set(body.playersFromMe);

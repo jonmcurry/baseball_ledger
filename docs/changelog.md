@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-10 - CPU Trade Auto-Evaluation (Phase 38)
+
+### Phase 38: CPU Trade Auto-Evaluation (REQ-RST-005, REQ-AI-006)
+
+Trades with CPU-controlled teams (owner_id = null) are now gated behind the template trade evaluator. CPU managers evaluate proposals using their personality profile and respond instantly with accept, counter, or reject.
+
+- **Created `src/lib/transforms/trade-eval-request-builder.ts` (L1 helper)**
+  - `buildTradeEvalRequest()` builds a TradeEvaluationRequest from roster data and team metadata
+  - Maps player IDs to name/position/value using roster entries
+  - Computes card value as sum of APBA card bytes
+  - Computes team needs from positional gaps in roster
+  - 4 tests in `trade-eval-request-builder.test.ts`
+
+- **Modified `api/leagues/[id]/teams.ts` -- CPU trade gate**
+  - `handleTrade()` checks `targetTeam.owner_id === null` for CPU teams
+  - CPU trades evaluated via `evaluateTradeTemplate()` with target team's manager_profile
+  - Rejected trades logged to transactions table with evaluation details
+  - Returns 409 TRADE_REJECTED with manager reasoning on rejection
+  - Expanded target team query to include manager_profile, name, city
+  - 4 new tests in `teams.test.ts`
+
+- **Modified `src/features/transactions/TransactionsPage.tsx` -- eval preview fix**
+  - `tradeEvalRequest` useMemo now uses `buildTradeEvalRequest` (shared L1 logic)
+  - Looks up target team from `teams` array for actual manager profile
+  - Uses `MANAGER_PROFILES[style].name` instead of hardcoded 'Manager'
+  - Fixed trade error handling to display AppError messages from API
+
+- **Modified error handling in trade UI**
+  - `handleTrade` catch block now extracts messages from AppError objects (not just Error instances)
+  - CPU trade rejection reasoning displayed via existing ErrorBanner
+
+- **New tests: 10 total** (4 builder + 4 API + 2 UI)
+- **Test suite: 2,554 tests across 223 files (all passing)**
+
 ## 2026-02-10 - Transaction History Persistence (Phase 37)
 
 ### Phase 37: Transaction History Persistence (REQ-RST-005)
