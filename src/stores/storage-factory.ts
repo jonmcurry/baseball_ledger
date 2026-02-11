@@ -1,9 +1,12 @@
 /**
- * Storage Factory
+ * Storage Factory (REQ-STATE-010)
  *
  * Creates a safe localStorage wrapper for zustand persist middleware.
  * Falls back to in-memory storage when localStorage is unavailable
  * (e.g., SSR, private browsing, or testing environments).
+ *
+ * Exposes isMemoryFallback() so the UI can display a WARN-severity
+ * ErrorBanner when persistence is unavailable.
  */
 
 export interface SafeStorage {
@@ -11,6 +14,8 @@ export interface SafeStorage {
   setItem: (name: string, value: string) => void;
   removeItem: (name: string) => void;
 }
+
+let _isMemoryFallback = false;
 
 function isLocalStorageAvailable(): boolean {
   try {
@@ -23,8 +28,19 @@ function isLocalStorageAvailable(): boolean {
   }
 }
 
+/** Returns true if createSafeStorage fell back to in-memory storage. */
+export function isMemoryFallback(): boolean {
+  return _isMemoryFallback;
+}
+
+/** Reset internal state (for testing only). */
+export function resetStorageState(): void {
+  _isMemoryFallback = false;
+}
+
 export function createSafeStorage(): SafeStorage {
   if (isLocalStorageAvailable()) {
+    _isMemoryFallback = false;
     return {
       getItem: (name) => localStorage.getItem(name),
       setItem: (name, value) => localStorage.setItem(name, value),
@@ -33,6 +49,7 @@ export function createSafeStorage(): SafeStorage {
   }
 
   // In-memory fallback
+  _isMemoryFallback = true;
   const store = new Map<string, string>();
   return {
     getItem: (name) => store.get(name) ?? null,

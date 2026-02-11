@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,655 tests across 231 files (all passing)
+**Test suite:** 2,660 tests across 232 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--50)
+## Completed Phases (1--51)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -340,6 +340,11 @@ Seven-layer architecture with strict downward-only imports:
 - WARN per retry attempt, ERROR on final exhaustion
 - 9 new tests
 
+### Phase 51 -- localStorage Fallback Warning + Traceability (REQ-STATE-010, REQ-TEST-011)
+- Completed REQ-STATE-010: isMemoryFallback() detection + WARN ErrorBanner
+- Updated TRACEABILITY.md through Phase 51
+- 5 new tests (3 storage-factory + 2 AuthenticatedLayout)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -460,9 +465,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 46 |
-| Test files | 229 |
-| Total tests | 2,613 |
+| Phases completed | 51 |
+| Test files | 232 |
+| Total tests | 2,660 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |

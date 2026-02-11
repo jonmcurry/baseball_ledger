@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-02-11 - localStorage Fallback Warning + Traceability (Phase 51)
+
+### Phase 51: localStorage Fallback Warning (REQ-STATE-010) + Traceability Update (REQ-TEST-011)
+
+Completed REQ-STATE-010 by adding `isMemoryFallback()` detection to the
+storage factory and displaying a WARN-severity ErrorBanner in
+AuthenticatedLayout when localStorage is unavailable.
+
+- **Modified `src/stores/storage-factory.ts`**
+  - Added `isMemoryFallback()` export: returns true when createSafeStorage
+    fell back to in-memory Map storage
+  - Added `resetStorageState()` for test cleanup
+
+- **Modified `src/features/auth/AuthenticatedLayout.tsx`**
+  - Imports `isMemoryFallback` from storage factory
+  - Conditionally renders ErrorBanner with severity "warning" and message
+    "Browser storage unavailable -- data will not persist between sessions."
+
+- **Modified `tests/unit/stores/storage-factory.test.ts`** (3 new tests)
+  - `isMemoryFallback` returns false when localStorage is available
+  - `isMemoryFallback` returns true when localStorage throws SecurityError
+  - Memory fallback storage still works correctly (get/set/remove)
+
+- **Created `tests/unit/features/auth/AuthenticatedLayout.test.tsx`** (2 tests)
+  - No storage warning when localStorage is available
+  - WARN-severity ErrorBanner shown when localStorage is unavailable
+
+- **Updated `tests/TRACEABILITY.md`**
+  - Added entries for Phases 45-51
+  - Added REQ-ERR-015/016 client retry cross-reference
+
+**Tests:** 2,660 tests across 232 files (5 new)
+
 ## 2026-02-11 - Client Network Request Retry (Phase 50)
 
 ### Phase 50: Client Network Request Retry (REQ-ERR-015, REQ-ERR-016)

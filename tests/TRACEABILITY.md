@@ -154,6 +154,7 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-ERR-005 Simulation validation | `tests/unit/lib/validation/simulation-schemas.test.ts` |
 | REQ-ERR-013/014 Structured logging | `tests/unit/api/_lib/logger.test.ts` |
 | REQ-ERR-015/016 DB retry | `tests/unit/api/_lib/db-retry.test.ts` |
+| REQ-ERR-015/016 Client retry | `tests/unit/services/api-client.test.ts` (fetchWithRetry tests) |
 | REQ-ERR-019/020 PG error mapping | `tests/unit/api/_lib/postgres-errors.test.ts` |
 | REQ-STS-003 Stats sorting | `tests/unit/features/stats/StatsPage.test.tsx` (sorting tests) |
 | REQ-UI-008 Roster interactions | `tests/unit/features/roster/RosterPage.test.tsx` (bench-to-lineup tests) |
@@ -368,3 +369,51 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-ERR-010 Per-feature error boundary | `tests/unit/components/feedback/ErrorBoundary.test.tsx` (chunk-load failure test) |
 | REQ-ERR-011 Error recovery UI | `tests/unit/components/feedback/ErrorBoundary.test.tsx` (Try Again, Return to Dashboard) |
 | REQ-COMP-007 ErrorBoundary wraps Suspense | `src/router.tsx` (LazyPage wrapper: ErrorBoundary > Suspense > lazy component) |
+
+## Phase 45: Traceability Matrix Update
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-TEST-011 Matrix maintenance | `tests/TRACEABILITY.md` (matrix updated through Phase 44) |
+
+## Phase 46: Per-Directory Coverage Thresholds
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-TEST-003 Statement coverage >= 60% | `vitest.config.ts` (9 per-directory thresholds) |
+| REQ-TEST-004 Branch coverage >= 50% | `vitest.config.ts` (9 per-directory thresholds) |
+
+## Phase 47: Responsive Design
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-UI-013 Single breakpoint responsive | `tests/unit/styles/responsive.test.tsx` (AppShell, Header, StandingsTable, StatTable, DiamondField, PlayerCardDisplay) |
+| REQ-COMP-010 Hamburger menu | `tests/unit/styles/responsive.test.tsx` (Header hamburger toggle, aria-expanded) |
+| REQ-NFR-018 Font-display swap | `tests/unit/styles/fonts.test.ts` (font-display: swap, Latin unicode-range) |
+
+## Phase 48: Immer Middleware for draftStore
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-005 Immer middleware | `tests/unit/stores/draftStore.test.ts` (all existing tests pass unchanged with immer) |
+
+## Phase 49: League Deletion CASCADE Verification
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-LGE-010 League deletion cascades | `tests/unit/migrations/cascade-delete.test.ts` (8 league_id FK, 1 team_id FK, root entity, file count) |
+
+## Phase 50: Client Network Request Retry
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ERR-015 Client retry (2 retries, exponential) | `tests/unit/services/api-client.test.ts` (retry on 500, 429, network error; no retry on 4xx) |
+| REQ-ERR-016 Retry logging | `tests/unit/services/api-client.test.ts` (WARN per attempt, ERROR on exhaustion) |
+
+## Phase 51: localStorage Fallback Warning + Traceability
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-010 Safe localStorage fallback | `tests/unit/stores/storage-factory.test.ts` (isMemoryFallback detection, memory storage correctness) |
+| REQ-STATE-010 WARN banner display | `tests/unit/features/auth/AuthenticatedLayout.test.tsx` (ErrorBanner shown/hidden based on storage availability) |
+| REQ-TEST-011 Traceability update | `tests/TRACEABILITY.md` (matrix updated through Phase 51) |
