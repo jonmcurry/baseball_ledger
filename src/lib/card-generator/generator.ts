@@ -1,5 +1,5 @@
-import type { PlayerCard, Position } from '@lib/types';
-import type { PlayerPoolEntry, LeagueAverages } from '@lib/csv/csv-types';
+import type { PlayerCard, Position } from '../types';
+import type { PlayerPoolEntry, LeagueAverages } from '../csv/csv-types';
 import { CARD_LENGTH, applyStructuralConstants } from './structural';
 import { computePlayerRates } from './rate-calculator';
 import { computePowerRating } from './power-rating';

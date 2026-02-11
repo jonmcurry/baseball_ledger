@@ -1,4 +1,4 @@
-import type { BattingStats } from '@lib/types';
+import type { BattingStats } from '../types';
 
 /**
  * Per-PA rates computed from a player's BattingStats (REQ-DATA-005 Step 1).

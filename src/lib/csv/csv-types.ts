@@ -1,4 +1,4 @@
-import type { BattingStats, PitchingStats } from '@lib/types';
+import type { BattingStats, PitchingStats } from '../types';
 
 // ---------------------------------------------------------------------------
 // Raw CSV row types -- match Lahman CSV column headers exactly.

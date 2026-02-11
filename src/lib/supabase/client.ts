@@ -7,8 +7,8 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@lib/types/database';
-import { getClientConfig } from '@lib/config';
+import type { Database } from '../types/database';
+import { getClientConfig } from '../config';
 
 let browserClient: SupabaseClient<Database> | null = null;
 

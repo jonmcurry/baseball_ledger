@@ -1,4 +1,4 @@
-// Barrel re-exports for @lib/csv
+// Barrel re-exports for ../csv
 
 export type {
   RawPeopleRow,

@@ -8,13 +8,13 @@
  */
 
 import type { PlayerPoolEntry, LeagueAverages } from './csv-types';
-import type { PlayerCard } from '@lib/types/player';
+import type { PlayerCard } from '../types/player';
 import { loadPeople } from './people-loader';
 import { loadBatting } from './batting-loader';
 import { loadPitching } from './pitching-loader';
 import { loadFielding } from './fielding-loader';
 import { buildPlayerPool, computeLeagueAverages } from './player-pool';
-import { generateAllCards } from '@lib/card-generator/generator';
+import { generateAllCards } from '../card-generator/generator';
 
 export interface CsvPipelineInput {
   readonly peopleCsv: string;

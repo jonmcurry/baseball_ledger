@@ -1,4 +1,4 @@
-import type { CardValue } from '@lib/types';
+import type { CardValue } from '../types';
 
 /**
  * Card length per APBA BBW (35 bytes).

@@ -1,4 +1,4 @@
-import type { CardValue } from '@lib/types';
+import type { CardValue } from '../types';
 import type { PlayerRates } from './rate-calculator';
 import { getVariablePositions } from './structural';
 

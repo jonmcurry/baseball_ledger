@@ -1,4 +1,4 @@
-import type { CardValue } from '@lib/types';
+import type { CardValue } from '../types';
 
 /**
  * Power rating tier definition.

@@ -10,7 +10,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@lib/types/database';
+import type { Database } from '../types/database';
 
 function requireServerEnv(key: string, fallbackKey?: string): string {
   const value = process.env[key] ?? (fallbackKey ? process.env[fallbackKey] : undefined);

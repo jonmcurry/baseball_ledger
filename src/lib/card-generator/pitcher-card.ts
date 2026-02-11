@@ -1,5 +1,5 @@
-import type { CardValue, PitcherAttributes } from '@lib/types';
-import type { PitchingStats } from '@lib/types';
+import type { CardValue, PitcherAttributes } from '../types';
+import type { PitchingStats } from '../types';
 import { getVariablePositions, CARD_LENGTH } from './structural';
 import { applyStructuralConstants } from './structural';
 import { CARD_VALUES } from './value-mapper';

@@ -1,5 +1,5 @@
-import type { PlayerArchetype, Position } from '@lib/types';
-import type { BattingStats } from '@lib/types';
+import type { PlayerArchetype, Position } from '../types';
+import type { BattingStats } from '../types';
 
 /**
  * Premium defensive positions where elite defense archetype applies.
