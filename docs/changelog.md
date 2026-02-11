@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-02-10 - Draft Pick Timer Enforcement (Phase 35)
+
+### Phase 35: Draft Pick Timer Enforcement (REQ-DFT-004)
+
+Player-controlled teams now have a 60-second pick timer during the draft. When the timer expires, the AI auto-picks the best available player using APBA card value scoring. The API responses were also fixed to include fields required by the frontend contracts.
+
+- **Created `src/lib/draft/auto-pick-selector.ts` (L1 pure helper)**
+  - `selectBestAvailable()` scores players using APBA card value correlations
+  - Batter scoring: HR=15, double=8, single=5, walk=4, K=-3, plus power rating bonus
+  - Pitcher scoring: grade * 10
+  - 5 tests in `auto-pick-selector.test.ts`
+
+- **Modified `api/leagues/[id]/draft.ts` -- fix GET and POST responses**
+  - GET now returns `currentTeamId`, `picks`, `pickTimerSeconds` (DraftState contract)
+  - POST now returns `round`, `pick`, `nextTeamId` (DraftPickResult contract)
+  - 6 new tests in `draft.test.ts`
+
+- **Created `src/features/draft/hooks/useDraftTimer.ts` (feature hook)**
+  - Dependency-injected: receives timer functions as params (REQ-SCOPE-003)
+  - Resets timer on team change, ticks every second when active
+  - Fires `onExpire` exactly once when timer reaches 0
+  - 6 tests in `useDraftTimer.test.ts`
+
+- **Modified `src/hooks/useDraft.ts` -- expose timer actions**
+  - Added `tickTimer` and `resetTimer` from draftStore to hook return
+
+- **Modified `src/features/draft/DraftBoardPage.tsx` -- wire timer + auto-pick**
+  - Calls `useDraftTimer` with isActive/currentTeamId/timer state
+  - `handleAutoPickOnExpire` selects best available via `selectBestAvailable`
+  - 3 new tests in `DraftBoardPage.test.tsx`
+
+- **New tests: 20 total** (5 + 6 + 6 + 3)
+
 ## 2026-02-10 - Playoff Dashboard Integration (Phase 34)
 
 ### Phase 34: Playoff Dashboard Integration (REQ-LGE-009, REQ-SCH-007)

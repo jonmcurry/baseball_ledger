@@ -100,7 +100,7 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
 
   const { data: league, error: leagueError } = await supabase
     .from('leagues')
-    .select('status, team_count')
+    .select('status, team_count, draft_order')
     .eq('id', leagueId)
     .single();
 
@@ -121,13 +121,23 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
   const currentRound = Math.floor(totalPicks / league.team_count) + 1;
   const currentPick = (totalPicks % league.team_count) + 1;
 
+  // REQ-DFT-004: Compute currentTeamId from draft order
+  let currentTeamId: string | null = null;
+  if (league.status === 'drafting' && league.draft_order && Array.isArray(league.draft_order)) {
+    const draftOrder = league.draft_order as string[];
+    currentTeamId = getPickingTeam(Math.min(currentRound, totalRounds), currentPick, draftOrder);
+  }
+
   ok(res, {
     leagueId,
     status: league.status === 'drafting' ? 'in_progress' : league.status === 'setup' ? 'not_started' : 'completed',
     currentRound: Math.min(currentRound, totalRounds),
     currentPick,
+    currentTeamId,
+    picks: [],
     totalRounds,
     totalPicks,
+    pickTimerSeconds: 60,
   }, requestId);
 }
 
@@ -224,11 +234,14 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     throw { category: 'AUTHORIZATION', code: 'NO_TEAM', message: 'You do not have a team in this league' };
   }
 
-  // Validate turn order if draft_order is available (REQ-DFT-002)
-  if (league.draft_order && Array.isArray(league.draft_order)) {
-    const draftOrder = league.draft_order as string[];
-    const teamCount = draftOrder.length;
+  // Compute current pick position for turn validation and response
+  const hasDraftOrder = league.draft_order && Array.isArray(league.draft_order);
+  const draftOrder = hasDraftOrder ? (league.draft_order as string[]) : [];
+  const teamCount = hasDraftOrder ? draftOrder.length : league.team_count;
+  let currentRound = 1;
+  let currentPick = 1;
 
+  if (hasDraftOrder) {
     // Count existing picks to determine current position
     const { count: pickCount } = await supabase
       .from('rosters')
@@ -236,9 +249,10 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
       .in('team_id', draftOrder);
 
     const totalPicks = pickCount ?? 0;
-    const currentRound = Math.floor(totalPicks / teamCount) + 1;
-    const currentPick = (totalPicks % teamCount) + 1;
+    currentRound = Math.floor(totalPicks / teamCount) + 1;
+    currentPick = (totalPicks % teamCount) + 1;
 
+    // Validate turn order (REQ-DFT-002)
     const expectedTeamId = getPickingTeam(currentRound, currentPick, draftOrder);
     if (userTeam.id !== expectedTeamId) {
       throw {
@@ -275,19 +289,17 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     .eq('league_id', leagueId)
     .eq('player_id', body.playerId);
 
-  // Check if draft is complete after this pick
+  // Check if draft is complete after this pick and compute nextTeamId
   let isComplete = false;
-  if (league.draft_order && Array.isArray(league.draft_order)) {
-    const draftOrder = league.draft_order as string[];
-    const teamCount = draftOrder.length;
+  let nextTeamId: string | null = null;
+
+  if (hasDraftOrder) {
     const { count: newPickCount } = await supabase
       .from('rosters')
       .select('*', { count: 'exact', head: true })
       .in('team_id', draftOrder);
 
     const totalAfter = newPickCount ?? 0;
-    const roundAfter = Math.floor(totalAfter / teamCount) + 1;
-    const pickAfter = (totalAfter % teamCount) + 1;
     const next = getNextPick(
       Math.floor((totalAfter - 1) / teamCount) + 1,
       ((totalAfter - 1) % teamCount) + 1,
@@ -303,15 +315,20 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
         .from('leagues')
         .update({ status: 'regular_season' })
         .eq('id', leagueId);
+    } else {
+      nextTeamId = getPickingTeam(next.round, next.pick, draftOrder);
     }
   }
 
   created(res, {
+    round: currentRound,
+    pick: currentPick,
     teamId: userTeam.id,
     playerId: body.playerId,
     playerName: body.playerName,
     position: body.position,
     isComplete,
+    nextTeamId,
   }, requestId, `/api/leagues/${leagueId}/teams/${userTeam.id}/roster`);
 }
 

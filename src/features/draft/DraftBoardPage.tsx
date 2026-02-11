@@ -8,9 +8,11 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDraft } from '@hooks/useDraft';
 import { useLeague } from '@hooks/useLeague';
+import { useDraftTimer } from './hooks/useDraftTimer';
+import { selectBestAvailable } from '@lib/draft/auto-pick-selector';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
@@ -37,6 +39,8 @@ export function DraftBoardPage() {
     submitPick,
     fetchDraftState,
     fetchAvailablePlayers,
+    tickTimer,
+    resetTimer,
   } = useDraft();
 
   useEffect(() => {
@@ -45,6 +49,25 @@ export function DraftBoardPage() {
       fetchAvailablePlayers(league.id);
     }
   }, [league?.id, fetchDraftState, fetchAvailablePlayers]);
+
+  // REQ-DFT-004: Auto-pick on timer expiry
+  const handleAutoPickOnExpire = useCallback(() => {
+    if (!league?.id || availablePlayers.length === 0) return;
+    const bestIdx = selectBestAvailable(availablePlayers);
+    if (bestIdx >= 0) {
+      submitPick(league.id, availablePlayers[bestIdx]);
+    }
+  }, [league?.id, availablePlayers, submitPick]);
+
+  // REQ-DFT-004: 60-second pick timer
+  useDraftTimer({
+    isActive: isMyPick && draftState?.status === 'in_progress',
+    currentTeamId: draftState?.currentTeamId ?? null,
+    pickTimerSeconds: timeRemaining,
+    tickTimer,
+    resetTimer,
+    onExpire: handleAutoPickOnExpire,
+  });
 
   if (isLoading) {
     return <LoadingLedger message="Loading draft board..." />;
