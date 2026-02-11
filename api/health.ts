@@ -1,39 +1,90 @@
 /**
  * GET /api/health -- Import diagnostic
  *
- * Uses the same imports as api/leagues/index.ts to identify
- * which one causes FUNCTION_INVOCATION_FAILED.
+ * Uses dynamic imports with try/catch to identify which specific
+ * import causes FUNCTION_INVOCATION_FAILED on Vercel.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { z } from 'zod';
-import { checkMethod } from './_lib/method-guard';
-import { requireAuth } from './_lib/auth';
-import { validateBody } from './_lib/validate';
-import { ok, created } from './_lib/response';
-import { handleApiError } from './_lib/errors';
-import { snakeToCamel } from './_lib/transform';
-import { createServerClient } from '@lib/supabase/server';
-import type { Json } from '@lib/types/database';
-import { loadCsvFiles } from './_lib/load-csvs';
-import { runCsvPipeline } from '@lib/csv/load-pipeline';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const results: Record<string, string> = {};
+
+  // Test each import individually with dynamic import + try/catch
+  try {
+    await import('zod');
+    results.zod = 'ok';
+  } catch (e: unknown) {
+    results.zod = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/method-guard');
+    results.methodGuard = 'ok';
+  } catch (e: unknown) {
+    results.methodGuard = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/auth');
+    results.auth = 'ok';
+  } catch (e: unknown) {
+    results.auth = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/validate');
+    results.validate = 'ok';
+  } catch (e: unknown) {
+    results.validate = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/response');
+    results.response = 'ok';
+  } catch (e: unknown) {
+    results.response = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/errors');
+    results.errors = 'ok';
+  } catch (e: unknown) {
+    results.errors = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/transform');
+    results.transform = 'ok';
+  } catch (e: unknown) {
+    results.transform = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('./_lib/load-csvs');
+    results.loadCsvs = 'ok';
+  } catch (e: unknown) {
+    results.loadCsvs = e instanceof Error ? e.message : String(e);
+  }
+
+  // The @lib/* path alias imports -- most likely culprits
+  try {
+    await import('@lib/supabase/server');
+    results.supabaseServer = 'ok';
+  } catch (e: unknown) {
+    results.supabaseServer = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    await import('@lib/csv/load-pipeline');
+    results.csvPipeline = 'ok';
+  } catch (e: unknown) {
+    results.csvPipeline = e instanceof Error ? e.message : String(e);
+  }
+
   res.status(200).json({
-    status: 'imports-ok',
+    status: 'diagnostic',
     timestamp: new Date().toISOString(),
-    modules: {
-      zod: typeof z.object === 'function',
-      checkMethod: typeof checkMethod === 'function',
-      requireAuth: typeof requireAuth === 'function',
-      validateBody: typeof validateBody === 'function',
-      ok: typeof ok === 'function',
-      created: typeof created === 'function',
-      handleApiError: typeof handleApiError === 'function',
-      snakeToCamel: typeof snakeToCamel === 'function',
-      createServerClient: typeof createServerClient === 'function',
-      loadCsvFiles: typeof loadCsvFiles === 'function',
-      runCsvPipeline: typeof runCsvPipeline === 'function',
-    },
+    imports: results,
   });
 }
