@@ -27,15 +27,17 @@ export interface LeagueFormData {
 
 const TEAM_COUNT_OPTIONS = [
   { value: '4', label: '4 Teams' },
-  { value: '6', label: '6 Teams' },
   { value: '8', label: '8 Teams' },
+  { value: '16', label: '16 Teams' },
+  { value: '24', label: '24 Teams' },
+  { value: '32', label: '32 Teams' },
 ] as const;
 
 export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormProps) {
   const [name, setName] = useState('');
   const [teamCount, setTeamCount] = useState('8');
-  const [yearStart, setYearStart] = useState('1970');
-  const [yearEnd, setYearEnd] = useState('2000');
+  const [yearStart, setYearStart] = useState('1901');
+  const [yearEnd, setYearEnd] = useState('2025');
   const [injuriesEnabled, setInjuriesEnabled] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -46,11 +48,11 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
     }
     const start = Number(yearStart);
     const end = Number(yearEnd);
-    if (isNaN(start) || start < 1871 || start > 2023) {
-      newErrors.yearStart = 'Year must be between 1871 and 2023';
+    if (isNaN(start) || start < 1901 || start > 2025) {
+      newErrors.yearStart = 'Year must be between 1901 and 2025';
     }
-    if (isNaN(end) || end < 1871 || end > 2023) {
-      newErrors.yearEnd = 'Year must be between 1871 and 2023';
+    if (isNaN(end) || end < 1901 || end > 2025) {
+      newErrors.yearEnd = 'Year must be between 1901 and 2025';
     }
     if (!isNaN(start) && !isNaN(end) && end < start) {
       newErrors.yearEnd = 'End year must be after start year';
@@ -98,7 +100,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
           name="yearStart"
           label="Start Year"
           type="number"
-          placeholder="1970"
+          placeholder="1901"
           error={errors.yearStart}
         />
         <Input
@@ -107,7 +109,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
           name="yearEnd"
           label="End Year"
           type="number"
-          placeholder="2000"
+          placeholder="2025"
           error={errors.yearEnd}
         />
       </div>
