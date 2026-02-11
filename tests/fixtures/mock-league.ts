@@ -4,6 +4,18 @@
  * Factory functions for creating mock league, team, and standings data.
  */
 
+/** REQ-TEST-009: Fixture metadata */
+export const _meta = {
+  description: 'League, team, standings, schedule, and playoff bracket mock factories',
+  usedBy: [
+    'tests/unit/stores/leagueStore.test.ts',
+    'tests/unit/features/standings/StandingsTable.test.tsx',
+    'tests/unit/features/dashboard/DashboardPage.test.tsx',
+    'tests/unit/features/playoffs/PlayoffBracketView.test.tsx',
+  ],
+  requirements: ['REQ-LGE-001', 'REQ-LGE-003', 'REQ-LGE-008', 'REQ-SCH-007'],
+};
+
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';
 import type { ScheduleDay, ScheduleGameSummary, FullPlayoffBracket } from '@lib/types/schedule';
 

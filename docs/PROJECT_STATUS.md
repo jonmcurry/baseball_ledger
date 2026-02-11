@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,749 tests across 241 files (all passing)
+**Test suite:** 2,756 tests across 242 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 19
@@ -387,6 +387,13 @@ Seven-layer architecture with strict downward-only imports:
 - Fixed non-conforming headers on migrations 00015, 00016, 00017
 - 11 new tests
 
+### Phase 58 -- API Contracts + Env Completeness + Fixture Metadata (REQ-API-009, REQ-API-010, REQ-ENV-001, REQ-ERR-014, REQ-TEST-009)
+- Fixed VITE_API_BASE_URL missing from .env.example and vite-env.d.ts (REQ-ENV-001)
+- Added `_meta` exports to all 6 fixture files (REQ-TEST-009)
+- 7 structural tests (response helpers, API types, env var completeness, logger levels, fixture metadata)
+- Comprehensive TRACEABILITY.md backfill: 20+ entries across 7 categories
+- 7 new tests
+
 ---
 
 ## REQ-* Coverage by Category
@@ -412,7 +419,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-MIG | 12 of 13 | Mostly done | 19 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 19 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim, server-side pagination |
 | REQ-SCOPE | 7 | Done | Feature scoping, no cross-feature imports, promotion rules, fixed-home artifacts |
-| REQ-TEST | 18 | Done | 2,749 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
+| REQ-TEST | 18 | Done | 2,756 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
 | REQ-ENV | 10 | Done | Config modules, .env.example, vercel.json, vite-env.d.ts, .gitignore, secrets management, rotation policy |
 
 ### UI Pages (REQ-UI)
@@ -481,9 +488,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 57 |
-| Test files | 241 |
-| Total tests | 2,749 |
+| Phases completed | 58 |
+| Test files | 242 |
+| Total tests | 2,756 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 19 |

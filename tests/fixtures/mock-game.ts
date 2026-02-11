@@ -4,6 +4,17 @@
  * Factory functions for creating mock game results, play-by-play, and box scores.
  */
 
+/** REQ-TEST-009: Fixture metadata */
+export const _meta = {
+  description: 'Game result, play-by-play, box score, and batting/pitching line mock factories',
+  usedBy: [
+    'tests/unit/features/game-viewer/GameViewerPage.test.tsx',
+    'tests/unit/lib/stats/accumulator.test.ts',
+    'tests/unit/api/leagues/[id]/simulate.test.ts',
+  ],
+  requirements: ['REQ-SIM-016', 'REQ-STS-001', 'REQ-STS-002'],
+};
+
 import type {
   GameResult,
   PlayByPlayEntry,

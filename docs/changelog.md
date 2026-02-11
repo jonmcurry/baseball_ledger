@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-11 - API Contracts + Env Completeness + Fixture Metadata (Phase 58)
+
+### Phase 58: REQ-API-009, REQ-API-010, REQ-ENV-001, REQ-ERR-014, REQ-TEST-009
+
+Completes API contract verification, environment variable inventory, and test
+fixture metadata. Comprehensive traceability backfill for 20+ requirements
+across API, ENV, ERR, TEST, RST, SCOPE, and MIG categories.
+
+- **Fixed REQ-ENV-001**: Added `VITE_API_BASE_URL` to `.env.example` and `vite-env.d.ts`
+  - Was used in `api-client.ts` but undocumented; optional with empty-string default
+
+- **Fixed REQ-TEST-009**: Added `_meta` exports to all 6 fixture files
+  - Each `_meta` includes: description, usedBy (test file paths), requirements (REQ-* IDs)
+
+- **Created `tests/unit/config/api-contracts.test.ts`** (7 tests)
+  - REQ-API-009: Response helpers (ok, created, paginated) exist and are used
+  - REQ-API-010: ApiResponse and PaginatedResponse interfaces exist
+  - REQ-ENV-001: All VITE_ vars in vite-env.d.ts appear in .env.example
+  - REQ-ERR-014: Logger exports INFO, WARN, ERROR levels
+  - REQ-TEST-009: All fixture files export _meta with required fields
+
+- **TRACEABILITY.md**: 20+ entries backfilled (REQ-API-009/010, REQ-ENV-001/004, REQ-ERR-006/008/014/020, REQ-TEST-002/007/009/010, REQ-RST-006, REQ-SCOPE-001/006, REQ-MIG-001/004/005/006)
+
 ## 2026-02-11 - Secrets Management + Migration Standards (Phase 57)
 
 ### Phase 57: REQ-ENV-009, REQ-ENV-010, REQ-MIG-002, REQ-MIG-003, REQ-MIG-007, REQ-MIG-008

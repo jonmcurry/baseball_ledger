@@ -4,6 +4,17 @@
  * Factory functions for creating mock roster entries.
  */
 
+/** REQ-TEST-009: Fixture metadata */
+export const _meta = {
+  description: 'Roster entry and full 10-player roster mock factories with PlayerCard data',
+  usedBy: [
+    'tests/unit/stores/rosterStore.test.ts',
+    'tests/unit/features/roster/RosterPage.test.tsx',
+    'tests/unit/api/leagues/[id]/teams.test.ts',
+  ],
+  requirements: ['REQ-RST-001', 'REQ-RST-002', 'REQ-RST-003'],
+};
+
 import type { RosterEntry } from '@lib/types/roster';
 import type { PlayerCard } from '@lib/types/player';
 

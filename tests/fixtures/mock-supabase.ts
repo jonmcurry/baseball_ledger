@@ -5,6 +5,15 @@
  * without a real database connection.
  */
 
+/** REQ-TEST-009: Fixture metadata */
+export const _meta = {
+  description: 'Mock Supabase client, query builder, request, and response factories for API testing',
+  usedBy: [
+    'tests/unit/api/**/*.test.ts',
+  ],
+  requirements: ['REQ-TEST-005', 'REQ-TEST-007'],
+};
+
 export interface MockQueryResult<T = unknown> {
   data: T | null;
   error: { message: string; code: string } | null;

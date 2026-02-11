@@ -4,6 +4,17 @@
  * Factory functions for creating mock batting/pitching leaders and team stats.
  */
 
+/** REQ-TEST-009: Fixture metadata */
+export const _meta = {
+  description: 'Batting leaders, pitching leaders, and team aggregate stats mock factories',
+  usedBy: [
+    'tests/unit/stores/statsStore.test.ts',
+    'tests/unit/features/stats/StatsPage.test.tsx',
+    'tests/unit/api/leagues/[id]/stats.test.ts',
+  ],
+  requirements: ['REQ-STS-003', 'REQ-STS-004', 'REQ-STS-005'],
+};
+
 import type { BattingLeaderEntry, PitchingLeaderEntry, TeamAggregateStats } from '@lib/stats/leaders';
 
 export function createMockBattingLeader(

@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string;
   /** Current environment identifier: 'development' | 'staging' | 'production' */
   readonly VITE_APP_ENV?: string;
+  /** API base URL override (defaults to '' for same-origin relative URLs) */
+  readonly VITE_API_BASE_URL?: string;
   /** Vite built-in: true when running in development mode */
   readonly DEV: boolean;
   /** Vite built-in: true when running in production mode */

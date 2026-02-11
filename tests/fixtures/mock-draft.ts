@@ -2,6 +2,17 @@
  * Draft test fixtures
  */
 
+/** REQ-TEST-009: Fixture metadata */
+export const _meta = {
+  description: 'Draft state, pick result, and available player mock factories',
+  usedBy: [
+    'tests/unit/stores/draftStore.test.ts',
+    'tests/unit/features/draft/DraftBoardPage.test.tsx',
+    'tests/unit/api/leagues/[id]/draft.test.ts',
+  ],
+  requirements: ['REQ-DFT-001', 'REQ-DFT-002', 'REQ-DFT-004'],
+};
+
 import type { DraftState, DraftPickResult } from '../../src/lib/types/draft';
 import type { AvailablePlayer } from '../../src/stores/draftStore';
 import type { PlayerCard } from '../../src/lib/types/player';

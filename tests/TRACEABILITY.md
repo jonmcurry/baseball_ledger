@@ -619,3 +619,59 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-MIG-003 Header comment block | `tests/unit/migrations/migration-standards.test.ts` |
 | REQ-MIG-007 Seed data (users, league, teams, schedule) | `tests/unit/migrations/migration-standards.test.ts` |
 | REQ-MIG-008 Idempotent ON CONFLICT seeds | `tests/unit/migrations/migration-standards.test.ts` |
+
+## Phase 58: API Contracts + Env Completeness + Fixture Metadata
+
+### API Contracts (REQ-API-009, REQ-API-010)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-API-009 Response type mapping (ok, created, paginated) | `tests/unit/config/api-contracts.test.ts` |
+| REQ-API-010 ApiResponse and PaginatedResponse interfaces | `tests/unit/config/api-contracts.test.ts` |
+
+### Environment Completeness (REQ-ENV-001, REQ-ENV-004)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ENV-001 All VITE_ vars documented in .env.example | `tests/unit/config/api-contracts.test.ts` |
+| REQ-ENV-004 Fail-fast config validation | `src/lib/config.ts` (requireEnv throws), `api/_lib/config.ts` (requireEnv throws) |
+
+### Error Handling (REQ-ERR-006, REQ-ERR-008, REQ-ERR-014, REQ-ERR-020)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-ERR-006 Three validation boundaries | `api/_lib/validation.ts` (L2), Zod schemas (L1), endpoint handlers (L2) |
+| REQ-ERR-008 Layer error responsibilities | `tests/unit/api/_lib/errors.test.ts`, `tests/unit/lib/errors/error-factory.test.ts` |
+| REQ-ERR-014 Log level semantics (ERROR, WARN, INFO) | `tests/unit/config/api-contracts.test.ts` |
+| REQ-ERR-020 PostgreSQL error code mapping | `tests/unit/api/_lib/errors.test.ts` (mapPostgresError) |
+
+### Test Infrastructure (REQ-TEST-002, REQ-TEST-007, REQ-TEST-009, REQ-TEST-010)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-TEST-002 TDD cycle (RED/GREEN/REFACTOR) | Process requirement: followed in all phases |
+| REQ-TEST-007 Realistic mock data shapes | `tests/fixtures/mock-supabase.ts` (Supabase client mock), `tests/fixtures/mock-*.ts` |
+| REQ-TEST-009 Fixture _meta metadata objects | `tests/unit/config/api-contracts.test.ts`, all `tests/fixtures/mock-*.ts` |
+| REQ-TEST-010 Every REQ has mapped test | `tests/TRACEABILITY.md` (this file) |
+
+### Roster (REQ-RST-006)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-RST-006 Post-trade roster validation | `src/lib/draft/trade-validator.ts` (validateTradeRosters), `tests/unit/api/leagues/[id]/teams.test.ts` |
+
+### Code Scoping (REQ-SCOPE-001, REQ-SCOPE-006)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-SCOPE-001 Start feature-scoped, promote when 2nd consumer | `tests/unit/config/scope-rules.test.ts` (no cross-feature imports) |
+| REQ-SCOPE-006 Ambiguous placement decision rules | Process requirement: InviteKeyDisplay promotion (Phase 56) |
+
+### Migration Process (REQ-MIG-001, REQ-MIG-004, REQ-MIG-005, REQ-MIG-006)
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-MIG-001 Local Supabase via Docker | Infrastructure requirement: `supabase/config.toml` |
+| REQ-MIG-004 SQL style rules | `tests/unit/migrations/migration-standards.test.ts` (header verification) |
+| REQ-MIG-005 Schema change workflow | Process requirement: all migrations follow create-write-test-commit |
+| REQ-MIG-006 Forward-only rollback strategy | Process requirement: no down migrations |
