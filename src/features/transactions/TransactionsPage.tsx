@@ -22,7 +22,10 @@ import type { TransactionEntry } from './TransactionLog';
 import type { TradePlayer, TradePayload } from './TradeForm';
 import type { TradeEvaluationRequest } from '@lib/types/ai';
 import type { RosterEntry } from '@lib/types/roster';
+import type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
+import { transformPoolRows } from '@lib/transforms/player-pool-transform';
 import * as transactionService from '@services/transaction-service';
+import { fetchAvailablePlayers as fetchFreeAgents } from '@services/draft-service';
 import { fetchRoster } from '@services/roster-service';
 
 type Tab = 'add-drop' | 'trade' | 'history';
@@ -43,6 +46,8 @@ export function TransactionsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingTrade, setPendingTrade] = useState<TradePayload | null>(null);
   const [targetRosterEntries, setTargetRosterEntries] = useState<RosterEntry[]>([]);
+  const [availablePlayers, setAvailablePlayers] = useState<AvailablePlayer[]>([]);
+  const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
 
   const leagueId = league?.id;
   const teamId = myTeam?.id;
@@ -75,6 +80,44 @@ export function TransactionsPage() {
       setActionError(err instanceof Error ? err.message : 'Failed to drop player');
     }
   }, [leagueId, teamId, roster, fetchMyRoster]);
+
+  // REQ-RST-005: Search free agent pool
+  const handleSearchPlayers = useCallback(async (search: string) => {
+    if (!leagueId || search.length < 2) {
+      setAvailablePlayers([]);
+      return;
+    }
+    setIsLoadingPlayers(true);
+    try {
+      const rows = await fetchFreeAgents(leagueId, { search, pageSize: 20 });
+      setAvailablePlayers(transformPoolRows(rows));
+    } catch {
+      setAvailablePlayers([]);
+    } finally {
+      setIsLoadingPlayers(false);
+    }
+  }, [leagueId]);
+
+  // REQ-RST-005: Add a free agent to roster
+  const handleAdd = useCallback(async (player: AvailablePlayer) => {
+    if (!leagueId || !teamId) return;
+    setActionError(null);
+    try {
+      await transactionService.addPlayer(leagueId, teamId, {
+        playerId: player.playerId,
+        playerName: `${player.nameFirst} ${player.nameLast}`,
+        seasonYear: player.seasonYear,
+        playerCard: player.playerCard as unknown as Record<string, unknown>,
+      });
+      await fetchMyRoster(leagueId, teamId);
+      setAvailablePlayers([]);
+      transactionService.fetchTransactionHistory(leagueId)
+        .then(setTransactions)
+        .catch(() => {});
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to add player');
+    }
+  }, [leagueId, teamId, fetchMyRoster]);
 
   const handleTargetChange = useCallback(async (targetTeamId: string) => {
     if (!leagueId) return;
@@ -200,8 +243,12 @@ export function TransactionsPage() {
       {activeTab === 'add-drop' && (
         <AddDropForm
           roster={roster}
+          availablePlayers={availablePlayers}
+          isLoadingPlayers={isLoadingPlayers}
           onDrop={handleDrop}
-          onAdd={() => {}}
+          onAdd={handleAdd}
+          onSearchPlayers={handleSearchPlayers}
+          canAdd={roster.length < 21}
         />
       )}
 

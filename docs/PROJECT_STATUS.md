@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-10
-**Test suite:** 2,449 tests across 214 files (all passing)
+**Test suite:** 2,516 tests across 220 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 17
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--31)
+## Completed Phases (1--35)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -222,6 +222,27 @@ Seven-layer architecture with strict downward-only imports:
 - Early break when schedule exhausted or playoff transition
 - Removed dead 202 async path from API endpoint
 
+### Phase 32 -- Post-Simulation Dashboard Refresh (REQ-STATE-014, REQ-SCH-007)
+- useRealtimeProgress triggers cache invalidation after simulation
+- SimulationNotification with typewriter game results
+- ResultsTicker integration with simulation completion flow
+
+### Phase 33 -- Season Completion Ceremony (REQ-SCH-009, REQ-LGE-009)
+- Season completion detection and champion announcement
+- SeasonCompletePanel with archive button
+- Playoff sim fix for game-by-game results
+
+### Phase 34 -- Playoff Dashboard Integration (REQ-LGE-009, REQ-SCH-007)
+- PlayoffStatusPanel in dashboard right column during playoffs
+- Playoff-specific simulation notifications (round/game/score)
+- Pure helpers for playoff display formatting
+
+### Phase 35 -- Draft Pick Timer Enforcement (REQ-DFT-004)
+- selectBestAvailable L1 helper (APBA card value scoring)
+- useDraftTimer feature hook (60s countdown, auto-pick on expiry)
+- API GET/POST draft response fixes (currentTeamId, round, pick, nextTeamId)
+- DraftBoardPage wired with timer + auto-pick
+
 ---
 
 ## REQ-* Coverage by Category
@@ -270,27 +291,12 @@ Seven-layer architecture with strict downward-only imports:
 
 ### High Priority (Core Functionality Gaps)
 
-1. **REQ-SCH-007: Typewriter simulation results notification**
-   - TypewriterText component exists but is not wired to show game results after simulation completes
-   - ResultsTicker exists but needs integration with simulation completion flow
-
-2. **REQ-SCH-008 / REQ-SCH-009: Season completion ceremony**
-   - StampAnimation component exists ("SEASON COMPLETED")
-   - Season-to-playoffs transition works, but the full season completion flow (after World Series) needs the stamp animation triggered in the UI
-   - Archive creation after season completion needs UI wiring
-
-3. **REQ-LGE-009: Playoff game-by-game simulation UI**
-   - Backend works (simulatePlayoffGame), but the frontend needs to show each game result one at a time rather than bulk-simulating
-
-4. **REQ-RST-005 / REQ-RST-006: Full transaction flow testing**
-   - Transaction service wired, trade validation exists
-   - End-to-end flow from TransactionsPage through API to DB needs verification with real Supabase
-   - Trade form UI could be more polished
-
-5. **REQ-DFT-004: 60-second pick timer enforcement**
-   - PickTimer component exists with countdown
-   - Auto-pick on expiration is partially wired (API endpoint exists)
-   - Needs real-time integration for multi-player draft experience
+1. **REQ-RST-005: Free agent add/drop + transaction history**
+   - Drop works, Add player UI is stubbed (onAdd callback is empty)
+   - No free agent pool browsing UI (available players endpoint exists from draft)
+   - No transactions table in DB -- history never persisted
+   - Trade acceptance flow for human-controlled teams not implemented
+   - CPU trade evaluation not wired (template evaluator exists)
 
 ### Medium Priority (Polish & NFR Compliance)
 
@@ -373,9 +379,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 31 |
-| Test files | 214 |
-| Total tests | 2,449 |
+| Phases completed | 35 |
+| Test files | 220 |
+| Total tests | 2,516 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 17 |

@@ -10,18 +10,12 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { DraftState, DraftPickResult } from '@lib/types/draft';
-import type { PlayerCard } from '@lib/types/player';
 import type { PlayerFilterOptions } from '@services/draft-service';
+import { transformPoolRows } from '@lib/transforms/player-pool-transform';
+import type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 import * as draftService from '@services/draft-service';
 
-export interface AvailablePlayer {
-  playerId: string;
-  nameFirst: string;
-  nameLast: string;
-  seasonYear: number;
-  primaryPosition: string;
-  playerCard: PlayerCard;
-}
+export type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 
 export interface DraftStoreState {
   draftState: DraftState | null;
@@ -75,17 +69,7 @@ export const useDraftStore = create<DraftStoreType>()(
         set({ isLoading: true, error: null }, false, 'fetchAvailablePlayers/start');
         try {
           const rows = await draftService.fetchAvailablePlayers(leagueId, filters);
-          const players: AvailablePlayer[] = rows.map((row) => {
-            const card = row.player_card as unknown as PlayerCard;
-            return {
-              playerId: card.playerId ?? row.player_id,
-              nameFirst: card.nameFirst ?? '',
-              nameLast: card.nameLast ?? '',
-              seasonYear: card.seasonYear ?? row.season_year,
-              primaryPosition: card.primaryPosition ?? 'DH',
-              playerCard: card,
-            };
-          });
+          const players = transformPoolRows(rows);
           set({ availablePlayers: players, isLoading: false }, false, 'fetchAvailablePlayers/success');
         } catch (err) {
           set({

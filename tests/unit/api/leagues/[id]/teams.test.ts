@@ -756,6 +756,178 @@ describe('POST /api/leagues/:id/teams (transactions)', () => {
     });
   });
 
+  // REQ-RST-005: player_pool sync on add/drop
+
+  it('updates player_pool is_drafted=false when dropping a player', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'drop',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToDrop: ['player-x'],
+        playersToAdd: [],
+      },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    // Verify player_pool was updated
+    expect(mockFrom).toHaveBeenCalledWith('player_pool');
+    expect(poolBuilder.update).toHaveBeenCalledWith({ is_drafted: false, drafted_by_team_id: null });
+  });
+
+  it('updates player_pool is_drafted=true when adding a player', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToAdd: [{
+          playerId: 'player-y',
+          playerName: 'Lou Gehrig',
+          seasonYear: 1927,
+          playerCard: { power: 20 },
+        }],
+        playersToDrop: [],
+      },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(mockFrom).toHaveBeenCalledWith('player_pool');
+    expect(poolBuilder.update).toHaveBeenCalledWith({
+      is_drafted: true,
+      drafted_by_team_id: '550e8400-e29b-41d4-a716-446655440000',
+    });
+  });
+
+  it('updates player_pool for both drop and add in combo transaction', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToDrop: ['player-drop'],
+        playersToAdd: [{
+          playerId: 'player-add',
+          playerName: 'Joe DiMaggio',
+          seasonYear: 1941,
+          playerCard: { power: 19 },
+        }],
+      },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    // player_pool should be called for both operations
+    const poolCalls = mockFrom.mock.calls.filter((c) => c[0] === 'player_pool');
+    expect(poolCalls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('sets drafted_by_team_id to team ID on add', async () => {
+    const teamId = '550e8400-e29b-41d4-a716-446655440000';
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: teamId, owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId,
+        playersToAdd: [{
+          playerId: 'player-z',
+          playerName: 'Mickey Mantle',
+          seasonYear: 1956,
+          playerCard: { power: 21 },
+        }],
+        playersToDrop: [],
+      },
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(poolBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ drafted_by_team_id: teamId }),
+    );
+  });
+
   // Trade-specific tests (REQ-RST-005, REQ-RST-006)
 
   describe('trade type', () => {

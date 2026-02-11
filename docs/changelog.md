@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-10 - Free Agent Pickup Flow (Phase 36)
+
+### Phase 36: Free Agent Pickup Flow (REQ-RST-005)
+
+Players can now add free agents from the player pool and drop roster players. The API keeps the player_pool table in sync so dropped players return to the free agent pool and added players are removed from it.
+
+- **Modified `api/leagues/[id]/teams.ts` -- player_pool sync on add/drop**
+  - Drop: sets `is_drafted=false, drafted_by_team_id=null` for all seasons of dropped player
+  - Add: sets `is_drafted=true, drafted_by_team_id=teamId` for all seasons of added player (REQ-DFT-001a)
+  - 4 new tests in `teams.test.ts`
+
+- **Created `src/lib/transforms/player-pool-transform.ts` (L1 shared helper)**
+  - `transformPoolRows()` converts PlayerPoolRow[] to AvailablePlayer[]
+  - Extracted from draftStore to avoid duplication with TransactionsPage
+  - 3 tests in `player-pool-transform.test.ts`
+
+- **Modified `src/features/transactions/AddDropForm.tsx` -- add player UI**
+  - New "Add a Player" section with debounced search input (300ms)
+  - Scrollable free agent list with per-player Add buttons
+  - `canAdd` guard enforces 21-player roster limit
+  - 6 new tests in `AddDropForm.test.tsx`
+
+- **Modified `src/features/transactions/TransactionsPage.tsx` -- wiring**
+  - `handleSearchPlayers` calls draft service to fetch undrafted players
+  - `handleAdd` calls transaction service, refreshes roster, clears search
+  - Passes all new props to AddDropForm
+  - 5 new tests in `TransactionsPage.test.tsx`
+
+- **Modified `src/stores/draftStore.ts` -- use shared transform**
+  - Re-exports `AvailablePlayer` from `@lib/transforms/player-pool-transform`
+  - `fetchAvailablePlayers` uses `transformPoolRows()` instead of inline logic
+
+- **New tests: 18 total** (4 + 3 + 6 + 5)
+
 ## 2026-02-10 - Draft Pick Timer Enforcement (Phase 35)
 
 ### Phase 35: Draft Pick Timer Enforcement (REQ-DFT-004)

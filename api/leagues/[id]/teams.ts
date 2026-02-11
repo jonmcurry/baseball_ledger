@@ -269,6 +269,15 @@ async function handleTransaction(req: VercelRequest, res: VercelResponse, reques
       .delete()
       .eq('team_id', body.teamId)
       .in('player_id', body.playersToDrop);
+
+    // REQ-RST-005: Return all seasons of dropped players to the pool
+    for (const playerId of body.playersToDrop) {
+      await supabase
+        .from('player_pool')
+        .update({ is_drafted: false, drafted_by_team_id: null })
+        .eq('league_id', leagueId)
+        .eq('player_id', playerId);
+    }
   }
 
   // Execute adds
@@ -288,6 +297,13 @@ async function handleTransaction(req: VercelRequest, res: VercelResponse, reques
       throw { category: 'DATA', code: 'INSERT_FAILED', message: insertError.message };
     }
     addedPlayers.push({ playerId: player.playerId, playerName: player.playerName });
+
+    // REQ-RST-005/REQ-DFT-001a: Mark all seasons of this player as drafted
+    await supabase
+      .from('player_pool')
+      .update({ is_drafted: true, drafted_by_team_id: body.teamId })
+      .eq('league_id', leagueId)
+      .eq('player_id', player.playerId);
   }
 
   const result = {
