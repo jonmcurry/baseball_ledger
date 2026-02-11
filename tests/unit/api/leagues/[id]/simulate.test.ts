@@ -464,6 +464,36 @@ describe('POST /api/leagues/:id/simulate', () => {
     });
   });
 
+  it('playoff simulation returns exactly one game per call (REQ-LGE-009)', async () => {
+    const leagueBuilder = createMockQueryBuilder({
+      data: { status: 'playoffs', current_day: 162 },
+      error: null,
+      count: null,
+    });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(leagueBuilder) } as never);
+
+    mockSimulatePlayoffGame.mockResolvedValue({
+      homeTeamId: 't-1',
+      awayTeamId: 't-2',
+      homeScore: 3,
+      awayScore: 1,
+      round: 'WildCard' as any,
+      seriesId: 'wc-1',
+      gameNumber: 1,
+      isPlayoffsComplete: false,
+    });
+
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    // REQ-LGE-009: Playoff games are one-at-a-time
+    expect(res._status).toBe(200);
+    expect(res._body.data.games).toHaveLength(1);
+    expect(mockSimulatePlayoffGame).toHaveBeenCalledTimes(1);
+  });
+
   it('returns empty games when no playoff games remain', async () => {
     const leagueBuilder = createMockQueryBuilder({
       data: { status: 'playoffs', current_day: 162 },

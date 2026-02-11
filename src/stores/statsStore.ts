@@ -53,7 +53,7 @@ const initialState: StatsState = {
   pitchingLeaders: [],
   teamStats: [],
   currentPage: 1,
-  pageSize: 25,
+  pageSize: 50,
   activeTab: 'batting',
   leagueFilter: 'combined',
   statView: 'traditional',
@@ -154,7 +154,7 @@ export const useStatsStore = create<StatsStore>()(
       }),
       {
         name: 'bl-stats-v1',
-        ...createMigrationConfig(1, initialState),
+        ...createMigrationConfig(2, initialState),
         storage: {
           getItem: (name) => {
             const storage = createSafeStorage();

@@ -16,7 +16,7 @@ describe('statsStore', () => {
     expect(state.pitchingLeaders).toHaveLength(0);
     expect(state.teamStats).toHaveLength(0);
     expect(state.currentPage).toBe(1);
-    expect(state.pageSize).toBe(25);
+    expect(state.pageSize).toBe(50);
     expect(state.activeTab).toBe('batting');
     expect(state.leagueFilter).toBe('combined');
     expect(state.isLoading).toBe(false);
@@ -78,7 +78,7 @@ describe('statsStore', () => {
   it('persist config includes version and migrate', () => {
     // REQ-STATE-009: Persist migration for safe schema evolution
     const persistOptions = (useStatsStore as unknown as { persist: { getOptions: () => { version: number; migrate: unknown } } }).persist.getOptions();
-    expect(persistOptions.version).toBe(1);
+    expect(persistOptions.version).toBe(2);
     expect(typeof persistOptions.migrate).toBe('function');
   });
 
@@ -147,7 +147,16 @@ describe('statsStore', () => {
     expect(state.activeTab).toBe('pitching');
     expect(state.leagueFilter).toBe('AL');
     expect(state.statView).toBe('advanced');
-    expect(state.pageSize).toBe(25);
+    expect(state.pageSize).toBe(50);
+  });
+
+  it('pageSize matches API PAGE_SIZE constant (REQ-NFR-019)', () => {
+    expect(useStatsStore.getState().pageSize).toBe(50);
+  });
+
+  it('persist config is at version 2 with pageSize alignment migration', () => {
+    const persistOptions = (useStatsStore as unknown as { persist: { getOptions: () => { version: number } } }).persist.getOptions();
+    expect(persistOptions.version).toBe(2);
   });
 
   it('reset also resets isStale to false', () => {

@@ -417,3 +417,35 @@ REQ-TEST-011: All requirements have mapped test cases.
 | REQ-STATE-010 Safe localStorage fallback | `tests/unit/stores/storage-factory.test.ts` (isMemoryFallback detection, memory storage correctness) |
 | REQ-STATE-010 WARN banner display | `tests/unit/features/auth/AuthenticatedLayout.test.tsx` (ErrorBanner shown/hidden based on storage availability) |
 | REQ-TEST-011 Traceability update | `tests/TRACEABILITY.md` (matrix updated through Phase 51) |
+
+## Phase 52: DevTools Conditional + Responsive SimControls + WARN Logging
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-016 DevTools conditional | `tests/unit/stores/devtools-conditional.test.ts` (6 stores verified `enabled: import.meta.env.DEV`) |
+| REQ-COMP-010 SimulationControls responsive | `tests/unit/styles/responsive.test.tsx` (2x2 mobile grid layout) |
+| REQ-ERR-018 WARN logging on fallback | `tests/unit/stores/storage-factory.test.ts` (console.warn on in-memory activation) |
+
+## Phase 53: Stale-While-Revalidate Cache Invalidation
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-011 Cross-store cache invalidation | `tests/unit/stores/cache-invalidation.test.ts` (sim complete, lineup save, league switch, logout) |
+| REQ-STATE-012 isStale + invalidateCache | `tests/unit/stores/leagueStore.test.ts`, `tests/unit/stores/leagueStore-async.test.ts` (isStale, invalidateLeagueCache, clearLeague) |
+| REQ-STATE-012 isStale + invalidateCache | `tests/unit/stores/rosterStore.test.ts`, `tests/unit/stores/rosterStore-async.test.ts` (isStale, invalidateRosterCache, clearRoster) |
+| REQ-STATE-012 isStale + invalidateCache | `tests/unit/stores/statsStore.test.ts`, `tests/unit/stores/statsStore-async.test.ts` (isStale, invalidateStatsCache, clearStats) |
+
+## Phase 54: Auth Lifecycle + npm Scripts Verification
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-STATE-015 Auth lifecycle | `tests/unit/stores/authStore-async.test.ts` (session refetch, no-session clear, signout reset) |
+| REQ-TEST-018 npm scripts | `tests/unit/config/npm-scripts.test.ts` (7 required scripts verified) |
+
+## Phase 55: Pagination Fix + DB Constraint + Playoff Enforcement
+
+| Requirement | Test File(s) |
+|-------------|-------------|
+| REQ-NFR-019 Server-side pagination alignment | `tests/unit/stores/statsStore.test.ts` (pageSize=50, version=2) |
+| REQ-LGE-007 One user per team per league | `tests/unit/migrations/unique-owner-per-league.test.ts` (unique index, partial WHERE, file count) |
+| REQ-LGE-009 Playoff one-game-at-a-time | `tests/unit/api/leagues/[id]/simulate.test.ts` (REQ-LGE-009 explicit test) |

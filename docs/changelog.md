@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-02-11 - Pagination Fix + DB Constraint + Traceability (Phase 55)
+
+### Phase 55: pageSize Alignment (REQ-NFR-019), One-User-Per-Team (REQ-LGE-007), Playoff Enforcement (REQ-LGE-009)
+
+Fixes client/server pagination mismatch, adds database-level constraint for
+team ownership, and adds explicit REQ-LGE-009 enforcement test.
+
+- **Modified `src/stores/statsStore.ts`**
+  - Fixed `pageSize: 25` -> `pageSize: 50` to match API `PAGE_SIZE = 50` (REQ-NFR-019)
+  - Bumped persist version from 1 to 2 (migration falls back to new default)
+
+- **Created `supabase/migrations/00019_unique_owner_per_league.sql`**
+  - Partial unique index on `(league_id, owner_id) WHERE owner_id IS NOT NULL`
+  - Prevents user from owning multiple teams in same league (REQ-LGE-007)
+  - NULL owner_id (CPU teams) correctly excluded from constraint
+
+- **Created `tests/unit/migrations/unique-owner-per-league.test.ts`** (3 tests)
+  - Verifies unique index exists on teams table
+  - Verifies partial WHERE clause for non-null owner_id
+  - Verifies migration file count is 19
+
+- **Modified `tests/unit/api/leagues/[id]/simulate.test.ts`** (1 new test)
+  - Explicit REQ-LGE-009 test: playoff simulation returns exactly one game per call
+
+- **Modified `tests/unit/stores/statsStore.test.ts`** (2 new tests)
+  - `pageSize matches API PAGE_SIZE constant (REQ-NFR-019)`: verifies 50
+  - `persist config is at version 2`: verifies migration version bump
+
+- **Updated `tests/TRACEABILITY.md`** through Phase 55
+- **Updated `docs/PROJECT_STATUS.md`** traceability reference
+
+**Tests:** 2,710 tests across 236 files (6 new)
+
 ## 2026-02-11 - Auth Lifecycle + npm Scripts Verification (Phase 54)
 
 ### Phase 54: Auth Lifecycle (REQ-STATE-015) + npm Scripts Verification (REQ-TEST-018)

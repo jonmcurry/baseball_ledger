@@ -1,10 +1,10 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,704 tests across 235 files (all passing)
+**Test suite:** 2,710 tests across 236 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
-**SQL migrations:** 18
+**SQL migrations:** 19
 
 ---
 
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--54)
+## Completed Phases (1--55)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -364,6 +364,14 @@ Seven-layer architecture with strict downward-only imports:
 - Structural test validates all 7 required npm scripts
 - 11 new tests (4 auth lifecycle + 7 npm scripts)
 
+### Phase 55 -- Pagination Fix + DB Constraint + Playoff Enforcement (REQ-NFR-019, REQ-LGE-007, REQ-LGE-009)
+- Fixed statsStore `pageSize` mismatch: 25 -> 50 to match API `PAGE_SIZE = 50`
+- Persist version bumped to 2 (migration falls back to new default)
+- Migration 00019: partial unique index `uq_teams_league_owner` on (league_id, owner_id) WHERE NOT NULL
+- Explicit REQ-LGE-009 test for playoff single-game enforcement
+- TRACEABILITY.md updated through Phase 55
+- 6 new tests (3 migration + 2 statsStore + 1 simulate)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -375,7 +383,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-ARCH | 8 | Done | 7-layer architecture, path aliases, naming conventions |
 | REQ-DATA | 9 | Done | CSV loading, player pool, card generation, league averages, DB schema |
 | REQ-SIM | 16 | Done | Full APBA simulation engine, all mechanics ported |
-| REQ-LGE | 8 of 10 | Mostly done | Creation, join, invite keys, divisions, playoffs, commissioner |
+| REQ-LGE | 10 | Done | Creation, join, invite keys, divisions, playoffs, commissioner, one-user-per-team, deletion |
 | REQ-DFT | 8 | Done | Snake draft, AI drafter, valuation, timer, roster validation |
 | REQ-RST | 6 | Done | Lineup gen, lineup update, roster validation, add/drop, trade eval, transactions |
 | REQ-SCH | 9 | Done | Schedule gen, simulate buttons, standings update, playoff transition, archive, new season |
@@ -386,9 +394,9 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
 | REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, stale-while-revalidate cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
-| REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
-| REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
-| REQ-TEST | 18 | Done | 2,704 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
+| REQ-MIG | 12 of 13 | Mostly done | 19 migrations, RLS, seed data, pgTAP stubs |
+| REQ-NFR | 18 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim, server-side pagination |
+| REQ-TEST | 18 | Done | 2,710 tests, TDD, traceability current, per-dir coverage thresholds, E2E, benchmarks, npm scripts |
 | REQ-ENV | 8 of 10 | Mostly done | Config modules, .env.example, vercel.json |
 
 ### UI Pages (REQ-UI)
@@ -436,7 +444,7 @@ Seven-layer architecture with strict downward-only imports:
    - CI runs `npm run test:coverage` which enforces thresholds
 
 6. **REQ-TEST-011: Traceability matrix maintenance** -- CURRENT
-   - TRACEABILITY.md updated through Phase 44
+   - TRACEABILITY.md updated through Phase 54
    - All phases have mapped requirement-to-test entries
 
 ### Lower Priority (Nice-to-Have / Future)
@@ -484,12 +492,12 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 54 |
-| Test files | 235 |
-| Total tests | 2,704 |
+| Phases completed | 55 |
+| Test files | 236 |
+| Total tests | 2,710 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
-| SQL migrations | 18 |
+| SQL migrations | 19 |
 | Zustand stores | 6 |
 | React hooks | 14 |
 | Feature directories | 15 |
