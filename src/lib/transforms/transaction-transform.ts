@@ -56,7 +56,7 @@ export function transformTransactionRows(rows: TransactionRow[]): TransactionEnt
 
       default:
         return {
-          type: row.type,
+          type: row.type as TransactionEntry['type'],
           playerName: 'Unknown',
           date: formatDate(row.created_at),
           details: '',
