@@ -23,6 +23,7 @@ export interface StatsState {
   activeTab: 'batting' | 'pitching';
   leagueFilter: 'AL' | 'NL' | 'combined';
   statView: StatView;
+  isStale: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -38,6 +39,8 @@ export interface StatsActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
+  clearStats: () => void;
+  invalidateStatsCache: (leagueId: string) => void;
   fetchBattingLeaders: (leagueId: string) => Promise<void>;
   fetchPitchingLeaders: (leagueId: string) => Promise<void>;
   fetchTeamStats: (leagueId: string) => Promise<void>;
@@ -54,6 +57,7 @@ const initialState: StatsState = {
   activeTab: 'batting',
   leagueFilter: 'combined',
   statView: 'traditional',
+  isStale: false,
   isLoading: false,
   error: null,
 };
@@ -93,12 +97,36 @@ export const useStatsStore = create<StatsStore>()(
 
         reset: () => set(initialState, false, 'reset'),
 
+        clearStats: () => {
+          const { activeTab, leagueFilter, statView, pageSize } = get();
+          set({
+            battingLeaders: [],
+            pitchingLeaders: [],
+            teamStats: [],
+            currentPage: 1,
+            activeTab,
+            leagueFilter,
+            statView,
+            pageSize,
+            isStale: false,
+            isLoading: false,
+            error: null,
+          }, false, 'clearStats');
+        },
+
+        invalidateStatsCache: (leagueId) => {
+          set({ isStale: true }, false, 'invalidateStatsCache');
+          get().fetchBattingLeaders(leagueId);
+          get().fetchPitchingLeaders(leagueId);
+          get().fetchTeamStats(leagueId);
+        },
+
         fetchBattingLeaders: async (leagueId) => {
           set({ isLoading: true, error: null }, false, 'fetchBattingLeaders/start');
           try {
             const page = get().currentPage;
             const response = await statsService.fetchBattingLeaders(leagueId, page);
-            set({ battingLeaders: response.data, isLoading: false }, false, 'fetchBattingLeaders/success');
+            set({ battingLeaders: response.data, isStale: false, isLoading: false }, false, 'fetchBattingLeaders/success');
           } catch (err) {
             set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch batting leaders' }, false, 'fetchBattingLeaders/error');
           }

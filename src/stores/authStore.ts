@@ -10,6 +10,10 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { getSupabaseClient } from '@lib/supabase/client';
+import { useLeagueStore } from './leagueStore';
+import { useRosterStore } from './rosterStore';
+import { useStatsStore } from './statsStore';
+import { useSimulationStore } from './simulationStore';
 
 export interface AuthUser {
   id: string;
@@ -61,8 +65,14 @@ export const useAuthStore = create<AuthStore>()(
 
       setError: (error) => set({ error }, false, 'setError'),
 
-      logout: () =>
-        set({ user: null, session: null, error: null }, false, 'logout'),
+      logout: () => {
+        set({ user: null, session: null, error: null }, false, 'logout');
+        // REQ-STATE-011: Full state reset on all stores when user logs out
+        useLeagueStore.getState().reset();
+        useRosterStore.getState().reset();
+        useStatsStore.getState().reset();
+        useSimulationStore.getState().reset();
+      },
 
       initialize: async () => {
         try {

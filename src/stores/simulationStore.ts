@@ -8,6 +8,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import * as simulationService from '@services/simulation-service';
+import { useLeagueStore } from './leagueStore';
+import { useRosterStore } from './rosterStore';
+import { useStatsStore } from './statsStore';
 
 export type SimulationStatus = 'idle' | 'running' | 'complete' | 'error';
 
@@ -146,6 +149,11 @@ export const useSimulationStore = create<SimulationStore>()(
 
           set({ status: 'complete', currentDay: daysDone, totalDays: daysDone },
             false, 'runSimulation/complete');
+
+          // REQ-STATE-011: Invalidate dependent caches after simulation completes
+          useLeagueStore.getState().invalidateLeagueCache();
+          useRosterStore.getState().invalidateRosterCache(leagueId);
+          useStatsStore.getState().invalidateStatsCache(leagueId);
         } catch (err) {
           set({
             status: 'error',

@@ -108,4 +108,35 @@ describe('leagueStore', () => {
     expect(state.teams).toHaveLength(0);
     expect(state.isLoading).toBe(false);
   });
+
+  // -----------------------------------------------------------------------
+  // Cache Invalidation (REQ-STATE-011, REQ-STATE-012)
+  // -----------------------------------------------------------------------
+
+  it('isStale defaults to false', () => {
+    expect(useLeagueStore.getState().isStale).toBe(false);
+  });
+
+  it('clearLeague resets data but preserves nothing (full clear)', () => {
+    const store = useLeagueStore.getState();
+    store.setActiveLeague(createMockLeague());
+    store.setTeams(createMockTeams());
+    store.setStandings(createMockStandings());
+    store.clearLeague();
+
+    const state = useLeagueStore.getState();
+    expect(state.activeLeagueId).toBeNull();
+    expect(state.league).toBeNull();
+    expect(state.teams).toHaveLength(0);
+    expect(state.standings).toHaveLength(0);
+    expect(state.schedule).toHaveLength(0);
+    expect(state.isStale).toBe(false);
+    expect(state.error).toBeNull();
+  });
+
+  it('reset also resets isStale to false', () => {
+    useLeagueStore.setState({ isStale: true });
+    useLeagueStore.getState().reset();
+    expect(useLeagueStore.getState().isStale).toBe(false);
+  });
 });

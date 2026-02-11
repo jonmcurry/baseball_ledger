@@ -12,10 +12,12 @@ import type { RosterEntry } from '@lib/types/roster';
 import * as rosterService from '@services/roster-service';
 import { createSafeStorage } from './storage-factory';
 import { createMigrationConfig } from './persist-migration';
+import { useStatsStore } from './statsStore';
 
 export interface RosterState {
   activeTeamId: string | null;
   roster: RosterEntry[];
+  isStale: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -32,6 +34,8 @@ export interface RosterActions {
     lineupPosition: string | null,
   ) => void;
   reset: () => void;
+  clearRoster: () => void;
+  invalidateRosterCache: (leagueId: string) => void;
   fetchRoster: (leagueId: string, teamId: string) => Promise<void>;
   saveLineup: (leagueId: string, teamId: string) => Promise<void>;
 }
@@ -41,6 +45,7 @@ export type RosterStore = RosterState & RosterActions;
 const initialState: RosterState = {
   activeTeamId: null,
   roster: [],
+  isStale: false,
   isLoading: false,
   error: null,
 };
@@ -111,6 +116,22 @@ export const useRosterStore = create<RosterStore>()(
             'reset',
           ),
 
+        clearRoster: () =>
+          set(
+            (state) => {
+              Object.assign(state, initialState);
+            },
+            false,
+            'clearRoster',
+          ),
+
+        invalidateRosterCache: (leagueId) => {
+          const teamId = get().activeTeamId;
+          if (!teamId) return;
+          set((state) => { state.isStale = true; }, false, 'invalidateRosterCache');
+          get().fetchRoster(leagueId, teamId);
+        },
+
         fetchRoster: async (leagueId, teamId) => {
           set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchRoster/start');
           try {
@@ -118,6 +139,7 @@ export const useRosterStore = create<RosterStore>()(
             set((state) => {
               state.activeTeamId = teamId;
               state.roster = roster;
+              state.isStale = false;
               state.isLoading = false;
             }, false, 'fetchRoster/success');
           } catch (err) {
@@ -139,6 +161,8 @@ export const useRosterStore = create<RosterStore>()(
             }));
             await rosterService.updateLineup(leagueId, teamId, updates);
             set((state) => { state.isLoading = false; }, false, 'saveLineup/success');
+            // REQ-STATE-011: Invalidate stats cache after roster change
+            useStatsStore.getState().invalidateStatsCache(leagueId);
           } catch (err) {
             set((state) => {
               state.isLoading = false;

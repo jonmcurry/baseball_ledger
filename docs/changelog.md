@@ -1,5 +1,59 @@
 # Changelog
 
+## 2026-02-11 - Cache Invalidation (Phase 53)
+
+### Phase 53: Stale-While-Revalidate Cache Invalidation (REQ-STATE-011, REQ-STATE-012)
+
+Implements the full cache invalidation trigger table from the SRD. Each of
+the 3 persisted stores (leagueStore, rosterStore, statsStore) now has
+`isStale`, `invalidateCache`, and `clear` actions. Cross-store triggers
+ensure caches are invalidated at the correct moments.
+
+- **Modified `src/stores/leagueStore.ts`**
+  - Added `isStale: boolean` to state
+  - Added `invalidateLeagueCache()`: sets isStale, triggers background refetch
+  - Added `clearLeague()`: full state reset
+  - `setActiveLeague()` now clears dependent roster and stats stores
+  - `fetchLeagueData` clears isStale on success
+
+- **Modified `src/stores/rosterStore.ts`**
+  - Added `isStale: boolean` to state
+  - Added `invalidateRosterCache(leagueId)`: sets isStale, triggers background refetch
+  - Added `clearRoster()`: full state reset
+  - `saveLineup()` success triggers `invalidateStatsCache()` on statsStore
+  - `fetchRoster` clears isStale on success
+
+- **Modified `src/stores/statsStore.ts`**
+  - Added `isStale: boolean` to state
+  - Added `invalidateStatsCache(leagueId)`: sets isStale, triggers parallel refetch of all 3 stat types
+  - Added `clearStats()`: clears data but preserves UI preferences (activeTab, leagueFilter, statView, pageSize)
+  - `fetchBattingLeaders` clears isStale on success
+
+- **Modified `src/stores/simulationStore.ts`**
+  - `runSimulation` completion now calls invalidateLeagueCache, invalidateRosterCache, invalidateStatsCache
+
+- **Modified `src/stores/authStore.ts`**
+  - `logout` now calls reset on all 4 dependent stores (league, roster, stats, simulation)
+
+- **Created `tests/unit/stores/cache-invalidation.test.ts`** (5 tests)
+  - Simulation completion triggers refetch on league, roster, stats
+  - saveLineup success triggers stats refetch; failure does not
+  - setActiveLeague clears roster and stats
+  - logout resets all stores
+
+- **Modified store sync tests** (7 new tests across 3 files)
+  - leagueStore: isStale default, clearLeague, reset clears isStale
+  - rosterStore: isStale default, clearRoster, reset clears isStale
+  - statsStore: isStale default, clearStats preserves UI prefs, reset clears isStale
+
+- **Modified store async tests** (11 new tests across 3 files)
+  - invalidateLeagueCache triggers refetch, preserves stale data, no-op without ID
+  - invalidateRosterCache triggers refetch, preserves stale data, no-op without ID
+  - invalidateStatsCache triggers refetch, preserves stale data
+  - fetchLeagueData/fetchRoster/fetchBattingLeaders clear isStale on success
+
+**Tests:** 2,693 tests across 234 files (25 new)
+
 ## 2026-02-11 - DevTools Conditional + Responsive SimControls + WARN Logging (Phase 52)
 
 ### Phase 52: Store DevTools Conditional (REQ-STATE-016), SimulationControls Responsive (REQ-COMP-010), Fallback WARN Logging (REQ-ERR-018)

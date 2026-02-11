@@ -115,4 +115,44 @@ describe('statsStore', () => {
     useStatsStore.getState().reset();
     expect(useStatsStore.getState().statView).toBe('traditional');
   });
+
+  // -----------------------------------------------------------------------
+  // Cache Invalidation (REQ-STATE-011, REQ-STATE-012)
+  // -----------------------------------------------------------------------
+
+  it('isStale defaults to false', () => {
+    expect(useStatsStore.getState().isStale).toBe(false);
+  });
+
+  it('clearStats resets data but preserves UI preferences', () => {
+    const store = useStatsStore.getState();
+    store.setBattingLeaders(createMockBattingLeaders());
+    store.setPitchingLeaders(createMockPitchingLeaders());
+    store.setTeamStats(createMockTeamStats());
+    store.setActiveTab('pitching');
+    store.setLeagueFilter('AL');
+    store.setStatView('advanced');
+    store.setPage(3);
+    store.clearStats();
+
+    const state = useStatsStore.getState();
+    // Data cleared
+    expect(state.battingLeaders).toHaveLength(0);
+    expect(state.pitchingLeaders).toHaveLength(0);
+    expect(state.teamStats).toHaveLength(0);
+    expect(state.currentPage).toBe(1);
+    expect(state.isStale).toBe(false);
+    expect(state.error).toBeNull();
+    // UI preferences preserved
+    expect(state.activeTab).toBe('pitching');
+    expect(state.leagueFilter).toBe('AL');
+    expect(state.statView).toBe('advanced');
+    expect(state.pageSize).toBe(25);
+  });
+
+  it('reset also resets isStale to false', () => {
+    useStatsStore.setState({ isStale: true });
+    useStatsStore.getState().reset();
+    expect(useStatsStore.getState().isStale).toBe(false);
+  });
 });

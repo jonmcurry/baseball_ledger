@@ -78,4 +78,31 @@ describe('rosterStore', () => {
     expect(state.roster).toHaveLength(0);
     expect(state.isLoading).toBe(false);
   });
+
+  // -----------------------------------------------------------------------
+  // Cache Invalidation (REQ-STATE-011, REQ-STATE-012)
+  // -----------------------------------------------------------------------
+
+  it('isStale defaults to false', () => {
+    expect(useRosterStore.getState().isStale).toBe(false);
+  });
+
+  it('clearRoster resets data fields', () => {
+    const store = useRosterStore.getState();
+    store.setActiveTeam('team-1');
+    store.setRoster(createMockRoster());
+    store.clearRoster();
+
+    const state = useRosterStore.getState();
+    expect(state.activeTeamId).toBeNull();
+    expect(state.roster).toHaveLength(0);
+    expect(state.isStale).toBe(false);
+    expect(state.error).toBeNull();
+  });
+
+  it('reset also resets isStale to false', () => {
+    useRosterStore.setState({ isStale: true });
+    useRosterStore.getState().reset();
+    expect(useRosterStore.getState().isStale).toBe(false);
+  });
 });

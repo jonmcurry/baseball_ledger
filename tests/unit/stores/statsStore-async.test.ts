@@ -117,4 +117,53 @@ describe('statsStore async actions', () => {
 
     expect(useStatsStore.getState().error).toBe('Team stats failed');
   });
+
+  // -----------------------------------------------------------------------
+  // invalidateStatsCache (REQ-STATE-011, REQ-STATE-012)
+  // -----------------------------------------------------------------------
+
+  it('invalidateStatsCache sets isStale and triggers refetch (REQ-STATE-012)', async () => {
+    // Pre-populate
+    vi.mocked(statsService.fetchBattingLeaders).mockResolvedValue(mockBattingResponse);
+    vi.mocked(statsService.fetchPitchingLeaders).mockResolvedValue(mockPitchingResponse);
+    vi.mocked(statsService.fetchTeamStats).mockResolvedValue(mockTeamStats);
+
+    useStatsStore.getState().invalidateStatsCache('league-1');
+
+    await vi.waitFor(() => {
+      expect(useStatsStore.getState().isStale).toBe(false);
+    });
+    expect(statsService.fetchBattingLeaders).toHaveBeenCalledWith('league-1', 1);
+    expect(statsService.fetchPitchingLeaders).toHaveBeenCalledWith('league-1', 1);
+    expect(statsService.fetchTeamStats).toHaveBeenCalledWith('league-1');
+  });
+
+  it('invalidateStatsCache preserves stale data during refetch (REQ-STATE-012)', async () => {
+    vi.mocked(statsService.fetchBattingLeaders).mockResolvedValue(mockBattingResponse);
+    vi.mocked(statsService.fetchPitchingLeaders).mockResolvedValue(mockPitchingResponse);
+    vi.mocked(statsService.fetchTeamStats).mockResolvedValue(mockTeamStats);
+
+    await useStatsStore.getState().fetchBattingLeaders('league-1');
+    vi.clearAllMocks();
+
+    // Make refetch hang
+    vi.mocked(statsService.fetchBattingLeaders).mockReturnValue(new Promise(() => {}));
+    vi.mocked(statsService.fetchPitchingLeaders).mockReturnValue(new Promise(() => {}));
+    vi.mocked(statsService.fetchTeamStats).mockReturnValue(new Promise(() => {}));
+
+    useStatsStore.getState().invalidateStatsCache('league-1');
+
+    // Stale data should still be visible
+    expect(useStatsStore.getState().battingLeaders).toEqual(mockBattingResponse.data);
+    expect(useStatsStore.getState().isStale).toBe(true);
+  });
+
+  it('fetchBattingLeaders clears isStale on success', async () => {
+    useStatsStore.setState({ isStale: true });
+    vi.mocked(statsService.fetchBattingLeaders).mockResolvedValue(mockBattingResponse);
+
+    await useStatsStore.getState().fetchBattingLeaders('league-1');
+
+    expect(useStatsStore.getState().isStale).toBe(false);
+  });
 });

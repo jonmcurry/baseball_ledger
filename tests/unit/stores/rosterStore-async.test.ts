@@ -155,4 +155,64 @@ describe('rosterStore async actions', () => {
     expect(state.error).toBe('Save failed');
     expect(state.isLoading).toBe(false);
   });
+
+  // -----------------------------------------------------------------------
+  // invalidateRosterCache (REQ-STATE-011, REQ-STATE-012)
+  // -----------------------------------------------------------------------
+
+  it('invalidateRosterCache sets isStale and triggers refetch (REQ-STATE-012)', async () => {
+    // Pre-populate
+    vi.mocked(rosterService.fetchRoster).mockResolvedValue(mockRoster);
+    useRosterStore.setState({ activeTeamId: 'team-1' });
+    await useRosterStore.getState().fetchRoster('league-1', 'team-1');
+    vi.clearAllMocks();
+
+    vi.mocked(rosterService.fetchRoster).mockResolvedValue(mockRoster);
+
+    useRosterStore.getState().invalidateRosterCache('league-1');
+
+    await vi.waitFor(() => {
+      expect(useRosterStore.getState().isStale).toBe(false);
+    });
+    expect(rosterService.fetchRoster).toHaveBeenCalledWith('league-1', 'team-1');
+  });
+
+  it('invalidateRosterCache preserves stale data during refetch (REQ-STATE-012)', async () => {
+    // Pre-populate
+    vi.mocked(rosterService.fetchRoster).mockResolvedValue(mockRoster);
+    useRosterStore.setState({ activeTeamId: 'team-1' });
+    await useRosterStore.getState().fetchRoster('league-1', 'team-1');
+    vi.clearAllMocks();
+
+    let resolveRoster!: (value: RosterEntry[]) => void;
+    vi.mocked(rosterService.fetchRoster).mockReturnValue(
+      new Promise((resolve) => { resolveRoster = resolve; }),
+    );
+
+    useRosterStore.getState().invalidateRosterCache('league-1');
+
+    expect(useRosterStore.getState().roster).toEqual(mockRoster);
+    expect(useRosterStore.getState().isStale).toBe(true);
+
+    resolveRoster(mockRoster);
+  });
+
+  it('invalidateRosterCache is a no-op when no activeTeamId', () => {
+    useRosterStore.getState().reset();
+    vi.mocked(rosterService.fetchRoster).mockResolvedValue([]);
+
+    useRosterStore.getState().invalidateRosterCache('league-1');
+
+    expect(rosterService.fetchRoster).not.toHaveBeenCalled();
+    expect(useRosterStore.getState().isStale).toBe(false);
+  });
+
+  it('fetchRoster clears isStale on success', async () => {
+    useRosterStore.setState({ isStale: true });
+    vi.mocked(rosterService.fetchRoster).mockResolvedValue(mockRoster);
+
+    await useRosterStore.getState().fetchRoster('league-1', 'team-1');
+
+    expect(useRosterStore.getState().isStale).toBe(false);
+  });
 });

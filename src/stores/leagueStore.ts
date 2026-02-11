@@ -13,6 +13,8 @@ import type { ScheduleDay, FullPlayoffBracket } from '@lib/types/schedule';
 import * as leagueService from '@services/league-service';
 import { createSafeStorage } from './storage-factory';
 import { createMigrationConfig } from './persist-migration';
+import { useRosterStore } from './rosterStore';
+import { useStatsStore } from './statsStore';
 
 export interface LeagueState {
   activeLeagueId: string | null;
@@ -22,6 +24,7 @@ export interface LeagueState {
   schedule: ScheduleDay[];
   playoffBracket: FullPlayoffBracket | null;
   currentDay: number;
+  isStale: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -37,6 +40,8 @@ export interface LeagueActions {
   setError: (error: string | null) => void;
   updateTeamRecord: (teamId: string, wins: number, losses: number) => void;
   reset: () => void;
+  clearLeague: () => void;
+  invalidateLeagueCache: () => void;
   fetchLeagueData: (id: string) => Promise<void>;
   fetchStandings: (id: string) => Promise<void>;
   fetchSchedule: (id: string, day?: number) => Promise<void>;
@@ -52,6 +57,7 @@ const initialState: LeagueState = {
   schedule: [],
   playoffBracket: null,
   currentDay: 0,
+  isStale: false,
   isLoading: false,
   error: null,
 };
@@ -59,10 +65,13 @@ const initialState: LeagueState = {
 export const useLeagueStore = create<LeagueStore>()(
   devtools(
     persist(
-      immer((set, _get) => ({
+      immer((set, get) => ({
         ...initialState,
 
-        setActiveLeague: (league) =>
+        setActiveLeague: (league) => {
+          // REQ-STATE-011: Clear dependent stores when switching leagues
+          useRosterStore.getState().clearRoster();
+          useStatsStore.getState().clearStats();
           set(
             (state) => {
               state.activeLeagueId = league.id;
@@ -72,7 +81,8 @@ export const useLeagueStore = create<LeagueStore>()(
             },
             false,
             'setActiveLeague',
-          ),
+          );
+        },
 
         setTeams: (teams) =>
           set(
@@ -159,6 +169,22 @@ export const useLeagueStore = create<LeagueStore>()(
             'reset',
           ),
 
+        clearLeague: () =>
+          set(
+            (state) => {
+              Object.assign(state, initialState);
+            },
+            false,
+            'clearLeague',
+          ),
+
+        invalidateLeagueCache: () => {
+          const id = get().activeLeagueId;
+          if (!id) return;
+          set((state) => { state.isStale = true; }, false, 'invalidateLeagueCache');
+          get().fetchLeagueData(id);
+        },
+
         fetchLeagueData: async (id) => {
           set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchLeagueData/start');
           try {
@@ -176,6 +202,7 @@ export const useLeagueStore = create<LeagueStore>()(
               state.schedule = schedule;
               state.playoffBracket = league.playoffBracket ?? null;
               state.currentDay = league.currentDay;
+              state.isStale = false;
               state.isLoading = false;
             }, false, 'fetchLeagueData/success');
           } catch (err) {

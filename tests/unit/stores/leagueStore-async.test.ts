@@ -158,4 +158,71 @@ describe('leagueStore async actions', () => {
 
     expect(leagueService.fetchSchedule).toHaveBeenCalledWith('league-1', 42);
   });
+
+  // -----------------------------------------------------------------------
+  // invalidateLeagueCache (REQ-STATE-011, REQ-STATE-012)
+  // -----------------------------------------------------------------------
+
+  it('invalidateLeagueCache sets isStale true and triggers refetch (REQ-STATE-012)', async () => {
+    // Pre-populate with stale data
+    setupSuccessMocks();
+    await useLeagueStore.getState().fetchLeagueData('league-1');
+    vi.clearAllMocks();
+
+    // Set up mocks for the refetch
+    setupSuccessMocks();
+
+    useLeagueStore.getState().invalidateLeagueCache();
+
+    // isStale should be set before refetch begins
+    // After refetch completes, isStale returns to false
+    await vi.waitFor(() => {
+      expect(useLeagueStore.getState().isStale).toBe(false);
+    });
+    expect(leagueService.fetchLeague).toHaveBeenCalledWith('league-1');
+  });
+
+  it('invalidateLeagueCache preserves stale data during refetch (REQ-STATE-012)', async () => {
+    // Pre-populate
+    setupSuccessMocks();
+    await useLeagueStore.getState().fetchLeagueData('league-1');
+    vi.clearAllMocks();
+
+    // Make refetch hang
+    let resolveFetch!: (value: typeof mockLeague) => void;
+    vi.mocked(leagueService.fetchLeague).mockReturnValue(
+      new Promise((resolve) => { resolveFetch = resolve; }),
+    );
+    vi.mocked(leagueService.fetchTeams).mockResolvedValue(mockTeams);
+    vi.mocked(leagueService.fetchStandings).mockResolvedValue(mockStandings);
+    vi.mocked(leagueService.fetchSchedule).mockResolvedValue(mockSchedule);
+
+    useLeagueStore.getState().invalidateLeagueCache();
+
+    // Stale data should still be visible
+    expect(useLeagueStore.getState().teams).toEqual(mockTeams);
+    expect(useLeagueStore.getState().standings).toEqual(mockStandings);
+    expect(useLeagueStore.getState().isStale).toBe(true);
+
+    resolveFetch(mockLeague);
+  });
+
+  it('invalidateLeagueCache is a no-op when no activeLeagueId', () => {
+    useLeagueStore.getState().reset();
+    setupSuccessMocks();
+
+    useLeagueStore.getState().invalidateLeagueCache();
+
+    expect(leagueService.fetchLeague).not.toHaveBeenCalled();
+    expect(useLeagueStore.getState().isStale).toBe(false);
+  });
+
+  it('fetchLeagueData clears isStale on success', async () => {
+    useLeagueStore.setState({ isStale: true, activeLeagueId: 'league-1' });
+    setupSuccessMocks();
+
+    await useLeagueStore.getState().fetchLeagueData('league-1');
+
+    expect(useLeagueStore.getState().isStale).toBe(false);
+  });
 });

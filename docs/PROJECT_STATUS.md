@@ -1,7 +1,7 @@
 # Baseball Ledger -- Project Status
 
 **Last updated:** 2026-02-11
-**Test suite:** 2,668 tests across 233 files (all passing)
+**Test suite:** 2,693 tests across 234 files (all passing)
 **TypeScript:** Clean (no errors)
 **API endpoints:** 10 of 12 Vercel Hobby limit (2 slots remaining)
 **SQL migrations:** 18
@@ -25,7 +25,7 @@ Seven-layer architecture with strict downward-only imports:
 
 ---
 
-## Completed Phases (1--52)
+## Completed Phases (1--53)
 
 ### Phase 1 -- Project Scaffolding & Foundation
 - Vite 7.3 + React 19 + TypeScript project structure
@@ -351,6 +351,12 @@ Seven-layer architecture with strict downward-only imports:
 - storage-factory: `console.warn()` on in-memory fallback activation
 - 8 new tests (6 structural + 1 WARN log + 1 responsive)
 
+### Phase 53 -- Stale-While-Revalidate Cache Invalidation (REQ-STATE-011, REQ-STATE-012)
+- `isStale` + `invalidateCache` + `clear` actions on all 3 persisted stores
+- Cross-store triggers: sim complete, lineup save, league switch, logout
+- Stale data preserved during background refetch (stale-while-revalidate pattern)
+- 25 new tests (5 cross-store + 7 sync + 11 async + 2 existing modified)
+
 ---
 
 ## REQ-* Coverage by Category
@@ -371,7 +377,7 @@ Seven-layer architecture with strict downward-only imports:
 | REQ-AUTH | 3 | Done | Supabase Auth, RLS, invite keys |
 | REQ-API | 10 of 11 | Mostly done | Endpoints, envelope format, pagination, error codes |
 | REQ-ERR | 20 | Done | AppError, Zod validation, per-feature error boundaries, structured logging |
-| REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, cache invalidation |
+| REQ-STATE | 16 | Done | All stores, persist + migration, devtools conditional, Realtime infra, stale-while-revalidate cache invalidation |
 | REQ-COMP | 13 | Done | Design tokens, components, routing, accessibility, focus trap, page titles |
 | REQ-MIG | 11 of 13 | Mostly done | 17 migrations, RLS, seed data, pgTAP stubs |
 | REQ-NFR | 17 of 21 | Mostly done | Performance benchmarks, determinism, Web Worker, chunked sim |
@@ -471,9 +477,9 @@ Seven-layer architecture with strict downward-only imports:
 
 | Metric | Value |
 |--------|-------|
-| Phases completed | 52 |
-| Test files | 233 |
-| Total tests | 2,668 |
+| Phases completed | 53 |
+| Test files | 234 |
+| Total tests | 2,693 |
 | Source files | ~300+ |
 | API endpoints | 10 serverless functions |
 | SQL migrations | 18 |
