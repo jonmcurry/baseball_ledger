@@ -114,7 +114,7 @@ export function DraftBoardPage() {
     onExpire: handleAutoPickOnExpire,
   });
 
-  if (isLoading) {
+  if (isLoading && !draftState && availablePlayers.length === 0) {
     return <LoadingLedger message="Loading draft board..." />;
   }
 

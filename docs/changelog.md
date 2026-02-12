@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-11 - Fix Draft Board Infinite Refresh Loop (Phase 71b)
+
+### Phase 71b: Stop draft board from refreshing every second
+
+The AvailablePlayersTable's search debounce `useEffect` fired on mount with
+an empty string, triggering a fetch. Each fetch set `isLoading = true` in the
+store, which caused the DraftBoardPage to unmount the entire page and show
+`LoadingLedger`. On remount, the initial-load effect fired again, creating an
+infinite loop.
+
+- **AvailablePlayersTable**: Use `useRef` to skip debounce effect on first
+  render. Use a ref for `onFilterChange` callback to avoid stale closures
+  without re-triggering the debounce effect.
+- **draftStore**: `fetchAvailablePlayers` no longer sets `isLoading = true`
+  since player fetches are background updates.
+- **DraftBoardPage**: Loading spinner only shows when no data has loaded yet
+  (`!draftState && availablePlayers.length === 0`).
+
 ## 2026-02-11 - Server-Side Pagination for Draft Player Pool (Phase 71)
 
 ### Phase 71: Full player pool browsing with server-side pagination

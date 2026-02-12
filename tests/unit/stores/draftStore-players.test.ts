@@ -96,8 +96,8 @@ describe('draftStore.fetchAvailablePlayers', () => {
     });
   });
 
-  it('sets isLoading during fetch', async () => {
-    let resolvePromise: (value: unknown[]) => void;
+  it('does not set isLoading during player fetch (background update)', async () => {
+    let resolvePromise: (value: unknown) => void;
     mockFetchAvailablePlayers.mockReturnValue(
       new Promise((resolve) => { resolvePromise = resolve; }),
     );
@@ -106,10 +106,10 @@ describe('draftStore.fetchAvailablePlayers', () => {
       useDraftStore.getState().fetchAvailablePlayers('league-1');
     });
 
-    // After starting, isLoading should be true
-    expect(useDraftStore.getState().isLoading).toBe(true);
+    // Player fetches are silent background updates -- isLoading stays false
+    expect(useDraftStore.getState().isLoading).toBe(false);
 
-    // Resolve and verify it's done
+    // Resolve and verify it completes
     resolvePromise!({ rows: [], totalRows: 0 });
     await fetchPromise;
   });

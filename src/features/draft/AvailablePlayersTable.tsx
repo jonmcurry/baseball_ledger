@@ -6,7 +6,7 @@
  * Feature-scoped sub-component. No store imports.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { AvailablePlayer } from '@stores/draftStore';
 import { Input } from '@components/forms/Input';
 import { Select } from '@components/forms/Select';
@@ -96,25 +96,32 @@ export function AvailablePlayersTable({
   const [posFilter, setPosFilter] = useState('all');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const isFirstRender = useRef(true);
 
   const totalPages = Math.max(1, Math.ceil(totalAvailable / pageSize));
 
-  const emitFilters = useCallback((overrides: Partial<PlayerTableFilters> = {}) => {
-    onFilterChange({
-      search: search || undefined,
-      position: posFilter === 'all' ? undefined : posFilter,
-      sortBy: SORT_KEY_TO_API[sortKey],
-      sortOrder: sortDir,
-      page: currentPage,
-      pageSize,
-      ...overrides,
-    });
-  }, [search, posFilter, sortKey, sortDir, currentPage, pageSize, onFilterChange]);
+  // Use a ref for the callback so the debounce effect doesn't re-fire on prop changes
+  const onFilterChangeRef = useRef(onFilterChange);
+  onFilterChangeRef.current = onFilterChange;
 
-  // Debounce search input (300ms)
+  const buildFilters = useCallback((overrides: Partial<PlayerTableFilters> = {}): PlayerTableFilters => ({
+    search: search || undefined,
+    position: posFilter === 'all' ? undefined : posFilter,
+    sortBy: SORT_KEY_TO_API[sortKey],
+    sortOrder: sortDir,
+    page: currentPage,
+    pageSize,
+    ...overrides,
+  }), [search, posFilter, sortKey, sortDir, currentPage, pageSize]);
+
+  // Debounce search input (300ms) -- skip initial mount
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
-      emitFilters({ search: search || undefined, page: 1 });
+      onFilterChangeRef.current(buildFilters({ search: search || undefined, page: 1 }));
     }, 300);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,7 +129,7 @@ export function AvailablePlayersTable({
 
   function handlePositionChange(value: string) {
     setPosFilter(value);
-    emitFilters({ position: value === 'all' ? undefined : value, page: 1 });
+    onFilterChangeRef.current(buildFilters({ position: value === 'all' ? undefined : value, page: 1 }));
   }
 
   function handleSort(key: SortKey) {
@@ -134,12 +141,12 @@ export function AvailablePlayersTable({
     }
     setSortKey(key);
     setSortDir(newDir);
-    emitFilters({ sortBy: SORT_KEY_TO_API[key], sortOrder: newDir, page: 1 });
+    onFilterChangeRef.current(buildFilters({ sortBy: SORT_KEY_TO_API[key], sortOrder: newDir, page: 1 }));
   }
 
   function handlePageChange(newPage: number) {
     if (newPage < 1 || newPage > totalPages) return;
-    emitFilters({ page: newPage });
+    onFilterChangeRef.current(buildFilters({ page: newPage }));
   }
 
   const COL_SPAN = 7;

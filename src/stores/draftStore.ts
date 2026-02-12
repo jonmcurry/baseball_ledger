@@ -76,7 +76,7 @@ export const useDraftStore = create<DraftStoreType>()(
       },
 
       fetchAvailablePlayers: async (leagueId, filters) => {
-        set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchAvailablePlayers/start');
+        set((state) => { state.error = null; }, false, 'fetchAvailablePlayers/start');
         try {
           const mergedFilters = { pageSize: DEFAULT_PAGE_SIZE, sortBy: 'nameLast', sortOrder: 'asc' as const, ...filters };
           const result = await draftService.fetchAvailablePlayers(leagueId, mergedFilters);
@@ -86,11 +86,9 @@ export const useDraftStore = create<DraftStoreType>()(
             state.totalAvailablePlayers = result.totalRows;
             state.playerCurrentPage = mergedFilters.page ?? 1;
             state.playerPageSize = mergedFilters.pageSize ?? DEFAULT_PAGE_SIZE;
-            state.isLoading = false;
           }, false, 'fetchAvailablePlayers/success');
         } catch (err) {
           set((state) => {
-            state.isLoading = false;
             state.error = err instanceof Error ? err.message : 'Failed to fetch available players';
           }, false, 'fetchAvailablePlayers/error');
         }
