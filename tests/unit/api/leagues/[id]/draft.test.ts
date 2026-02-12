@@ -1030,7 +1030,7 @@ describe('POST /api/leagues/:id/draft (action=auto-pick)', () => {
     expect(res._body.data).toMatchObject({
       leagueId: 'league-1',
       action: 'auto-pick',
-      status: 'triggered',
+      status: 'processed',
     });
   });
 });

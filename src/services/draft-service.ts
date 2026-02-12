@@ -52,10 +52,15 @@ export async function autoPick(leagueId: string): Promise<{ status: string }> {
   return response.data;
 }
 
+export interface PlayerPoolResult {
+  rows: PlayerPoolRow[];
+  totalRows: number;
+}
+
 export async function fetchAvailablePlayers(
   leagueId: string,
   filters?: PlayerFilterOptions,
-): Promise<PlayerPoolRow[]> {
+): Promise<PlayerPoolResult> {
   const params = new URLSearchParams({ drafted: 'false' });
   if (filters?.position) params.set('position', filters.position);
   if (filters?.search) params.set('search', filters.search);
@@ -67,5 +72,8 @@ export async function fetchAvailablePlayers(
   const response = await apiGetPaginated<PlayerPoolRow>(
     `/api/leagues/${leagueId}/draft?resource=players&${params}`,
   );
-  return response.data;
+  return {
+    rows: response.data,
+    totalRows: response.pagination?.totalRows ?? response.data.length,
+  };
 }

@@ -13,6 +13,7 @@ import { Select } from '@components/forms/Select';
 
 export interface AvailablePlayersTableProps {
   players: readonly AvailablePlayer[];
+  totalAvailable?: number;
   onSelect: (player: AvailablePlayer) => void;
   onPlayerClick?: (player: AvailablePlayer) => void;
   disabled?: boolean;
@@ -75,7 +76,7 @@ function SortableHeader({
   );
 }
 
-export function AvailablePlayersTable({ players, onSelect, onPlayerClick, disabled = false }: AvailablePlayersTableProps) {
+export function AvailablePlayersTable({ players, totalAvailable, onSelect, onPlayerClick, disabled = false }: AvailablePlayersTableProps) {
   const [search, setSearch] = useState('');
   const [posFilter, setPosFilter] = useState('all');
   const [sortKey, setSortKey] = useState<SortKey>('name');
@@ -111,7 +112,14 @@ export function AvailablePlayersTable({ players, onSelect, onPlayerClick, disabl
 
   return (
     <div className="space-y-gutter">
-      <h3 className="font-headline text-sm font-bold text-ballpark">Available Players</h3>
+      <div className="flex items-baseline justify-between">
+        <h3 className="font-headline text-sm font-bold text-ballpark">Available Players</h3>
+        {totalAvailable !== undefined && totalAvailable > 0 && (
+          <span className="text-xs text-muted">
+            Showing {filtered.length} of {totalAvailable.toLocaleString()}
+          </span>
+        )}
+      </div>
       <div className="flex gap-gutter">
         <div className="flex-1">
           <Input value={search} onChange={setSearch} name="search" label="Search" placeholder="Player name..." />

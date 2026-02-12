@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-11 - CPU Auto-Drafting + Player Pool Fix (Phase 69)
+
+### Phase 69: CPU teams auto-draft + player pool display improvements
+
+CPU teams did not pick automatically during the draft. After clicking "Start
+Draft", the board showed "Waiting for [CPU team]..." indefinitely because no
+backend mechanism triggered CPU picks. Additionally, the player pool table only
+showed ~100 players (default page size).
+
+**Backend (`api/leagues/[id]/draft.ts`):**
+- New `processCpuPicks()` helper: loops through consecutive CPU team turns,
+  selects best available player via APBA card scoring (`selectBestAvailable`),
+  inserts roster entry, marks player as drafted
+- `handleStart` now calls `processCpuPicks` after setting draft status, so
+  initial CPU picks happen before returning to the frontend
+- `handlePick` calls `processCpuPicks` after each human pick, processing all
+  subsequent CPU team turns before responding
+- `handleAutoPick` is no longer a stub -- actually processes CPU picks
+
+**Frontend:**
+- `draftStore.submitPick` refetches draft state + available players after each
+  pick (ensures UI reflects all CPU auto-picks processed server-side)
+- Default player pool page size increased from 100 to 500
+- `fetchAvailablePlayers` now returns pagination metadata (`totalRows`)
+- `AvailablePlayersTable` shows "Showing X of Y" count for diagnostics
+- `DraftBoardPage` polls draft state every 5s when waiting for CPU teams
+  (edge case recovery)
+
+**Files changed:** `api/leagues/[id]/draft.ts`, `draftStore.ts`,
+`draft-service.ts`, `DraftBoardPage.tsx`, `AvailablePlayersTable.tsx`,
+`useDraft.ts`, `TransactionsPage.tsx`
+
+**Test count:** 2,799 across 246 files (all passing). TypeScript clean.
+
 ## 2026-02-11 - League Setup Workflow (Phase 68)
 
 ### Phase 68: Auto-generate teams on league creation + setup dashboard

@@ -13,7 +13,7 @@ const { mockUseTeam, mockAddPlayer, mockDropPlayer, mockSubmitTrade, mockFetchHi
   const mockDropPlayer = vi.fn().mockResolvedValue({ transactionId: 'tx-2' });
   const mockSubmitTrade = vi.fn().mockResolvedValue({});
   const mockFetchHistory = vi.fn().mockResolvedValue([]);
-  const mockFetchAvailable = vi.fn().mockResolvedValue([]);
+  const mockFetchAvailable = vi.fn().mockResolvedValue({ rows: [], totalRows: 0 });
   const mockFetchMyRoster = vi.fn().mockResolvedValue(undefined);
   const mockFetchRoster = vi.fn().mockResolvedValue([]);
   return { mockUseTeam, mockAddPlayer, mockDropPlayer, mockSubmitTrade, mockFetchHistory, mockFetchAvailable, mockFetchMyRoster, mockFetchRoster };
@@ -146,7 +146,7 @@ describe('TransactionsPage', () => {
       drafted_by_team_id: null,
       created_at: '2026-01-01',
     };
-    mockFetchAvailable.mockResolvedValue([poolRow]);
+    mockFetchAvailable.mockResolvedValue({ rows: [poolRow], totalRows: 1 });
 
     const user = userEvent.setup();
     render(<TransactionsPage />);
@@ -171,7 +171,7 @@ describe('TransactionsPage', () => {
       drafted_by_team_id: null,
       created_at: '2026-01-01',
     };
-    mockFetchAvailable.mockResolvedValue([poolRow]);
+    mockFetchAvailable.mockResolvedValue({ rows: [poolRow], totalRows: 1 });
 
     const user = userEvent.setup();
     render(<TransactionsPage />);
@@ -206,7 +206,7 @@ describe('TransactionsPage', () => {
       drafted_by_team_id: null,
       created_at: '2026-01-01',
     };
-    mockFetchAvailable.mockResolvedValue([poolRow]);
+    mockFetchAvailable.mockResolvedValue({ rows: [poolRow], totalRows: 1 });
 
     const user = userEvent.setup();
     render(<TransactionsPage />);
@@ -238,7 +238,7 @@ describe('TransactionsPage', () => {
       drafted_by_team_id: null,
       created_at: '2026-01-01',
     };
-    mockFetchAvailable.mockResolvedValue([poolRow]);
+    mockFetchAvailable.mockResolvedValue({ rows: [poolRow], totalRows: 1 });
 
     const user = userEvent.setup();
     render(<TransactionsPage />);

@@ -32,6 +32,7 @@ export function DraftBoardPage() {
   const {
     draftState,
     availablePlayers,
+    totalAvailablePlayers,
     isLoading,
     error,
     myTeam,
@@ -51,6 +52,16 @@ export function DraftBoardPage() {
       fetchAvailablePlayers(league.id);
     }
   }, [league?.id, fetchDraftState, fetchAvailablePlayers]);
+
+  // Poll draft state when it is not the user's turn (CPU picks processed server-side)
+  useEffect(() => {
+    if (!league?.id || !draftState || draftState.status !== 'in_progress' || isMyPick) return;
+    const interval = setInterval(() => {
+      fetchDraftState(league.id);
+      fetchAvailablePlayers(league.id);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [league?.id, draftState?.status, isMyPick, fetchDraftState, fetchAvailablePlayers]);
 
   // REQ-DFT-004: Auto-pick on timer expiry
   const handleAutoPickOnExpire = useCallback(() => {
@@ -165,6 +176,7 @@ export function DraftBoardPage() {
         <div className="md:col-span-6">
           <AvailablePlayersTable
             players={availablePlayers}
+            totalAvailable={totalAvailablePlayers}
             onSelect={handlePlayerSelect}
             onPlayerClick={handlePlayerClick}
             disabled={!isMyPick}

@@ -11,7 +11,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { DraftState, DraftPickResult } from '@lib/types/draft';
+import type { DraftState } from '@lib/types/draft';
 import type { PlayerFilterOptions } from '@services/draft-service';
 import { transformPoolRows } from '@lib/transforms/player-pool-transform';
 import type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
@@ -22,6 +22,7 @@ export type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 export interface DraftStoreState {
   draftState: DraftState | null;
   availablePlayers: AvailablePlayer[];
+  totalAvailablePlayers: number;
   isLoading: boolean;
   error: string | null;
   pickTimerSeconds: number;
@@ -44,6 +45,7 @@ export type DraftStoreType = DraftStoreState & DraftStoreActions;
 const initialState: DraftStoreState = {
   draftState: null,
   availablePlayers: [],
+  totalAvailablePlayers: 0,
   isLoading: false,
   error: null,
   pickTimerSeconds: 60,
@@ -70,9 +72,14 @@ export const useDraftStore = create<DraftStoreType>()(
       fetchAvailablePlayers: async (leagueId, filters) => {
         set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchAvailablePlayers/start');
         try {
-          const rows = await draftService.fetchAvailablePlayers(leagueId, filters);
-          const players = transformPoolRows(rows);
-          set((state) => { state.availablePlayers = players; state.isLoading = false; }, false, 'fetchAvailablePlayers/success');
+          const mergedFilters = { pageSize: 500, ...filters };
+          const result = await draftService.fetchAvailablePlayers(leagueId, mergedFilters);
+          const players = transformPoolRows(result.rows);
+          set((state) => {
+            state.availablePlayers = players;
+            state.totalAvailablePlayers = result.totalRows;
+            state.isLoading = false;
+          }, false, 'fetchAvailablePlayers/success');
         } catch (err) {
           set((state) => {
             state.isLoading = false;
@@ -84,24 +91,25 @@ export const useDraftStore = create<DraftStoreType>()(
       submitPick: async (leagueId, player) => {
         set((state) => { state.isLoading = true; state.error = null; }, false, 'submitPick/start');
         try {
-          const result: DraftPickResult = await draftService.submitPick(leagueId, {
+          await draftService.submitPick(leagueId, {
             playerId: player.playerId,
             playerName: `${player.nameFirst} ${player.nameLast}`,
             position: player.primaryPosition,
             seasonYear: player.seasonYear,
             playerCard: player.playerCard as unknown as Record<string, unknown>,
           });
+          // Refetch both draft state and available players after pick.
+          // The backend processes CPU picks synchronously, so the refetch
+          // returns the updated position after all CPU auto-picks complete.
+          const [freshState, freshResult] = await Promise.all([
+            draftService.fetchDraftState(leagueId),
+            draftService.fetchAvailablePlayers(leagueId, { pageSize: 500 }),
+          ]);
           set((state) => {
             state.isLoading = false;
-            if (state.draftState) {
-              state.draftState.picks.push(result);
-              state.draftState.currentPick += 1;
-              state.draftState.currentTeamId = result.nextTeamId;
-              state.draftState.status = result.isComplete ? 'completed' : 'in_progress';
-            }
-            state.availablePlayers = state.availablePlayers.filter(
-              (p) => p.playerId !== player.playerId,
-            );
+            state.draftState = freshState;
+            state.availablePlayers = transformPoolRows(freshResult.rows);
+            state.totalAvailablePlayers = freshResult.totalRows;
           }, false, 'submitPick/success');
         } catch (err) {
           set((state) => {

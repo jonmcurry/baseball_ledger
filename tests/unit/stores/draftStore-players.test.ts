@@ -41,7 +41,7 @@ describe('draftStore.fetchAvailablePlayers', () => {
         },
       },
     ];
-    mockFetchAvailablePlayers.mockResolvedValue(mockPlayers);
+    mockFetchAvailablePlayers.mockResolvedValue({ rows: mockPlayers, totalRows: 1 });
 
     await act(async () => {
       await useDraftStore.getState().fetchAvailablePlayers('league-1');
@@ -68,17 +68,17 @@ describe('draftStore.fetchAvailablePlayers', () => {
   });
 
   it('calls draft service with correct league ID', async () => {
-    mockFetchAvailablePlayers.mockResolvedValue([]);
+    mockFetchAvailablePlayers.mockResolvedValue({ rows: [], totalRows: 0 });
 
     await act(async () => {
       await useDraftStore.getState().fetchAvailablePlayers('league-42');
     });
 
-    expect(mockFetchAvailablePlayers).toHaveBeenCalledWith('league-42', undefined);
+    expect(mockFetchAvailablePlayers).toHaveBeenCalledWith('league-42', { pageSize: 500 });
   });
 
   it('passes filter options to service', async () => {
-    mockFetchAvailablePlayers.mockResolvedValue([]);
+    mockFetchAvailablePlayers.mockResolvedValue({ rows: [], totalRows: 0 });
 
     await act(async () => {
       await useDraftStore.getState().fetchAvailablePlayers('league-1', {
@@ -88,6 +88,7 @@ describe('draftStore.fetchAvailablePlayers', () => {
     });
 
     expect(mockFetchAvailablePlayers).toHaveBeenCalledWith('league-1', {
+      pageSize: 500,
       position: 'SP',
       search: 'ruth',
     });
@@ -107,7 +108,7 @@ describe('draftStore.fetchAvailablePlayers', () => {
     expect(useDraftStore.getState().isLoading).toBe(true);
 
     // Resolve and verify it's done
-    resolvePromise!([]);
+    resolvePromise!({ rows: [], totalRows: 0 });
     await fetchPromise;
   });
 });

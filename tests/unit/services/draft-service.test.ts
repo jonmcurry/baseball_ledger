@@ -105,7 +105,8 @@ describe('draft-service', () => {
     expect(mockApiGetPaginated).toHaveBeenCalledWith(
       expect.stringContaining('/api/leagues/lg-1/draft?resource=players&'),
     );
-    expect(result).toEqual(players);
+    expect(result.rows).toEqual(players);
+    expect(result.totalRows).toBe(1);
   });
 
   it('fetchAvailablePlayers passes filter params in URL', async () => {

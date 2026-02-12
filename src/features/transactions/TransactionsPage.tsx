@@ -94,8 +94,8 @@ export function TransactionsPage() {
     }
     setIsLoadingPlayers(true);
     try {
-      const rows = await fetchFreeAgents(leagueId, { search, pageSize: 20 });
-      setAvailablePlayers(transformPoolRows(rows));
+      const result = await fetchFreeAgents(leagueId, { search, pageSize: 20 });
+      setAvailablePlayers(transformPoolRows(result.rows));
     } catch {
       setAvailablePlayers([]);
     } finally {

@@ -21,6 +21,8 @@ import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '../../../src/lib/supabase/server';
 import type { Json } from '../../../src/lib/types/database';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '../../../src/lib/draft/draft-order';
+import { selectBestAvailable } from '../../../src/lib/draft/auto-pick-selector';
+import type { PlayerCard } from '../../../src/lib/types/player';
 import { SeededRNG } from '../../../src/lib/rng/seeded-rng';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
 import { generateAndInsertLineups } from '../../_lib/generate-lineup-rows';
@@ -39,6 +41,117 @@ const DraftPickSchema = z.object({
 const DraftStartSchema = z.object({
   action: z.literal('start'),
 });
+
+// ---------- CPU auto-pick helper ----------
+
+interface CpuPicksResult {
+  picksMade: number;
+  isComplete: boolean;
+  nextRound: number;
+  nextPick: number;
+  nextTeamId: string | null;
+}
+
+/**
+ * Process all consecutive CPU team picks starting from the current draft position.
+ * Loops until a human-owned team's turn is reached or the draft completes.
+ *
+ * REQ-DFT-004: CPU teams auto-select best available player via APBA card scoring.
+ */
+async function processCpuPicks(
+  supabase: ReturnType<typeof createServerClient>,
+  leagueId: string,
+  draftOrder: string[],
+): Promise<CpuPicksResult> {
+  const teamCount = draftOrder.length;
+  let picksMade = 0;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    // Count existing picks to determine current position
+    const { count: pickCount } = await supabase
+      .from('rosters')
+      .select('*', { count: 'exact', head: true })
+      .in('team_id', draftOrder);
+
+    const totalPicks = pickCount ?? 0;
+    const currentRound = Math.floor(totalPicks / teamCount) + 1;
+    const currentPick = (totalPicks % teamCount) + 1;
+
+    // Draft complete?
+    if (currentRound > TOTAL_ROUNDS) {
+      await generateAndInsertLineups(supabase, leagueId);
+      await generateAndInsertSchedule(supabase, leagueId);
+      await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
+      return { picksMade, isComplete: true, nextRound: TOTAL_ROUNDS, nextPick: teamCount, nextTeamId: null };
+    }
+
+    const currentTeamId = getPickingTeam(currentRound, currentPick, draftOrder);
+
+    // Check if team is CPU-controlled (owner_id is null)
+    const { data: team } = await supabase
+      .from('teams')
+      .select('id, owner_id')
+      .eq('id', currentTeamId)
+      .single();
+
+    if (!team || team.owner_id !== null) {
+      // Human team's turn -- stop processing
+      return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
+    }
+
+    // CPU team: fetch undrafted players and score them
+    const { data: available } = await supabase
+      .from('player_pool')
+      .select('*')
+      .eq('league_id', leagueId)
+      .eq('is_drafted', false)
+      .limit(200);
+
+    if (!available || available.length === 0) {
+      return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
+    }
+
+    // Map DB rows to the shape selectBestAvailable expects
+    const poolWithCards = available.map((row) => ({
+      playerCard: row.player_card as unknown as PlayerCard,
+      raw: row,
+    }));
+    const bestIdx = selectBestAvailable(poolWithCards);
+    if (bestIdx < 0) break;
+
+    const best = available[bestIdx];
+
+    // Insert roster entry for CPU team
+    const { error: insertError } = await supabase
+      .from('rosters')
+      .insert({
+        team_id: currentTeamId,
+        player_id: best.player_id,
+        season_year: best.season_year,
+        player_card: best.player_card,
+        roster_slot: 'bench',
+      });
+
+    if (insertError) {
+      // If duplicate key, skip this player and try again next iteration
+      if (insertError.code === '23505') continue;
+      break;
+    }
+
+    // Mark player as drafted
+    await supabase
+      .from('player_pool')
+      .update({ is_drafted: true, drafted_by_team_id: currentTeamId })
+      .eq('league_id', leagueId)
+      .eq('player_id', best.player_id);
+
+    picksMade++;
+  }
+
+  // Fallback (should not normally reach here)
+  return { picksMade, isComplete: false, nextRound: 1, nextPick: 1, nextTeamId: null };
+}
 
 // ---------- GET ?resource=players: Player pool ----------
 
@@ -190,12 +303,17 @@ async function handleStart(req: VercelRequest, res: VercelResponse, requestId: s
     throw { category: 'DATA', code: 'UPDATE_FAILED', message: updateError.message };
   }
 
+  // REQ-DFT-004: Process any initial CPU picks before returning
+  const cpuResult = await processCpuPicks(supabase, leagueId, draftOrder);
+
   ok(res, {
     leagueId,
-    status: 'in_progress',
-    currentRound: 1,
-    currentPick: 1,
+    status: cpuResult.isComplete ? 'completed' : 'in_progress',
+    currentRound: cpuResult.nextRound,
+    currentPick: cpuResult.nextPick,
+    currentTeamId: cpuResult.nextTeamId,
     draftOrder,
+    cpuPicksProcessed: cpuResult.picksMade,
   }, requestId);
 }
 
@@ -290,35 +408,20 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     .eq('league_id', leagueId)
     .eq('player_id', body.playerId);
 
-  // Check if draft is complete after this pick and compute nextTeamId
+  // After human pick, process any subsequent CPU picks (REQ-DFT-004)
   let isComplete = false;
   let nextTeamId: string | null = null;
+  let cpuPicksProcessed = 0;
+  let nextRound = currentRound;
+  let nextPick = currentPick;
 
   if (hasDraftOrder) {
-    const { count: newPickCount } = await supabase
-      .from('rosters')
-      .select('*', { count: 'exact', head: true })
-      .in('team_id', draftOrder);
-
-    const totalAfter = newPickCount ?? 0;
-    const next = getNextPick(
-      Math.floor((totalAfter - 1) / teamCount) + 1,
-      ((totalAfter - 1) % teamCount) + 1,
-      TOTAL_ROUNDS,
-      teamCount,
-    );
-
-    if (next === null) {
-      isComplete = true;
-      await generateAndInsertLineups(supabase, leagueId);
-      await generateAndInsertSchedule(supabase, leagueId);
-      await supabase
-        .from('leagues')
-        .update({ status: 'regular_season' })
-        .eq('id', leagueId);
-    } else {
-      nextTeamId = getPickingTeam(next.round, next.pick, draftOrder);
-    }
+    const cpuResult = await processCpuPicks(supabase, leagueId, draftOrder);
+    isComplete = cpuResult.isComplete;
+    nextTeamId = cpuResult.nextTeamId;
+    cpuPicksProcessed = cpuResult.picksMade;
+    nextRound = cpuResult.nextRound;
+    nextPick = cpuResult.nextPick;
   }
 
   created(res, {
@@ -330,6 +433,9 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     position: body.position,
     isComplete,
     nextTeamId,
+    nextRound,
+    nextPick,
+    cpuPicksProcessed,
   }, requestId, `/api/leagues/${leagueId}/teams/${userTeam.id}/roster`);
 }
 
@@ -367,10 +473,17 @@ async function handleAutoPick(req: VercelRequest, res: VercelResponse, requestId
     throw { category: 'VALIDATION', code: 'NO_DRAFT_ORDER', message: 'Draft order not yet generated. Start the draft first.' };
   }
 
+  const draftOrder = league.draft_order as string[];
+  const cpuResult = await processCpuPicks(supabase, leagueId, draftOrder);
+
   ok(res, {
     leagueId,
     action: 'auto-pick',
-    status: 'triggered',
+    status: cpuResult.isComplete ? 'completed' : 'processed',
+    cpuPicksProcessed: cpuResult.picksMade,
+    nextRound: cpuResult.nextRound,
+    nextPick: cpuResult.nextPick,
+    nextTeamId: cpuResult.nextTeamId,
   }, requestId);
 }
 
