@@ -108,7 +108,7 @@ export function DashboardPage() {
     try {
       await apiPost(`/api/leagues/${league.id}/draft`, { action: 'start' });
       await useLeagueStore.getState().fetchLeagueData(league.id);
-      navigate('draft');
+      navigate('../draft');
     } catch {
       // Error reflected in league store
     } finally {
@@ -203,7 +203,7 @@ export function DashboardPage() {
           </p>
           <button
             type="button"
-            onClick={() => navigate('draft')}
+            onClick={() => navigate('../draft')}
             className="mt-3 inline-block rounded-button bg-ballpark px-4 py-2 text-sm font-bold text-old-lace hover:opacity-90"
           >
             Go to Draft Board
