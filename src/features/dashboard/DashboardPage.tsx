@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulation } from '@hooks/useSimulation';
 import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
@@ -40,6 +41,7 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 
 export function DashboardPage() {
   usePageTitle('Dashboard');
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
   const { status, totalDays, completedGames, isRunning, progressPct, runSimulation, lastPlayoffResult } = useSimulation();
@@ -106,6 +108,7 @@ export function DashboardPage() {
     try {
       await apiPost(`/api/leagues/${league.id}/draft`, { action: 'start' });
       await useLeagueStore.getState().fetchLeagueData(league.id);
+      navigate('draft');
     } catch {
       // Error reflected in league store
     } finally {
@@ -198,12 +201,13 @@ export function DashboardPage() {
           <p className="mt-1 text-sm text-ink">
             The league draft is underway. Head to the Draft Board to make your picks.
           </p>
-          <a
-            href="/draft"
+          <button
+            type="button"
+            onClick={() => navigate('draft')}
             className="mt-3 inline-block rounded-button bg-ballpark px-4 py-2 text-sm font-bold text-old-lace hover:opacity-90"
           >
             Go to Draft Board
-          </a>
+          </button>
         </div>
       )}
 

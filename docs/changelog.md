@@ -11,6 +11,9 @@ player pool batch inserts could fail silently on large JSONB payloads.
 **Dashboard (`DashboardPage.tsx`):**
 - Added `drafting` phase panel with "Draft In Progress" heading and link to
   Draft Board page, displayed between setup and regular_season phases
+- "Start Draft" now navigates directly to the Draft Board after starting
+- Fixed "Go to Draft Board" link: was `/draft` (404), now uses relative
+  `navigate('draft')` which resolves to `/leagues/:leagueId/draft`
 
 **Player pool reliability (`api/leagues/index.ts`):**
 - Reduced BATCH_SIZE from 1000 to 200 to avoid Supabase payload limits with
