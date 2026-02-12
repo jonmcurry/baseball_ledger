@@ -33,7 +33,7 @@ describe('AuthGuard', () => {
     vi.clearAllMocks();
   });
 
-  it('renders nothing when isInitialized is false', () => {
+  it('shows loading indicator when isInitialized is false', () => {
     vi.mocked(useAuth).mockReturnValue({
       isAuthenticated: false,
       isInitialized: false,
@@ -46,11 +46,12 @@ describe('AuthGuard', () => {
       initialize: vi.fn(),
     });
 
-    const { container } = renderWithRouter();
+    renderWithRouter();
 
-    // AuthGuard returns null before initialization -- container should be empty
-    expect(container.innerHTML).not.toContain('Protected Content');
-    expect(container.innerHTML).not.toContain('Login Page');
+    // AuthGuard shows LoadingLedger before initialization
+    expect(screen.getByRole('status')).toBeDefined();
+    expect(screen.queryByText('Protected Content')).toBeNull();
+    expect(screen.queryByText('Login Page')).toBeNull();
   });
 
   it('redirects to /login when not authenticated', () => {

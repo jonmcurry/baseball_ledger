@@ -7,12 +7,13 @@
 
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
+import { LoadingLedger } from '@components/feedback/LoadingLedger';
 
 export function AuthGuard() {
   const { isAuthenticated, isInitialized } = useAuth();
 
   if (!isInitialized) {
-    return null;
+    return <LoadingLedger message="Initializing..." />;
   }
 
   if (!isAuthenticated) {

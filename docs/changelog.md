@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-02-12 - Fix Blank Screen on AuthGuard Routes (Phase 81)
+
+Fixed blank screen when navigating to protected routes (e.g., "Create a League").
+AuthGuard returned `null` while Supabase auth initialization was in progress, causing
+a blank screen with no visible feedback. Now shows LoadingLedger with "Initializing..."
+message during the brief async auth check.
+
+- AuthGuard shows LoadingLedger instead of null when `isInitialized` is false
+- Updated AuthGuard test to verify loading indicator renders
+
 ## 2026-02-12 - Fix Roster Display: OF Labels, Pitcher Categorization, Diamond (Phase 80)
 
 Fixed three roster page bugs:
