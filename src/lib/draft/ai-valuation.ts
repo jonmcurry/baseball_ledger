@@ -93,18 +93,39 @@ export function calculatePlayerValue(
   }
 
   // Fallback: derive approximate value from card attributes when no stats available
-  // power (ISO) ≈ SLG - BA, so OPS ≈ OBP + BA + ISO ≈ 0.330 + 0.260 + power
-  // speed correlates with SB potential
+  // Handle undefined attributes (legacy cards may not have these fields)
   if (ops === 0) {
-    ops = 0.650 + (card.power * 0.5) + (card.contactRate * 0.15) + (card.discipline * 0.1);
-    sb = Math.round(card.speed * 40); // speed of 1.0 ≈ 40 SB season
+    const power = card.power ?? 0;
+    const contactRate = card.contactRate ?? 0;
+    const discipline = card.discipline ?? 0;
+    const speed = card.speed ?? 0;
+
+    // If card attributes are also missing/zero, use position-based baseline
+    // This ensures differentiation even for completely legacy cards
+    if (power === 0 && contactRate === 0 && discipline === 0) {
+      // Use position scarcity as primary differentiator for legacy data
+      // C/SS/CF are premium, corner infielders next, then OF/DH
+      const positionValue: Record<string, number> = {
+        C: 0.85, SS: 0.82, CF: 0.80, '2B': 0.78, '3B': 0.76,
+        RF: 0.74, LF: 0.72, '1B': 0.70, DH: 0.68,
+      };
+      ops = positionValue[card.primaryPosition] ?? 0.70;
+      sb = 10; // Assume average speed
+    } else {
+      // power (ISO) contributes to SLG, contactRate/discipline to OBP
+      ops = 0.650 + (power * 0.5) + (contactRate * 0.15) + (discipline * 0.1);
+      sb = Math.round(speed * 40); // speed of 1.0 ≈ 40 SB season
+    }
   }
+
+  // Ensure fieldingPct is valid (default to 0.95 for legacy cards)
+  const fieldingPct = card.fieldingPct ?? 0.95;
 
   return calculateBatterValue(
     card.primaryPosition,
     ops,
     sb,
-    card.fieldingPct,
+    fieldingPct,
   );
 }
 
