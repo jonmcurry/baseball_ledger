@@ -954,14 +954,22 @@ describe('POST /api/leagues/:id/draft (start generates draft order)', () => {
 // ---------- POST action=auto-pick ----------
 
 describe('POST /api/leagues/:id/draft (action=auto-pick)', () => {
-  it('returns 403 when user is not commissioner', async () => {
-    const builder = createMockQueryBuilder({
+  it('returns 403 when user has no team in league', async () => {
+    const leagueBuilder = createMockQueryBuilder({
       data: { commissioner_id: 'other-user', status: 'drafting', team_count: 4, draft_order: ['t1', 't2'] },
       error: null,
       count: null,
     });
+    const teamsBuilder = createMockQueryBuilder({
+      data: null,
+      error: null,
+      count: null,
+    });
     mockCreateServerClient.mockReturnValue({
-      from: vi.fn().mockReturnValue(builder),
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'teams') return teamsBuilder;
+        return leagueBuilder;
+      }),
     } as never);
 
     const req = createMockRequest({
@@ -976,7 +984,7 @@ describe('POST /api/leagues/:id/draft (action=auto-pick)', () => {
 
     expect(res._status).toBe(403);
     expect(res._body).toMatchObject({
-      error: { code: 'NOT_COMMISSIONER' },
+      error: { code: 'NO_TEAM' },
     });
   });
 

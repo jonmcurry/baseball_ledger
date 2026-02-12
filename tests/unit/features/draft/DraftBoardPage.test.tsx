@@ -10,10 +10,11 @@ import {
   createMockAvailablePlayer,
 } from '../../../fixtures/mock-draft';
 
-const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTickTimer, mockResetTimer, mockUseDraft, mockUseDraftTimer } = vi.hoisted(() => {
+const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTriggerAutoPick, mockTickTimer, mockResetTimer, mockUseDraft, mockUseDraftTimer } = vi.hoisted(() => {
   const mockFetchDraftState = vi.fn();
   const mockFetchAvailablePlayers = vi.fn();
   const mockSubmitPick = vi.fn();
+  const mockTriggerAutoPick = vi.fn();
   const mockTickTimer = vi.fn();
   const mockResetTimer = vi.fn();
   const mockUseDraftTimer = vi.fn();
@@ -27,12 +28,13 @@ const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTick
     currentTeamName: null,
     timeRemaining: 60,
     submitPick: mockSubmitPick,
+    triggerAutoPick: mockTriggerAutoPick,
     fetchDraftState: mockFetchDraftState,
     fetchAvailablePlayers: mockFetchAvailablePlayers,
     tickTimer: mockTickTimer,
     resetTimer: mockResetTimer,
   });
-  return { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTickTimer, mockResetTimer, mockUseDraft, mockUseDraftTimer };
+  return { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTriggerAutoPick, mockTickTimer, mockResetTimer, mockUseDraft, mockUseDraftTimer };
 });
 
 vi.mock('@hooks/useLeague', () => ({
@@ -77,6 +79,7 @@ describe('DraftBoardPage', () => {
       currentTeamName: null,
       timeRemaining: 60,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -194,7 +197,7 @@ describe('DraftBoardPage', () => {
     );
   });
 
-  it('auto-picks best available player when onExpire fires', () => {
+  it('triggers server-side auto-pick when onExpire fires', () => {
     const players = [
       createMockAvailablePlayer({ playerId: 'p1' }),
       createMockAvailablePlayer({ playerId: 'p2' }),
@@ -210,6 +213,7 @@ describe('DraftBoardPage', () => {
       currentTeamName: 'New York Yankees',
       timeRemaining: 0,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -223,12 +227,11 @@ describe('DraftBoardPage', () => {
 
     render(<DraftBoardPage />);
 
-    expect(mockSubmitPick).toHaveBeenCalledWith('league-1', expect.objectContaining({
-      playerId: expect.any(String),
-    }));
+    expect(mockTriggerAutoPick).toHaveBeenCalledWith('league-1', true);
+    expect(mockSubmitPick).not.toHaveBeenCalled();
   });
 
-  it('does not auto-pick when no available players', () => {
+  it('triggers server-side auto-pick even with empty local player list', () => {
     mockUseDraft.mockReturnValue({
       draftState: createMockDraftState({ status: 'in_progress', currentTeamId: 'team-1' }),
       availablePlayers: [],
@@ -239,6 +242,7 @@ describe('DraftBoardPage', () => {
       currentTeamName: 'New York Yankees',
       timeRemaining: 0,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -251,6 +255,7 @@ describe('DraftBoardPage', () => {
 
     render(<DraftBoardPage />);
 
-    expect(mockSubmitPick).not.toHaveBeenCalled();
+    // Server-side auto-pick does not depend on client-side player list
+    expect(mockTriggerAutoPick).toHaveBeenCalledWith('league-1', true);
   });
 });

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-12 - Draft Pick Responsiveness + Auto-Pick Quality (Phase 79)
+
+Fixed two draft UX bugs: (1) human draft picks took 5-15 seconds to register because
+the server synchronously processed all subsequent CPU picks before responding, and
+(2) timer-expired auto-picks chose players alphabetically because the client only
+evaluated the current page of 50 players sorted by last name.
+
+- Decoupled CPU pick processing from human pick response -- `handlePick` now returns
+  immediately after recording the human pick, and the frontend triggers CPU processing
+  separately via the auto-pick endpoint
+- Moved timer-expired auto-pick logic to server-side using valuation-based AI strategy
+  (top 500 players by `valuation_score`) instead of client-side page-1 selection
+- Relaxed auto-pick auth from commissioner-only to any league team owner (needed for
+  timer-expired picks and post-human-pick CPU processing)
+- Added `timerExpired` parameter to auto-pick endpoint to distinguish timer expiry
+  from post-pick CPU processing (prevents accidentally auto-picking for the next
+  human team)
+- Updated DraftBoardPage to use `triggerAutoPick(leagueId, true)` on timer expiry
+- Updated draftStore with separate `triggerAutoPick` action and immediate-response
+  `submitPick` flow
+- Updated tests: 246 files, 2816 tests passing
+
 ## 2026-02-12 - Wire Delete League Button into Config Page (Phase 78)
 
 Wired the existing `DeleteLeagueButton` component into `LeagueConfigPage` so

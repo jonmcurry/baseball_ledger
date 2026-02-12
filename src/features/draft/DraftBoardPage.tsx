@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDraft } from '@hooks/useDraft';
 import { useLeague } from '@hooks/useLeague';
 import { useDraftTimer } from './hooks/useDraftTimer';
-import { selectBestAvailable } from '@lib/draft/auto-pick-selector';
+
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
@@ -43,6 +43,7 @@ export function DraftBoardPage() {
     currentTeamName,
     timeRemaining,
     submitPick,
+    triggerAutoPick,
     fetchDraftState,
     fetchAvailablePlayers,
     tickTimer,
@@ -66,14 +67,11 @@ export function DraftBoardPage() {
     return () => clearInterval(interval);
   }, [league?.id, draftState?.status, isMyPick, fetchDraftState, fetchAvailablePlayers]);
 
-  // REQ-DFT-004: Auto-pick on timer expiry
+  // REQ-DFT-004: Auto-pick on timer expiry (server-side valuation-based pick)
   const handleAutoPickOnExpire = useCallback(() => {
-    if (!league?.id || availablePlayers.length === 0) return;
-    const bestIdx = selectBestAvailable(availablePlayers);
-    if (bestIdx >= 0) {
-      submitPick(league.id, availablePlayers[bestIdx]);
-    }
-  }, [league?.id, availablePlayers, submitPick]);
+    if (!league?.id) return;
+    triggerAutoPick(league.id, true);
+  }, [league?.id, triggerAutoPick]);
 
   const handleFilterChange = useCallback((filters: PlayerTableFilters) => {
     if (!league?.id) return;

@@ -477,20 +477,27 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     .eq('league_id', leagueId)
     .eq('player_id', body.playerId);
 
-  // After human pick, process any subsequent CPU picks (REQ-DFT-004)
+  // Compute next pick position without processing CPU picks synchronously.
+  // The frontend triggers CPU processing separately via the auto-pick endpoint,
+  // so the human pick response returns immediately (~1-2s instead of 5-15s).
   let isComplete = false;
   let nextTeamId: string | null = null;
-  let cpuPicksProcessed = 0;
   let nextRound = currentRound;
   let nextPick = currentPick;
 
   if (hasDraftOrder) {
-    const cpuResult = await processCpuPicks(supabase, leagueId, draftOrder);
-    isComplete = cpuResult.isComplete;
-    nextTeamId = cpuResult.nextTeamId;
-    cpuPicksProcessed = cpuResult.picksMade;
-    nextRound = cpuResult.nextRound;
-    nextPick = cpuResult.nextPick;
+    const next = getNextPick(currentRound, currentPick, TOTAL_ROUNDS, teamCount);
+    if (next) {
+      nextRound = next.round;
+      nextPick = next.pick;
+      nextTeamId = getPickingTeam(next.round, next.pick, draftOrder);
+    } else {
+      // Human made the final pick -- trigger draft completion
+      isComplete = true;
+      await generateAndInsertLineups(supabase, leagueId);
+      await generateAndInsertSchedule(supabase, leagueId);
+      await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
+    }
   }
 
   created(res, {
@@ -504,22 +511,20 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     nextTeamId,
     nextRound,
     nextPick,
-    cpuPicksProcessed,
+    cpuPicksPending: !isComplete && hasDraftOrder,
   }, requestId, `/api/leagues/${leagueId}/teams/${userTeam.id}/roster`);
 }
 
-// ---------- POST action=auto-pick: Timer-expired auto-pick ----------
-
-const AutoPickSchema = z.object({
-  action: z.literal('auto-pick'),
-});
+// ---------- POST action=auto-pick: CPU processing + timer-expired human auto-pick ----------
 
 async function handleAutoPick(req: VercelRequest, res: VercelResponse, requestId: string) {
   const { userId } = await requireAuth(req);
   const leagueId = req.query.id as string;
   const supabase = createServerClient();
+  const body = req.body as Record<string, unknown> | null;
+  const timerExpired = body?.timerExpired === true;
 
-  // Verify league and commissioner
+  // Verify league
   const { data: league, error: leagueError } = await supabase
     .from('leagues')
     .select('commissioner_id, status, team_count, draft_order')
@@ -530,8 +535,17 @@ async function handleAutoPick(req: VercelRequest, res: VercelResponse, requestId
     throw { category: 'NOT_FOUND', code: 'LEAGUE_NOT_FOUND', message: `League ${leagueId} not found` };
   }
 
-  if (league.commissioner_id !== userId) {
-    throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can trigger auto-pick' };
+  // Allow any team owner in the league (needed for timer-expired auto-picks
+  // and post-human-pick CPU processing triggered from the frontend).
+  const { data: userTeam } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('league_id', leagueId)
+    .eq('owner_id', userId)
+    .single();
+
+  if (!userTeam) {
+    throw { category: 'AUTHORIZATION', code: 'NO_TEAM', message: 'You do not have a team in this league' };
   }
 
   if (league.status !== 'drafting') {
@@ -543,13 +557,90 @@ async function handleAutoPick(req: VercelRequest, res: VercelResponse, requestId
   }
 
   const draftOrder = league.draft_order as string[];
+  const teamCount = draftOrder.length;
+  let humanAutoPickMade = false;
+
+  // When timerExpired is true and the current pick is a human team,
+  // auto-pick for them using valuation-based AI strategy before processing CPU picks.
+  if (timerExpired) {
+    const { count: pickCount } = await supabase
+      .from('rosters')
+      .select('*', { count: 'exact', head: true })
+      .in('team_id', draftOrder);
+
+    const totalPicks = pickCount ?? 0;
+    const currentRound = Math.floor(totalPicks / teamCount) + 1;
+    const currentPick = (totalPicks % teamCount) + 1;
+
+    if (currentRound <= TOTAL_ROUNDS) {
+      const currentTeamId = getPickingTeam(currentRound, currentPick, draftOrder);
+
+      const { data: currentTeam } = await supabase
+        .from('teams')
+        .select('id, owner_id')
+        .eq('id', currentTeamId)
+        .single();
+
+      // Human team that timed out: auto-pick using valuation + AI strategy
+      if (currentTeam && currentTeam.owner_id !== null) {
+        const rng = new SeededRNG(Date.now());
+        const { data: rosterRows } = await supabase
+          .from('rosters')
+          .select('player_card')
+          .eq('team_id', currentTeamId);
+
+        const roster: DraftablePlayer[] = (rosterRows ?? []).map(toDraftablePlayer);
+
+        const { data: available } = await supabase
+          .from('player_pool')
+          .select('*')
+          .eq('league_id', leagueId)
+          .eq('is_drafted', false)
+          .order('valuation_score', { ascending: false })
+          .limit(500);
+
+        if (available && available.length > 0) {
+          const pool: DraftablePlayer[] = available.map(toDraftablePlayer);
+          const selected = selectAIPick(currentRound, roster, pool, rng);
+          const selectedIdx = available.findIndex(
+            (row) => (row.player_card as unknown as PlayerCard).playerId === selected.card.playerId
+              && (row.player_card as unknown as PlayerCard).seasonYear === selected.card.seasonYear
+          );
+
+          if (selectedIdx >= 0) {
+            const best = available[selectedIdx];
+            const { error: insertError } = await supabase
+              .from('rosters')
+              .insert({
+                team_id: currentTeamId,
+                player_id: best.player_id,
+                season_year: best.season_year,
+                player_card: best.player_card,
+                roster_slot: 'bench',
+              });
+
+            if (!insertError) {
+              await supabase
+                .from('player_pool')
+                .update({ is_drafted: true, drafted_by_team_id: currentTeamId })
+                .eq('league_id', leagueId)
+                .eq('player_id', best.player_id);
+              humanAutoPickMade = true;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Process subsequent CPU team picks
   const cpuResult = await processCpuPicks(supabase, leagueId, draftOrder);
 
   ok(res, {
     leagueId,
     action: 'auto-pick',
     status: cpuResult.isComplete ? 'completed' : 'processed',
-    cpuPicksProcessed: cpuResult.picksMade,
+    cpuPicksProcessed: cpuResult.picksMade + (humanAutoPickMade ? 1 : 0),
     nextRound: cpuResult.nextRound,
     nextPick: cpuResult.nextPick,
     nextTeamId: cpuResult.nextTeamId,

@@ -44,6 +44,7 @@ export interface DraftStoreActions {
   fetchDraftState: (leagueId: string) => Promise<void>;
   fetchAvailablePlayers: (leagueId: string, filters?: PlayerFilterOptions) => Promise<void>;
   submitPick: (leagueId: string, player: AvailablePlayer) => Promise<void>;
+  triggerAutoPick: (leagueId: string, timerExpired?: boolean) => Promise<void>;
   setAvailablePlayers: (players: AvailablePlayer[]) => void;
   tickTimer: () => void;
   resetTimer: (seconds: number) => void;
@@ -105,16 +106,17 @@ export const useDraftStore = create<DraftStoreType>()(
       submitPick: async (leagueId, player) => {
         set((state) => { state.isLoading = true; state.error = null; }, false, 'submitPick/start');
         try {
-          await draftService.submitPick(leagueId, {
+          const result = await draftService.submitPick(leagueId, {
             playerId: player.playerId,
             playerName: `${player.nameFirst} ${player.nameLast}`,
             position: player.primaryPosition,
             seasonYear: player.seasonYear,
             playerCard: player.playerCard as unknown as Record<string, unknown>,
           });
-          // Refetch both draft state and available players after pick.
-          // The backend processes CPU picks synchronously, so the refetch
-          // returns the updated position after all CPU auto-picks complete.
+
+          // Immediately refetch so the user sees their pick registered fast.
+          // The backend no longer processes CPU picks synchronously, so this
+          // response comes back in ~1-2s instead of 5-15s.
           const [freshState, freshResult] = await Promise.all([
             draftService.fetchDraftState(leagueId),
             draftService.fetchAvailablePlayers(leagueId, { pageSize: DEFAULT_PAGE_SIZE, sortBy: 'nameLast', sortOrder: 'asc' }),
@@ -126,11 +128,54 @@ export const useDraftStore = create<DraftStoreType>()(
             state.totalAvailablePlayers = freshResult.totalRows;
             state.playerCurrentPage = 1;
           }, false, 'submitPick/success');
+
+          // Trigger CPU processing in the background. When complete, refresh
+          // the board so the user sees it's their turn again.
+          if (!result.isComplete) {
+            try {
+              await draftService.autoPick(leagueId);
+              const [cpuState, cpuPlayers] = await Promise.all([
+                draftService.fetchDraftState(leagueId),
+                draftService.fetchAvailablePlayers(leagueId, { pageSize: DEFAULT_PAGE_SIZE, sortBy: 'nameLast', sortOrder: 'asc' }),
+              ]);
+              set((state) => {
+                state.draftState = cpuState;
+                state.availablePlayers = transformPoolRows(cpuPlayers.rows);
+                state.totalAvailablePlayers = cpuPlayers.totalRows;
+                state.playerCurrentPage = 1;
+              }, false, 'submitPick/cpuComplete');
+            } catch {
+              // CPU processing failure is non-fatal; 5-second polling catches up
+            }
+          }
         } catch (err) {
           set((state) => {
             state.isLoading = false;
             state.error = getErrorMessage(err, 'Failed to submit pick');
           }, false, 'submitPick/error');
+        }
+      },
+
+      triggerAutoPick: async (leagueId, timerExpired = false) => {
+        set((state) => { state.isLoading = true; state.error = null; }, false, 'triggerAutoPick/start');
+        try {
+          await draftService.autoPick(leagueId, timerExpired);
+          const [freshState, freshResult] = await Promise.all([
+            draftService.fetchDraftState(leagueId),
+            draftService.fetchAvailablePlayers(leagueId, { pageSize: DEFAULT_PAGE_SIZE, sortBy: 'nameLast', sortOrder: 'asc' }),
+          ]);
+          set((state) => {
+            state.isLoading = false;
+            state.draftState = freshState;
+            state.availablePlayers = transformPoolRows(freshResult.rows);
+            state.totalAvailablePlayers = freshResult.totalRows;
+            state.playerCurrentPage = 1;
+          }, false, 'triggerAutoPick/success');
+        } catch (err) {
+          set((state) => {
+            state.isLoading = false;
+            state.error = getErrorMessage(err, 'Failed to auto-pick');
+          }, false, 'triggerAutoPick/error');
         }
       },
 

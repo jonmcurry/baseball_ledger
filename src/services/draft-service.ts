@@ -44,10 +44,10 @@ export async function fetchDraftState(leagueId: string): Promise<DraftState> {
   return response.data;
 }
 
-export async function autoPick(leagueId: string): Promise<{ status: string }> {
+export async function autoPick(leagueId: string, timerExpired = false): Promise<{ status: string }> {
   const response = await apiPost<{ status: string }>(
     `/api/leagues/${leagueId}/draft`,
-    { action: 'auto-pick' },
+    { action: 'auto-pick', ...(timerExpired ? { timerExpired: true } : {}) },
   );
   return response.data;
 }
