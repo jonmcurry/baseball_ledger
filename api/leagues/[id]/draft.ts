@@ -128,8 +128,7 @@ async function processCpuPicks(
       .from('player_pool')
       .select('*')
       .eq('league_id', leagueId)
-      .eq('is_drafted', false)
-      .limit(1000);
+      .eq('is_drafted', false);
 
     if (!available || available.length === 0) {
       return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
