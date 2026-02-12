@@ -21,6 +21,14 @@ export type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 
 const DEFAULT_PAGE_SIZE = 50;
 
+/** Extract error message from Error instances or AppError objects from api-client */
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === 'object' && 'message' in err) {
+    return (err as { message: string }).message;
+  }
+  return fallback;
+}
+
 export interface DraftStoreState {
   draftState: DraftState | null;
   availablePlayers: AvailablePlayer[];
@@ -70,7 +78,7 @@ export const useDraftStore = create<DraftStoreType>()(
         } catch (err) {
           set((state) => {
             state.isLoading = false;
-            state.error = err instanceof Error ? err.message : 'Failed to fetch draft state';
+            state.error = getErrorMessage(err, 'Failed to fetch draft state');
           }, false, 'fetchDraftState/error');
         }
       },
@@ -89,7 +97,7 @@ export const useDraftStore = create<DraftStoreType>()(
           }, false, 'fetchAvailablePlayers/success');
         } catch (err) {
           set((state) => {
-            state.error = err instanceof Error ? err.message : 'Failed to fetch available players';
+            state.error = getErrorMessage(err, 'Failed to fetch available players');
           }, false, 'fetchAvailablePlayers/error');
         }
       },
@@ -121,7 +129,7 @@ export const useDraftStore = create<DraftStoreType>()(
         } catch (err) {
           set((state) => {
             state.isLoading = false;
-            state.error = err instanceof Error ? err.message : 'Failed to submit pick';
+            state.error = getErrorMessage(err, 'Failed to submit pick');
           }, false, 'submitPick/error');
         }
       },

@@ -272,6 +272,7 @@ export type Database = {
       }
       rosters: {
         Row: {
+          created_at: string
           id: string
           lineup_order: number | null
           lineup_position: string | null
@@ -282,6 +283,7 @@ export type Database = {
           team_id: string
         }
         Insert: {
+          created_at?: string
           id?: string
           lineup_order?: number | null
           lineup_position?: string | null
@@ -292,6 +294,7 @@ export type Database = {
           team_id: string
         }
         Update: {
+          created_at?: string
           id?: string
           lineup_order?: number | null
           lineup_position?: string | null

@@ -19,6 +19,8 @@ export type {
   PlayerArchetype,
   PitcherAttributes,
   PlayerCard,
+  MlbBattingStats,
+  MlbPitchingStats,
 } from './player';
 
 export {

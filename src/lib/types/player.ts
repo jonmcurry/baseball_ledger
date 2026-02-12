@@ -36,6 +36,43 @@ export interface PitcherAttributes {
   isReliever: boolean;
 }
 
+/** Real MLB season batting stats (from Lahman database) */
+export interface MlbBattingStats {
+  G: number;
+  AB: number;
+  R: number;
+  H: number;
+  doubles: number;
+  triples: number;
+  HR: number;
+  RBI: number;
+  SB: number;
+  CS: number;
+  BB: number;
+  SO: number;
+  BA: number;
+  OBP: number;
+  SLG: number;
+  OPS: number;
+}
+
+/** Real MLB season pitching stats (from Lahman database) */
+export interface MlbPitchingStats {
+  G: number;
+  GS: number;
+  W: number;
+  L: number;
+  SV: number;
+  IP: number;
+  H: number;
+  ER: number;
+  HR: number;
+  BB: number;
+  SO: number;
+  ERA: number;
+  WHIP: number;
+}
+
 export interface PlayerCard {
   // Identity
   playerId: string;          // Lahman playerID (e.g., "ruthba01")
@@ -75,4 +112,8 @@ export interface PlayerCard {
 
   // Pitching attributes (only for isPitcher = true)
   pitching?: PitcherAttributes;
+
+  // Real MLB season stats (from Lahman database)
+  mlbBattingStats?: MlbBattingStats;
+  mlbPitchingStats?: MlbPitchingStats;
 }

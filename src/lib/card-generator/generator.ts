@@ -1,4 +1,4 @@
-import type { PlayerCard, Position } from '../types';
+import type { PlayerCard, Position, MlbBattingStats, MlbPitchingStats } from '../types';
 import type { PlayerPoolEntry, LeagueAverages } from '../csv/csv-types';
 import { CARD_LENGTH, applyStructuralConstants } from './structural';
 import { computePlayerRates } from './rate-calculator';
@@ -251,6 +251,50 @@ export function generateCard(
     pitching = buildPitcherAttributes(entry.pitchingStats, allPitcherERAs);
   }
 
+  // Build MLB stats from entry
+  let mlbBattingStats: MlbBattingStats | undefined;
+  if (entry.battingStats) {
+    const s = entry.battingStats;
+    mlbBattingStats = {
+      G: s.G,
+      AB: s.AB,
+      R: s.R,
+      H: s.H,
+      doubles: s.doubles,
+      triples: s.triples,
+      HR: s.HR,
+      RBI: s.RBI,
+      SB: s.SB,
+      CS: s.CS,
+      BB: s.BB,
+      SO: s.SO,
+      BA: s.BA,
+      OBP: s.OBP,
+      SLG: s.SLG,
+      OPS: s.OPS,
+    };
+  }
+
+  let mlbPitchingStats: MlbPitchingStats | undefined;
+  if (entry.pitchingStats) {
+    const p = entry.pitchingStats;
+    mlbPitchingStats = {
+      G: p.G,
+      GS: p.GS,
+      W: p.W,
+      L: p.L,
+      SV: p.SV,
+      IP: p.IP,
+      H: p.H,
+      ER: p.ER,
+      HR: p.HR,
+      BB: p.BB,
+      SO: p.SO,
+      ERA: p.ERA,
+      WHIP: p.WHIP,
+    };
+  }
+
   return {
     playerId: entry.playerID,
     nameFirst: entry.nameFirst,
@@ -272,6 +316,8 @@ export function generateCard(
     range: computeRange(entry),
     arm: computeArm(entry),
     pitching,
+    mlbBattingStats,
+    mlbPitchingStats,
   };
 }
 

@@ -226,13 +226,19 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
     throw { category: 'NOT_FOUND', code: 'LEAGUE_NOT_FOUND', message: `League ${leagueId} not found` };
   }
 
+  // Get all teams in this league
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('league_id', leagueId);
+
+  const teamIds = teams?.map((t) => t.id) ?? [];
+
   // Count total picks made
   const { count: pickCount } = await supabase
     .from('rosters')
     .select('*', { count: 'exact', head: true })
-    .in('team_id', (
-      await supabase.from('teams').select('id').eq('league_id', leagueId)
-    ).data?.map((t) => t.id) ?? []);
+    .in('team_id', teamIds);
 
   const totalRounds = 21;
   const totalPicks = pickCount ?? 0;
@@ -241,10 +247,36 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
 
   // REQ-DFT-004: Compute currentTeamId from draft order
   let currentTeamId: string | null = null;
-  if (league.status === 'drafting' && league.draft_order && Array.isArray(league.draft_order)) {
-    const draftOrder = league.draft_order as string[];
+  const hasDraftOrder = league.draft_order && Array.isArray(league.draft_order);
+  const draftOrder = hasDraftOrder ? (league.draft_order as string[]) : [];
+  if (league.status === 'drafting' && hasDraftOrder) {
     currentTeamId = getPickingTeam(Math.min(currentRound, totalRounds), currentPick, draftOrder);
   }
+
+  // Fetch all roster entries ordered by created_at for accurate pick order
+  const { data: rosterEntries } = await supabase
+    .from('rosters')
+    .select('id, team_id, player_id, player_card, created_at')
+    .in('team_id', teamIds)
+    .order('created_at', { ascending: true });
+
+  // Build picks array from roster entries
+  const teamCount = hasDraftOrder ? draftOrder.length : league.team_count;
+  const picks = (rosterEntries ?? []).map((entry, index) => {
+    const card = entry.player_card as { nameFirst?: string; nameLast?: string; primaryPosition?: string };
+    const round = Math.floor(index / teamCount) + 1;
+    const pick = (index % teamCount) + 1;
+    return {
+      round,
+      pick,
+      teamId: entry.team_id,
+      playerId: entry.player_id,
+      playerName: `${card.nameFirst ?? ''} ${card.nameLast ?? ''}`.trim(),
+      position: card.primaryPosition ?? 'UT',
+      isComplete: false,
+      nextTeamId: null as string | null,
+    };
+  });
 
   ok(res, {
     leagueId,
@@ -252,7 +284,7 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
     currentRound: Math.min(currentRound, totalRounds),
     currentPick,
     currentTeamId,
-    picks: [],
+    picks,
     totalRounds,
     totalPicks,
     pickTimerSeconds: 60,

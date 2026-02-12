@@ -1,4 +1,4 @@
-﻿/**
+/**
  * PlayerProfileModal
  *
  * "Digital Baseball Card" popup (REQ-UI-009).
@@ -8,7 +8,7 @@
  * Layer 6: Presentational component.
  */
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { PlayerCard } from '@lib/types/player';
 import { useFocusTrap } from '@hooks/useFocusTrap';
 
@@ -29,6 +29,8 @@ const POWER_LABELS: Record<number, string> = {
   21: 'Excellent',
 };
 
+type TabId = 'card' | 'mlb';
+
 function pctLabel(value: number): string {
   return (value * 100).toFixed(0) + '%';
 }
@@ -42,13 +44,142 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function TabButton({
+  label,
+  isActive,
+  onClick,
+}: {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs font-bold transition-colors ${
+        isActive
+          ? 'border-b-2 border-ballpark text-ballpark'
+          : 'text-muted hover:text-ink'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function CardRatingsTab({ player }: { player: PlayerCard }) {
+  const powerLabel = POWER_LABELS[player.powerRating] ?? String(player.powerRating);
+
+  return (
+    <div className="space-y-3">
+      {/* Batting / Card Attributes */}
+      {!player.isPitcher && (
+        <div>
+          <h4 className="mb-1 text-xs font-bold uppercase text-muted">Batting</h4>
+          <StatRow label="Power Rating" value={`${player.powerRating} (${powerLabel})`} />
+          <StatRow label="Speed" value={pctLabel(player.speed)} />
+          <StatRow label="Contact" value={pctLabel(player.contactRate)} />
+          <StatRow label="Discipline (BB/K)" value={pctLabel(player.discipline)} />
+          <StatRow label="ISO (Power)" value={player.power.toFixed(3)} />
+        </div>
+      )}
+
+      {/* Pitching Attributes */}
+      {player.pitching && (
+        <div>
+          <h4 className="mb-1 text-xs font-bold uppercase text-muted">Pitching</h4>
+          <StatRow label="Grade" value={`${player.pitching.grade} / 15`} />
+          <StatRow label="Role" value={player.pitching.role} />
+          <StatRow label="ERA" value={player.pitching.era.toFixed(2)} />
+          <StatRow label="WHIP" value={player.pitching.whip.toFixed(2)} />
+          <StatRow label="K/9" value={player.pitching.k9.toFixed(1)} />
+          <StatRow label="BB/9" value={player.pitching.bb9.toFixed(1)} />
+          <StatRow label="Stamina" value={player.pitching.stamina.toFixed(1)} />
+        </div>
+      )}
+
+      {/* Fielding */}
+      <div>
+        <h4 className="mb-1 text-xs font-bold uppercase text-muted">Fielding</h4>
+        <StatRow label="Position(s)" value={player.eligiblePositions.join(', ')} />
+        <StatRow label="Fielding Pct" value={player.fieldingPct.toFixed(3)} />
+        <StatRow label="Range" value={pctLabel(player.range)} />
+        <StatRow label="Arm" value={pctLabel(player.arm)} />
+      </div>
+    </div>
+  );
+}
+
+function MlbStatsTab({ player }: { player: PlayerCard }) {
+  const batting = player.mlbBattingStats;
+  const pitching = player.mlbPitchingStats;
+
+  if (!batting && !pitching) {
+    return (
+      <div className="py-4 text-center text-xs text-muted">
+        No MLB stats available for this player.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Batting Stats */}
+      {batting && (
+        <div>
+          <h4 className="mb-1 text-xs font-bold uppercase text-muted">
+            {player.seasonYear} Batting
+          </h4>
+          <StatRow label="Games" value={batting.G} />
+          <StatRow label="AB" value={batting.AB} />
+          <StatRow label="Runs" value={batting.R} />
+          <StatRow label="Hits" value={batting.H} />
+          <StatRow label="2B" value={batting.doubles} />
+          <StatRow label="3B" value={batting.triples} />
+          <StatRow label="HR" value={batting.HR} />
+          <StatRow label="RBI" value={batting.RBI} />
+          <StatRow label="SB" value={batting.SB} />
+          <StatRow label="BB" value={batting.BB} />
+          <StatRow label="SO" value={batting.SO} />
+          <StatRow label="AVG" value={batting.BA.toFixed(3)} />
+          <StatRow label="OBP" value={batting.OBP.toFixed(3)} />
+          <StatRow label="SLG" value={batting.SLG.toFixed(3)} />
+          <StatRow label="OPS" value={batting.OPS.toFixed(3)} />
+        </div>
+      )}
+
+      {/* Pitching Stats */}
+      {pitching && (
+        <div>
+          <h4 className="mb-1 text-xs font-bold uppercase text-muted">
+            {player.seasonYear} Pitching
+          </h4>
+          <StatRow label="Games" value={pitching.G} />
+          <StatRow label="GS" value={pitching.GS} />
+          <StatRow label="W" value={pitching.W} />
+          <StatRow label="L" value={pitching.L} />
+          <StatRow label="SV" value={pitching.SV} />
+          <StatRow label="IP" value={pitching.IP.toFixed(1)} />
+          <StatRow label="H" value={pitching.H} />
+          <StatRow label="ER" value={pitching.ER} />
+          <StatRow label="HR" value={pitching.HR} />
+          <StatRow label="BB" value={pitching.BB} />
+          <StatRow label="SO" value={pitching.SO} />
+          <StatRow label="ERA" value={pitching.ERA.toFixed(2)} />
+          <StatRow label="WHIP" value={pitching.WHIP.toFixed(2)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<TabId>('card');
   useFocusTrap(containerRef, isOpen, onClose);
 
   if (!isOpen) return null;
-
-  const powerLabel = POWER_LABELS[player.powerRating] ?? String(player.powerRating);
 
   return (
     <div
@@ -81,42 +212,24 @@ export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileMod
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-sandstone px-gutter-lg">
+          <TabButton
+            label="Card Ratings"
+            isActive={activeTab === 'card'}
+            onClick={() => setActiveTab('card')}
+          />
+          <TabButton
+            label="MLB Stats"
+            isActive={activeTab === 'mlb'}
+            onClick={() => setActiveTab('mlb')}
+          />
+        </div>
+
         {/* Body */}
-        <div className="space-y-3 px-gutter-lg py-3">
-          {/* Batting / Card Attributes */}
-          {!player.isPitcher && (
-            <div>
-              <h4 className="mb-1 text-xs font-bold uppercase text-muted">Batting</h4>
-              <StatRow label="Power Rating" value={`${player.powerRating} (${powerLabel})`} />
-              <StatRow label="Speed" value={pctLabel(player.speed)} />
-              <StatRow label="Contact" value={pctLabel(player.contactRate)} />
-              <StatRow label="Discipline (BB/K)" value={pctLabel(player.discipline)} />
-              <StatRow label="ISO (Power)" value={player.power.toFixed(3)} />
-            </div>
-          )}
-
-          {/* Pitching Attributes */}
-          {player.pitching && (
-            <div>
-              <h4 className="mb-1 text-xs font-bold uppercase text-muted">Pitching</h4>
-              <StatRow label="Grade" value={`${player.pitching.grade} / 15`} />
-              <StatRow label="Role" value={player.pitching.role} />
-              <StatRow label="ERA" value={player.pitching.era.toFixed(2)} />
-              <StatRow label="WHIP" value={player.pitching.whip.toFixed(2)} />
-              <StatRow label="K/9" value={player.pitching.k9.toFixed(1)} />
-              <StatRow label="BB/9" value={player.pitching.bb9.toFixed(1)} />
-              <StatRow label="Stamina" value={player.pitching.stamina.toFixed(1)} />
-            </div>
-          )}
-
-          {/* Fielding */}
-          <div>
-            <h4 className="mb-1 text-xs font-bold uppercase text-muted">Fielding</h4>
-            <StatRow label="Position(s)" value={player.eligiblePositions.join(', ')} />
-            <StatRow label="Fielding Pct" value={player.fieldingPct.toFixed(3)} />
-            <StatRow label="Range" value={pctLabel(player.range)} />
-            <StatRow label="Arm" value={pctLabel(player.arm)} />
-          </div>
+        <div className="max-h-80 overflow-y-auto px-gutter-lg py-3">
+          {activeTab === 'card' && <CardRatingsTab player={player} />}
+          {activeTab === 'mlb' && <MlbStatsTab player={player} />}
         </div>
       </div>
     </div>
