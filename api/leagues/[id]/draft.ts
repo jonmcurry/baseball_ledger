@@ -123,12 +123,17 @@ async function processCpuPicks(
 
     const roster: DraftablePlayer[] = (rosterRows ?? []).map(toDraftablePlayer);
 
-    // CPU team: fetch ALL undrafted players for proper AI evaluation
+    // CPU team: fetch top-valued undrafted players for AI evaluation.
+    // ORDER BY valuation_score DESC ensures the AI sees the best candidates
+    // regardless of insertion order. LIMIT 500 covers all positions adequately
+    // while avoiding fetching 55K+ JSONB rows.
     const { data: available } = await supabase
       .from('player_pool')
       .select('*')
       .eq('league_id', leagueId)
-      .eq('is_drafted', false);
+      .eq('is_drafted', false)
+      .order('valuation_score', { ascending: false })
+      .limit(500);
 
     if (!available || available.length === 0) {
       return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
@@ -186,6 +191,7 @@ const SORT_COLUMN_MAP: Record<string, string> = {
   nameLast: 'player_card->nameLast',
   seasonYear: 'season_year',
   primaryPosition: 'player_card->primaryPosition',
+  valuation: 'valuation_score',
 };
 
 async function handleGetPlayers(req: VercelRequest, res: VercelResponse, requestId: string) {

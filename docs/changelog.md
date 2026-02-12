@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-02-12 - Fix CPU Draft Alphabetical Bias (Phase 77)
+
+Fixed a bug where CPU teams only drafted players whose last names start with "A".
+Root cause: Supabase/PostgREST defaults to returning 1000 rows when no `.limit()`
+is specified. With ~55K players inserted alphabetically from CSVs, the AI only
+evaluated the first 1000 (all "A" names).
+
+- Added `valuation_score` column to `player_pool` table (migration 00022)
+- Pre-compute valuation score during league creation using `calculatePlayerValue()`
+- CPU draft query now uses `ORDER BY valuation_score DESC LIMIT 500` so AI sees
+  the 500 highest-valued available players across all positions
+- Added partial index on `(league_id, valuation_score DESC) WHERE is_drafted = false`
+- Backfill SQL for existing leagues using approximate JSONB-based valuation
+- Added `valuation` sort option to player list endpoint
+- Added tests for mlbBattingStats-based valuation and elite vs average batter spread
+
 ## 2026-02-12 - Rich Header Banner (Phase 76)
 
 Redesigned the header from a minimal flat bar into a rich "Stadium Night" banner

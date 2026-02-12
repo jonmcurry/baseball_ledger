@@ -37,8 +37,8 @@ describe('One user per team per league constraint (REQ-LGE-007)', () => {
     );
   });
 
-  it('total migration file count is 21', () => {
+  it('total migration file count is 22', () => {
     const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql'));
-    expect(files.length).toBe(21);
+    expect(files.length).toBe(22);
   });
 });

@@ -181,6 +181,48 @@ describe('calculatePlayerValue', () => {
 });
 
 // ---------------------------------------------------------------------------
+// calculatePlayerValue uses mlbBattingStats from card (REQ-DFT-007)
+// ---------------------------------------------------------------------------
+describe('calculatePlayerValue with mlbBattingStats', () => {
+  it('uses card.mlbBattingStats when no external stats provided', () => {
+    const card = makeCard({
+      primaryPosition: 'LF',
+      fieldingPct: 0.98,
+      mlbBattingStats: {
+        G: 150, AB: 500, R: 120, H: 180, doubles: 35, triples: 5,
+        HR: 45, RBI: 120, SB: 6, CS: 2, BB: 100, SO: 85,
+        BA: 0.360, OBP: 0.500, SLG: 0.800, OPS: 1.300,
+      },
+    });
+    const value = calculatePlayerValue(card);
+    // (1.300 * 100) + (6 * 0.5) + (0.98 * 20) + 2 = 130 + 3 + 19.6 + 2 = 154.6
+    expect(value).toBeCloseTo(154.6, 0);
+  });
+
+  it('elite batter (1.300 OPS) outvalues average batter (0.700 OPS)', () => {
+    const elite = makeCard({
+      primaryPosition: 'LF',
+      mlbBattingStats: {
+        G: 150, AB: 500, R: 120, H: 180, doubles: 35, triples: 5,
+        HR: 45, RBI: 120, SB: 6, CS: 2, BB: 100, SO: 85,
+        BA: 0.360, OBP: 0.500, SLG: 0.800, OPS: 1.300,
+      },
+    });
+    const average = makeCard({
+      primaryPosition: 'LF',
+      mlbBattingStats: {
+        G: 140, AB: 480, R: 60, H: 130, doubles: 20, triples: 2,
+        HR: 10, RBI: 50, SB: 3, CS: 3, BB: 40, SO: 120,
+        BA: 0.270, OBP: 0.320, SLG: 0.380, OPS: 0.700,
+      },
+    });
+    const diff = calculatePlayerValue(elite) - calculatePlayerValue(average);
+    // 60+ point difference ensures sorting will not be ambiguous
+    expect(diff).toBeGreaterThan(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // selectBestSeason (REQ-DFT-001a)
 // ---------------------------------------------------------------------------
 describe('selectBestSeason (REQ-DFT-001a)', () => {

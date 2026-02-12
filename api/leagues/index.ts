@@ -24,6 +24,7 @@ import { runCsvPipeline } from '../../src/lib/csv/load-pipeline';
 import { generateTeamNames } from '../../src/lib/league/team-generator';
 import { assignDivisions } from '../../src/lib/league/division-assignment';
 import { SeededRNG } from '../../src/lib/rng/seeded-rng';
+import { calculatePlayerValue } from '../../src/lib/draft/ai-valuation';
 
 const BATCH_SIZE = 200;
 
@@ -110,6 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           player_id: card.playerId,
           season_year: card.seasonYear,
           player_card: card as unknown as Json,
+          valuation_score: calculatePlayerValue(card),
         }));
 
         let insertedCount = 0;
