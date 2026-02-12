@@ -74,7 +74,7 @@ describe('draftStore.fetchAvailablePlayers', () => {
       await useDraftStore.getState().fetchAvailablePlayers('league-42');
     });
 
-    expect(mockFetchAvailablePlayers).toHaveBeenCalledWith('league-42', { pageSize: 500 });
+    expect(mockFetchAvailablePlayers).toHaveBeenCalledWith('league-42', { pageSize: 50, sortBy: 'nameLast', sortOrder: 'asc' });
   });
 
   it('passes filter options to service', async () => {
@@ -88,7 +88,9 @@ describe('draftStore.fetchAvailablePlayers', () => {
     });
 
     expect(mockFetchAvailablePlayers).toHaveBeenCalledWith('league-1', {
-      pageSize: 500,
+      pageSize: 50,
+      sortBy: 'nameLast',
+      sortOrder: 'asc',
       position: 'SP',
       search: 'ruth',
     });

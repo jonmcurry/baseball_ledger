@@ -18,6 +18,8 @@ export function useDraft() {
   const draftState = useDraftStore((s) => s.draftState);
   const availablePlayers = useDraftStore((s) => s.availablePlayers);
   const totalAvailablePlayers = useDraftStore((s) => s.totalAvailablePlayers);
+  const playerCurrentPage = useDraftStore((s) => s.playerCurrentPage);
+  const playerPageSize = useDraftStore((s) => s.playerPageSize);
   const isLoading = useDraftStore((s) => s.isLoading);
   const error = useDraftStore((s) => s.error);
   const pickTimerSeconds = useDraftStore((s) => s.pickTimerSeconds);
@@ -47,6 +49,8 @@ export function useDraft() {
     draftState,
     availablePlayers,
     totalAvailablePlayers,
+    playerCurrentPage,
+    playerPageSize,
     isLoading,
     error,
     myTeam,

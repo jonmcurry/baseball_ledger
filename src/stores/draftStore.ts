@@ -19,10 +19,14 @@ import * as draftService from '@services/draft-service';
 
 export type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 
+const DEFAULT_PAGE_SIZE = 50;
+
 export interface DraftStoreState {
   draftState: DraftState | null;
   availablePlayers: AvailablePlayer[];
   totalAvailablePlayers: number;
+  playerCurrentPage: number;
+  playerPageSize: number;
   isLoading: boolean;
   error: string | null;
   pickTimerSeconds: number;
@@ -46,6 +50,8 @@ const initialState: DraftStoreState = {
   draftState: null,
   availablePlayers: [],
   totalAvailablePlayers: 0,
+  playerCurrentPage: 1,
+  playerPageSize: DEFAULT_PAGE_SIZE,
   isLoading: false,
   error: null,
   pickTimerSeconds: 60,
@@ -72,12 +78,14 @@ export const useDraftStore = create<DraftStoreType>()(
       fetchAvailablePlayers: async (leagueId, filters) => {
         set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchAvailablePlayers/start');
         try {
-          const mergedFilters = { pageSize: 500, ...filters };
+          const mergedFilters = { pageSize: DEFAULT_PAGE_SIZE, sortBy: 'nameLast', sortOrder: 'asc' as const, ...filters };
           const result = await draftService.fetchAvailablePlayers(leagueId, mergedFilters);
           const players = transformPoolRows(result.rows);
           set((state) => {
             state.availablePlayers = players;
             state.totalAvailablePlayers = result.totalRows;
+            state.playerCurrentPage = mergedFilters.page ?? 1;
+            state.playerPageSize = mergedFilters.pageSize ?? DEFAULT_PAGE_SIZE;
             state.isLoading = false;
           }, false, 'fetchAvailablePlayers/success');
         } catch (err) {
@@ -103,13 +111,14 @@ export const useDraftStore = create<DraftStoreType>()(
           // returns the updated position after all CPU auto-picks complete.
           const [freshState, freshResult] = await Promise.all([
             draftService.fetchDraftState(leagueId),
-            draftService.fetchAvailablePlayers(leagueId, { pageSize: 500 }),
+            draftService.fetchAvailablePlayers(leagueId, { pageSize: DEFAULT_PAGE_SIZE, sortBy: 'nameLast', sortOrder: 'asc' }),
           ]);
           set((state) => {
             state.isLoading = false;
             state.draftState = freshState;
             state.availablePlayers = transformPoolRows(freshResult.rows);
             state.totalAvailablePlayers = freshResult.totalRows;
+            state.playerCurrentPage = 1;
           }, false, 'submitPick/success');
         } catch (err) {
           set((state) => {

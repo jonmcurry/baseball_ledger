@@ -192,6 +192,10 @@ async function handleGetPlayers(req: VercelRequest, res: VercelResponse, request
 
   const sortColumn = SORT_COLUMN_MAP[sortBy] || 'player_card->nameLast';
   query = query.order(sortColumn, { ascending: sortOrder === 'asc' });
+  // Secondary sort by season year for stable ordering within same name/position
+  if (sortColumn !== 'season_year') {
+    query = query.order('season_year', { ascending: true });
+  }
 
   const offset = (page - 1) * pageSize;
   query = query.range(offset, offset + pageSize - 1);

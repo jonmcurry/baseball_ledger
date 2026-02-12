@@ -19,6 +19,7 @@ import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import { DraftTicker } from './DraftTicker';
 import { DraftReasoningPanel } from './DraftReasoningPanel';
 import { AvailablePlayersTable } from './AvailablePlayersTable';
+import type { PlayerTableFilters } from './AvailablePlayersTable';
 import { PickTimer } from './PickTimer';
 import { RosterPreviewPanel } from './RosterPreviewPanel';
 import type { AvailablePlayer } from '@stores/draftStore';
@@ -33,6 +34,8 @@ export function DraftBoardPage() {
     draftState,
     availablePlayers,
     totalAvailablePlayers,
+    playerCurrentPage,
+    playerPageSize,
     isLoading,
     error,
     myTeam,
@@ -71,6 +74,11 @@ export function DraftBoardPage() {
       submitPick(league.id, availablePlayers[bestIdx]);
     }
   }, [league?.id, availablePlayers, submitPick]);
+
+  const handleFilterChange = useCallback((filters: PlayerTableFilters) => {
+    if (!league?.id) return;
+    fetchAvailablePlayers(league.id, filters);
+  }, [league?.id, fetchAvailablePlayers]);
 
   const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
 
@@ -177,8 +185,11 @@ export function DraftBoardPage() {
           <AvailablePlayersTable
             players={availablePlayers}
             totalAvailable={totalAvailablePlayers}
+            currentPage={playerCurrentPage}
+            pageSize={playerPageSize}
             onSelect={handlePlayerSelect}
             onPlayerClick={handlePlayerClick}
+            onFilterChange={handleFilterChange}
             disabled={!isMyPick}
           />
         </div>

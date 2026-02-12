@@ -10,6 +10,10 @@ import { DashboardPage } from '@features/dashboard/DashboardPage';
 import { createMockLeague, createMockTeams, createMockStandings, createMockScheduleDay, createMockGame, createMockPlayoffBracket } from '../../../../tests/fixtures/mock-league';
 import type { PlayoffGameResult } from '@stores/simulationStore';
 
+vi.mock('react-router-dom', () => ({
+  useNavigate: vi.fn().mockReturnValue(vi.fn()),
+}));
+
 vi.mock('@hooks/useLeague', () => ({
   useLeague: vi.fn(),
 }));

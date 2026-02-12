@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-11 - Server-Side Pagination for Draft Player Pool (Phase 71)
+
+### Phase 71: Full player pool browsing with server-side pagination
+
+Previously only 500 of ~55,686 players loaded into the draft board. Converted
+the AvailablePlayersTable from client-side filtering/sorting to server-driven
+pagination with Prev/Next controls.
+
+**Backend (`api/leagues/[id]/draft.ts`):**
+- Added secondary sort by `season_year` when primary sort is `nameLast` or
+  `primaryPosition` for stable ordering within groups
+
+**Frontend:**
+- `AvailablePlayersTable`: Server-driven with `onFilterChange` callback. Search
+  debounced (300ms), position filter and sort headers trigger server refetch.
+  Prev/Next pagination controls. Names display as "Last, First". Removed all
+  client-side filtering/sorting logic.
+- `draftStore`: Default pageSize reduced from 500 to 50, default sort set to
+  `nameLast` ascending. Tracks `playerCurrentPage` and `playerPageSize`.
+- `DraftBoardPage`: Added `handleFilterChange` callback wiring table events to
+  `fetchAvailablePlayers`. Passes pagination state to table.
+- `useDraft`: Exposes `playerCurrentPage` and `playerPageSize` from store.
+
 ## 2026-02-11 - Dashboard Drafting Panel + Pool Batch Fix (Phase 70)
 
 ### Phase 70: Drafting phase UX gap + player pool reliability
