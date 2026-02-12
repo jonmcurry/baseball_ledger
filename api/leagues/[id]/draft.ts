@@ -142,8 +142,8 @@ async function processCpuPicks(
 
     // Find the original row for the selected player
     const selectedIdx = available.findIndex(
-      (row) => (row.player_card as PlayerCard).playerId === selected.card.playerId
-        && (row.player_card as PlayerCard).seasonYear === selected.card.seasonYear
+      (row) => (row.player_card as unknown as PlayerCard).playerId === selected.card.playerId
+        && (row.player_card as unknown as PlayerCard).seasonYear === selected.card.seasonYear
     );
     if (selectedIdx < 0) break;
 
