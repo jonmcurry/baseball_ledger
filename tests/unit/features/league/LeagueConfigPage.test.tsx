@@ -21,6 +21,13 @@ vi.mock('@hooks/useAuth', () => ({
 
 vi.mock('@services/league-service', () => ({
   createLeague: vi.fn().mockResolvedValue({ id: 'league-1', inviteKey: 'ABC123' }),
+  deleteLeague: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock state for useLeagueStore selector pattern
+let mockStoreState: Record<string, unknown> = { league: null };
+vi.mock('@stores/leagueStore', () => ({
+  useLeagueStore: (selector: (s: Record<string, unknown>) => unknown) => selector(mockStoreState),
 }));
 
 import * as leagueService from '@services/league-service';
@@ -31,6 +38,7 @@ describe('LeagueConfigPage', () => {
     vi.clearAllMocks();
     vi.useFakeTimers({ shouldAdvanceTime: true });
     mockCreateLeague.mockResolvedValue({ id: 'league-1', inviteKey: 'ABC123' });
+    mockStoreState = { league: null };
   });
 
   afterEach(() => {
@@ -154,5 +162,29 @@ describe('LeagueConfigPage', () => {
 
     // Form should be visible again
     expect(screen.getByLabelText('League Name')).toBeInTheDocument();
+  });
+
+  it('does not show delete button in creation mode', () => {
+    render(<LeagueConfigPage />);
+    expect(screen.queryByText('Danger Zone')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete league/i })).not.toBeInTheDocument();
+  });
+
+  it('shows delete button for commissioner of existing league', () => {
+    mockStoreState = {
+      league: { id: 'lg-1', name: 'My League', commissionerId: 'user-1' },
+    };
+    render(<LeagueConfigPage />);
+    expect(screen.getByText('Danger Zone')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /delete league/i })).toBeInTheDocument();
+  });
+
+  it('hides delete button for non-commissioner', () => {
+    mockStoreState = {
+      league: { id: 'lg-1', name: 'My League', commissionerId: 'other-user' },
+    };
+    render(<LeagueConfigPage />);
+    expect(screen.queryByText('Danger Zone')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete league/i })).not.toBeInTheDocument();
   });
 });

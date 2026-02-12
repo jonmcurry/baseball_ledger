@@ -13,9 +13,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LeagueConfigForm } from './LeagueConfigForm';
+import { DeleteLeagueButton } from './DeleteLeagueButton';
 import { InviteKeyDisplay } from '@components/data-display/InviteKeyDisplay';
 import type { LeagueFormData } from './LeagueConfigForm';
 import * as leagueService from '@services/league-service';
+import { useLeagueStore } from '@stores/leagueStore';
 import { usePageTitle } from '@hooks/usePageTitle';
 
 /** Estimated creation stages with cumulative progress targets. */
@@ -42,6 +44,9 @@ export function LeagueConfigPage() {
   usePageTitle('League Setup');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const league = useLeagueStore((s) => s.league);
+  const isExistingLeague = !!league;
+  const isCommissioner = league?.commissionerId === user?.id;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdInviteKey, setCreatedInviteKey] = useState<string | null>(null);
@@ -144,6 +149,23 @@ export function LeagueConfigPage() {
         </div>
       ) : (
         <LeagueConfigForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      )}
+
+      {/* Danger zone: delete league (REQ-LGE-010) -- commissioner only */}
+      {isExistingLeague && isCommissioner && !isSubmitting && (
+        <div className="mt-gutter-xl border-t border-stitch-red/30 pt-gutter-lg">
+          <h3 className="font-headline text-lg font-bold text-stitch-red">Danger Zone</h3>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            Permanently delete this league and all associated data.
+          </p>
+          <div className="mt-gutter">
+            <DeleteLeagueButton
+              leagueId={league.id}
+              leagueName={league.name}
+              onDeleted={() => navigate('/leagues/new')}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

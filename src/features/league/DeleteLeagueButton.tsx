@@ -68,19 +68,19 @@ export function DeleteLeagueButton({
 
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
           role="dialog"
           aria-modal="true"
           onClick={(e) => {
             if (e.target === e.currentTarget) handleCancel();
           }}
         >
-          <div className="w-full max-w-md rounded-card border border-sandstone bg-old-lace p-gutter-lg shadow-ledger">
+          <div className="w-full max-w-md rounded-card border border-[var(--border-default)] bg-[var(--surface-overlay)] p-gutter-lg shadow-ledger">
             <h3 className="font-headline text-lg font-bold text-stitch-red">
               Delete League
             </h3>
-            <p className="mt-2 text-sm text-muted">
-              This action cannot be undone. Type <strong>{leagueName}</strong> to confirm.
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              This action cannot be undone. Type <strong className="text-[var(--text-primary)]">{leagueName}</strong> to confirm.
             </p>
 
             <input
@@ -88,7 +88,7 @@ export function DeleteLeagueButton({
               placeholder="Type league name to confirm"
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
-              className="mt-3 w-full rounded-button border border-sandstone px-3 py-2 text-sm"
+              className="mt-3 w-full rounded-button border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
             />
 
             {error && (
@@ -100,7 +100,7 @@ export function DeleteLeagueButton({
                 type="button"
                 aria-label="Cancel"
                 onClick={handleCancel}
-                className="rounded-button border border-sandstone px-4 py-2 text-sm font-medium text-ink hover:bg-sandstone/20"
+                className="rounded-button border border-[var(--border-default)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]"
               >
                 Cancel
               </button>
@@ -109,7 +109,7 @@ export function DeleteLeagueButton({
                 aria-label="Confirm Delete"
                 disabled={!canConfirm || isDeleting}
                 onClick={handleConfirm}
-                className="rounded-button bg-stitch-red px-4 py-2 text-sm font-medium text-ink hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="rounded-button bg-stitch-red px-4 py-2 text-sm font-medium text-[var(--text-primary)] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </button>

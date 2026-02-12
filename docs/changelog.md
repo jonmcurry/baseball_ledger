@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-02-12 - Wire Delete League Button into Config Page (Phase 78)
+
+Wired the existing `DeleteLeagueButton` component into `LeagueConfigPage` so
+commissioners can delete leagues from the UI (REQ-LGE-010).
+
+- Delete button appears in "Danger Zone" section on League Config page
+- Only visible to commissioners of existing leagues (hidden in creation mode)
+- Updated `DeleteLeagueButton` modal styles to Ballpark Night theme
+- After deletion, navigates to league creation page
+- Added 3 new tests for delete button visibility logic
+
 ## 2026-02-12 - Fix CPU Draft Alphabetical Bias (Phase 77)
 
 Fixed a bug where CPU teams only drafted players whose last names start with "A".
