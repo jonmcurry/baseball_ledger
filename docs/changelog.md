@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-02-12 - Rich Header Banner (Phase 76)
+
+Redesigned the header from a minimal flat bar into a rich "Stadium Night" banner
+with the application title, league name, and decorative baseball stitching.
+
+- Added "BASEBALL LEDGER" as prominent gold app title (Barlow Condensed, wide tracking)
+- League name displayed below with gold separator line
+- Decorative baseball seam SVGs flanking the title (hidden on small screens)
+- Gradient background: deep navy (#081422) to navy (#132337) with subtle gold glow
+- Removed status badge text ("SETUP", "regular season") from header
+- User info / logout positioned at top-right over the banner
+- Navigation strip centered below the banner
+- Dashboard page now shows "Dashboard" heading instead of duplicating league name
+- Playoff variant: accent-hover gold title when in playoffs
+
 ## 2026-02-12 - Baseball Color Palette + League Creation Progress (Phase 75)
 
 ### Color Palette: Ballpark Night

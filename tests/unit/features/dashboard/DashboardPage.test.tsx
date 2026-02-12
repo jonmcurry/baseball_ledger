@@ -94,9 +94,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Loading league data...')).toBeInTheDocument();
   });
 
-  it('displays league name', () => {
+  it('displays Dashboard heading', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Test League')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 
   it('displays current day and status', () => {

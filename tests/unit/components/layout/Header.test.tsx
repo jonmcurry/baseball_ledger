@@ -2,7 +2,7 @@
 /**
  * Tests for Header component
  *
- * Navigation header with league info, user info, and nav links.
+ * Rich banner header with app title, league name, navigation, and user info.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -18,6 +18,11 @@ describe('Header', () => {
     onNavigate: vi.fn(),
     onLogout: vi.fn(),
   };
+
+  it('renders app title "Baseball Ledger"', () => {
+    render(<Header {...defaultProps} />);
+    expect(screen.getByText('Baseball Ledger')).toBeInTheDocument();
+  });
 
   it('renders league name', () => {
     render(<Header {...defaultProps} />);
@@ -77,10 +82,10 @@ describe('Header', () => {
     expect(screen.queryByText(/league config/i)).not.toBeInTheDocument();
   });
 
-  it('uses font-display for league name', () => {
+  it('uses font-display for app title', () => {
     render(<Header {...defaultProps} />);
-    const nameEl = screen.getByText('Test League');
-    expect(nameEl.className).toContain('font-display');
+    const titleEl = screen.getByText('Baseball Ledger');
+    expect(titleEl.className).toContain('font-display');
   });
 
   it('shows playoff variant when status is playoffs', () => {

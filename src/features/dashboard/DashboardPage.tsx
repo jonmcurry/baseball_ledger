@@ -166,7 +166,7 @@ export function DashboardPage() {
       <div className="flex items-center gap-4">
         <div>
           <h2 className="pennant-header">
-            {league?.name ?? 'Dashboard'}
+            Dashboard
           </h2>
           {league && (
             <p className="mt-1 font-stat text-sm text-[var(--color-muted)]">

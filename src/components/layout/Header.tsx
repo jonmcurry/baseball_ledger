@@ -1,8 +1,8 @@
 /**
  * Header
  *
- * Navigation header with league info, user display, and nav links.
- * All nav items visible in every league phase so users can always navigate.
+ * Rich banner header with "Baseball Ledger" app title, league name,
+ * decorative baseball stitching SVGs, and navigation strip.
  * Playoff variant styling when status is "playoffs".
  * Collapsed hamburger menu on narrow viewports (REQ-COMP-010).
  *
@@ -40,6 +40,30 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'League Config', route: '/config', commissionerOnly: true },
 ];
 
+/** Baseball seam curve -- one half of the classic stitching pattern. */
+function StitchSvg({ mirror }: { mirror?: boolean }) {
+  return (
+    <svg
+      className={`h-16 w-12 md:h-20 md:w-16 text-[var(--accent-primary)] opacity-15 ${mirror ? 'scale-x-[-1]' : ''}`}
+      viewBox="0 0 48 80"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+    >
+      {/* Main seam curve */}
+      <path d="M24 4 C36 20, 12 36, 36 52 C12 68, 36 76, 24 76" />
+      {/* Stitch marks */}
+      <path d="M18 12 L30 16" strokeWidth="1" />
+      <path d="M30 24 L18 28" strokeWidth="1" />
+      <path d="M18 36 L30 40" strokeWidth="1" />
+      <path d="M30 48 L18 52" strokeWidth="1" />
+      <path d="M18 60 L30 64" strokeWidth="1" />
+      <path d="M30 70 L18 74" strokeWidth="1" />
+    </svg>
+  );
+}
+
 export function Header({
   leagueName,
   leagueStatus,
@@ -64,60 +88,100 @@ export function Header({
     <header
       role="banner"
       className={`border-b relative z-20 transition-colors duration-300 ${isPlayoff
-          ? 'border-[var(--accent-primary)] bg-surface-raised'
-          : 'border-[var(--border-default)] bg-surface-raised'
+          ? 'border-[var(--accent-primary)]'
+          : 'border-[var(--border-default)]'
         }`}
     >
-      <div className="px-gutter py-4 flex items-center justify-between relative">
-        <div className="flex items-center gap-gutter">
-          <div className="flex flex-col">
-            <span className={`font-display text-2xl tracking-wider uppercase ${isPlayoff ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
-              {leagueName}
+      {/* Banner area with gradient background */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(180deg, #081422 0%, #0C1B2A 40%, #132337 100%)',
+        }}
+      >
+        {/* Subtle radial gold glow */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(212,168,67,0.06) 0%, transparent 70%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* User info -- positioned top-right */}
+        <div className="relative z-10 flex justify-end px-gutter pt-3">
+          <div className="flex items-center gap-gutter">
+            <span className="font-body text-sm max-md:hidden text-[var(--text-secondary)]">
+              {userName}
             </span>
-            <span className="text-xs font-stat tracking-widest text-[var(--text-tertiary)] uppercase">
-              {leagueStatus.replace('_', ' ')}
-            </span>
+            <button
+              type="button"
+              onClick={onLogout}
+              aria-label="Log out"
+              className="font-display uppercase text-xs tracking-wider border px-4 py-1.5 rounded-sm transition-all active:translate-y-px max-md:hidden border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+            >
+              Log Out
+            </button>
+
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="hidden max-md:block p-1 text-[var(--text-secondary)]"
+            >
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className="stroke-current"
+              >
+                {mobileMenuOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="square" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="square" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-gutter">
-          <span className="font-body text-sm max-md:hidden text-[var(--text-secondary)]">
-            {userName}
-          </span>
-          <button
-            type="button"
-            onClick={onLogout}
-            aria-label="Log out"
-            className="font-display uppercase text-xs tracking-wider border px-4 py-1.5 rounded-sm transition-all active:translate-y-px max-md:hidden border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
-          >
-            Log Out
-          </button>
+        {/* Centered banner content with flanking stitching */}
+        <div className="relative z-10 flex items-center justify-center gap-4 px-gutter pb-5 pt-1 md:gap-8 md:pb-6">
+          {/* Left stitch */}
+          <div className="max-sm:hidden">
+            <StitchSvg />
+          </div>
 
-          <button
-            type="button"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="hidden max-md:block p-1 text-[var(--text-secondary)]"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-              className="stroke-current"
+          {/* Title block */}
+          <div className="flex flex-col items-center text-center">
+            <h1
+              className={`font-display text-2xl tracking-[0.2em] uppercase md:text-3xl lg:text-4xl ${
+                isPlayoff ? 'text-[var(--accent-hover)]' : 'text-[var(--accent-primary)]'
+              }`}
             >
-              {mobileMenuOpen ? (
-                <path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="square" />
-              ) : (
-                <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="square" />
-              )}
-            </svg>
-          </button>
+              Baseball Ledger
+            </h1>
+
+            {/* Gold separator */}
+            <div className="my-2 h-px w-24 bg-[var(--accent-primary)] opacity-40 md:w-32" aria-hidden="true" />
+
+            {/* League name */}
+            <span className="font-display text-base uppercase tracking-wider text-[var(--text-primary)] md:text-lg">
+              {leagueName}
+            </span>
+          </div>
+
+          {/* Right stitch (mirrored) */}
+          <div className="max-sm:hidden">
+            <StitchSvg mirror />
+          </div>
         </div>
       </div>
 
+      {/* Navigation strip */}
       <nav
         className={`bg-surface-overlay/80 backdrop-blur-sm transition-all duration-300 overflow-hidden ${mobileMenuOpen
             ? 'max-h-96 border-t border-[var(--border-subtle)]'
@@ -125,7 +189,7 @@ export function Header({
           }`}
         role="navigation"
       >
-        <div className="px-gutter flex max-md:flex-col md:items-center md:gap-6 py-2">
+        <div className="px-gutter flex max-md:flex-col md:items-center md:justify-center md:gap-6 py-2">
           {visibleNavItems.map((item) => (
             <button
               key={item.route}
