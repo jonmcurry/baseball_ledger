@@ -7,8 +7,16 @@ AuthGuard returned `null` while Supabase auth initialization was in progress, ca
 a blank screen with no visible feedback. Now shows LoadingLedger with "Initializing..."
 message during the brief async auth check.
 
+Added 10-second timeout to `getSession()` call in authStore `initialize()`. When
+Supabase is unreachable (CORS errors, network issues), the auth client's internal retry
+logic can block the promise from ever resolving, leaving the app stuck on
+"Initializing..." indefinitely. The timeout ensures the app falls through to the login
+page with an error message instead of hanging forever.
+
 - AuthGuard shows LoadingLedger instead of null when `isInitialized` is false
+- Auth initialization wraps `getSession()` in `Promise.race` with 10s timeout
 - Updated AuthGuard test to verify loading indicator renders
+- Added authStore initialize tests (no-session, timeout, valid session)
 
 ## 2026-02-12 - Fix Roster Display: OF Labels, Pitcher Categorization, Diamond (Phase 80)
 

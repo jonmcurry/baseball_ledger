@@ -2,7 +2,12 @@
  * Tests for Auth Store
  */
 
+vi.mock('@lib/supabase/client', () => ({
+  getSupabaseClient: vi.fn(),
+}));
+
 import { useAuthStore } from '@stores/authStore';
+import { getSupabaseClient } from '@lib/supabase/client';
 
 describe('authStore', () => {
   beforeEach(() => {
@@ -69,5 +74,66 @@ describe('authStore', () => {
     store.setUser({ id: 'u1', email: 'x@y.com', displayName: 'X' });
     store.setUser(null);
     expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  describe('initialize', () => {
+    it('sets isInitialized true when getSession returns no session', async () => {
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        auth: {
+          getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+          onAuthStateChange: vi.fn(),
+        },
+      } as never);
+
+      await useAuthStore.getState().initialize();
+
+      expect(useAuthStore.getState().isInitialized).toBe(true);
+      expect(useAuthStore.getState().user).toBeNull();
+    });
+
+    it('sets isInitialized true with error when getSession hangs (timeout)', async () => {
+      vi.useFakeTimers();
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        auth: {
+          getSession: vi.fn().mockReturnValue(new Promise(() => {})), // never resolves
+          onAuthStateChange: vi.fn(),
+        },
+      } as never);
+
+      const initPromise = useAuthStore.getState().initialize();
+      await vi.advanceTimersByTimeAsync(10_000);
+      await initPromise;
+
+      const state = useAuthStore.getState();
+      expect(state.isInitialized).toBe(true);
+      expect(state.error).toBe('Session check timed out');
+      expect(state.user).toBeNull();
+
+      vi.useRealTimers();
+    });
+
+    it('sets user when getSession returns a valid session', async () => {
+      vi.mocked(getSupabaseClient).mockReturnValue({
+        auth: {
+          getSession: vi.fn().mockResolvedValue({
+            data: {
+              session: {
+                user: { id: 'u1', email: 'a@b.com', user_metadata: { display_name: 'Test' } },
+                access_token: 'tok',
+                expires_at: 9999,
+              },
+            },
+          }),
+          onAuthStateChange: vi.fn(),
+        },
+      } as never);
+
+      await useAuthStore.getState().initialize();
+
+      const state = useAuthStore.getState();
+      expect(state.isInitialized).toBe(true);
+      expect(state.user?.id).toBe('u1');
+      expect(state.session?.accessToken).toBe('tok');
+    });
   });
 });

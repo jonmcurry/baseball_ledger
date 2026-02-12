@@ -44,6 +44,9 @@ export interface AuthActions {
 
 export type AuthStore = AuthState & AuthActions;
 
+/** Timeout (ms) for Supabase getSession(). Prevents infinite hang on CORS/network errors. */
+const SESSION_TIMEOUT_MS = 10_000;
+
 const initialState: AuthState = {
   user: null,
   session: null,
@@ -77,7 +80,10 @@ export const useAuthStore = create<AuthStore>()(
       initialize: async () => {
         try {
           const supabase = getSupabaseClient();
-          const { data } = await supabase.auth.getSession();
+          const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Session check timed out')), SESSION_TIMEOUT_MS),
+          );
+          const { data } = await Promise.race([supabase.auth.getSession(), timeout]);
           if (data.session?.user) {
             const u = data.session.user;
             set({
