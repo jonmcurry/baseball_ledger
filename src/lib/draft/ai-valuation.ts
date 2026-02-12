@@ -68,11 +68,12 @@ export function calculatePitcherValue(pitching: PitcherAttributes): number {
  * Calculate a player's draft value.
  *
  * For pitchers, uses the card's pitching attributes.
- * For batters, requires raw OPS and SB stats (not stored on PlayerCard).
+ * For batters, uses MLB stats from card or passed-in stats.
+ * Falls back to card attributes (power, speed, contactRate) when stats unavailable.
  *
  * @param card - The player card
- * @param batterStats - Raw batting stats needed for batter valuation
- * @returns Valuation score, or 0 if insufficient data
+ * @param batterStats - Optional raw batting stats (overrides card.mlbBattingStats)
+ * @returns Valuation score
  */
 export function calculatePlayerValue(
   card: PlayerCard,
@@ -81,11 +82,28 @@ export function calculatePlayerValue(
   if (card.isPitcher && card.pitching) {
     return calculatePitcherValue(card.pitching);
   }
-  if (!batterStats) return 0;
+
+  // Try passed-in stats first, then card's mlbBattingStats
+  let ops = batterStats?.ops ?? 0;
+  let sb = batterStats?.sb ?? 0;
+
+  if (ops === 0 && card.mlbBattingStats) {
+    ops = card.mlbBattingStats.OPS;
+    sb = card.mlbBattingStats.SB;
+  }
+
+  // Fallback: derive approximate value from card attributes when no stats available
+  // power (ISO) ≈ SLG - BA, so OPS ≈ OBP + BA + ISO ≈ 0.330 + 0.260 + power
+  // speed correlates with SB potential
+  if (ops === 0) {
+    ops = 0.650 + (card.power * 0.5) + (card.contactRate * 0.15) + (card.discipline * 0.1);
+    sb = Math.round(card.speed * 40); // speed of 1.0 ≈ 40 SB season
+  }
+
   return calculateBatterValue(
     card.primaryPosition,
-    batterStats.ops,
-    batterStats.sb,
+    ops,
+    sb,
     card.fieldingPct,
   );
 }
