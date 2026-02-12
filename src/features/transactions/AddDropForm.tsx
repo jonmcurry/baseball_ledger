@@ -82,7 +82,7 @@ export function AddDropForm({
             type="button"
             onClick={handleDrop}
             disabled={!selectedDrop}
-            className="rounded-button bg-stitch-red px-3 py-2 text-xs font-medium text-old-lace hover:opacity-90 disabled:opacity-40"
+            className="rounded-button bg-stitch-red px-3 py-2 text-xs font-medium text-ink hover:opacity-90 disabled:opacity-40"
           >
             Drop
           </button>
@@ -124,7 +124,7 @@ export function AddDropForm({
                   type="button"
                   onClick={() => onAdd(player)}
                   disabled={!canAdd}
-                  className="rounded-button bg-ballpark px-2 py-0.5 text-xs font-medium text-old-lace hover:opacity-90 disabled:opacity-40"
+                  className="rounded-button bg-ballpark px-2 py-0.5 text-xs font-medium text-ink hover:opacity-90 disabled:opacity-40"
                 >
                   Add
                 </button>

@@ -105,7 +105,7 @@ export function RosterPage() {
           type="button"
           onClick={handleSaveLineup}
           disabled={isSaving}
-          className="rounded-button bg-ballpark px-4 py-2 text-sm font-medium text-old-lace hover:opacity-90 disabled:opacity-40"
+          className="rounded-button bg-ballpark px-4 py-2 text-sm font-medium text-ink hover:opacity-90 disabled:opacity-40"
         >
           {isSaving ? 'Saving...' : 'Save Lineup'}
         </button>

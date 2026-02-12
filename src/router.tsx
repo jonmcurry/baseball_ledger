@@ -69,12 +69,12 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 
 function NotFoundPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-old-lace p-gutter-xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-base p-gutter-xl">
       <h1 className="font-headline text-4xl font-bold text-stitch-red">404</h1>
       <p className="mt-gutter text-lg text-ink">Page not found</p>
       <Link
         to="/"
-        className="mt-gutter-lg rounded-button bg-ballpark px-6 py-2 font-medium text-old-lace hover:opacity-90"
+        className="mt-gutter-lg rounded-button bg-ballpark px-6 py-2 font-medium text-ink hover:opacity-90"
       >
         Return Home
       </Link>

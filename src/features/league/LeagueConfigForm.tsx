@@ -123,7 +123,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-button bg-ballpark px-6 py-2 font-medium text-old-lace hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="rounded-button bg-ballpark px-6 py-2 font-medium text-ink hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {isSubmitting ? 'Creating...' : 'Create League'}
       </button>

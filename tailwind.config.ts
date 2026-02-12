@@ -68,7 +68,7 @@ const config: Config = {
 
         /* Legacy color aliases from original design */
         'ballpark': 'var(--accent-primary)',
-        'old-lace': 'var(--text-primary)',
+        'old-lace': 'var(--surface-raised)',
         'sandstone': 'var(--border-default)',
         'stitch-red': 'var(--semantic-danger)',
       },

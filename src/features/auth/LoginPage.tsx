@@ -31,7 +31,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-old-lace p-gutter-xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-base p-gutter-xl">
       <div className="w-full max-w-sm rounded-card border border-sandstone bg-surface-raised p-gutter-xl shadow-card">
         <h1 className="font-headline text-2xl font-bold text-ballpark">Sign In</h1>
         {error && (
@@ -47,7 +47,7 @@ export function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-button border border-sandstone px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-button border border-sandstone bg-surface-overlay px-3 py-2 text-sm text-ink placeholder:text-muted"
               placeholder="you@example.com"
               disabled={isSubmitting}
             />
@@ -61,14 +61,14 @@ export function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-button border border-sandstone px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-button border border-sandstone bg-surface-overlay px-3 py-2 text-sm text-ink"
               disabled={isSubmitting}
             />
           </div>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-button bg-ballpark py-2 font-medium text-old-lace hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-button bg-ballpark py-2 font-medium text-ink hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>

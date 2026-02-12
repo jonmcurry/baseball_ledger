@@ -47,7 +47,7 @@ export function BenchPanel({ bench, onPlayerSelect, onPlayerClick }: BenchPanelP
             <button
               type="button"
               onClick={() => onPlayerSelect(entry)}
-              className="rounded-button bg-ballpark px-2 py-0.5 text-xs text-old-lace hover:opacity-90"
+              className="rounded-button bg-ballpark px-2 py-0.5 text-xs text-ink hover:opacity-90"
             >
               Add to Lineup
             </button>

@@ -63,7 +63,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-button bg-stitch-red px-4 py-2 text-sm font-medium text-old-lace hover:opacity-90"
+            className="rounded-button bg-stitch-red px-4 py-2 text-sm font-medium text-ink hover:opacity-90"
           >
             {confirmLabel}
           </button>

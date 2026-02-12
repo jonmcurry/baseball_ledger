@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-12 - Dark Theme Form Input Fix (Phase 73b)
+
+Fix form inputs and backgrounds that were unreadable in the dark theme due to
+the `old-lace` Tailwind alias mapping to a light color (#E8EAED) -- correct for
+text use but wrong for background use.
+
+- Changed `old-lace` alias from `var(--text-primary)` to `var(--surface-raised)`
+  so `bg-old-lace` renders as a dark surface
+- Replaced all `text-old-lace` usages with `text-ink` (both resolve to light text)
+- Added `bg-surface-overlay` to Input and Select components for dark input fields
+- Fixed Toggle knob to use explicit light color instead of `bg-old-lace`
+- Fixed LoginPage inline inputs with dark background and light text
+- Changed standalone page backgrounds (Splash, Login, 404) to `bg-surface-base`
+
 ## 2026-02-12 - Complete UI/UX Redesign: Press Box Theme (Phase 73)
 
 ### Phase 73: Modern editorial sports design overhaul

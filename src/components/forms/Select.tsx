@@ -50,7 +50,7 @@ export function Select({
         disabled={disabled}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`w-full rounded-button border bg-old-lace px-3 py-2 font-body text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ballpark/50 disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`w-full rounded-button border bg-surface-overlay px-3 py-2 font-body text-sm text-ink focus:outline-none focus:ring-2 focus:ring-ballpark/50 disabled:opacity-40 disabled:cursor-not-allowed ${
           error ? 'border-stitch-red' : 'border-sandstone'
         }`}
       >

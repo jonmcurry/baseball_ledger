@@ -15,9 +15,9 @@ export interface TradeEvaluationPanelProps {
 }
 
 const BADGE_COLORS: Record<string, string> = {
-  accept: 'bg-green-700 text-old-lace',
-  reject: 'bg-red-800 text-old-lace',
-  counter: 'bg-amber-700 text-old-lace',
+  accept: 'bg-green-700 text-ink',
+  reject: 'bg-red-800 text-ink',
+  counter: 'bg-amber-700 text-ink',
 };
 
 export function TradeEvaluationPanel({ request }: TradeEvaluationPanelProps) {

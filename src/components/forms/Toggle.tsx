@@ -40,7 +40,7 @@ export function Toggle({
       >
         <span
           aria-hidden="true"
-          className={`inline-block h-4 w-4 transform rounded-full bg-old-lace shadow-sm transition-transform ${
+          className={`inline-block h-4 w-4 transform rounded-full bg-[var(--text-primary)] shadow-sm transition-transform ${
             checked ? 'translate-x-6' : 'translate-x-1'
           }`}
         />

@@ -109,7 +109,7 @@ export function DeleteLeagueButton({
                 aria-label="Confirm Delete"
                 disabled={!canConfirm || isDeleting}
                 onClick={handleConfirm}
-                className="rounded-button bg-stitch-red px-4 py-2 text-sm font-medium text-old-lace hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="rounded-button bg-stitch-red px-4 py-2 text-sm font-medium text-ink hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Confirm Delete'}
               </button>

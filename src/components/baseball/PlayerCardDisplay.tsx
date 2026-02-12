@@ -50,10 +50,10 @@ export function PlayerCardDisplay({ player, isOpen, onClose }: PlayerCardDisplay
         {/* Card header */}
         <div className="flex items-center justify-between border-b-2 border-sandstone bg-ballpark px-gutter py-3">
           <div>
-            <h3 className="font-headline text-lg font-bold text-old-lace">
+            <h3 className="font-headline text-lg font-bold text-ink">
               {player.nameFirst} {player.nameLast}
             </h3>
-            <p className="text-xs text-old-lace/80">
+            <p className="text-xs text-ink/80">
               {player.seasonYear} -- {player.primaryPosition} -- Bats: {player.battingHand} / Throws: {player.throwingHand}
             </p>
           </div>
@@ -61,7 +61,7 @@ export function PlayerCardDisplay({ player, isOpen, onClose }: PlayerCardDisplay
             type="button"
             onClick={onClose}
             aria-label="Close player card"
-            className="text-old-lace/80 hover:text-old-lace"
+            className="text-ink/80 hover:text-ink"
           >
             &#x2715;
           </button>

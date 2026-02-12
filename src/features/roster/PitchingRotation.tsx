@@ -51,7 +51,7 @@ export function PitchingRotation({
                 </span>
               )}
               {idx === nextStarterIdx && (
-                <span className="rounded-full bg-ballpark px-1.5 py-0.5 text-[10px] font-bold text-old-lace">
+                <span className="rounded-full bg-ballpark px-1.5 py-0.5 text-[10px] font-bold text-ink">
                   NEXT
                 </span>
               )}

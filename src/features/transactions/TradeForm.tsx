@@ -164,7 +164,7 @@ export function TradeForm({
         type="button"
         onClick={handleSubmit}
         disabled={!canSubmit}
-        className="rounded-button bg-ballpark px-4 py-2 text-xs font-medium text-old-lace hover:opacity-90 disabled:opacity-40"
+        className="rounded-button bg-ballpark px-4 py-2 text-xs font-medium text-ink hover:opacity-90 disabled:opacity-40"
       >
         Submit Trade
       </button>
