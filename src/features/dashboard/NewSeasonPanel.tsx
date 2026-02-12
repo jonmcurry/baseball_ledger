@@ -28,7 +28,7 @@ export function NewSeasonPanel({
       <div
         className="vintage-card relative overflow-hidden text-center"
         style={{
-          background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, #1A3320 100%)',
+          background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, #0A1520 100%)',
           borderColor: 'var(--color-gold)',
           borderWidth: '2px',
         }}

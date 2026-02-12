@@ -104,6 +104,9 @@ const config: Config = {
       borderWidth: {
         'spine': '4px',
       },
+      animation: {
+        'spin-slow': 'spin 3s linear infinite',
+      },
     },
   },
   plugins: [

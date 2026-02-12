@@ -4,79 +4,79 @@
 
 /**
  * Baseball Ledger Design System
- * "Press Box" -- Modern Editorial Sports Design
+ * "Ballpark Night" -- Warm Baseball Aesthetic
  *
- * Inspired by premium sports journalism: The Athletic, ESPN+ longform,
- * Sports Illustrated editorial layouts. Clean, confident, high-contrast.
+ * Deep navy evoking night games under the lights, warm cream text like
+ * vintage baseball cards, rich gold accents, classic red and blue.
  */
 
 @layer base {
   :root {
     /* ===================================================================
-       COLOR PALETTE - "Press Box"
+       COLOR PALETTE - "Ballpark Night"
        =================================================================== */
 
-    /* Surfaces */
-    --surface-base: #0F1419;
-    --surface-raised: #1A1F26;
-    --surface-overlay: #242B35;
-    --surface-highlight: #2D3542;
+    /* Surfaces -- warm navy (night game sky) */
+    --surface-base: #0C1B2A;
+    --surface-raised: #132337;
+    --surface-overlay: #1A2E45;
+    --surface-highlight: #243A54;
 
-    /* Text */
-    --text-primary: #E8EAED;
-    --text-secondary: #9AA0A8;
-    --text-tertiary: #636B75;
+    /* Text -- warm cream (vintage card stock) */
+    --text-primary: #F5F0E6;
+    --text-secondary: #BDB5A7;
+    --text-tertiary: #7D7568;
 
-    /* Accent -- warm amber */
-    --accent-primary: #E6A817;
-    --accent-hover: #F0B929;
-    --accent-muted: rgba(230, 168, 23, 0.15);
+    /* Accent -- championship gold */
+    --accent-primary: #D4A843;
+    --accent-hover: #E4BC5A;
+    --accent-muted: rgba(212, 168, 67, 0.15);
 
     /* Semantic */
-    --semantic-success: #34A853;
-    --semantic-danger: #EA4335;
-    --semantic-warning: #FBBC04;
-    --semantic-info: #4285F4;
+    --semantic-success: #2D8B4E;
+    --semantic-danger: #C53030;
+    --semantic-warning: #D4A843;
+    --semantic-info: #3B72CF;
 
     /* Borders */
-    --border-default: #2D3542;
-    --border-subtle: #1F2630;
-    --border-accent: #E6A817;
+    --border-default: #1E3350;
+    --border-subtle: #152740;
+    --border-accent: #D4A843;
 
     /* ===================================================================
        LEGACY TOKEN ALIASES
        Map old CSS variable names to new values so existing var() refs work
        =================================================================== */
-    --color-scoreboard: #0F1419;
-    --color-scoreboard-green: #0F1419;
-    --color-scoreboard-light: #1A1F26;
-    --color-scoreboard-dark: #080C10;
-    --color-scoreboard-text: #E8EAED;
-    --color-scoreboard-glow: rgba(232, 234, 237, 0.1);
+    --color-scoreboard: #0C1B2A;
+    --color-scoreboard-green: #0C1B2A;
+    --color-scoreboard-light: #132337;
+    --color-scoreboard-dark: #06101A;
+    --color-scoreboard-text: #F5F0E6;
+    --color-scoreboard-glow: rgba(245, 240, 230, 0.1);
 
-    --color-cream: #1A1F26;
-    --color-cream-dark: #151A20;
-    --color-parchment: #242B35;
+    --color-cream: #132337;
+    --color-cream-dark: #0E1C2D;
+    --color-parchment: #1A2E45;
 
-    --color-stitch: #EA4335;
-    --color-stitch-light: #F06860;
-    --color-leather: #2D3542;
-    --color-leather-dark: #1F2630;
+    --color-stitch: #C53030;
+    --color-stitch-light: #E04848;
+    --color-leather: #1E3350;
+    --color-leather-dark: #152740;
 
-    --color-gold: #E6A817;
-    --color-gold-light: #F0B929;
-    --color-gold-dark: #C48F10;
+    --color-gold: #D4A843;
+    --color-gold-light: #E4BC5A;
+    --color-gold-dark: #B8912E;
 
-    --color-ink: #E8EAED;
-    --color-ink-light: #D0D3D8;
-    --color-wood: #636B75;
-    --color-wood-light: #7A8290;
-    --color-muted: #9AA0A8;
-    --color-muted-light: #B0B5BC;
+    --color-ink: #F5F0E6;
+    --color-ink-light: #E0D9CE;
+    --color-wood: #7D7568;
+    --color-wood-light: #958C7E;
+    --color-muted: #BDB5A7;
+    --color-muted-light: #D0C9BC;
 
-    --color-grass: #34A853;
+    --color-grass: #2D8B4E;
     --color-dirt: #A67B5B;
-    --color-chalk: #E8EAED;
+    --color-chalk: #F5F0E6;
 
     /* ===================================================================
        TYPOGRAPHY

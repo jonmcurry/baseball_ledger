@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-02-12 - Baseball Color Palette + League Creation Progress (Phase 75)
+
+### Color Palette: Ballpark Night
+
+Replaced the cold charcoal "Press Box" palette with a warm baseball-inspired
+"Ballpark Night" theme. The new palette evokes the warmth of a ballpark under
+the lights -- warm navy surfaces, cream text, rich gold accents.
+
+- Surface colors: deep midnight navy (#0C1B2A) through warm navy tiers
+- Text: warm cream (#F5F0E6) primary, warm muted (#BDB5A7) secondary
+- Accent: rich gold (#D4A843) with bright gold hover (#E4BC5A)
+- Semantic: ballpark green success, stitch red danger, classic blue info
+- Fixed hardcoded gradient colors in DashboardPage, SimulationNotification,
+  and NewSeasonPanel to match new palette
+
+### League Creation Progress Indicator
+
+Added an animated progress bar with stage-specific status messages during
+league creation (~60 second process). Replaces the static "Creating..." button
+text with a visual progress view.
+
+- Asymptotic progress curve (rises quickly, approaches 95% asymptotically)
+- Status messages: Generating teams, Loading player database, Building player
+  cards, Populating player pool, Finalizing league setup
+- Form hidden during creation, restored on error
+- Progress bar with aria attributes for accessibility
+- Baseball stitching SVG animation as decorative element
+- Jumps to 100% on completion with brief pause before navigation
+
 ## 2026-02-12 - Simplify Setup Dashboard (Phase 74)
 
 Redesign the initial setup dashboard to be less busy and more focused.
