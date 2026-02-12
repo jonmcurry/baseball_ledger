@@ -190,6 +190,23 @@ export function DashboardPage() {
         )
       )}
 
+      {league?.status === 'drafting' && (
+        <div className="rounded-card border border-ballpark bg-ballpark/10 px-gutter py-4">
+          <h3 className="font-headline text-lg font-bold text-ballpark">
+            Draft In Progress
+          </h3>
+          <p className="mt-1 text-sm text-ink">
+            The league draft is underway. Head to the Draft Board to make your picks.
+          </p>
+          <a
+            href="/draft"
+            className="mt-3 inline-block rounded-button bg-ballpark px-4 py-2 text-sm font-bold text-old-lace hover:opacity-90"
+          >
+            Go to Draft Board
+          </a>
+        </div>
+      )}
+
       {recentResults.length > 0 && (
         <ResultsTicker results={recentResults} />
       )}

@@ -25,7 +25,7 @@ import { generateTeamNames } from '../../src/lib/league/team-generator';
 import { assignDivisions } from '../../src/lib/league/division-assignment';
 import { SeededRNG } from '../../src/lib/rng/seeded-rng';
 
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = 200;
 
 const CreateLeagueSchema = z.object({
   name: z.string().min(1).max(100),
@@ -99,6 +99,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       // Batch insert cards into player_pool table
+      console.log(`[league ${data.id}] Pipeline generated ${pipeline.cards.length} cards, ${pipeline.pool.length} pool entries, ${pipeline.errors.length} errors`);
+      if (pipeline.errors.length > 0) {
+        console.warn(`[league ${data.id}] Pipeline errors (first 5):`, pipeline.errors.slice(0, 5));
+      }
+
       if (pipeline.cards.length > 0) {
         const poolRecords = pipeline.cards.map((card) => ({
           league_id: data.id,
@@ -107,6 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           player_card: card as unknown as Json,
         }));
 
+        let insertedCount = 0;
+        let failedBatches = 0;
         for (let i = 0; i < poolRecords.length; i += BATCH_SIZE) {
           const batch = poolRecords.slice(i, i + BATCH_SIZE);
           const { error: poolError } = await supabase
@@ -114,9 +121,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .insert(batch);
 
           if (poolError) {
-            console.error(`Player pool batch insert failed for league ${data.id}:`, poolError.message);
+            failedBatches++;
+            console.error(`[league ${data.id}] Batch ${Math.floor(i / BATCH_SIZE) + 1} failed (${batch.length} records):`, poolError.message);
+          } else {
+            insertedCount += batch.length;
           }
         }
+        console.log(`[league ${data.id}] Pool insert complete: ${insertedCount} inserted, ${failedBatches} batches failed`);
       }
 
       // Update league with player name cache (REQ-DATA-003)

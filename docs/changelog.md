@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-11 - Dashboard Drafting Panel + Pool Batch Fix (Phase 70)
+
+### Phase 70: Drafting phase UX gap + player pool reliability
+
+After clicking "Start Draft", the dashboard transitioned to `drafting` status but
+had no handler for that phase -- users saw only standings with no guidance. Also,
+player pool batch inserts could fail silently on large JSONB payloads.
+
+**Dashboard (`DashboardPage.tsx`):**
+- Added `drafting` phase panel with "Draft In Progress" heading and link to
+  Draft Board page, displayed between setup and regular_season phases
+
+**Player pool reliability (`api/leagues/index.ts`):**
+- Reduced BATCH_SIZE from 1000 to 200 to avoid Supabase payload limits with
+  large PlayerCard JSONB objects
+- Added per-batch success/failure logging with counts for diagnostics
+- Logged pipeline card count, pool entries, and errors at generation time
+
 ## 2026-02-11 - CPU Auto-Drafting + Player Pool Fix (Phase 69)
 
 ### Phase 69: CPU teams auto-draft + player pool display improvements
