@@ -274,44 +274,46 @@ export function DashboardPage() {
         />
       )}
 
-      {/* Main content grid */}
-      <div className="grid grid-cols-1 gap-gutter-lg md:grid-cols-2">
-        {/* Standings */}
-        <div className="vintage-card">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)]/20">
-              <svg
-                className="h-5 w-5 text-[var(--accent-primary)]"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M3 5v14h18V5H3zm4 2v2H5V7h2zm-2 6v-2h2v2H5zm0 2h2v2H5v-2zm14 2H9v-2h10v2zm0-4H9v-2h10v2zm0-4H9V7h10v2z" />
-              </svg>
+      {/* Main content grid -- hidden during setup (empty standings/schedule) */}
+      {league?.status !== 'setup' && (
+        <div className="grid grid-cols-1 gap-gutter-lg md:grid-cols-2">
+          {/* Standings */}
+          <div className="vintage-card">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)]/20">
+                <svg
+                  className="h-5 w-5 text-[var(--accent-primary)]"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M3 5v14h18V5H3zm4 2v2H5V7h2zm-2 6v-2h2v2H5zm0 2h2v2H5v-2zm14 2H9v-2h10v2zm0-4H9v-2h10v2zm0-4H9V7h10v2z" />
+                </svg>
+              </div>
+              <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
+                Standings
+              </h3>
             </div>
-            <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
-              Standings
-            </h3>
-          </div>
-          <StandingsTable
-            standings={standings}
-            userTeamId=""
-            onTeamClick={() => {}}
-          />
-        </div>
-
-        {/* Schedule or Playoff status */}
-        <div>
-          {leagueStatus === 'playoffs' && playoffBracket ? (
-            <PlayoffStatusPanel
-              playoffBracket={playoffBracket}
-              teams={teams}
-              lastGameResult={lastPlayoffResult}
+            <StandingsTable
+              standings={standings}
+              userTeamId=""
+              onTeamClick={() => {}}
             />
-          ) : (
-            <ScheduleView day={todaySchedule} teams={teams} />
-          )}
+          </div>
+
+          {/* Schedule or Playoff status */}
+          <div>
+            {leagueStatus === 'playoffs' && playoffBracket ? (
+              <PlayoffStatusPanel
+                playoffBracket={playoffBracket}
+                teams={teams}
+                lastGameResult={lastPlayoffResult}
+              />
+            ) : (
+              <ScheduleView day={todaySchedule} teams={teams} />
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-02-12 - Simplify Setup Dashboard (Phase 74)
+
+Redesign the initial setup dashboard to be less busy and more focused.
+
+- Replaced verbose 32-team division-by-division roster dump with compact overview
+- Added summary stats bar (teams, leagues, divisions, players at a glance)
+- Added user team highlight card with league/division info
+- AL/NL league tabs -- only one league visible at a time (halves vertical space)
+- Compact 4-column division grid with team names only
+- Removed CPU badge noise -- only show badges for player-controlled teams
+- Hidden empty standings table and "No games scheduled" during setup phase
+
 ## 2026-02-12 - Dark Theme Form Input Fix (Phase 73b)
 
 Fix form inputs and backgrounds that were unreadable in the dark theme due to

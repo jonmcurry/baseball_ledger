@@ -4,7 +4,7 @@
  *
  * REQ-LGE-004: Display auto-generated team names.
  * REQ-LGE-005: Show AL/NL division assignments.
- * REQ-LGE-006: Ownership badges (You / CPU / Player).
+ * REQ-LGE-006: Ownership badges (You / Player).
  */
 
 import { render, screen } from '@testing-library/react';
@@ -38,7 +38,14 @@ const defaultProps = {
 };
 
 describe('TeamSetupPanel', () => {
-  it('renders teams organized by AL and NL', () => {
+  it('renders league overview header', () => {
+    const teams = [makeTeam()];
+    render(<TeamSetupPanel {...defaultProps} teams={teams} />);
+
+    expect(screen.getByText('League Overview')).toBeInTheDocument();
+  });
+
+  it('renders AL and NL league tabs', () => {
     const teams = [
       makeTeam({ id: 't1', city: 'Austin', name: 'Aces', leagueDivision: 'AL', division: 'East' }),
       makeTeam({ id: 't2', city: 'Boston', name: 'Barons', leagueDivision: 'NL', division: 'West' }),
@@ -47,17 +54,24 @@ describe('TeamSetupPanel', () => {
 
     expect(screen.getByText('American League')).toBeInTheDocument();
     expect(screen.getByText('National League')).toBeInTheDocument();
-    expect(screen.getByText('Austin Aces')).toBeInTheDocument();
-    expect(screen.getByText('Boston Barons')).toBeInTheDocument();
   });
 
-  it('shows CPU badge for unowned teams', () => {
+  it('shows AL teams by default, NL teams after tab click', async () => {
+    const user = userEvent.setup();
     const teams = [
-      makeTeam({ id: 't1', ownerId: null }),
+      makeTeam({ id: 't1', name: 'Aces', leagueDivision: 'AL', division: 'East' }),
+      makeTeam({ id: 't2', name: 'Barons', leagueDivision: 'NL', division: 'West' }),
     ];
     render(<TeamSetupPanel {...defaultProps} teams={teams} />);
 
-    expect(screen.getByText('CPU')).toBeInTheDocument();
+    // AL tab is active by default -- shows AL team name
+    expect(screen.getByText('Aces')).toBeInTheDocument();
+    expect(screen.queryByText('Barons')).not.toBeInTheDocument();
+
+    // Click NL tab
+    await user.click(screen.getByText('National League'));
+    expect(screen.getByText('Barons')).toBeInTheDocument();
+    expect(screen.queryByText('Aces')).not.toBeInTheDocument();
   });
 
   it('shows You badge for current user team', () => {
@@ -76,6 +90,15 @@ describe('TeamSetupPanel', () => {
     render(<TeamSetupPanel {...defaultProps} userId="user-1" teams={teams} />);
 
     expect(screen.getByText('Player')).toBeInTheDocument();
+  });
+
+  it('does not show CPU badge for unowned teams', () => {
+    const teams = [
+      makeTeam({ id: 't1', ownerId: null }),
+    ];
+    render(<TeamSetupPanel {...defaultProps} teams={teams} />);
+
+    expect(screen.queryByText('CPU')).not.toBeInTheDocument();
   });
 
   it('renders Start Draft button only for commissioners', () => {
@@ -108,5 +131,28 @@ describe('TeamSetupPanel', () => {
     render(<TeamSetupPanel {...defaultProps} inviteKey="XYZ99999" teams={teams} />);
 
     expect(screen.getByText('XYZ99999')).toBeInTheDocument();
+  });
+
+  it('shows summary stats', () => {
+    const teams = [
+      makeTeam({ id: 't1', leagueDivision: 'AL', division: 'East' }),
+      makeTeam({ id: 't2', leagueDivision: 'NL', division: 'West' }),
+    ];
+    render(<TeamSetupPanel {...defaultProps} teams={teams} />);
+
+    expect(screen.getByText('Teams')).toBeInTheDocument();
+    expect(screen.getByText('Leagues')).toBeInTheDocument();
+    expect(screen.getByText('Divisions')).toBeInTheDocument();
+  });
+
+  it('highlights user team in overview section', () => {
+    const teams = [
+      makeTeam({ id: 't1', city: 'Austin', name: 'Aces', ownerId: 'user-1', leagueDivision: 'AL', division: 'East' }),
+    ];
+    render(<TeamSetupPanel {...defaultProps} userId="user-1" teams={teams} />);
+
+    expect(screen.getByText('Your Team')).toBeInTheDocument();
+    expect(screen.getByText(/Austin Aces/)).toBeInTheDocument();
+    expect(screen.getByText(/AL East/)).toBeInTheDocument();
   });
 });
