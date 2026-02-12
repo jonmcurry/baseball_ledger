@@ -224,15 +224,40 @@ describe('generateLineup', () => {
     }
   });
 
-  it('assigns each player to their primary position', () => {
+  it('assigns each player to their primary position (or outfield slot for OF)', () => {
     const starters = makeStartingNine();
     const lineup = generateLineup(starters);
-    // Each player should be at their primary position
     for (const slot of lineup) {
       const input = starters.find((s) => s.card.playerId === slot.playerId);
       expect(input).toBeDefined();
-      expect(slot.position).toBe(input!.card.primaryPosition);
+      if (input!.card.primaryPosition === 'OF') {
+        expect(['LF', 'CF', 'RF']).toContain(slot.position);
+      } else {
+        expect(slot.position).toBe(input!.card.primaryPosition);
+      }
     }
+  });
+
+  it('distributes OF players across LF, CF, RF slots', () => {
+    const starters = [
+      makeStarter('of1_____', 'OF' as Position, { ops: 0.950, obp: 0.400, slg: 0.550, speed: 0.80, contactRate: 0.85 }),
+      makeStarter('of2_____', 'OF' as Position, { ops: 0.820, obp: 0.360, slg: 0.460, speed: 0.55, contactRate: 0.78 }),
+      makeStarter('of3_____', 'OF' as Position, { ops: 0.780, obp: 0.340, slg: 0.440, speed: 0.50, contactRate: 0.76 }),
+      makeStarter('catcher_', 'C', { ops: 0.680, obp: 0.300, slg: 0.380, speed: 0.25, contactRate: 0.68 }),
+      makeStarter('first___', '1B', { ops: 0.850, obp: 0.350, slg: 0.500, speed: 0.30, contactRate: 0.72 }),
+      makeStarter('second__', '2B', { ops: 0.760, obp: 0.340, slg: 0.420, speed: 0.50, contactRate: 0.90 }),
+      makeStarter('short___', 'SS', { ops: 0.750, obp: 0.330, slg: 0.420, speed: 0.60, contactRate: 0.74 }),
+      makeStarter('third___', '3B', { ops: 0.770, obp: 0.330, slg: 0.440, speed: 0.42, contactRate: 0.73 }),
+      makeStarter('dh______', 'DH', { ops: 0.700, obp: 0.310, slg: 0.390, speed: 0.35, contactRate: 0.70 }),
+    ];
+    const lineup = generateLineup(starters);
+    const positions = lineup.map((s) => s.position);
+    expect(positions).toContain('LF');
+    expect(positions).toContain('CF');
+    expect(positions).toContain('RF');
+    // No duplicates
+    const unique = new Set(positions);
+    expect(unique.size).toBe(9);
   });
 
   it('throws when given fewer than 9 players', () => {

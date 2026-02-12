@@ -18,7 +18,7 @@ export function mapFieldingPosition(csvPos: string): string | null {
     case '2B': return '2B';
     case '3B': return '3B';
     case 'SS': return 'SS';
-    case 'OF': return 'RF';  // Default outfield -> RF
+    case 'OF': return 'OF';  // Generic outfield
     case 'LF': return 'LF';
     case 'CF': return 'CF';
     case 'RF': return 'RF';

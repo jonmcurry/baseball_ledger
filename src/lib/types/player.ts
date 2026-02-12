@@ -2,7 +2,7 @@ export type CardValue = number; // 0-42
 
 export type Position =
   | 'C' | '1B' | '2B' | '3B' | 'SS'
-  | 'LF' | 'CF' | 'RF' | 'DH'
+  | 'LF' | 'CF' | 'RF' | 'OF' | 'DH'
   | 'SP' | 'RP' | 'CL';
 
 // Archetype flags derived from APBA card bytes 33-34 pair analysis

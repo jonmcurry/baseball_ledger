@@ -31,7 +31,7 @@ export function useTeam() {
   );
 
   const bench = useMemo(
-    () => roster.filter((r) => r.lineupOrder === null),
+    () => roster.filter((r) => r.rosterSlot === 'bench'),
     [roster],
   );
 

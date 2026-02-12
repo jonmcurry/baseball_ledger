@@ -36,8 +36,51 @@ export interface LineupValidationResult {
 /** The 8 defensive positions that must each appear exactly once. */
 const DEFENSIVE_POSITIONS: Position[] = ['C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'];
 
+/** The 3 outfield slots for distributing generic 'OF' players. */
+const OUTFIELD_SLOTS: Position[] = ['LF', 'CF', 'RF'];
+
 /** All 9 lineup positions (8 defensive + DH). */
 const LINEUP_POSITIONS: Position[] = [...DEFENSIVE_POSITIONS, 'DH'];
+
+/**
+ * Assign defensive positions from the batting order.
+ * Handles generic 'OF' players by distributing them across LF, CF, RF slots.
+ */
+function assignDefensivePositions(order: LineupInput[]): Position[] {
+  const usedPositions = new Set<Position>();
+  const assignments = new Map<number, Position>();
+
+  // Pass 1: Assign players with specific non-OF, non-DH positions
+  for (let i = 0; i < order.length; i++) {
+    const pos = order[i].card.primaryPosition;
+    if (pos !== 'OF' && pos !== 'DH' && !usedPositions.has(pos)) {
+      assignments.set(i, pos);
+      usedPositions.add(pos);
+    }
+  }
+
+  // Pass 2: Assign OF players to open outfield slots (LF, CF, RF)
+  for (let i = 0; i < order.length; i++) {
+    if (assignments.has(i)) continue;
+    const pos = order[i].card.primaryPosition;
+    if (pos === 'OF') {
+      const slot = OUTFIELD_SLOTS.find((s) => !usedPositions.has(s));
+      if (slot) {
+        assignments.set(i, slot);
+        usedPositions.add(slot);
+      }
+    }
+  }
+
+  // Pass 3: Remaining unassigned players get DH
+  for (let i = 0; i < order.length; i++) {
+    if (!assignments.has(i)) {
+      assignments.set(i, 'DH');
+    }
+  }
+
+  return order.map((_, i) => assignments.get(i)!);
+}
 
 /**
  * Generate a 9-slot batting order from the starting 9 players.
@@ -88,11 +131,12 @@ export function generateLineup(starters: LineupInput[]): LineupSlot[] {
   order.push(weakest);
   order.push(secondWeakest);
 
-  return order.map((input) => ({
+  const positions = assignDefensivePositions(order);
+  return order.map((input, i) => ({
     rosterId: input.card.playerId, // Layer 1 uses playerId as rosterId placeholder
     playerId: input.card.playerId,
     playerName: `${input.card.nameFirst} ${input.card.nameLast}`,
-    position: input.card.primaryPosition,
+    position: positions[i],
   }));
 }
 

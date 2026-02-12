@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-12 - Fix Roster Display: OF Labels, Pitcher Categorization, Diamond (Phase 80)
+
+Fixed three roster page bugs:
+
+1. **Outfielders labeled "RF" instead of "OF"**: Lahman Fielding.csv uses generic "OF"
+   for most outfielders, but the fielding loader mapped all "OF" to "RF". Now maps to
+   "OF" and added 'OF' to the Position type.
+2. **Diamond only showed one outfielder**: Lineup generator blindly copied
+   `primaryPosition` as the defensive slot, creating duplicate RF entries. Added
+   `assignDefensivePositions()` to distribute OF players across LF, CF, RF slots.
+3. **Pitchers appeared in Bench panel**: Bench filter used `lineupOrder === null` which
+   included pitchers. Changed to `rosterSlot === 'bench'` which correctly excludes
+   rotation/bullpen/closer entries.
+
+- Added 'OF' to Position union type
+- Lineup generator distributes generic 'OF' players across available outfield slots
+- RosterPage resolves 'OF' to first open outfield slot when adding from bench
+- Updated fielding-loader, lineup-generator, and useTeam tests
+
 ## 2026-02-12 - Draft Pick Responsiveness + Auto-Pick Quality (Phase 79)
 
 Fixed two draft UX bugs: (1) human draft picks took 5-15 seconds to register because

@@ -62,7 +62,13 @@ export function RosterPage() {
   }, []);
 
   const handleBenchPlayerSelect = useCallback((entry: RosterEntry) => {
-    const targetPosition = selectedPosition ?? entry.playerCard.primaryPosition;
+    let targetPosition = selectedPosition ?? entry.playerCard.primaryPosition;
+
+    // Resolve generic 'OF' to first available outfield slot
+    if (targetPosition === 'OF') {
+      const occupiedSlots = new Set(starters.map((s) => s.lineupPosition));
+      targetPosition = ['LF', 'CF', 'RF'].find((s) => !occupiedSlots.has(s)) ?? 'RF';
+    }
 
     // Find the current starter at the target position
     const currentStarter = starters.find((s) => s.lineupPosition === targetPosition);

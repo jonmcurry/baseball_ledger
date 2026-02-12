@@ -9,7 +9,7 @@ import { useAuthStore } from '@stores/authStore';
 import { useLeagueStore } from '@stores/leagueStore';
 import { useRosterStore } from '@stores/rosterStore';
 import { createMockTeams } from '../../../tests/fixtures/mock-league';
-import { createMockRoster } from '../../../tests/fixtures/mock-roster';
+import { createMockRoster, createMockRosterEntry } from '../../../tests/fixtures/mock-roster';
 
 describe('useTeam', () => {
   beforeEach(() => {
@@ -71,14 +71,54 @@ describe('useTeam', () => {
     }
   });
 
-  it('bench returns entries without lineup order', () => {
+  it('bench returns entries with rosterSlot bench', () => {
     useRosterStore.getState().setRoster(createMockRoster());
 
     const { result } = renderHook(() => useTeam());
     const bench = result.current.bench;
     expect(bench.length).toBeGreaterThan(0);
     for (const b of bench) {
-      expect(b.lineupOrder).toBeNull();
+      expect(b.rosterSlot).toBe('bench');
     }
+  });
+
+  it('excludes pitchers from bench even when lineupOrder is null', () => {
+    const roster = createMockRoster();
+    // Add a pitcher with lineupOrder: null and rosterSlot: 'rotation'
+    roster.push(createMockRosterEntry({
+      id: 'r-pitcher',
+      playerId: 'p-pitcher',
+      lineupOrder: null,
+      lineupPosition: null,
+      rosterSlot: 'rotation',
+      playerCard: {
+        playerId: 'p-pitcher',
+        nameFirst: 'Pedro',
+        nameLast: 'Martinez',
+        seasonYear: 1999,
+        battingHand: 'R',
+        throwingHand: 'R',
+        primaryPosition: 'SP',
+        eligiblePositions: ['SP'],
+        isPitcher: true,
+        card: Array(35).fill(7),
+        powerRating: 13,
+        archetype: { byte33: 7, byte34: 0 },
+        speed: 0.1,
+        power: 0,
+        discipline: 0.3,
+        contactRate: 0.3,
+        fieldingPct: 0.95,
+        range: 0.3,
+        arm: 0.5,
+        pitching: { role: 'SP', grade: 1, stamina: 9, era: 2.07, whip: 1.04, k9: 13.2, bb9: 2.1, hr9: 0.5, usageFlags: [], isReliever: false },
+      },
+    }));
+    useRosterStore.getState().setRoster(roster);
+
+    const { result } = renderHook(() => useTeam());
+    const bench = result.current.bench;
+    const pitcherInBench = bench.find((b) => b.playerId === 'p-pitcher');
+    expect(pitcherInBench).toBeUndefined();
   });
 });

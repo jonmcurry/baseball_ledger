@@ -21,8 +21,8 @@ describe('mapFieldingPosition', () => {
     expect(mapFieldingPosition('SS')).toBe('SS');
   });
 
-  it('maps OF to RF as default outfield primary', () => {
-    expect(mapFieldingPosition('OF')).toBe('RF');
+  it('maps OF to OF (generic outfield)', () => {
+    expect(mapFieldingPosition('OF')).toBe('OF');
   });
 
   it('maps P to SP', () => {
@@ -92,7 +92,7 @@ describe('transformFieldingRow', () => {
     expect(transformFieldingRow(raw)).toBeNull();
   });
 
-  it('maps OF position to RF', () => {
+  it('maps OF position to OF', () => {
     const raw: RawFieldingRow = {
       playerID: 'test01', yearID: '1971', stint: '1', teamID: 'TEA',
       lgID: 'AL', POS: 'OF', G: '100', GS: '90',
@@ -100,7 +100,7 @@ describe('transformFieldingRow', () => {
       PB: '', WP: '', SB: '', CS: '', ZR: '',
     };
     const result = transformFieldingRow(raw);
-    expect(result!.position).toBe('RF');
+    expect(result!.position).toBe('OF');
   });
 });
 
@@ -149,9 +149,9 @@ describe('loadFielding (mini-lahman)', () => {
     const alou = result.data.get('aloufe01');
 
     expect(alou).toBeDefined();
-    // Should have records for distinct positions (1B and RF after OF->RF mapping)
+    // Should have records for distinct positions (1B and OF)
     const positions = alou!.map((r) => r.position);
     expect(positions).toContain('1B');
-    expect(positions).toContain('RF');
+    expect(positions).toContain('OF');
   });
 });
