@@ -10,8 +10,8 @@ import { createMockDraftPick } from '../../../fixtures/mock-draft';
 describe('RosterPreviewPanel', () => {
   it('shows team name and no picks message when empty', () => {
     render(<RosterPreviewPanel picks={[]} teamName="New York Yankees" teamId="team-1" />);
-    expect(screen.getByText('New York Yankees Roster')).toBeInTheDocument();
-    expect(screen.getByText('No picks yet')).toBeInTheDocument();
+    expect(screen.getByText('New York Yankees')).toBeInTheDocument();
+    expect(screen.getByText(/No players drafted yet/)).toBeInTheDocument();
   });
 
   it('displays drafted players filtered by team', () => {
@@ -24,6 +24,6 @@ describe('RosterPreviewPanel', () => {
     expect(screen.getByText('Babe Ruth')).toBeInTheDocument();
     expect(screen.getByText('Lou Gehrig')).toBeInTheDocument();
     expect(screen.queryByText('Hank Aaron')).not.toBeInTheDocument();
-    expect(screen.getByText('2 players')).toBeInTheDocument();
+    expect(screen.getByText(/2 Players Drafted/i)).toBeInTheDocument();
   });
 });

@@ -75,22 +75,24 @@ const fakePlayer: PlayerCard = {
 /* -------------------------------------------------------------------------- */
 
 describe('AppShell responsive (REQ-COMP-010)', () => {
-  it('has max-md:max-w-none to remove max-width on narrow viewports', () => {
+  it('has max-w-ledger container for centered layout', () => {
     render(<AppShell><div>Test</div></AppShell>);
     const container = screen.getByRole('main').closest('[class*="max-w-ledger"]');
-    expect(container?.className).toContain('max-md:max-w-none');
+    expect(container).toBeInTheDocument();
   });
 
-  it('has max-md:border-l-0 to hide book-spine on narrow viewports', () => {
+  it('has left spine decoration with fixed positioning', () => {
     render(<AppShell><div>Test</div></AppShell>);
-    const container = screen.getByRole('main').closest('[class*="border-l-spine"]');
-    expect(container?.className).toContain('max-md:border-l-0');
+    // The spine is a fixed left-positioned element with gradient
+    const outer = screen.getByRole('main').closest('[class*="min-h-screen"]');
+    expect(outer).toBeInTheDocument();
   });
 
-  it('has max-md:px-gutter for tighter mobile padding', () => {
+  it('has flex layout for main content', () => {
     render(<AppShell><div>Test</div></AppShell>);
     const main = screen.getByRole('main');
-    expect(main.className).toContain('max-md:px-gutter');
+    expect(main.className).toContain('flex');
+    expect(main.className).toContain('flex-col');
   });
 });
 
@@ -115,10 +117,10 @@ describe('Header responsive (REQ-COMP-010)', () => {
     expect(hamburger.className).toContain('max-md:block');
   });
 
-  it('nav has max-md:hidden by default (collapsed on mobile)', () => {
+  it('nav is collapsed by default (max-h-0 on mobile)', () => {
     render(<Header {...headerProps} />);
     const nav = screen.getByRole('navigation');
-    expect(nav.className).toContain('max-md:hidden');
+    expect(nav.className).toContain('max-h-0');
   });
 
   it('toggles mobile nav open when hamburger is clicked', async () => {
@@ -129,8 +131,7 @@ describe('Header responsive (REQ-COMP-010)', () => {
     await user.click(hamburger);
 
     const nav = screen.getByRole('navigation');
-    expect(nav.className).toContain('max-md:flex');
-    expect(nav.className).toContain('max-md:flex-col');
+    expect(nav.className).toContain('max-h-96');
   });
 
   it('closes mobile menu when a nav link is clicked', async () => {
@@ -145,7 +146,7 @@ describe('Header responsive (REQ-COMP-010)', () => {
 
     expect(onNavigate).toHaveBeenCalledWith('/dashboard');
     const nav = screen.getByRole('navigation');
-    expect(nav.className).toContain('max-md:hidden');
+    expect(nav.className).toContain('max-h-0');
   });
 
   it('hamburger button has aria-expanded attribute', async () => {

@@ -19,9 +19,9 @@ describe('NewSeasonPanel', () => {
     expect(screen.getByText('Season 2')).toBeInTheDocument();
   });
 
-  it('shows Start Season button for commissioner', () => {
+  it('shows Play Ball button for commissioner', () => {
     render(<NewSeasonPanel {...defaultProps} isCommissioner={true} />);
-    expect(screen.getByRole('button', { name: /start season/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /play ball/i })).toBeInTheDocument();
   });
 
   it('shows waiting message for non-commissioner, no button', () => {
@@ -35,4 +35,5 @@ describe('NewSeasonPanel', () => {
     const button = screen.getByRole('button', { name: /starting season/i });
     expect(button).toBeDisabled();
   });
+
 });

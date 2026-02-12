@@ -77,16 +77,16 @@ describe('Header', () => {
     expect(screen.queryByText(/league config/i)).not.toBeInTheDocument();
   });
 
-  it('uses font-headline for league name', () => {
+  it('uses font-display for league name', () => {
     render(<Header {...defaultProps} />);
     const nameEl = screen.getByText('Test League');
-    expect(nameEl.className).toContain('font-headline');
+    expect(nameEl.className).toContain('font-display');
   });
 
   it('shows playoff variant when status is playoffs', () => {
     render(<Header {...defaultProps} leagueStatus="playoffs" />);
     const header = screen.getByRole('banner');
-    expect(header.className).toContain('playoff');
+    expect(header.className).toContain('border-gold');
   });
 
   it('renders header element with role="banner"', () => {

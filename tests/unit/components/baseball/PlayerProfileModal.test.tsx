@@ -90,21 +90,26 @@ describe('PlayerProfileModal', () => {
     render(
       <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
     );
-    expect(screen.getByText('Babe Ruth')).toBeInTheDocument();
+    // Name is split across elements: first name and last name in separate nodes
+    expect(screen.getByText('Babe')).toBeInTheDocument();
+    expect(screen.getByText('Ruth')).toBeInTheDocument();
   });
 
   it('displays position and season year', () => {
     render(
       <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
     );
-    expect(screen.getByText(/RF -- 1927/)).toBeInTheDocument();
+    // 'RF' appears in both position badge and eligible positions; verify at least one
+    expect(screen.getAllByText('RF').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('1927')).toBeInTheDocument();
   });
 
   it('displays batter attributes for position player', () => {
     render(
       <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
     );
-    expect(screen.getByText(/Power Rating/)).toBeInTheDocument();
+    // 'Power' appears in both "Power" label and "ISO (Power)"; use getAllByText
+    expect(screen.getAllByText(/Power/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Speed/)).toBeInTheDocument();
     expect(screen.getByText(/Contact/)).toBeInTheDocument();
   });
@@ -122,7 +127,7 @@ describe('PlayerProfileModal', () => {
     render(
       <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
     );
-    expect(screen.getByText('Fielding Pct')).toBeInTheDocument();
+    expect(screen.getByText('FLD%')).toBeInTheDocument();
     expect(screen.getByText('Range')).toBeInTheDocument();
   });
 

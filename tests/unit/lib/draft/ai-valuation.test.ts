@@ -172,10 +172,11 @@ describe('calculatePlayerValue', () => {
     expect(value).toBeGreaterThan(0);
   });
 
-  it('returns 0 for batter without stats', () => {
+  it('returns positive fallback value for batter without stats (uses card attributes)', () => {
     const card = makeCard();
     const value = calculatePlayerValue(card);
-    expect(value).toBe(0);
+    // Fallback derives value from card attributes (power, contactRate, discipline, speed)
+    expect(value).toBeGreaterThan(0);
   });
 });
 

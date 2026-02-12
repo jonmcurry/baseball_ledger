@@ -15,7 +15,7 @@ describe('SimulationControls', () => {
     expect(screen.getByText('Sim Day')).toBeInTheDocument();
     expect(screen.getByText('Sim Week')).toBeInTheDocument();
     expect(screen.getByText('Sim Month')).toBeInTheDocument();
-    expect(screen.getByText('Sim Season')).toBeInTheDocument();
+    expect(screen.getByText('Full Season')).toBeInTheDocument();
   });
 
   it('buttons are enabled when not running', () => {
@@ -64,7 +64,7 @@ describe('SimulationControls', () => {
     render(
       <SimulationControls isRunning={false} progressPct={0} onSimulate={onSimulate} />,
     );
-    await user.click(screen.getByText('Sim Season'));
+    await user.click(screen.getByText('Full Season'));
     expect(onSimulate).toHaveBeenCalledWith('season');
   });
 
@@ -108,12 +108,13 @@ describe('SimulationControls', () => {
     expect(screen.getByText(/Playoff mode/)).toBeInTheDocument();
   });
 
-  it('button container has max-md:grid max-md:grid-cols-2 for 2x2 mobile layout (REQ-COMP-010)', () => {
+  it('button container has grid grid-cols-2 for 2x2 mobile layout (REQ-COMP-010)', () => {
     render(
       <SimulationControls isRunning={false} progressPct={0} onSimulate={vi.fn()} />,
     );
-    const buttonContainer = screen.getByText('Sim Day').parentElement;
-    expect(buttonContainer?.className).toContain('max-md:grid');
-    expect(buttonContainer?.className).toContain('max-md:grid-cols-2');
+    // getByText returns the label span; parent is the button; grandparent is the grid container
+    const buttonContainer = screen.getByText('Sim Day').closest('button')?.parentElement;
+    expect(buttonContainer?.className).toContain('grid');
+    expect(buttonContainer?.className).toContain('grid-cols-2');
   });
 });

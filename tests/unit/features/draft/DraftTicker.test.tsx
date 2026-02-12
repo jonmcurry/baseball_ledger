@@ -22,7 +22,7 @@ describe('DraftTicker', () => {
 
   it('shows no picks message when empty', () => {
     render(<DraftTicker picks={[]} currentPick={0} />);
-    expect(screen.getByText('No picks yet')).toBeInTheDocument();
+    expect(screen.getByText(/Waiting for first pick/)).toBeInTheDocument();
   });
 
   it('renders pick entries with round and pick number', () => {
@@ -31,7 +31,7 @@ describe('DraftTicker', () => {
       createMockDraftPick({ round: 1, pick: 2, playerName: 'Lou Gehrig', position: '1B' }),
     ];
     render(<DraftTicker picks={picks} currentPick={2} />);
-    expect(screen.getByText('R1.1')).toBeInTheDocument();
+    expect(screen.getByText('1.1')).toBeInTheDocument();
     expect(screen.getByText('Babe Ruth')).toBeInTheDocument();
     expect(screen.getByText('Lou Gehrig')).toBeInTheDocument();
   });

@@ -50,6 +50,8 @@ describe('ResultsTicker', () => {
     const { container } = render(<ResultsTicker results={makeResults()} />);
     const ticker = container.querySelector('[data-testid="results-ticker"]');
     expect(ticker).toBeInTheDocument();
-    expect(ticker?.className).toContain('overflow-x-auto');
+    // Outer container uses overflow-hidden; inner flex div uses overflow-x-auto
+    const scrollable = ticker?.querySelector('.overflow-x-auto');
+    expect(scrollable).toBeInTheDocument();
   });
 });

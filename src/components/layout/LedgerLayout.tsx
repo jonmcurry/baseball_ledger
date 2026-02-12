@@ -4,7 +4,7 @@ interface LedgerLayoutProps {
     children: React.ReactNode;
 }
 
-export function LedgerLayout({ children }: LedgerLayoutProps) {
+export default function LedgerLayout({ children }: LedgerLayoutProps) {
     return (
         <div className="min-h-screen font-body text-ink bg-cream selection:bg-gold selection:text-ink flex flex-col">
             {/* Decorative Spine */}

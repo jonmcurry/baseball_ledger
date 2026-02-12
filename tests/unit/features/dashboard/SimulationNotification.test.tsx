@@ -43,9 +43,9 @@ describe('SimulationNotification', () => {
     });
 
     expect(screen.getByRole('status')).toBeInTheDocument();
-    // Single day message should contain "complete" and game count
+    // Single day message should contain "COMPLETE" and game count
     const statusEl = screen.getByRole('status');
-    expect(statusEl.textContent).toContain('complete');
+    expect(statusEl.textContent).toContain('COMPLETE');
     expect(statusEl.textContent).toContain('4');
   });
 
@@ -64,7 +64,7 @@ describe('SimulationNotification', () => {
     });
 
     const statusEl = screen.getByRole('status');
-    expect(statusEl.textContent).toContain('7 days');
+    expect(statusEl.textContent).toContain('7 DAYS');
     expect(statusEl.textContent).toContain('28');
   });
 

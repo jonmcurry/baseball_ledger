@@ -21,6 +21,7 @@
 
     /* Primary - Scoreboard Green (classic Fenway/Wrigley) */
     --color-scoreboard: #1E3D2F;
+    --color-scoreboard-green: #1E3D2F;
     --color-scoreboard-light: #2A5240;
     --color-scoreboard-dark: #0F261C;
 
@@ -143,6 +144,7 @@
     --color-ink-light: #E8DCC3;
     --color-muted: #9A9186;
     --color-scoreboard: #D4AF37;
+    --color-scoreboard-green: #D4AF37;
     --color-scoreboard-light: #E8C547;
     --color-scoreboard-dark: #B8941F;
   }

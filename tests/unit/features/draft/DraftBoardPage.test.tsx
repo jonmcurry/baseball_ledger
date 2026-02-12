@@ -145,7 +145,8 @@ describe('DraftBoardPage', () => {
       fetchAvailablePlayers: mockFetchAvailablePlayers,
     });
     render(<DraftBoardPage />);
-    expect(screen.getByText(/Your turn to pick!/)).toBeInTheDocument();
+    // "On the Clock" appears in both banner and PickTimer; verify at least one
+    expect(screen.getAllByText(/On the Clock/).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows error banner when error exists', () => {

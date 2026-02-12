@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-12 - Fix Redesign Build Errors + Test Failures (Phase 72b)
+
+### Phase 72b: Resolve missing assets and 44 broken tests from Gemini redesign
+
+The Phase 72 redesign introduced font references, CSS variable names, and
+component text changes that broke the build and test suite.
+
+**Missing font files:**
+- Downloaded `source-sans-3-latin.woff2`, `archivo-black-latin.woff2`, and
+  `oswald-latin.woff2` from Google Fonts into `public/fonts/`
+
+**Missing CSS variable:**
+- Added `--color-scoreboard-green` alias (= `--color-scoreboard`) to both
+  light and postseason theme in `globals.css`
+
+**Test fixes (44 failures across 20 files):**
+- Updated text assertions to match new vintage-styled headings, labels, and
+  component structure throughout dashboard, draft, layout, and config tests
+- Updated architecture test for new components that use named exports
+- Updated migration count tests for new SQL migration files
+- Updated font test: Google Fonts import is now expected (used as fallback)
+- Updated responsive tests for new AppShell/Header class names
+
 ## 2026-02-11 - Vintage Baseball UI Redesign (Phase 72)
 
 ### Phase 72: Golden Era Ballpark aesthetic overhaul

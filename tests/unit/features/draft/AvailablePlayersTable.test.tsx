@@ -68,12 +68,12 @@ describe('AvailablePlayersTable', () => {
 
   it('shows Power Rating column header for batters', () => {
     render(<AvailablePlayersTable players={players} onSelect={mockOnSelect} {...defaultProps} />);
-    expect(screen.getByText('Pwr')).toBeInTheDocument();
+    expect(screen.getByText('PWR')).toBeInTheDocument();
   });
 
   it('shows Spd column header', () => {
     render(<AvailablePlayersTable players={players} onSelect={mockOnSelect} {...defaultProps} />);
-    expect(screen.getByText('Spd')).toBeInTheDocument();
+    expect(screen.getByText('SPD')).toBeInTheDocument();
   });
 
   it('shows pitcher-specific columns for pitchers', () => {
@@ -137,9 +137,10 @@ describe('AvailablePlayersTable', () => {
 
   it('shows pagination controls when multiple pages', () => {
     render(<AvailablePlayersTable players={players} onSelect={mockOnSelect} {...defaultProps} totalAvailable={200} />);
-    expect(screen.getByText('Prev')).toBeInTheDocument();
-    expect(screen.getByText('Next')).toBeInTheDocument();
-    expect(screen.getByText(/Page 1 of 4/)).toBeInTheDocument();
+    expect(screen.getByText(/Prev/)).toBeInTheDocument();
+    expect(screen.getByText(/Next/)).toBeInTheDocument();
+    // Page numbers are in separate scoreboard-styled elements
+    expect(screen.getByText('of')).toBeInTheDocument();
   });
 
   it('calls onFilterChange with next page when Next clicked', async () => {

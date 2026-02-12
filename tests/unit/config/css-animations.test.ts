@@ -18,12 +18,12 @@ describe('CSS animations (REQ-COMP-011)', () => {
     expect(css).toContain('@keyframes stamp-slam');
   });
 
-  it('defines cursor-blink keyframe animation', () => {
-    expect(css).toContain('@keyframes cursor-blink');
+  it('defines typewriter-cursor keyframe animation', () => {
+    expect(css).toContain('@keyframes typewriter-cursor');
   });
 
-  it('stamp-animation-text class uses stamp-slam animation', () => {
-    expect(css).toContain('.stamp-animation-text');
+  it('animate-stamp class uses stamp-slam animation', () => {
+    expect(css).toContain('.animate-stamp');
     expect(css).toContain('animation: stamp-slam');
   });
 
@@ -35,7 +35,7 @@ describe('CSS animations (REQ-COMP-011)', () => {
 
   it('postseason theme overrides design tokens', () => {
     expect(css).toContain('[data-theme="postseason"]');
-    expect(css).toContain('--color-old-lace:');
-    expect(css).toContain('--color-ballpark:');
+    expect(css).toContain('--color-cream:');
+    expect(css).toContain('--color-scoreboard:');
   });
 });

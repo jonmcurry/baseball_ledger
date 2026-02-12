@@ -56,13 +56,13 @@ describe('AppShell', () => {
     expect(container).toBeInTheDocument();
   });
 
-  it('uses shadow-ledger and border-spine classes', () => {
+  it('uses shadow-2xl and border-leather classes on ledger container', () => {
     render(
       <AppShell>
         <div>Content</div>
       </AppShell>,
     );
-    const container = screen.getByRole('main').closest('[class*="shadow-ledger"]');
+    const container = screen.getByRole('main').closest('[class*="shadow-2xl"]');
     expect(container).toBeInTheDocument();
   });
 
