@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-02-11 - Vintage Baseball UI Redesign (Phase 72)
+
+### Phase 72: Golden Era Ballpark aesthetic overhaul
+
+Complete UI redesign capturing the essence of vintage baseball with a 1940s-60s
+"Golden Era Ballpark" aesthetic. All components updated with scoreboard styling,
+leather textures, gold accents, and period-appropriate typography.
+
+**Design System (globals.css, fonts.css):**
+- New color palette: scoreboard green, aged cream, leather brown, stitch red, championship gold
+- Custom CSS properties for consistent theming across all components
+- Vintage font stack: Archivo Black (headlines), Oswald (stats), JetBrains Mono (scoreboard numerals)
+- Component classes: `.vintage-card`, `.scoreboard-panel`, `.pennant-header`, `.btn-vintage-primary`
+- Animations: `animate-glow` for urgency states, gold-glow text effects
+
+**Draft Board Components:**
+- `PickTimer.tsx`: Scoreboard-style countdown with glow effects for urgency
+- `DraftTicker.tsx`: Vintage scrolling pick feed with gold accents and position badges
+- `RosterPreviewPanel.tsx`: Lineup card with position groupings (infield/outfield/pitching)
+- `AvailablePlayersTable.tsx`: Box score styled player table with vintage inputs/pagination
+- `DraftBoardPage.tsx`: Full vintage layout with decorative baseball icons
+
+**Dashboard Components:**
+- `SimulationControls.tsx`: Press box control panel with scoreboard numerals
+- `ResultsTicker.tsx`: Stadium ticker-tape results feed with winner highlighting
+- `ScheduleView.tsx`: Vintage scorecard game display
+- `SeasonCompletePanel.tsx`: Championship trophy card with gold stars
+- `NewSeasonPanel.tsx`: Opening day announcement with baseball icon
+- `TeamSetupPanel.tsx`: Vintage program roster display with AL/NL badges
+- `PlayoffStatusPanel.tsx`: October baseball bracket with trophy icon
+- `SimulationNotification.tsx`: Press box ticker notification with typewriter effect
+- `DashboardPage.tsx`: Full ballpark dashboard with decorative header
+
+**PlayerProfileModal.tsx (previously completed):**
+- Vintage baseball card design with leather header
+- Tab-based Card Ratings / MLB Stats views
+- Position badges with pitching/fielding distinction
+- Gold-accented rating bars
+
 ## 2026-02-11 - Fix Draft Board Infinite Refresh Loop (Phase 71b)
 
 ### Phase 71b: Stop draft board from refreshing every second

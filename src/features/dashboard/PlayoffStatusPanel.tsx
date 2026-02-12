@@ -1,8 +1,8 @@
 /**
  * PlayoffStatusPanel
  *
- * Dashboard right-column panel during playoffs. Shows last game result,
- * active series summary, next game preview, and link to full bracket.
+ * Vintage October baseball playoff status display.
+ * Golden era aesthetic with championship bracket feel.
  *
  * REQ-LGE-009: Per-game playoff result display.
  *
@@ -55,18 +55,44 @@ export function PlayoffStatusPanel({
   const nextGame = getNextFullBracketGame(playoffBracket);
 
   return (
-    <div data-testid="playoff-status-panel" className="space-y-3">
-      <h3 className="font-headline text-lg font-bold text-ballpark">
-        Playoff Status
-      </h3>
+    <div data-testid="playoff-status-panel" className="vintage-card">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-3">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-full"
+          style={{
+            background: 'linear-gradient(135deg, var(--color-gold) 0%, #B8860B 100%)',
+            boxShadow: '0 0 10px var(--color-gold)',
+          }}
+        >
+          <svg
+            className="h-5 w-5 text-[var(--color-ink)]"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z" />
+          </svg>
+        </div>
+        <div>
+          <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+            Playoff Status
+          </h3>
+          <p className="font-stat text-xs text-[var(--color-muted)]">
+            October baseball
+          </p>
+        </div>
+      </div>
 
+      {/* Last game result */}
       {lastGameResult && (
         <div
           data-testid="last-game-result"
-          className="rounded-card border border-ballpark bg-ballpark/10 px-3 py-2"
+          className="mb-4 rounded border border-[var(--color-gold)]/50 bg-[var(--color-gold)]/10 px-3 py-2"
         >
-          <p className="text-[10px] font-medium text-muted">Last Result</p>
-          <p className="font-stat text-sm font-bold text-ink">
+          <p className="mb-1 font-stat text-[10px] uppercase tracking-wider text-[var(--color-muted)]">
+            Last Result
+          </p>
+          <p className="font-stat text-sm font-bold text-[var(--color-ink)]">
             {buildPlayoffGameMessage({
               round: lastGameResult.round,
               gameNumber: lastGameResult.gameNumber,
@@ -80,20 +106,35 @@ export function PlayoffStatusPanel({
         </div>
       )}
 
+      {/* Active series */}
       {activeSeries.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-[10px] font-medium text-muted">Active Series</p>
+        <div className="mb-4 space-y-2">
+          <p className="font-stat text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
+            Active Series
+          </p>
           {activeSeries.map((series) => (
             <div
               key={series.id}
-              className="flex items-center justify-between rounded-card border border-sandstone/50 px-3 py-1.5 font-stat text-sm"
+              className="flex items-center justify-between rounded border border-[var(--color-sandstone)]/50 bg-[var(--color-sandstone)]/10 px-3 py-2"
             >
-              <span>{teamNameMap.get(series.higherSeed?.teamId ?? '') ?? '?'}</span>
-              <span className="font-bold">{series.higherSeedWins}</span>
-              <span className="text-muted">-</span>
-              <span className="font-bold">{series.lowerSeedWins}</span>
-              <span>{teamNameMap.get(series.lowerSeed?.teamId ?? '') ?? '?'}</span>
-              <span className="ml-2 text-[10px] text-muted">
+              <div className="flex items-center gap-3">
+                <span className="font-stat text-sm font-medium text-[var(--color-ink)]">
+                  {teamNameMap.get(series.higherSeed?.teamId ?? '') ?? '?'}
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="font-scoreboard text-lg text-[var(--color-ballpark)]">
+                    {series.higherSeedWins}
+                  </span>
+                  <span className="font-stat text-xs text-[var(--color-muted)]">-</span>
+                  <span className="font-scoreboard text-lg text-[var(--color-ballpark)]">
+                    {series.lowerSeedWins}
+                  </span>
+                </div>
+                <span className="font-stat text-sm font-medium text-[var(--color-ink)]">
+                  {teamNameMap.get(series.lowerSeed?.teamId ?? '') ?? '?'}
+                </span>
+              </div>
+              <span className="rounded bg-[var(--color-ballpark)]/10 px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--color-ballpark)]">
                 {formatPlayoffRoundName(series.round)}
               </span>
             </div>
@@ -101,20 +142,28 @@ export function PlayoffStatusPanel({
         </div>
       )}
 
+      {/* Next game preview */}
       {nextGame && (
-        <div data-testid="next-game-preview" className="text-sm">
-          <p className="text-[10px] font-medium text-muted">Up Next</p>
-          <p className="font-stat text-ink">
-            {formatPlayoffRoundName(nextGame.round)} Game {nextGame.gameNumber}:{' '}
+        <div data-testid="next-game-preview" className="mb-4">
+          <p className="mb-1 font-stat text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
+            Up Next
+          </p>
+          <p className="font-stat text-sm text-[var(--color-ink)]">
+            <span className="font-bold">{formatPlayoffRoundName(nextGame.round)}</span> Game {nextGame.gameNumber}
+          </p>
+          <p className="font-stat text-xs text-[var(--color-muted)]">
             {teamFullNameMap.get(nextGame.awayTeamId) ?? nextGame.awayTeamId} at{' '}
             {teamFullNameMap.get(nextGame.homeTeamId) ?? nextGame.homeTeamId}
           </p>
         </div>
       )}
 
-      <p className="text-xs text-muted">
-        View full bracket on the Playoffs page.
-      </p>
+      {/* Footer */}
+      <div className="border-t border-[var(--color-sandstone)] pt-2">
+        <p className="text-center font-stat text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
+          ★ View full bracket on Playoffs page ★
+        </p>
+      </div>
     </div>
   );
 }

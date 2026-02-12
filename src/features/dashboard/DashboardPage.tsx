@@ -1,8 +1,8 @@
 /**
  * DashboardPage
  *
- * Main league dashboard with standings, today's schedule, and simulation controls.
- * Wires useLeague + useSimulation + useRealtimeProgress hooks to presentational components.
+ * Main league dashboard with vintage ballpark scoreboard aesthetic.
+ * Standings, schedule, and simulation controls with golden era styling.
  *
  * REQ-STATE-014: useRealtimeProgress triggers cache invalidation after simulation.
  * REQ-SCH-007: SimulationNotification shows typewriter results after simulation.
@@ -162,17 +162,39 @@ export function DashboardPage() {
     <div className="space-y-gutter-lg">
       {error && <ErrorBanner severity="error" message={error} />}
 
-      <div>
-        <h2 className="font-headline text-2xl font-bold text-ballpark">
-          {league?.name ?? 'Dashboard'}
-        </h2>
-        {league && (
-          <p className="mt-1 text-sm text-muted">
-            Day {currentDay} -- {league.status.replace('_', ' ')}
-          </p>
-        )}
+      {/* Header with pennant styling */}
+      <div className="flex items-center gap-4">
+        {/* Decorative baseball */}
+        <div
+          className="hidden h-14 w-14 items-center justify-center rounded-full md:flex"
+          style={{
+            background: 'linear-gradient(135deg, var(--color-cream) 0%, #E8DCC8 100%)',
+            border: '2px solid var(--color-stitch)',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.1)',
+          }}
+        >
+          <svg
+            className="h-7 w-7 text-[var(--color-stitch)]"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM5.5 16.5c-.83-.73-1.5-1.63-1.96-2.64.3-.07.65-.11 1.01-.11 1.07 0 2.18.36 3.21 1.04-.46.61-.85 1.18-1.15 1.71h-1.1zM5.04 10.14c.46-.08.95-.14 1.46-.14 1.63 0 3.36.58 4.89 1.64-1.13.85-2.1 1.89-2.83 3.08-1.03-.68-2.14-1.04-3.21-1.04-.36 0-.71.04-1.01.11-.21-.56-.38-1.15-.47-1.76.33-.07.75-.11 1.17-.11v-1.78zm13.46 6.36c-.46.08-.95.14-1.46.14-1.63 0-3.36-.58-4.89-1.64 1.13-.85 2.1-1.89 2.83-3.08 1.03.68 2.14 1.04 3.21 1.04.36 0 .71-.04 1.01-.11.21.56.38 1.15.47 1.76-.33.07-.75.11-1.17.11v1.78z" />
+          </svg>
+        </div>
+
+        <div>
+          <h2 className="pennant-header">
+            {league?.name ?? 'Dashboard'}
+          </h2>
+          {league && (
+            <p className="mt-1 font-stat text-sm text-[var(--color-muted)]">
+              Day {currentDay} of Season {league.seasonYear} — {league.status.replace('_', ' ')}
+            </p>
+          )}
+        </div>
       </div>
 
+      {/* Setup phase panels */}
       {league?.status === 'setup' && (
         league.seasonYear > 1 ? (
           <NewSeasonPanel
@@ -193,28 +215,56 @@ export function DashboardPage() {
         )
       )}
 
+      {/* Drafting banner */}
       {league?.status === 'drafting' && (
-        <div className="rounded-card border border-ballpark bg-ballpark/10 px-gutter py-4">
-          <h3 className="font-headline text-lg font-bold text-ballpark">
-            Draft In Progress
-          </h3>
-          <p className="mt-1 text-sm text-ink">
-            The league draft is underway. Head to the Draft Board to make your picks.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('../draft')}
-            className="mt-3 inline-block rounded-button bg-ballpark px-4 py-2 text-sm font-bold text-old-lace hover:opacity-90"
-          >
-            Go to Draft Board
-          </button>
+        <div
+          className="vintage-card relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, #1A3320 100%)',
+            borderColor: 'var(--color-gold)',
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, var(--color-gold) 0%, #B8860B 100%)',
+                boxShadow: '0 0 15px var(--color-gold)',
+              }}
+            >
+              <svg
+                className="h-6 w-6 text-[var(--color-ink)]"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5h3V8h4v4h3l-5 5z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-gold)]">
+                Draft In Progress
+              </h3>
+              <p className="font-stat text-sm text-[var(--color-scoreboard-text)]/80">
+                The league draft is underway. Head to the Draft Board to make your picks.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('../draft')}
+              className="btn-vintage-primary"
+            >
+              Go to Draft Board
+            </button>
+          </div>
         </div>
       )}
 
+      {/* Results ticker */}
       {recentResults.length > 0 && (
         <ResultsTicker results={recentResults} />
       )}
 
+      {/* Simulation controls or season complete */}
       {leagueStatus === 'completed' ? (
         <SeasonCompletePanel
           championName={championName}
@@ -231,6 +281,7 @@ export function DashboardPage() {
         />
       ) : null}
 
+      {/* Simulation notification */}
       {showNotification && (
         <SimulationNotification
           daysSimulated={totalDays}
@@ -241,17 +292,32 @@ export function DashboardPage() {
         />
       )}
 
+      {/* Main content grid */}
       <div className="grid grid-cols-1 gap-gutter-lg md:grid-cols-2">
-        <div>
-          <h3 className="mb-2 font-headline text-lg font-bold text-ballpark">
-            Standings
-          </h3>
+        {/* Standings */}
+        <div className="vintage-card">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-ballpark)]/20">
+              <svg
+                className="h-5 w-5 text-[var(--color-ballpark)]"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M3 5v14h18V5H3zm4 2v2H5V7h2zm-2 6v-2h2v2H5zm0 2h2v2H5v-2zm14 2H9v-2h10v2zm0-4H9v-2h10v2zm0-4H9V7h10v2z" />
+              </svg>
+            </div>
+            <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+              Standings
+            </h3>
+          </div>
           <StandingsTable
             standings={standings}
             userTeamId=""
             onTeamClick={() => {}}
           />
         </div>
+
+        {/* Schedule or Playoff status */}
         <div>
           {leagueStatus === 'playoffs' && playoffBracket ? (
             <PlayoffStatusPanel
