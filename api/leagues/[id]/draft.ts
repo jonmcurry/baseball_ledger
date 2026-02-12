@@ -21,8 +21,8 @@ import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '../../../src/lib/supabase/server';
 import type { Json } from '../../../src/lib/types/database';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '../../../src/lib/draft/draft-order';
-import { selectBestAvailable } from '../../../src/lib/draft/auto-pick-selector';
-import type { PlayerCard } from '../../../src/lib/types/player';
+import { selectAIPick, type DraftablePlayer } from '../../../src/lib/draft/ai-strategy';
+import type { PlayerCard, MlbBattingStats } from '../../../src/lib/types/player';
 import { SeededRNG } from '../../../src/lib/rng/seeded-rng';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
 import { generateAndInsertLineups } from '../../_lib/generate-lineup-rows';
@@ -53,10 +53,24 @@ interface CpuPicksResult {
 }
 
 /**
+ * Convert a player pool row to a DraftablePlayer for AI strategy.
+ */
+function toDraftablePlayer(row: { player_card: unknown }): DraftablePlayer {
+  const card = row.player_card as PlayerCard;
+  const mlbStats = card.mlbBattingStats as MlbBattingStats | undefined;
+  return {
+    card,
+    ops: mlbStats?.OPS ?? 0,
+    sb: mlbStats?.SB ?? 0,
+  };
+}
+
+/**
  * Process all consecutive CPU team picks starting from the current draft position.
  * Loops until a human-owned team's turn is reached or the draft completes.
  *
- * REQ-DFT-004: CPU teams auto-select best available player via APBA card scoring.
+ * REQ-DFT-004: CPU teams auto-select using round-aware AI strategy.
+ * REQ-DFT-006: Round-based priorities (early: SP/elite, mid: rotation/premium, late: relievers).
  */
 async function processCpuPicks(
   supabase: ReturnType<typeof createServerClient>,
@@ -65,6 +79,7 @@ async function processCpuPicks(
 ): Promise<CpuPicksResult> {
   const teamCount = draftOrder.length;
   let picksMade = 0;
+  const rng = new SeededRNG(Date.now());
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
@@ -100,27 +115,40 @@ async function processCpuPicks(
       return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
     }
 
-    // CPU team: fetch undrafted players and score them
+    // Fetch team's current roster for position needs calculation
+    const { data: rosterRows } = await supabase
+      .from('rosters')
+      .select('player_card')
+      .eq('team_id', currentTeamId);
+
+    const roster: DraftablePlayer[] = (rosterRows ?? []).map(toDraftablePlayer);
+
+    // CPU team: fetch ALL undrafted players for proper AI evaluation
     const { data: available } = await supabase
       .from('player_pool')
       .select('*')
       .eq('league_id', leagueId)
       .eq('is_drafted', false)
-      .limit(200);
+      .limit(1000);
 
     if (!available || available.length === 0) {
       return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
     }
 
-    // Map DB rows to the shape selectBestAvailable expects
-    const poolWithCards = available.map((row) => ({
-      playerCard: row.player_card as unknown as PlayerCard,
-      raw: row,
-    }));
-    const bestIdx = selectBestAvailable(poolWithCards);
-    if (bestIdx < 0) break;
+    // Convert to DraftablePlayer format for AI strategy
+    const pool: DraftablePlayer[] = available.map(toDraftablePlayer);
 
-    const best = available[bestIdx];
+    // Use AI strategy to select pick based on round and team needs
+    const selected = selectAIPick(currentRound, roster, pool, rng);
+
+    // Find the original row for the selected player
+    const selectedIdx = available.findIndex(
+      (row) => (row.player_card as PlayerCard).playerId === selected.card.playerId
+        && (row.player_card as PlayerCard).seasonYear === selected.card.seasonYear
+    );
+    if (selectedIdx < 0) break;
+
+    const best = available[selectedIdx];
 
     // Insert roster entry for CPU team
     const { error: insertError } = await supabase
