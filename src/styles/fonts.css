@@ -1,14 +1,32 @@
 /**
- * Self-hosted fonts (REQ-NFR-018)
+ * Baseball Ledger Typography
+ * "Golden Era Ballpark" Font Stack
  *
- * Roboto Slab -- headline/display font (OFL license)
- * JetBrains Mono -- stat/monospace font (OFL license)
- *
- * Variable fonts: single file covers weights 400/500/700.
- * Latin subset only.
+ * Self-hosted fonts for offline capability (REQ-NFR-018)
+ * Google Fonts fallbacks for development
  */
 
-/* Roboto Slab -- Latin */
+/* ═══════════════════════════════════════════════════════════════════════
+   DISPLAY FONT - Archivo Black
+   Bold, condensed for pennant-style headlines
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Archivo Black';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/archivo-black-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HEADLINE FONT - Roboto Slab
+   Classic slab serif for headlines and emphasis
+   ═══════════════════════════════════════════════════════════════════════ */
+
 @font-face {
   font-family: 'Roboto Slab';
   font-style: normal;
@@ -20,7 +38,27 @@
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* JetBrains Mono -- Latin */
+/* ═══════════════════════════════════════════════════════════════════════
+   SCOREBOARD FONT - Oswald
+   Tall, condensed numerals for scoreboard displays
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/oswald-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MONOSPACE FONT - JetBrains Mono
+   Clean monospace for statistics and data
+   ═══════════════════════════════════════════════════════════════════════ */
+
 @font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
@@ -31,3 +69,25 @@
     U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
     U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BODY FONT - Source Sans 3
+   Clean, readable sans-serif for body text
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 400 600 700;
+  font-display: swap;
+  src: url('/fonts/source-sans-3-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   GOOGLE FONTS FALLBACK (Development)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@400;500;700&family=Roboto+Slab:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');

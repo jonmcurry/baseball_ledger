@@ -2,55 +2,527 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Baseball Ledger Design System
+ * "Golden Era Ballpark" - Vintage 1940s-60s Baseball Aesthetic
+ *
+ * Inspired by:
+ * - Classic manual scoreboards (Fenway, Wrigley)
+ * - Vintage Topps/Bowman baseball cards
+ * - Old-timey pennants and felt lettering
+ * - Leather, wood grain, and aged paper textures
+ */
+
 @layer base {
   :root {
-    --color-old-lace:     #FDF5E6;
-    --color-ballpark:     #1B4D3E;
-    --color-stitch-red:   #B22222;
-    --color-sandstone:    #D2B48C;
-    --color-ink:          #2C2C2C;
-    --color-muted:        #6B7280;
-    --color-playoff-gold: #CFB53B;
-    --color-playoff-dark: #1A1A2E;
+    /* ═══════════════════════════════════════════════════════════════════
+       COLOR PALETTE - "Golden Era Ballpark"
+       ═══════════════════════════════════════════════════════════════════ */
 
-    --font-headline: 'Roboto Slab', Georgia, 'Times New Roman', serif;
-    --font-stat:     'JetBrains Mono', Consolas, 'Courier New', monospace;
-    --font-body:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-                     Roboto, 'Helvetica Neue', Arial, sans-serif;
+    /* Primary - Scoreboard Green (classic Fenway/Wrigley) */
+    --color-scoreboard: #1E3D2F;
+    --color-scoreboard-light: #2A5240;
+    --color-scoreboard-dark: #0F261C;
 
-    --max-width-ledger: 1200px;
-    --border-spine:     4px;
+    /* Secondary - Aged Cream (vintage card stock) */
+    --color-cream: #F5ECD7;
+    --color-cream-dark: #E8DCC3;
+    --color-parchment: #FAF6EB;
 
-    --shadow-ledger: 0 2px 8px rgba(0, 0, 0, 0.12);
-    --shadow-card:   0 1px 4px rgba(0, 0, 0, 0.08);
+    /* Accent - Baseball Red (stitches & leather) */
+    --color-stitch: #C41E3A;
+    --color-stitch-light: #E63B58;
+    --color-leather: #8B4513;
+    --color-leather-dark: #5C2E0A;
+
+    /* Accent - Gold (championship, premium) */
+    --color-gold: #D4AF37;
+    --color-gold-light: #E8C547;
+    --color-gold-dark: #B8941F;
+
+    /* Neutrals - Ink & Wood */
+    --color-ink: #1A1612;
+    --color-ink-light: #3D352D;
+    --color-wood: #6B5344;
+    --color-wood-light: #8B7355;
+    --color-muted: #7A7067;
+    --color-muted-light: #A89F94;
+
+    /* Scoreboard Numbers */
+    --color-scoreboard-text: #F5F0E1;
+    --color-scoreboard-glow: rgba(245, 240, 225, 0.15);
+
+    /* Grass & Field */
+    --color-grass: #2E5A3A;
+    --color-dirt: #A67B5B;
+    --color-chalk: #FFFEF5;
+
+    /* ═══════════════════════════════════════════════════════════════════
+       TYPOGRAPHY
+       ═══════════════════════════════════════════════════════════════════ */
+
+    /* Display - Classic baseball pennant style */
+    --font-display: 'Archivo Black', 'Impact', sans-serif;
+
+    /* Headlines - Vintage slab serif */
+    --font-headline: 'Roboto Slab', 'Rockwell', 'Georgia', serif;
+
+    /* Scoreboard - Mechanical display numerals */
+    --font-scoreboard: 'Oswald', 'Bebas Neue', 'Impact', sans-serif;
+
+    /* Stats - Monospace for numbers */
+    --font-stat: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+
+    /* Body - Clean, readable */
+    --font-body: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SPACING & LAYOUT
+       ═══════════════════════════════════════════════════════════════════ */
+
+    --max-width-ledger: 1400px;
+    --gutter: 1rem;
+    --gutter-lg: 1.5rem;
+    --gutter-xl: 2rem;
+
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-card: 1rem;
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SHADOWS & EFFECTS
+       ═══════════════════════════════════════════════════════════════════ */
+
+    --shadow-card:
+      0 1px 2px rgba(26, 22, 18, 0.1),
+      0 4px 8px rgba(26, 22, 18, 0.1),
+      0 8px 16px rgba(26, 22, 18, 0.05);
+
+    --shadow-elevated:
+      0 2px 4px rgba(26, 22, 18, 0.15),
+      0 8px 16px rgba(26, 22, 18, 0.15),
+      0 16px 32px rgba(26, 22, 18, 0.1);
+
+    --shadow-scoreboard:
+      inset 0 2px 4px rgba(0, 0, 0, 0.3),
+      0 2px 0 rgba(255, 255, 255, 0.1);
+
+    --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BORDERS & TEXTURES
+       ═══════════════════════════════════════════════════════════════════ */
+
+    --border-card: 3px solid var(--color-leather);
+    --border-scoreboard: 4px solid var(--color-scoreboard-dark);
+    --border-stitch: 2px dashed var(--color-stitch);
+
+    /* Baseball stitch pattern (SVG encoded) */
+    --pattern-stitch: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q10 15 20 20 Q30 25 40 20' stroke='%23C41E3A' stroke-width='2' fill='none' opacity='0.15'/%3E%3C/svg%3E");
+
+    /* Paper grain texture */
+    --pattern-paper: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+
+    /* Wood grain pattern */
+    --pattern-wood: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     POSTSEASON THEME (Dark, Championship Gold)
+     ═══════════════════════════════════════════════════════════════════ */
+  [data-theme="postseason"] {
+    --color-cream: #1A1612;
+    --color-cream-dark: #252019;
+    --color-parchment: #0F0D0A;
+    --color-ink: #F5ECD7;
+    --color-ink-light: #E8DCC3;
+    --color-muted: #9A9186;
+    --color-scoreboard: #D4AF37;
+    --color-scoreboard-light: #E8C547;
+    --color-scoreboard-dark: #B8941F;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     BASE STYLES
+     ═══════════════════════════════════════════════════════════════════ */
   html {
-    background-color: var(--color-old-lace);
+    background-color: var(--color-cream);
     color: var(--color-ink);
     font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background:
+      var(--pattern-paper),
+      linear-gradient(180deg, var(--color-cream) 0%, var(--color-cream-dark) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* Selection styling */
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-ink);
+  }
+
+  /* Focus visible styling */
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
   }
 }
 
-@layer base {
-  [data-theme="postseason"] {
-    --color-old-lace:   #1A1A2E;
-    --color-ballpark:   #CFB53B;
-    --color-sandstone:  #3A3A5C;
-    --color-ink:        #F5F5F5;
-    --color-muted:      #9CA3AF;
+/* ═══════════════════════════════════════════════════════════════════════
+   COMPONENT CLASSES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+  /* ─────────────────────────────────────────────────────────────────────
+     VINTAGE CARD - Baseball card aesthetic
+     ───────────────────────────────────────────────────────────────────── */
+  .vintage-card {
+    background:
+      var(--pattern-paper),
+      linear-gradient(145deg, var(--color-parchment) 0%, var(--color-cream-dark) 100%);
+    border: var(--border-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vintage-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--pattern-stitch);
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .vintage-card-header {
+    background: linear-gradient(180deg, var(--color-leather) 0%, var(--color-leather-dark) 100%);
+    color: var(--color-cream);
+    padding: var(--gutter) var(--gutter-lg);
+    border-bottom: 3px solid var(--color-gold);
+    position: relative;
+  }
+
+  .vintage-card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-gold-light), transparent);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     SCOREBOARD PANEL - Classic manual scoreboard
+     ───────────────────────────────────────────────────────────────────── */
+  .scoreboard-panel {
+    background:
+      var(--pattern-wood),
+      linear-gradient(180deg, var(--color-scoreboard) 0%, var(--color-scoreboard-dark) 100%);
+    border: var(--border-scoreboard);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-scoreboard);
+    color: var(--color-scoreboard-text);
+    padding: var(--gutter);
+  }
+
+  .scoreboard-number {
+    font-family: var(--font-scoreboard);
+    font-weight: 700;
+    color: var(--color-scoreboard-text);
+    text-shadow: 0 0 10px var(--color-scoreboard-glow);
+    letter-spacing: 0.05em;
+  }
+
+  .scoreboard-cell {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    padding: 0.25rem 0.5rem;
+    text-align: center;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     PENNANT HEADER - Vintage felt pennant style
+     ───────────────────────────────────────────────────────────────────── */
+  .pennant-header {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-scoreboard);
+    position: relative;
+    display: inline-block;
+  }
+
+  .pennant-header::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-stitch), var(--color-gold), var(--color-stitch));
+    border-radius: 2px;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     VINTAGE BUTTONS
+     ───────────────────────────────────────────────────────────────────── */
+  .btn-vintage {
+    font-family: var(--font-headline);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-vintage-primary {
+    background: linear-gradient(180deg, var(--color-scoreboard-light) 0%, var(--color-scoreboard) 100%);
+    color: var(--color-scoreboard-text);
+    border: 2px solid var(--color-scoreboard-dark);
+    box-shadow:
+      0 2px 0 var(--color-scoreboard-dark),
+      0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-vintage-primary:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 3px 0 var(--color-scoreboard-dark),
+      0 6px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .btn-vintage-primary:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 var(--color-scoreboard-dark),
+      0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-vintage-gold {
+    background: linear-gradient(180deg, var(--color-gold-light) 0%, var(--color-gold) 100%);
+    color: var(--color-ink);
+    border: 2px solid var(--color-gold-dark);
+    box-shadow:
+      0 2px 0 var(--color-gold-dark),
+      0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-vintage-gold:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 3px 0 var(--color-gold-dark),
+      0 6px 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .btn-vintage-secondary {
+    background: linear-gradient(180deg, var(--color-cream) 0%, var(--color-cream-dark) 100%);
+    color: var(--color-ink);
+    border: 2px solid var(--color-leather);
+    box-shadow: 0 2px 0 var(--color-leather-dark);
+  }
+
+  .btn-vintage-secondary:hover {
+    background: linear-gradient(180deg, var(--color-parchment) 0%, var(--color-cream) 100%);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     STAT TABLES - Vintage box score style
+     ───────────────────────────────────────────────────────────────────── */
+  .stat-table {
+    font-family: var(--font-stat);
+    font-size: 0.875rem;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .stat-table thead th {
+    background: var(--color-scoreboard);
+    color: var(--color-scoreboard-text);
+    font-family: var(--font-headline);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid var(--color-gold);
+  }
+
+  .stat-table thead th:first-child {
+    border-top-left-radius: var(--radius-sm);
+  }
+
+  .stat-table thead th:last-child {
+    border-top-right-radius: var(--radius-sm);
+  }
+
+  .stat-table tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-cream-dark);
+    background: var(--color-parchment);
+  }
+
+  .stat-table tbody tr:nth-child(even) td {
+    background: var(--color-cream);
+  }
+
+  .stat-table tbody tr:hover td {
+    background: var(--color-gold);
+    background: rgba(212, 175, 55, 0.15);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     TICKER - Vintage news ticker style
+     ───────────────────────────────────────────────────────────────────── */
+  .ticker-strip {
+    background: var(--color-scoreboard);
+    border-top: 3px solid var(--color-gold);
+    border-bottom: 3px solid var(--color-gold);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ticker-content {
+    display: flex;
+    animation: ticker-scroll 30s linear infinite;
+    white-space: nowrap;
+    font-family: var(--font-scoreboard);
+    color: var(--color-scoreboard-text);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 0.5rem 0;
+  }
+
+  .ticker-item {
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .ticker-separator {
+    color: var(--color-gold);
+    font-size: 1.25rem;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     POSITION BADGES
+     ───────────────────────────────────────────────────────────────────── */
+  .position-badge {
+    font-family: var(--font-headline);
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .position-badge-pitcher {
+    background: var(--color-stitch);
+    color: white;
+  }
+
+  .position-badge-catcher {
+    background: var(--color-leather);
+    color: white;
+  }
+
+  .position-badge-infield {
+    background: var(--color-dirt);
+    color: white;
+  }
+
+  .position-badge-outfield {
+    background: var(--color-grass);
+    color: white;
+  }
+
+  .position-badge-dh {
+    background: var(--color-gold);
+    color: var(--color-ink);
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────
+     BASEBALL DIAMOND GRAPHIC
+     ───────────────────────────────────────────────────────────────────── */
+  .diamond {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    transform: rotate(45deg);
+    margin: 2rem auto;
+  }
+
+  .diamond-field {
+    position: absolute;
+    inset: 0;
+    background: var(--color-grass);
+    border: 4px solid var(--color-chalk);
+    border-radius: var(--radius-sm);
+  }
+
+  .diamond-infield {
+    position: absolute;
+    top: 30%;
+    left: 30%;
+    width: 40%;
+    height: 40%;
+    background: var(--color-dirt);
+    border: 2px solid var(--color-chalk);
+  }
+
+  .diamond-base {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--color-chalk);
+    transform: rotate(-45deg);
   }
 }
 
-/* REQ-COMP-011: Animation keyframes */
+/* ═══════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 @keyframes stamp-slam {
   0% {
     opacity: 0;
-    transform: scale(2) rotate(-15deg);
+    transform: scale(2.5) rotate(-15deg);
   }
-  60% {
+  50% {
     opacity: 1;
-    transform: scale(0.95) rotate(-15deg);
+    transform: scale(0.9) rotate(-15deg);
+  }
+  70% {
+    transform: scale(1.05) rotate(-15deg);
   }
   100% {
     opacity: 1;
@@ -58,36 +530,163 @@
   }
 }
 
-@keyframes cursor-blink {
+@keyframes flip-in {
+  0% {
+    transform: rotateX(-90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: rotateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--color-gold);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--color-gold), 0 0 30px var(--color-gold-light);
+  }
+}
+
+@keyframes typewriter-cursor {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
 
-.stamp-animation-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.stamp-animation-text {
-  display: inline-block;
-  font-family: var(--font-headline);
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: var(--color-stitch-red);
-  border: 4px solid var(--color-stitch-red);
-  padding: 0.5rem 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+/* ─────────────────────────────────────────────────────────────────────
+   Animation Classes
+   ───────────────────────────────────────────────────────────────────── */
+.animate-stamp {
   animation: stamp-slam 400ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
 
-/* REQ-COMP-011: Respect prefers-reduced-motion */
+.animate-flip-in {
+  animation: flip-in 300ms ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 400ms ease-out forwards;
+}
+
+.animate-glow {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-ticker {
+  animation: ticker-scroll 30s linear infinite;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: slide-up 400ms ease-out forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  .font-display { font-family: var(--font-display); }
+  .font-headline { font-family: var(--font-headline); }
+  .font-scoreboard { font-family: var(--font-scoreboard); }
+  .font-stat { font-family: var(--font-stat); }
+  .font-body { font-family: var(--font-body); }
+
+  .text-scoreboard { color: var(--color-scoreboard); }
+  .text-stitch { color: var(--color-stitch); }
+  .text-gold { color: var(--color-gold); }
+  .text-leather { color: var(--color-leather); }
+  .text-cream { color: var(--color-cream); }
+  .text-muted { color: var(--color-muted); }
+
+  .bg-scoreboard { background-color: var(--color-scoreboard); }
+  .bg-cream { background-color: var(--color-cream); }
+  .bg-parchment { background-color: var(--color-parchment); }
+  .bg-leather { background-color: var(--color-leather); }
+  .bg-gold { background-color: var(--color-gold); }
+  .bg-grass { background-color: var(--color-grass); }
+  .bg-dirt { background-color: var(--color-dirt); }
+
+  .border-scoreboard { border-color: var(--color-scoreboard); }
+  .border-leather { border-color: var(--color-leather); }
+  .border-gold { border-color: var(--color-gold); }
+  .border-stitch { border-color: var(--color-stitch); }
+
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elevated { box-shadow: var(--shadow-elevated); }
+  .shadow-scoreboard { box-shadow: var(--shadow-scoreboard); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REDUCED MOTION PREFERENCES
+   ═══════════════════════════════════════════════════════════════════════ */
+
 @media (prefers-reduced-motion: reduce) {
-  .stamp-animation-text {
+  .animate-stamp,
+  .animate-flip-in,
+  .animate-slide-up,
+  .animate-glow,
+  .animate-ticker,
+  .stagger-children > * {
     animation: none;
     opacity: 1;
-    transform: rotate(-15deg);
+    transform: none;
   }
+
+  .ticker-content {
+    animation: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+   ═══════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream-dark);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-leather);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-cream-dark);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-leather-dark);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-leather) var(--color-cream-dark);
 }
