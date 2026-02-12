@@ -6,37 +6,74 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'old-lace':     '#FDF5E6',
-        'ballpark':     '#1B4D3E',
-        'stitch-red':   '#B22222',
-        'sandstone':    '#D2B48C',
-        'ink':          '#2C2C2C',
-        'muted':        '#6B7280',
-        'playoff-gold': '#CFB53B',
-        'playoff-dark': '#1A1A2E',
+        scoreboard: {
+          DEFAULT: 'var(--color-scoreboard)',
+          light: 'var(--color-scoreboard-light)',
+          dark: 'var(--color-scoreboard-dark)',
+          text: 'var(--color-scoreboard-text)',
+        },
+        cream: {
+          DEFAULT: 'var(--color-cream)',
+          dark: 'var(--color-cream-dark)',
+        },
+        parchment: 'var(--color-parchment)',
+        stitch: {
+          DEFAULT: 'var(--color-stitch)',
+          light: 'var(--color-stitch-light)',
+        },
+        leather: {
+          DEFAULT: 'var(--color-leather)',
+          dark: 'var(--color-leather-dark)',
+        },
+        gold: {
+          DEFAULT: 'var(--color-gold)',
+          light: 'var(--color-gold-light)',
+          dark: 'var(--color-gold-dark)',
+        },
+        ink: {
+          DEFAULT: 'var(--color-ink)',
+          light: 'var(--color-ink-light)',
+        },
+        wood: {
+          DEFAULT: 'var(--color-wood)',
+          light: 'var(--color-wood-light)',
+        },
+        muted: {
+          DEFAULT: 'var(--color-muted)',
+          light: 'var(--color-muted-light)',
+        },
+        grass: 'var(--color-grass)',
+        dirt: 'var(--color-dirt)',
+        chalk: 'var(--color-chalk)',
       },
       fontFamily: {
-        headline: ['"Roboto Slab"', 'Georgia', '"Times New Roman"', 'serif'],
-        stat:     ['"JetBrains Mono"', 'Consolas', '"Courier New"', 'monospace'],
-        body:     ['system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"',
-                   'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        headline: ['var(--font-headline)', 'serif'],
+        display: ['var(--font-display)', 'serif'],
+        stat: ['var(--font-stat)', 'monospace'],
+        body: ['var(--font-body)', 'sans-serif'],
+        scoreboard: ['var(--font-scoreboard)', 'sans-serif'],
       },
-      spacing: {
-        'gutter':    '1rem',
-        'gutter-lg': '1.5rem',
-        'gutter-xl': '2rem',
-      },
-      maxWidth: {
-        'ledger': '1200px',
-      },
-      borderRadius: {
-        'card':   '0.375rem',
-        'button': '0.25rem',
+      backgroundImage: {
+        'paper-texture': "var(--pattern-paper)",
+        'wood-pattern': "var(--pattern-wood)",
+        'stitch-pattern': "var(--pattern-stitch)",
       },
       boxShadow: {
-        'ledger': '0 2px 8px rgba(0, 0, 0, 0.12)',
-        'card':   '0 1px 4px rgba(0, 0, 0, 0.08)',
-        'stamp':  '2px 2px 0px rgba(178, 34, 34, 0.3)',
+        'card-depth': 'var(--shadow-card)',
+        'ledger-bind': 'inset 5px 0 10px rgba(0,0,0,0.1)',
+        'scoreboard': 'var(--shadow-scoreboard)',
+      },
+      spacing: {
+        'gutter': 'var(--gutter)',
+        'gutter-lg': 'var(--gutter-lg)',
+        'gutter-xl': 'var(--gutter-xl)',
+      },
+      maxWidth: {
+        'ledger': 'var(--max-width-ledger)',
+      },
+      borderRadius: {
+        'card': 'var(--radius-card)',
+        'button': 'var(--radius-sm)',
       },
       borderWidth: {
         'spine': '4px',

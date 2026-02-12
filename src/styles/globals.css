@@ -62,19 +62,19 @@
        ═══════════════════════════════════════════════════════════════════ */
 
     /* Display - Classic baseball pennant style */
-    --font-display: 'Archivo Black', 'Impact', sans-serif;
+    --font-display: 'Playfair Display', 'Impact', serif;
 
     /* Headlines - Vintage slab serif */
-    --font-headline: 'Roboto Slab', 'Rockwell', 'Georgia', serif;
+    --font-headline: 'Playfair Display', 'Georgia', serif;
 
     /* Scoreboard - Mechanical display numerals */
-    --font-scoreboard: 'Oswald', 'Bebas Neue', 'Impact', sans-serif;
+    --font-scoreboard: 'Courier Prime', 'Consolas', monospace;
 
     /* Stats - Monospace for numbers */
-    --font-stat: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+    --font-stat: 'Courier Prime', 'Consolas', monospace;
 
     /* Body - Clean, readable */
-    --font-body: 'Source Sans 3', 'Helvetica Neue', Arial, sans-serif;
+    --font-body: 'Lora', 'Georgia', serif;
 
     /* ═══════════════════════════════════════════════════════════════════
        SPACING & LAYOUT
@@ -125,13 +125,11 @@
     --pattern-paper: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
 
     /* Wood grain pattern */
-    --pattern-wood: repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
-    );
+    --pattern-wood: repeating-linear-gradient(90deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.03) 2px,
+        rgba(0, 0, 0, 0.03) 4px);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -186,6 +184,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 @layer components {
+
   /* ─────────────────────────────────────────────────────────────────────
      VINTAGE CARD - Baseball card aesthetic
      ───────────────────────────────────────────────────────────────────── */
@@ -508,8 +507,13 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 @keyframes ticker-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes stamp-slam {
@@ -517,13 +521,16 @@
     opacity: 0;
     transform: scale(2.5) rotate(-15deg);
   }
+
   50% {
     opacity: 1;
     transform: scale(0.9) rotate(-15deg);
   }
+
   70% {
     transform: scale(1.05) rotate(-15deg);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) rotate(-15deg);
@@ -535,6 +542,7 @@
     transform: rotateX(-90deg);
     opacity: 0;
   }
+
   100% {
     transform: rotateX(0);
     opacity: 1;
@@ -546,6 +554,7 @@
     transform: translateY(20px);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0);
     opacity: 1;
@@ -553,17 +562,27 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 5px var(--color-gold);
   }
+
   50% {
     box-shadow: 0 0 20px var(--color-gold), 0 0 30px var(--color-gold-light);
   }
 }
 
 @keyframes typewriter-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -590,54 +609,147 @@
 }
 
 /* Stagger children animations */
-.stagger-children > * {
+.stagger-children>* {
   opacity: 0;
   animation: slide-up 400ms ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 50ms;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 200ms;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 250ms;
+}
+
+.stagger-children>*:nth-child(7) {
+  animation-delay: 300ms;
+}
+
+.stagger-children>*:nth-child(8) {
+  animation-delay: 350ms;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════
    UTILITY CLASSES
    ═══════════════════════════════════════════════════════════════════════ */
 
 @layer utilities {
-  .font-display { font-family: var(--font-display); }
-  .font-headline { font-family: var(--font-headline); }
-  .font-scoreboard { font-family: var(--font-scoreboard); }
-  .font-stat { font-family: var(--font-stat); }
-  .font-body { font-family: var(--font-body); }
+  .font-display {
+    font-family: var(--font-display);
+  }
 
-  .text-scoreboard { color: var(--color-scoreboard); }
-  .text-stitch { color: var(--color-stitch); }
-  .text-gold { color: var(--color-gold); }
-  .text-leather { color: var(--color-leather); }
-  .text-cream { color: var(--color-cream); }
-  .text-muted { color: var(--color-muted); }
+  .font-headline {
+    font-family: var(--font-headline);
+  }
 
-  .bg-scoreboard { background-color: var(--color-scoreboard); }
-  .bg-cream { background-color: var(--color-cream); }
-  .bg-parchment { background-color: var(--color-parchment); }
-  .bg-leather { background-color: var(--color-leather); }
-  .bg-gold { background-color: var(--color-gold); }
-  .bg-grass { background-color: var(--color-grass); }
-  .bg-dirt { background-color: var(--color-dirt); }
+  .font-scoreboard {
+    font-family: var(--font-scoreboard);
+  }
 
-  .border-scoreboard { border-color: var(--color-scoreboard); }
-  .border-leather { border-color: var(--color-leather); }
-  .border-gold { border-color: var(--color-gold); }
-  .border-stitch { border-color: var(--color-stitch); }
+  .font-stat {
+    font-family: var(--font-stat);
+  }
 
-  .shadow-card { box-shadow: var(--shadow-card); }
-  .shadow-elevated { box-shadow: var(--shadow-elevated); }
-  .shadow-scoreboard { box-shadow: var(--shadow-scoreboard); }
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .text-scoreboard {
+    color: var(--color-scoreboard);
+  }
+
+  .text-stitch {
+    color: var(--color-stitch);
+  }
+
+  .text-gold {
+    color: var(--color-gold);
+  }
+
+  .text-leather {
+    color: var(--color-leather);
+  }
+
+  .text-cream {
+    color: var(--color-cream);
+  }
+
+  .text-muted {
+    color: var(--color-muted);
+  }
+
+  .bg-scoreboard {
+    background-color: var(--color-scoreboard);
+  }
+
+  .bg-cream {
+    background-color: var(--color-cream);
+  }
+
+  .bg-parchment {
+    background-color: var(--color-parchment);
+  }
+
+  .bg-leather {
+    background-color: var(--color-leather);
+  }
+
+  .bg-gold {
+    background-color: var(--color-gold);
+  }
+
+  .bg-grass {
+    background-color: var(--color-grass);
+  }
+
+  .bg-dirt {
+    background-color: var(--color-dirt);
+  }
+
+  .border-scoreboard {
+    border-color: var(--color-scoreboard);
+  }
+
+  .border-leather {
+    border-color: var(--color-leather);
+  }
+
+  .border-gold {
+    border-color: var(--color-gold);
+  }
+
+  .border-stitch {
+    border-color: var(--color-stitch);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .shadow-scoreboard {
+    box-shadow: var(--shadow-scoreboard);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -645,12 +757,13 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
+
   .animate-stamp,
   .animate-flip-in,
   .animate-slide-up,
   .animate-glow,
   .animate-ticker,
-  .stagger-children > * {
+  .stagger-children>* {
     animation: none;
     opacity: 1;
     transform: none;

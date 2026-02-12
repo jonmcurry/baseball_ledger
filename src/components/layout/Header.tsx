@@ -63,86 +63,102 @@ export function Header({
   return (
     <header
       role="banner"
-      className={`border-b-2 px-gutter py-3 ${
-        isPlayoff
-          ? 'border-playoff-gold bg-playoff-dark text-playoff-gold'
-          : 'border-sandstone bg-ballpark text-old-lace'
-      }`}
+      className={`border-b-4 relative z-20 transition-colors duration-300 ${isPlayoff
+          ? 'border-gold bg-scoreboard-dark text-gold'
+          : 'border-leather bg-scoreboard text-cream'
+        }`}
     >
-      <div className="flex items-center justify-between">
+      {/* Stitch decoration */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-stitch-pattern opacity-30 pointer-events-none" />
+
+      <div className="px-gutter py-4 flex items-center justify-between relative">
         <div className="flex items-center gap-gutter">
-          <span className="font-headline text-xl font-bold">{leagueName}</span>
+          <div className="flex flex-col">
+            <span className="font-display text-2xl tracking-wider uppercase text-shadow-sm transform -rotate-1 origin-bottom-left">
+              {leagueName}
+            </span>
+            <span className="text-xs font-stat tracking-widest opacity-80 uppercase">
+              {leagueStatus.replace('_', ' ')}
+            </span>
+          </div>
         </div>
+
         <div className="flex items-center gap-gutter">
-          <span className="text-sm max-md:hidden">{userName}</span>
+          <span className="font-headline text-sm max-md:hidden border-b border-transparent hover:border-current cursor-default">
+            {userName}
+          </span>
           <button
             type="button"
             onClick={onLogout}
             aria-label="Log out"
-            className="rounded-button border border-current px-3 py-1 text-xs hover:opacity-80 max-md:hidden"
+            className={`font-headline uppercase text-xs tracking-wider border-2 px-4 py-1.5 rounded-sm transition-transform active:translate-y-px max-md:hidden ${isPlayoff ? 'border-gold hover:bg-gold/10' : 'border-cream hover:bg-cream/10'
+              }`}
           >
             Log Out
           </button>
+
           <button
             type="button"
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="hidden max-md:block rounded-button border border-current px-2 py-1"
+            className="hidden max-md:block p-1"
           >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                aria-hidden="true"
-                className="stroke-current"
-              >
-                {mobileMenuOpen ? (
-                  <>
-                    <line x1="4" y1="4" x2="16" y2="16" strokeWidth="2" strokeLinecap="round" />
-                    <line x1="16" y1="4" x2="4" y2="16" strokeWidth="2" strokeLinecap="round" />
-                  </>
-                ) : (
-                  <>
-                    <line x1="3" y1="5" x2="17" y2="5" strokeWidth="2" strokeLinecap="round" />
-                    <line x1="3" y1="10" x2="17" y2="10" strokeWidth="2" strokeLinecap="round" />
-                    <line x1="3" y1="15" x2="17" y2="15" strokeWidth="2" strokeLinecap="round" />
-                  </>
-                )}
-              </svg>
-            </button>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+              className="stroke-current"
+            >
+              {mobileMenuOpen ? (
+                <>
+                  <path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="square" />
+                </>
+              ) : (
+                <>
+                  <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="square" />
+                </>
+              )}
+            </svg>
+          </button>
         </div>
       </div>
+
       <nav
-        className={`mt-2 flex flex-wrap gap-gutter ${
-          mobileMenuOpen
-            ? 'max-md:flex max-md:flex-col max-md:gap-1'
-            : 'max-md:hidden'
-        }`}
+        className={`bg-black/20 backdrop-blur-sm transition-all duration-300 overflow-hidden ${mobileMenuOpen
+            ? 'max-h-96 border-t border-white/10'
+            : 'max-h-0 md:max-h-12 md:overflow-visible'
+          }`}
         role="navigation"
       >
-        {visibleNavItems.map((item) => (
-          <button
-            key={item.route}
-            type="button"
-            onClick={() => handleNavigate(item.route)}
-            className="text-sm hover:underline max-md:py-1 max-md:text-left"
-          >
-            {item.label}
-          </button>
-        ))}
-        {/* Mobile-only: user info and logout */}
-        <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-current/20 max-md:pt-2 max-md:mt-1">
-          <span className="text-sm">{userName}</span>
-          <button
-            type="button"
-            onClick={onLogout}
-            aria-label="Log out"
-            className="rounded-button border border-current px-3 py-1 text-xs hover:opacity-80"
-          >
-            Log Out
-          </button>
+        <div className="px-gutter flex max-md:flex-col md:items-center md:gap-6 py-2">
+          {visibleNavItems.map((item) => (
+            <button
+              key={item.route}
+              type="button"
+              onClick={() => handleNavigate(item.route)}
+              className={`font-headline text-sm uppercase tracking-wide py-2 md:py-1 hover:text-white transition-colors relative group text-left ${isPlayoff ? 'text-gold/80' : 'text-cream/80'
+                }`}
+            >
+              {item.label}
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current transition-all group-hover:w-full" />
+            </button>
+          ))}
+
+          {/* Mobile-only: user info and logout */}
+          <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-white/10 max-md:pt-3 max-md:mt-2">
+            <span className="font-headline text-sm">{userName}</span>
+            <button
+              type="button"
+              onClick={onLogout}
+              aria-label="Log out"
+              className="font-headline uppercase text-xs border border-current px-3 py-1 rounded-sm"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </nav>
     </header>
