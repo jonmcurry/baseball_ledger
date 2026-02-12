@@ -164,24 +164,6 @@ export function DashboardPage() {
 
       {/* Header with pennant styling */}
       <div className="flex items-center gap-4">
-        {/* Decorative baseball */}
-        <div
-          className="hidden h-14 w-14 items-center justify-center rounded-full md:flex"
-          style={{
-            background: 'linear-gradient(135deg, var(--color-cream) 0%, #E8DCC8 100%)',
-            border: '2px solid var(--color-stitch)',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
-          <svg
-            className="h-7 w-7 text-[var(--color-stitch)]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM5.5 16.5c-.83-.73-1.5-1.63-1.96-2.64.3-.07.65-.11 1.01-.11 1.07 0 2.18.36 3.21 1.04-.46.61-.85 1.18-1.15 1.71h-1.1zM5.04 10.14c.46-.08.95-.14 1.46-.14 1.63 0 3.36.58 4.89 1.64-1.13.85-2.1 1.89-2.83 3.08-1.03-.68-2.14-1.04-3.21-1.04-.36 0-.71.04-1.01.11-.21-.56-.38-1.15-.47-1.76.33-.07.75-.11 1.17-.11v-1.78zm13.46 6.36c-.46.08-.95.14-1.46.14-1.63 0-3.36-.58-4.89-1.64 1.13-.85 2.1-1.89 2.83-3.08 1.03.68 2.14 1.04 3.21 1.04.36 0 .71-.04 1.01-.11.21.56.38 1.15.47 1.76-.33.07-.75.11-1.17.11v1.78z" />
-          </svg>
-        </div>
-
         <div>
           <h2 className="pennant-header">
             {league?.name ?? 'Dashboard'}
@@ -297,16 +279,16 @@ export function DashboardPage() {
         {/* Standings */}
         <div className="vintage-card">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-ballpark)]/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)]/20">
               <svg
-                className="h-5 w-5 text-[var(--color-ballpark)]"
+                className="h-5 w-5 text-[var(--accent-primary)]"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path d="M3 5v14h18V5H3zm4 2v2H5V7h2zm-2 6v-2h2v2H5zm0 2h2v2H5v-2zm14 2H9v-2h10v2zm0-4H9v-2h10v2zm0-4H9V7h10v2z" />
               </svg>
             </div>
-            <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+            <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
               Standings
             </h3>
           </div>

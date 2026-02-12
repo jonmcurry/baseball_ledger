@@ -136,24 +136,6 @@ export function DraftBoardPage() {
       {/* Header with pennant styling */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {/* Decorative baseball */}
-          <div
-            className="hidden h-12 w-12 items-center justify-center rounded-full md:flex"
-            style={{
-              background: 'linear-gradient(135deg, var(--color-cream) 0%, #E8DCC8 100%)',
-              border: '2px solid var(--color-stitch)',
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.1)',
-            }}
-          >
-            <svg
-              className="h-6 w-6 text-[var(--color-stitch)]"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM5.5 16.5c-.83-.73-1.5-1.63-1.96-2.64.3-.07.65-.11 1.01-.11 1.07 0 2.18.36 3.21 1.04-.46.61-.85 1.18-1.15 1.71h-1.1zM5.04 10.14c.46-.08.95-.14 1.46-.14 1.63 0 3.36.58 4.89 1.64-1.13.85-2.1 1.89-2.83 3.08-1.03-.68-2.14-1.04-3.21-1.04-.36 0-.71.04-1.01.11-.21-.56-.38-1.15-.47-1.76.33-.07.75-.11 1.17-.11v-1.78zm13.46 6.36c-.46.08-.95.14-1.46.14-1.63 0-3.36-.58-4.89-1.64 1.13-.85 2.1-1.89 2.83-3.08 1.03.68 2.14 1.04 3.21 1.04.36 0 .71-.04 1.01-.11.21.56.38 1.15.47 1.76-.33.07-.75.11-1.17.11v1.78z" />
-            </svg>
-          </div>
-
           <div>
             <h2 className="pennant-header">Draft Board</h2>
             {isDraftActive && (
@@ -197,7 +179,7 @@ export function DraftBoardPage() {
       )}
 
       {isDraftNotStarted && (
-        <div className="vintage-card border-[var(--color-sandstone)]">
+        <div className="vintage-card border-[var(--border-default)]">
           <p className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--color-ink)]">
             Waiting for Draft
           </p>
@@ -212,7 +194,7 @@ export function DraftBoardPage() {
           className={`vintage-card flex items-center gap-3 ${
             isMyPick
               ? 'animate-glow border-[var(--color-gold)] bg-gradient-to-r from-[var(--color-gold)]/20 to-[var(--color-gold)]/10'
-              : 'border-[var(--color-sandstone)]'
+              : 'border-[var(--border-default)]'
           }`}
         >
           {isMyPick && (

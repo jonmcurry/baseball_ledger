@@ -39,22 +39,15 @@ export function NewSeasonPanel({
         <div className="absolute bottom-2 left-2 h-4 w-4 border-b-2 border-l-2 border-[var(--color-gold)]/50" />
         <div className="absolute bottom-2 right-2 h-4 w-4 border-b-2 border-r-2 border-[var(--color-gold)]/50" />
 
-        {/* Baseball icon */}
+        {/* Season icon */}
         <div className="mb-3 flex justify-center">
-          <div
-            className="flex h-14 w-14 items-center justify-center rounded-full"
-            style={{
-              background: 'linear-gradient(135deg, var(--color-cream) 0%, #E8DCC8 100%)',
-              border: '2px solid var(--color-stitch)',
-              boxShadow: '0 0 15px rgba(255,255,255,0.3), inset 0 2px 4px rgba(0,0,0,0.1)',
-            }}
-          >
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-gold)]/20">
             <svg
-              className="h-6 w-6 text-[var(--color-stitch)]"
+              className="h-6 w-6 text-[var(--color-gold)]"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM5.5 16.5c-.83-.73-1.5-1.63-1.96-2.64.3-.07.65-.11 1.01-.11 1.07 0 2.18.36 3.21 1.04-.46.61-.85 1.18-1.15 1.71h-1.1zM5.04 10.14c.46-.08.95-.14 1.46-.14 1.63 0 3.36.58 4.89 1.64-1.13.85-2.1 1.89-2.83 3.08-1.03-.68-2.14-1.04-3.21-1.04-.36 0-.71.04-1.01.11-.21-.56-.38-1.15-.47-1.76.33-.07.75-.11 1.17-.11v-1.78zm13.46 6.36c-.46.08-.95.14-1.46.14-1.63 0-3.36-.58-4.89-1.64 1.13-.85 2.1-1.89 2.83-3.08 1.03.68 2.14 1.04 3.21 1.04.36 0 .71-.04 1.01-.11.21.56.38 1.15.47 1.76-.33.07-.75.11-1.17.11v1.78z" />
+              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
             </svg>
           </div>
         </div>

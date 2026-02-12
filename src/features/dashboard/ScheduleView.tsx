@@ -30,9 +30,9 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
     <div className="vintage-card">
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-ballpark)]/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)]/20">
           <svg
-            className="h-5 w-5 text-[var(--color-ballpark)]"
+            className="h-5 w-5 text-[var(--accent-primary)]"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -40,7 +40,7 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
           </svg>
         </div>
         <div>
-          <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+          <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
             Day {day.dayNumber}
           </h3>
           <p className="font-stat text-xs text-[var(--color-muted)]">
@@ -60,14 +60,14 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
           return (
             <div
               key={game.id}
-              className="flex items-center justify-between rounded border border-[var(--color-sandstone)]/50 bg-[var(--color-sandstone)]/10 px-3 py-2 transition-colors hover:bg-[var(--color-sandstone)]/20"
+              className="flex items-center justify-between rounded border border-[var(--border-default)]/50 bg-[var(--border-default)]/10 px-3 py-2 transition-colors hover:bg-[var(--border-default)]/20"
             >
               {/* Away team */}
               <div className="flex w-32 items-center justify-end gap-2">
                 <span
                   className={`font-stat text-sm ${
                     awayWon
-                      ? 'font-bold text-[var(--color-ballpark)]'
+                      ? 'font-bold text-[var(--accent-primary)]'
                       : 'text-[var(--color-ink)]'
                   }`}
                 >
@@ -76,7 +76,7 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
                 {game.isComplete && (
                   <span
                     className={`font-scoreboard text-lg ${
-                      awayWon ? 'text-[var(--color-ballpark)]' : 'text-[var(--color-muted)]'
+                      awayWon ? 'text-[var(--accent-primary)]' : 'text-[var(--color-muted)]'
                     }`}
                   >
                     {game.awayScore}
@@ -94,7 +94,7 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
                 {game.isComplete && (
                   <span
                     className={`font-scoreboard text-lg ${
-                      homeWon ? 'text-[var(--color-ballpark)]' : 'text-[var(--color-muted)]'
+                      homeWon ? 'text-[var(--accent-primary)]' : 'text-[var(--color-muted)]'
                     }`}
                   >
                     {game.homeScore}
@@ -103,7 +103,7 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
                 <span
                   className={`font-stat text-sm ${
                     homeWon
-                      ? 'font-bold text-[var(--color-ballpark)]'
+                      ? 'font-bold text-[var(--accent-primary)]'
                       : 'text-[var(--color-ink)]'
                   }`}
                 >
@@ -114,11 +114,11 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
               {/* Status */}
               <div className="ml-auto">
                 {game.isComplete ? (
-                  <span className="rounded bg-[var(--color-ballpark)]/10 px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--color-ballpark)]">
+                  <span className="rounded bg-[var(--accent-primary)]/10 px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--accent-primary)]">
                     Final
                   </span>
                 ) : (
-                  <span className="rounded bg-[var(--color-sandstone)] px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--color-muted)]">
+                  <span className="rounded bg-[var(--border-default)] px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--color-muted)]">
                     Scheduled
                   </span>
                 )}
@@ -129,7 +129,7 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
       </div>
 
       {/* Footer */}
-      <div className="mt-4 border-t border-[var(--color-sandstone)] pt-2">
+      <div className="mt-4 border-t border-[var(--border-default)] pt-2">
         <p className="text-center font-stat text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
           ★ Today's Schedule ★
         </p>

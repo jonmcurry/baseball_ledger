@@ -63,36 +63,32 @@ export function Header({
   return (
     <header
       role="banner"
-      className={`border-b-4 relative z-20 transition-colors duration-300 ${isPlayoff
-          ? 'border-gold bg-scoreboard-dark text-gold'
-          : 'border-leather bg-scoreboard text-cream'
+      className={`border-b relative z-20 transition-colors duration-300 ${isPlayoff
+          ? 'border-[var(--accent-primary)] bg-surface-raised'
+          : 'border-[var(--border-default)] bg-surface-raised'
         }`}
     >
-      {/* Stitch decoration */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-stitch-pattern opacity-30 pointer-events-none" />
-
       <div className="px-gutter py-4 flex items-center justify-between relative">
         <div className="flex items-center gap-gutter">
           <div className="flex flex-col">
-            <span className="font-display text-2xl tracking-wider uppercase text-shadow-sm transform -rotate-1 origin-bottom-left">
+            <span className={`font-display text-2xl tracking-wider uppercase ${isPlayoff ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`}>
               {leagueName}
             </span>
-            <span className="text-xs font-stat tracking-widest opacity-80 uppercase">
+            <span className="text-xs font-stat tracking-widest text-[var(--text-tertiary)] uppercase">
               {leagueStatus.replace('_', ' ')}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-gutter">
-          <span className="font-headline text-sm max-md:hidden border-b border-transparent hover:border-current cursor-default">
+          <span className="font-body text-sm max-md:hidden text-[var(--text-secondary)]">
             {userName}
           </span>
           <button
             type="button"
             onClick={onLogout}
             aria-label="Log out"
-            className={`font-headline uppercase text-xs tracking-wider border-2 px-4 py-1.5 rounded-sm transition-transform active:translate-y-px max-md:hidden ${isPlayoff ? 'border-gold hover:bg-gold/10' : 'border-cream hover:bg-cream/10'
-              }`}
+            className="font-display uppercase text-xs tracking-wider border px-4 py-1.5 rounded-sm transition-all active:translate-y-px max-md:hidden border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
           >
             Log Out
           </button>
@@ -102,7 +98,7 @@ export function Header({
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="hidden max-md:block p-1"
+            className="hidden max-md:block p-1 text-[var(--text-secondary)]"
           >
             <svg
               width="24"
@@ -113,13 +109,9 @@ export function Header({
               className="stroke-current"
             >
               {mobileMenuOpen ? (
-                <>
-                  <path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="square" />
-                </>
+                <path d="M6 18L18 6M6 6l12 12" strokeWidth="2" strokeLinecap="square" />
               ) : (
-                <>
-                  <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="square" />
-                </>
+                <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="square" />
               )}
             </svg>
           </button>
@@ -127,8 +119,8 @@ export function Header({
       </div>
 
       <nav
-        className={`bg-black/20 backdrop-blur-sm transition-all duration-300 overflow-hidden ${mobileMenuOpen
-            ? 'max-h-96 border-t border-white/10'
+        className={`bg-surface-overlay/80 backdrop-blur-sm transition-all duration-300 overflow-hidden ${mobileMenuOpen
+            ? 'max-h-96 border-t border-[var(--border-subtle)]'
             : 'max-h-0 md:max-h-12 md:overflow-visible'
           }`}
         role="navigation"
@@ -139,22 +131,21 @@ export function Header({
               key={item.route}
               type="button"
               onClick={() => handleNavigate(item.route)}
-              className={`font-headline text-sm uppercase tracking-wide py-2 md:py-1 hover:text-white transition-colors relative group text-left ${isPlayoff ? 'text-gold/80' : 'text-cream/80'
-                }`}
+              className="font-display text-sm uppercase tracking-wide py-2 md:py-1 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors relative group text-left"
             >
               {item.label}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-current transition-all group-hover:w-full" />
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--accent-primary)] transition-all group-hover:w-full" />
             </button>
           ))}
 
           {/* Mobile-only: user info and logout */}
-          <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-white/10 max-md:pt-3 max-md:mt-2">
-            <span className="font-headline text-sm">{userName}</span>
+          <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-[var(--border-subtle)] max-md:pt-3 max-md:mt-2">
+            <span className="font-body text-sm text-[var(--text-secondary)]">{userName}</span>
             <button
               type="button"
               onClick={onLogout}
               aria-label="Log out"
-              className="font-headline uppercase text-xs border border-current px-3 py-1 rounded-sm"
+              className="font-display uppercase text-xs border border-[var(--border-default)] text-[var(--text-secondary)] px-3 py-1 rounded-sm hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
             >
               Log Out
             </button>

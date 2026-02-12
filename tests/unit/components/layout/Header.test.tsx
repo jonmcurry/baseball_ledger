@@ -86,7 +86,7 @@ describe('Header', () => {
   it('shows playoff variant when status is playoffs', () => {
     render(<Header {...defaultProps} leagueStatus="playoffs" />);
     const header = screen.getByRole('banner');
-    expect(header.className).toContain('border-gold');
+    expect(header.className).toContain('border-[var(--accent-primary)]');
   });
 
   it('renders header element with role="banner"', () => {

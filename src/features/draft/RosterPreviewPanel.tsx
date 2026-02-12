@@ -58,23 +58,12 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
           {teamPicks.length} Player{teamPicks.length !== 1 ? 's' : ''} Drafted
         </p>
 
-        {/* Decorative baseball stitching */}
-        <div
-          className="absolute right-3 top-1/2 -translate-y-1/2 opacity-20"
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            border: '2px solid var(--color-stitch)',
-            background: 'var(--color-cream)',
-          }}
-        />
       </div>
 
       {teamPicks.length === 0 && (
         <div className="flex flex-col items-center justify-center py-8">
           <svg
-            className="mb-2 h-8 w-8 text-[var(--color-sandstone)]"
+            className="mb-2 h-8 w-8 text-[var(--border-default)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -110,7 +99,7 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
 
       {/* Footer */}
       {teamPicks.length > 0 && (
-        <div className="mt-4 border-t border-[var(--color-sandstone)] pt-2">
+        <div className="mt-4 border-t border-[var(--border-default)] pt-2">
           <p className="text-center font-stat text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
             ★ Official Roster Card ★
           </p>
@@ -129,21 +118,21 @@ function RosterSection({
 }) {
   return (
     <div>
-      <h4 className="mb-1 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+      <h4 className="mb-1 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--accent-primary)]">
         {title}
       </h4>
       <div className="space-y-0.5">
         {players.map((pick) => (
           <div
             key={`${pick.round}-${pick.pick}`}
-            className="flex items-center gap-2 rounded border border-[var(--color-sandstone)]/50 bg-[var(--color-sandstone)]/10 px-2 py-1 transition-colors hover:bg-[var(--color-sandstone)]/20"
+            className="flex items-center gap-2 rounded border border-[var(--border-default)]/50 bg-[var(--border-default)]/10 px-2 py-1 transition-colors hover:bg-[var(--border-default)]/20"
           >
             {/* Position badge */}
             <span
               className={`inline-flex h-5 w-7 items-center justify-center rounded font-stat text-[10px] font-bold ${
                 ['SP', 'RP'].includes(pick.position)
                   ? 'bg-[var(--color-leather)]/20 text-[var(--color-leather)]'
-                  : 'bg-[var(--color-ballpark)]/15 text-[var(--color-ballpark)]'
+                  : 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]'
               }`}
             >
               {pick.position}

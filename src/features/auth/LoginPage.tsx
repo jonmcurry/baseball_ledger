@@ -32,10 +32,10 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-old-lace p-gutter-xl">
-      <div className="w-full max-w-sm rounded-card border border-sandstone bg-white p-gutter-xl shadow-card">
+      <div className="w-full max-w-sm rounded-card border border-sandstone bg-surface-raised p-gutter-xl shadow-card">
         <h1 className="font-headline text-2xl font-bold text-ballpark">Sign In</h1>
         {error && (
-          <p className="mt-gutter text-sm text-red-600">{error}</p>
+          <p className="mt-gutter text-sm text-semantic-danger">{error}</p>
         )}
         <form className="mt-gutter-lg space-y-gutter" onSubmit={handleSubmit}>
           <div>

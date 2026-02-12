@@ -105,7 +105,7 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
                 className={`rounded px-1.5 py-0.5 font-stat text-[10px] font-bold uppercase ${
                   ['SP', 'RP'].includes(pick.position)
                     ? 'bg-[var(--color-leather)]/30 text-[var(--color-leather)]'
-                    : 'bg-[var(--color-ballpark)]/20 text-[var(--color-ballpark)]'
+                    : 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
                 }`}
               >
                 {pick.position}

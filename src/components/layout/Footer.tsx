@@ -10,7 +10,7 @@ export function Footer() {
   return (
     <footer
       role="contentinfo"
-      className="border-t border-sandstone px-gutter py-3 text-center text-xs text-muted"
+      className="border-t border-[var(--border-subtle)] px-gutter py-3 text-center text-xs text-[var(--text-tertiary)]"
     >
       Baseball Ledger -- APBA Baseball Simulation
     </footer>

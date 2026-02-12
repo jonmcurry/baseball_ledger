@@ -6,6 +6,26 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        /* New design tokens */
+        surface: {
+          base: 'var(--surface-base)',
+          raised: 'var(--surface-raised)',
+          overlay: 'var(--surface-overlay)',
+          highlight: 'var(--surface-highlight)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent-primary)',
+          hover: 'var(--accent-hover)',
+          muted: 'var(--accent-muted)',
+        },
+        semantic: {
+          success: 'var(--semantic-success)',
+          danger: 'var(--semantic-danger)',
+          warning: 'var(--semantic-warning)',
+          info: 'var(--semantic-info)',
+        },
+
+        /* Legacy token aliases -- resolve existing class names */
         scoreboard: {
           DEFAULT: 'var(--color-scoreboard)',
           light: 'var(--color-scoreboard-light)',
@@ -45,22 +65,28 @@ const config: Config = {
         grass: 'var(--color-grass)',
         dirt: 'var(--color-dirt)',
         chalk: 'var(--color-chalk)',
+
+        /* Legacy color aliases from original design */
+        'ballpark': 'var(--accent-primary)',
+        'old-lace': 'var(--text-primary)',
+        'sandstone': 'var(--border-default)',
+        'stitch-red': 'var(--semantic-danger)',
       },
       fontFamily: {
-        headline: ['var(--font-headline)', 'serif'],
-        display: ['var(--font-display)', 'serif'],
+        headline: ['var(--font-headline)', 'sans-serif'],
+        display: ['var(--font-display)', 'sans-serif'],
         stat: ['var(--font-stat)', 'monospace'],
         body: ['var(--font-body)', 'sans-serif'],
-        scoreboard: ['var(--font-scoreboard)', 'sans-serif'],
+        scoreboard: ['var(--font-stat)', 'monospace'],
       },
       backgroundImage: {
-        'paper-texture': "var(--pattern-paper)",
-        'wood-pattern': "var(--pattern-wood)",
-        'stitch-pattern': "var(--pattern-stitch)",
+        'paper-texture': 'var(--pattern-paper)',
+        'wood-pattern': 'var(--pattern-wood)',
+        'stitch-pattern': 'var(--pattern-stitch)',
       },
       boxShadow: {
         'card-depth': 'var(--shadow-card)',
-        'ledger-bind': 'inset 5px 0 10px rgba(0,0,0,0.1)',
+        'ledger-bind': 'none',
         'scoreboard': 'var(--shadow-scoreboard)',
       },
       spacing: {

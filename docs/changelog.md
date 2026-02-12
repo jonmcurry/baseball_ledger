@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-02-12 - Complete UI/UX Redesign: Press Box Theme (Phase 73)
+
+### Phase 73: Modern editorial sports design overhaul
+
+Complete redesign replacing the inconsistent vintage/legacy dual design system
+with a cohesive dark theme inspired by premium sports journalism (The Athletic,
+ESPN+ longform, SI editorial layouts).
+
+**Design System (3 core files rewritten):**
+- New color palette: dark charcoal surfaces (#0F1419, #1A1F26, #242B35), warm
+  amber accent (#E6A817), semantic colors for success/danger/warning/info
+- New typography: Barlow Condensed (headlines), DM Sans (body), IBM Plex Mono
+  (stats/monospace) -- replacing Archivo Black, Oswald, Source Sans, Roboto Slab
+- Removed all texture patterns (paper grain, stitch pattern, wood grain)
+- Simplified shadows and borders for clean dark aesthetic
+- Legacy CSS variable aliases maintained for backward compatibility
+
+**Layout cleanup:**
+- AppShell: Removed paper texture overlay, leather spine, binding shadow
+- Header: Dark surface background, accent border on playoffs, clean nav links
+- Footer: Updated to use new border and text tokens
+
+**Component updates (~50 files):**
+- All feature pages updated (Dashboard, Draft, Game Viewer, Roster, Stats,
+  Standings, Playoffs, Archive, Transactions, League Config)
+- All shared components updated (forms, feedback, data-display, baseball)
+- Removed decorative baseball SVGs and ornamental divs
+- Cleaned up inline style gradients with hardcoded vintage colors
+- Replaced var(--color-ballpark) and var(--color-sandstone) references
+- Added Tailwind aliases for legacy color names (ballpark, old-lace, sandstone,
+  stitch-red) to ensure full backward compatibility
+
+**Font files:**
+- Added: barlow-condensed-latin.woff2, dm-sans-latin.woff2,
+  ibm-plex-mono-latin.woff2
+- Retained old fonts for any remaining references
+
+**Tests:** All 2,802 tests passing across 246 test files.
+
 ## 2026-02-12 - Fix Redesign Build Errors + Test Failures (Phase 72b)
 
 ### Phase 72b: Resolve missing assets and 44 broken tests from Gemini redesign

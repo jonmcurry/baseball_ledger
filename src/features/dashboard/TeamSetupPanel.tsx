@@ -34,7 +34,7 @@ function badgeStyles(badge: string): string {
     case 'You':
       return 'bg-[var(--color-gold)] text-[var(--color-ink)]';
     case 'Player':
-      return 'bg-[var(--color-ballpark)] text-[var(--color-cream)]';
+      return 'bg-[var(--accent-primary)] text-[var(--color-cream)]';
     default:
       return 'bg-[var(--color-muted)]/20 text-[var(--color-muted)]';
   }
@@ -59,16 +59,11 @@ export function TeamSetupPanel({
         {/* League header */}
         <div className="mb-4 flex items-center gap-3">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-full font-headline text-sm font-bold"
-            style={{
-              background: 'linear-gradient(135deg, var(--color-ballpark) 0%, #5C1A1A 100%)',
-              color: 'var(--color-cream)',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)] font-headline text-sm font-bold text-[var(--color-cream)]"
           >
             {shortLabel}
           </div>
-          <h4 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+          <h4 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
             {label}
           </h4>
         </div>
@@ -89,7 +84,7 @@ export function TeamSetupPanel({
                     return (
                       <div
                         key={team.id}
-                        className="flex items-center justify-between rounded border border-[var(--color-sandstone)]/50 bg-[var(--color-sandstone)]/10 px-3 py-2 transition-colors hover:bg-[var(--color-sandstone)]/20"
+                        className="flex items-center justify-between rounded border border-[var(--border-default)]/50 bg-[var(--border-default)]/10 px-3 py-2 transition-colors hover:bg-[var(--border-default)]/20"
                       >
                         <span className="font-stat text-sm font-medium text-[var(--color-ink)]">
                           {team.city} {team.name}
@@ -117,16 +112,16 @@ export function TeamSetupPanel({
 
       {/* Teams header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-ballpark)]/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)]/20">
           <svg
-            className="h-5 w-5 text-[var(--color-ballpark)]"
+            className="h-5 w-5 text-[var(--accent-primary)]"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
             <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
           </svg>
         </div>
-        <h3 className="font-headline text-xl font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+        <h3 className="font-headline text-xl font-bold uppercase tracking-wider text-[var(--accent-primary)]">
           League Rosters
         </h3>
       </div>

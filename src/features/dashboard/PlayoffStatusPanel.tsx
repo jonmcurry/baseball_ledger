@@ -74,7 +74,7 @@ export function PlayoffStatusPanel({
           </svg>
         </div>
         <div>
-          <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-ballpark)]">
+          <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
             Playoff Status
           </h3>
           <p className="font-stat text-xs text-[var(--color-muted)]">
@@ -115,18 +115,18 @@ export function PlayoffStatusPanel({
           {activeSeries.map((series) => (
             <div
               key={series.id}
-              className="flex items-center justify-between rounded border border-[var(--color-sandstone)]/50 bg-[var(--color-sandstone)]/10 px-3 py-2"
+              className="flex items-center justify-between rounded border border-[var(--border-default)]/50 bg-[var(--border-default)]/10 px-3 py-2"
             >
               <div className="flex items-center gap-3">
                 <span className="font-stat text-sm font-medium text-[var(--color-ink)]">
                   {teamNameMap.get(series.higherSeed?.teamId ?? '') ?? '?'}
                 </span>
                 <div className="flex items-center gap-1">
-                  <span className="font-scoreboard text-lg text-[var(--color-ballpark)]">
+                  <span className="font-scoreboard text-lg text-[var(--accent-primary)]">
                     {series.higherSeedWins}
                   </span>
                   <span className="font-stat text-xs text-[var(--color-muted)]">-</span>
-                  <span className="font-scoreboard text-lg text-[var(--color-ballpark)]">
+                  <span className="font-scoreboard text-lg text-[var(--accent-primary)]">
                     {series.lowerSeedWins}
                   </span>
                 </div>
@@ -134,7 +134,7 @@ export function PlayoffStatusPanel({
                   {teamNameMap.get(series.lowerSeed?.teamId ?? '') ?? '?'}
                 </span>
               </div>
-              <span className="rounded bg-[var(--color-ballpark)]/10 px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--color-ballpark)]">
+              <span className="rounded bg-[var(--accent-primary)]/10 px-2 py-0.5 font-stat text-[10px] uppercase tracking-wider text-[var(--accent-primary)]">
                 {formatPlayoffRoundName(series.round)}
               </span>
             </div>
@@ -159,7 +159,7 @@ export function PlayoffStatusPanel({
       )}
 
       {/* Footer */}
-      <div className="border-t border-[var(--color-sandstone)] pt-2">
+      <div className="border-t border-[var(--border-default)] pt-2">
         <p className="text-center font-stat text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
           ★ View full bracket on Playoffs page ★
         </p>

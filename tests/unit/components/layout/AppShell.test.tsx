@@ -56,13 +56,13 @@ describe('AppShell', () => {
     expect(container).toBeInTheDocument();
   });
 
-  it('uses shadow-2xl and border-leather classes on ledger container', () => {
+  it('uses bg-surface-base class on ledger container', () => {
     render(
       <AppShell>
         <div>Content</div>
       </AppShell>,
     );
-    const container = screen.getByRole('main').closest('[class*="shadow-2xl"]');
+    const container = screen.getByRole('main').closest('[class*="bg-surface-base"]');
     expect(container).toBeInTheDocument();
   });
 

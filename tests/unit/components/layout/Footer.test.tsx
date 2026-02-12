@@ -20,6 +20,6 @@ describe('Footer', () => {
   it('uses muted text color', () => {
     render(<Footer />);
     const footer = screen.getByRole('contentinfo');
-    expect(footer.className).toContain('text-muted');
+    expect(footer.className).toContain('text-[var(--text-tertiary)]');
   });
 });

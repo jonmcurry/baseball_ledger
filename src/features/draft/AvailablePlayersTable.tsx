@@ -303,7 +303,7 @@ export function AvailablePlayersTable({
                     className={`inline-block rounded px-1.5 py-0.5 font-stat text-[10px] font-bold ${
                       ['SP', 'RP'].includes(p.primaryPosition)
                         ? 'bg-[var(--color-leather)]/30 text-[var(--color-leather)]'
-                        : 'bg-[var(--color-ballpark)]/20 text-[var(--color-cream)]'
+                        : 'bg-[var(--accent-primary)]/20 text-[var(--color-cream)]'
                     }`}
                   >
                     {p.primaryPosition}
