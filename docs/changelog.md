@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-02-13 - Fix Lineup Save 400 Error (Hotfix)
+
+The lineup save PATCH endpoint rejected requests containing 'OF' as a
+lineupPosition. Phase 80 added 'OF' as a valid Position type but the Zod
+validation schema in `api/leagues/[id]/teams.ts` was not updated to include it.
+
+- Added 'OF' to the `lineupPosition` enum in `LineupUpdateSchema`
+- Added test verifying 'OF' is accepted as a valid lineup position
+
 ## 2026-02-13 - Draft Modal Text Contrast Review (Phase 89)
 
 Investigation of reported "white textbox with barely visible text" in draft

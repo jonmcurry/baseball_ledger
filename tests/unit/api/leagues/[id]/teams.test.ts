@@ -562,6 +562,26 @@ describe('PATCH /api/leagues/:id/teams?tid=X&include=roster (lineup update)', ()
     expect(res._body.error).toHaveProperty('code', 'INVALID_ROSTER_ID');
   });
 
+  it('accepts OF as a valid lineupPosition', async () => {
+    setupLineupMocks();
+
+    const req = createMockRequest({
+      method: 'PATCH',
+      query: { id: 'league-1', tid: 'team-1', include: 'roster' },
+      body: {
+        updates: [
+          { rosterId: 'roster-1', lineupOrder: 4, lineupPosition: 'OF', rosterSlot: 'starter' },
+        ],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(Array.isArray(res._body.data)).toBe(true);
+  });
+
   it('handles empty updates array and returns current roster', async () => {
     setupLineupMocks();
 

@@ -40,7 +40,7 @@ const LineupUpdateSchema = z.object({
     rosterId: z.string().uuid(),
     lineupOrder: z.number().int().min(1).max(9).nullable(),
     lineupPosition: z.enum([
-      'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH',
+      'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'DH',
     ]).nullable(),
     rosterSlot: z.enum(['starter', 'bench', 'rotation', 'bullpen', 'closer']),
   })),
