@@ -155,30 +155,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     );
 
-    // Run simulation
+    // Run simulation (atomic: game_logs + standings + current_day advance)
     const dayResult = await simulateDayOnServer(supabase, leagueId, nextDay, dayGames, baseSeed);
 
-    // Mark schedule rows complete (parallel to reduce latency)
-    await Promise.all(dayResult.games.map((game) =>
-      supabase
-        .from('schedule')
-        .update({
-          is_complete: true,
-          home_score: game.homeScore,
-          away_score: game.awayScore,
-        })
-        .eq('id', game.gameId),
-    ));
-
-    // Accumulate season stats (REQ-STS-001)
-    const starterPitcherIds = new Set<string>();
-    for (const game of dayGames) {
-      starterPitcherIds.add(game.homeStartingPitcher.playerId);
-      starterPitcherIds.add(game.awayStartingPitcher.playerId);
+    // Post-commit bookkeeping (non-fatal: core data already committed via RPC)
+    try {
+      // Mark schedule rows complete (parallel to reduce latency)
+      await Promise.all(dayResult.games.map((game) =>
+        supabase
+          .from('schedule')
+          .update({
+            is_complete: true,
+            home_score: game.homeScore,
+            away_score: game.awayScore,
+          })
+          .eq('id', game.gameId),
+      ));
+    } catch (schedErr) {
+      console.error(`[simulate] Schedule update failed for day ${nextDay}:`, schedErr);
     }
-    await accumulateSeasonStats(supabase, leagueId, league.season_year, dayResult, starterPitcherIds);
 
-    ok(res, dayResult, requestId);
+    try {
+      // Accumulate season stats (REQ-STS-001)
+      const starterPitcherIds = new Set<string>();
+      for (const game of dayGames) {
+        starterPitcherIds.add(game.homeStartingPitcher.playerId);
+        starterPitcherIds.add(game.awayStartingPitcher.playerId);
+      }
+      await accumulateSeasonStats(supabase, leagueId, league.season_year, dayResult, starterPitcherIds);
+    } catch (statsErr) {
+      console.error(`[simulate] Stats accumulation failed for day ${nextDay}:`, statsErr);
+    }
+
+    // Return compact response (client only needs scores + playoff metadata)
+    const compactGames = dayResult.games.map((g) => ({
+      gameId: g.gameId,
+      homeTeamId: g.homeTeamId,
+      awayTeamId: g.awayTeamId,
+      homeScore: g.homeScore,
+      awayScore: g.awayScore,
+    }));
+    ok(res, { dayNumber: dayResult.dayNumber, games: compactGames }, requestId);
   } catch (err) {
     handleApiError(res, err, requestId);
   }

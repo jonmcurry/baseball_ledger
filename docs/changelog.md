@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-02-13 - Simulate Endpoint Resilience (502 Fix for Multi-Day Sim)
+
+Fixed the simulate endpoint crashing mid-loop, causing Sim Week/Month/Season to
+stop after ~3 days:
+
+- **Non-fatal post-commit steps**: Schedule row updates and stats accumulation
+  now wrapped in separate try/catch blocks -- if they fail after the atomic RPC
+  commits game_logs + standings, the endpoint still returns 200 instead of 502
+- **Compact response body**: Stripped full DayResult (play-by-play, box scores,
+  batting/pitching lines for all 14 games) down to just game IDs and scores,
+  reducing response payload from ~500KB to ~2KB per simulated day
+
 ## 2026-02-13 - Season Page Overhaul (Full Schedule, Simulate Fix, Game Viewer Final)
 
 Four issues addressed across simulation, schedule, and game viewer:
