@@ -16,6 +16,7 @@ import type { PlayerFilterOptions } from '@services/draft-service';
 import { transformPoolRows } from '@lib/transforms/player-pool-transform';
 import type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 import * as draftService from '@services/draft-service';
+import { useLeagueStore } from './leagueStore';
 
 export type { AvailablePlayer } from '@lib/transforms/player-pool-transform';
 
@@ -68,14 +69,19 @@ const initialState: DraftStoreState = {
 
 export const useDraftStore = create<DraftStoreType>()(
   devtools(
-    immer((set) => ({
+    immer((set, get) => ({
       ...initialState,
 
       fetchDraftState: async (leagueId) => {
         set((state) => { state.isLoading = true; state.error = null; }, false, 'fetchDraftState/start');
         try {
           const data = await draftService.fetchDraftState(leagueId);
+          const prevStatus = get().draftState?.status;
           set((state) => { state.draftState = data; state.isLoading = false; }, false, 'fetchDraftState/success');
+          // Draft just completed (status transition); refresh league data
+          if (data.status === 'completed' && prevStatus !== 'completed') {
+            useLeagueStore.getState().fetchLeagueData(leagueId);
+          }
         } catch (err) {
           set((state) => {
             state.isLoading = false;
@@ -144,9 +150,16 @@ export const useDraftStore = create<DraftStoreType>()(
                 state.totalAvailablePlayers = cpuPlayers.totalRows;
                 state.playerCurrentPage = 1;
               }, false, 'submitPick/cpuComplete');
+              // Draft may have completed during CPU picks; refresh league status
+              if (cpuState.status === 'completed') {
+                useLeagueStore.getState().fetchLeagueData(leagueId);
+              }
             } catch {
               // CPU processing failure is non-fatal; 5-second polling catches up
             }
+          } else {
+            // Human pick was the final pick; refresh league status
+            useLeagueStore.getState().fetchLeagueData(leagueId);
           }
         } catch (err) {
           set((state) => {
@@ -171,6 +184,10 @@ export const useDraftStore = create<DraftStoreType>()(
             state.totalAvailablePlayers = freshResult.totalRows;
             state.playerCurrentPage = 1;
           }, false, 'triggerAutoPick/success');
+          // Draft completed during auto-pick; refresh league status
+          if (freshState.status === 'completed') {
+            useLeagueStore.getState().fetchLeagueData(leagueId);
+          }
         } catch (err) {
           set((state) => {
             state.isLoading = false;

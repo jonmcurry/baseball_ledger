@@ -313,7 +313,7 @@ async function handleTransaction(req: VercelRequest, res: VercelResponse, reques
         player_id: player.playerId,
         season_year: player.seasonYear,
         player_card: player.playerCard as unknown as Json,
-        roster_slot: 'bench',
+        roster_slot: determineRosterSlot(player.playerCard),
       });
 
     if (insertError) {
@@ -488,7 +488,7 @@ async function handleTrade(
       player_id: row.player_id as string,
       season_year: row.season_year as number,
       player_card: row.player_card as Json,
-      roster_slot: 'bench' as const,
+      roster_slot: determineRosterSlot(row.player_card as Record<string, unknown>),
     });
   }
   for (const row of rowsLeavingB) {
@@ -497,7 +497,7 @@ async function handleTrade(
       player_id: row.player_id as string,
       season_year: row.season_year as number,
       player_card: row.player_card as Json,
-      roster_slot: 'bench' as const,
+      roster_slot: determineRosterSlot(row.player_card as Record<string, unknown>),
     });
   }
 
@@ -524,6 +524,23 @@ async function handleTrade(
   });
 
   created(res, result, requestId, `/api/leagues/${leagueId}/teams`);
+}
+
+/**
+ * Determine the correct roster_slot for an added player based on their card data.
+ * Pitchers go to rotation/bullpen/closer based on their pitching role;
+ * position players go to bench.
+ */
+function determineRosterSlot(playerCard: Record<string, unknown>): 'bench' | 'rotation' | 'bullpen' | 'closer' {
+  if (!playerCard.isPitcher) return 'bench';
+  const pitching = playerCard.pitching as { role?: string } | undefined;
+  if (!pitching?.role) return 'bullpen';
+  switch (pitching.role) {
+    case 'SP': return 'rotation';
+    case 'RP': return 'bullpen';
+    case 'CL': return 'closer';
+    default: return 'bullpen';
+  }
 }
 
 function toRosterEntry(row: Record<string, unknown>): RosterEntry {

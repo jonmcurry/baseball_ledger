@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-02-13 - Roster Bug Fixes (Pitcher Slots, Draft Completion)
+
+Three bug fixes for roster and draft management:
+
+- **Pitcher roster slot**: Adding a pitcher via transaction (add/drop/trade)
+  now assigns the correct roster slot based on their pitching role (SP ->
+  rotation, RP -> bullpen, CL -> closer) instead of always defaulting to
+  bench. Applies to both free agent adds and traded players.
+- **Draft completion dashboard**: After the draft completes, the league store
+  is now refreshed so the dashboard transitions from "Draft in Progress" to
+  showing standings, schedule, and simulation controls. Covers all completion
+  paths: human final pick, CPU auto-picks, and polling detection.
+- **Pitching staff changes**: The 400 error on lineup save (fixed in previous
+  hotfix) was also preventing pitcher role changes (rotation/bullpen/closer
+  buttons) from persisting. Now resolved.
+- 7 new tests for pitcher slot assignment and draft completion league refresh
+
 ## 2026-02-13 - Fix Lineup Save 400 Error (Hotfix)
 
 The lineup save PATCH endpoint rejected requests containing 'OF' as a

@@ -800,6 +800,176 @@ describe('POST /api/leagues/:id/teams (transactions)', () => {
     });
   });
 
+  // Pitcher roster slot assignment
+
+  it('assigns rotation slot when adding a starting pitcher', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToAdd: [{
+          playerId: 'pitcher-sp',
+          playerName: 'Sandy Koufax',
+          seasonYear: 1965,
+          playerCard: { isPitcher: true, pitching: { role: 'SP' } },
+        }],
+        playersToDrop: [],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(rostersBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ roster_slot: 'rotation' }),
+    );
+  });
+
+  it('assigns bullpen slot when adding a relief pitcher', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToAdd: [{
+          playerId: 'pitcher-rp',
+          playerName: 'Mariano Rivera',
+          seasonYear: 2000,
+          playerCard: { isPitcher: true, pitching: { role: 'RP' } },
+        }],
+        playersToDrop: [],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(rostersBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ roster_slot: 'bullpen' }),
+    );
+  });
+
+  it('assigns closer slot when adding a closer', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToAdd: [{
+          playerId: 'pitcher-cl',
+          playerName: 'Dennis Eckersley',
+          seasonYear: 1990,
+          playerCard: { isPitcher: true, pitching: { role: 'CL' } },
+        }],
+        playersToDrop: [],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(rostersBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ roster_slot: 'closer' }),
+    );
+  });
+
+  it('assigns bench slot when adding a position player', async () => {
+    const teamsBuilder = createMockQueryBuilder({
+      data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+    const poolBuilder = createMockQueryBuilder({ data: null, error: null, count: null });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      if (table === 'player_pool') return poolBuilder;
+      return createMockQueryBuilder();
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: {
+        type: 'add',
+        teamId: '550e8400-e29b-41d4-a716-446655440000',
+        playersToAdd: [{
+          playerId: 'player-1',
+          playerName: 'Babe Ruth',
+          seasonYear: 1927,
+          playerCard: { isPitcher: false, power: 21 },
+        }],
+        playersToDrop: [],
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(rostersBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ roster_slot: 'bench' }),
+    );
+  });
+
   // REQ-RST-005: player_pool sync on add/drop
 
   it('updates player_pool is_drafted=false when dropping a player', async () => {
