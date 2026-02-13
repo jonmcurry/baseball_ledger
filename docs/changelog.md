@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-02-12 - Fix Season Stats Accumulation (Phase 84)
+
+Season stats were not tracking at all. The `accumulator.ts` pure logic existed and was
+fully tested, but was never called from the simulation pipeline. After each simulated
+day, batting and pitching lines were written to `game_logs` but never accumulated into
+the `season_stats` table.
+
+- Created `api/_lib/accumulate-season-stats.ts`: fetches existing season stats, runs
+  accumulation via pure `accumulateBatting`/`accumulatePitching` functions, upserts
+  updated totals back to `season_stats`
+- Wired into `api/leagues/[id]/simulate.ts`: called after `simulateDayOnServer` with
+  starter pitcher IDs extracted from `DayGameConfig`
+- Added `season_year` to league query in simulate endpoint
+- 9 unit tests for accumulation function, 2 integration tests for endpoint wiring
+
 ## 2026-02-12 - Fix Dashboard Crash: Schedule Row Grouping (Phase 83)
 
 Dashboard crashed with "h.games is not iterable" because the schedule API returns

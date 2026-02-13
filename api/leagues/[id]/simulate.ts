@@ -19,6 +19,7 @@ import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '../../../src/lib/supabase/server';
 import { simulateDayOnServer } from '../../_lib/simulate-day';
 import { simulatePlayoffGame } from '../../_lib/simulate-playoff-game';
+import { accumulateSeasonStats } from '../../_lib/accumulate-season-stats';
 import { checkAndTransitionToPlayoffs } from '../../_lib/playoff-transition';
 import { loadTeamConfig, selectStartingPitcher } from '../../_lib/load-team-config';
 import type { DayGameConfig } from '../../../src/lib/simulation/season-runner';
@@ -42,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Verify league exists and is in regular_season or playoffs
     const { data: league, error: leagueError } = await supabase
       .from('leagues')
-      .select('status, current_day')
+      .select('status, current_day, season_year')
       .eq('id', leagueId)
       .single();
 
@@ -168,6 +169,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq('id', game.gameId);
     }
+
+    // Accumulate season stats (REQ-STS-001)
+    const starterPitcherIds = new Set<string>();
+    for (const game of dayGames) {
+      starterPitcherIds.add(game.homeStartingPitcher.playerId);
+      starterPitcherIds.add(game.awayStartingPitcher.playerId);
+    }
+    await accumulateSeasonStats(supabase, leagueId, league.season_year, dayResult, starterPitcherIds);
 
     ok(res, dayResult, requestId);
   } catch (err) {

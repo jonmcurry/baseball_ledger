@@ -17,6 +17,9 @@ vi.mock('../../../../../api/_lib/playoff-transition', () => ({
 vi.mock('../../../../../api/_lib/simulate-playoff-game', () => ({
   simulatePlayoffGame: vi.fn(),
 }));
+vi.mock('../../../../../api/_lib/accumulate-season-stats', () => ({
+  accumulateSeasonStats: vi.fn().mockResolvedValue(undefined),
+}));
 
 import handler from '../../../../../api/leagues/[id]/simulate';
 import { createServerClient } from '@lib/supabase/server';
@@ -24,6 +27,7 @@ import { requireAuth } from '../../../../../api/_lib/auth';
 import { loadTeamConfig, selectStartingPitcher } from '../../../../../api/_lib/load-team-config';
 import { simulateDayOnServer } from '../../../../../api/_lib/simulate-day';
 import { simulatePlayoffGame } from '../../../../../api/_lib/simulate-playoff-game';
+import { accumulateSeasonStats } from '../../../../../api/_lib/accumulate-season-stats';
 import {
   createMockRequest,
   createMockResponse,
@@ -37,6 +41,7 @@ const mockLoadTeamConfig = vi.mocked(loadTeamConfig);
 const mockSelectStartingPitcher = vi.mocked(selectStartingPitcher);
 const mockSimulateDayOnServer = vi.mocked(simulateDayOnServer);
 const mockSimulatePlayoffGame = vi.mocked(simulatePlayoffGame);
+const mockAccumulateSeasonStats = vi.mocked(accumulateSeasonStats);
 
 function mockPitcherCard(id: string): PlayerCard {
   return { playerId: id, nameFirst: 'Pitcher', nameLast: id } as PlayerCard;
@@ -416,6 +421,90 @@ describe('POST /api/leagues/:id/simulate', () => {
 
     expect(res._status).toBe(400);
     expect(res._body.error).toHaveProperty('code', 'INVALID_REQUEST_BODY');
+  });
+
+  // -----------------------------------------------------------------------
+  // Season stats accumulation (REQ-STS-001)
+  // -----------------------------------------------------------------------
+
+  it('calls accumulateSeasonStats after successful simulation', async () => {
+    const leagueBuilder = createMockQueryBuilder({
+      data: { status: 'regular_season', current_day: 42, season_year: 2020 },
+      error: null,
+      count: null,
+    });
+    const scheduleBuilder = createMockQueryBuilder({
+      data: [
+        { id: 'g-1', league_id: 'league-1', day_number: 43, home_team_id: 't-1', away_team_id: 't-2' },
+      ],
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: [{ id: 't-1', wins: 0, losses: 0 }, { id: 't-2', wins: 0, losses: 0 }],
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leagueBuilder;
+      if (table === 'teams') return teamsBuilder;
+      return scheduleBuilder;
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(mockAccumulateSeasonStats).toHaveBeenCalledTimes(1);
+    expect(mockAccumulateSeasonStats).toHaveBeenCalledWith(
+      expect.anything(),  // supabase client
+      'league-1',         // leagueId
+      2020,               // seasonYear
+      mockDayResult,      // dayResult
+      expect.any(Set),    // starterPitcherIds
+    );
+  });
+
+  it('includes correct starter pitcher IDs for accumulation', async () => {
+    const leagueBuilder = createMockQueryBuilder({
+      data: { status: 'regular_season', current_day: 0, season_year: 2020 },
+      error: null,
+      count: null,
+    });
+    const scheduleBuilder = createMockQueryBuilder({
+      data: [
+        { id: 'g-1', league_id: 'league-1', day_number: 1, home_team_id: 't-1', away_team_id: 't-2' },
+      ],
+      error: null,
+      count: null,
+    });
+    const teamsBuilder = createMockQueryBuilder({
+      data: [{ id: 't-1', wins: 0, losses: 0 }, { id: 't-2', wins: 0, losses: 0 }],
+      error: null,
+      count: null,
+    });
+
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'leagues') return leagueBuilder;
+      if (table === 'teams') return teamsBuilder;
+      return scheduleBuilder;
+    });
+    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+
+    // selectStartingPitcher returns the same mock for all teams
+    mockSelectStartingPitcher.mockReturnValue(mockPitcherCard('selected-sp'));
+
+    const req = createMockRequest({ method: 'POST', query: { id: 'league-1' }, body: { days: 1 } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    // The starter set should contain the selected pitcher ID
+    const starterIds = mockAccumulateSeasonStats.mock.calls[0][4] as Set<string>;
+    expect(starterIds.has('selected-sp')).toBe(true);
   });
 
   // -----------------------------------------------------------------------
