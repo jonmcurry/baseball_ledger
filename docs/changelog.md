@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-13 - Redesign Draft Board Roster Card
+
+Redesigned `RosterPreviewPanel` for the draft board page:
+
+- **Position-aware auto-assignment**: First player drafted at each defensive
+  position auto-fills the corresponding starter slot (C, 1B, 2B, SS, 3B, LF,
+  CF, RF, DH). Excess position players go to Bench with natural position label.
+- **New section layout**: Starting Lineup (9 slots with empty placeholders),
+  Bench (4 slots), Pitching (Rotation + Bullpen sub-groups). Removed old
+  Infield/Outfield/Utility groupings.
+- **Pitching sub-groups**: SP listed under "Rotation", RP/CL listed under
+  "Bullpen" showing actual role badge (RP or CL).
+- **Composition summary bar**: Shows POS/PIT/total counts at a glance with
+  green highlight when roster is complete.
+- **Empty slot indicators**: All 21 roster slots visible from the start so
+  users can see what positions still need to be filled.
+- **Removed max-height constraint**: Roster card now uses full available height
+  instead of being capped at `max-h-72`.
+
 ## 2026-02-13 - Fix Roster Composition (Position-Aware Starters + Unified Bullpen)
 
 Fixed roster composition being wrong after draft. Four root causes addressed:
