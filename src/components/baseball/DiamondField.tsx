@@ -20,6 +20,7 @@ export interface DiamondFieldProps {
   positions: readonly FieldPosition[];
   isEditable?: boolean;
   onPositionClick?: (position: string) => void;
+  selectedPosition?: string;
   baseRunners?: BaseState;
   outs?: number;
 }
@@ -56,6 +57,7 @@ export function DiamondField({
   positions,
   isEditable = false,
   onPositionClick,
+  selectedPosition,
   baseRunners,
   outs,
 }: DiamondFieldProps) {
@@ -146,6 +148,7 @@ export function DiamondField({
       {Object.entries(POSITION_COORDS).map(([pos, coords], idx) => {
         const playerName = posMap.get(pos) ?? '';
         const hasPlayer = playerName.length > 0;
+        const isSelected = selectedPosition === pos;
 
         return (
           <g key={pos}>
@@ -160,8 +163,14 @@ export function DiamondField({
                 className="cursor-pointer"
               >
                 <circle cx={coords.x} cy={coords.y} r={20}
-                  className={`${hasPlayer ? 'fill-ballpark/10' : 'fill-sandstone/20'} stroke-ballpark hover:fill-ballpark/20`}
-                  strokeWidth={1.5} />
+                  className={
+                    isSelected
+                      ? 'fill-ballpark/30 stroke-ballpark'
+                      : hasPlayer
+                        ? 'fill-ballpark/10 stroke-ballpark hover:fill-ballpark/20'
+                        : 'fill-sandstone/20 stroke-ballpark hover:fill-ballpark/20'
+                  }
+                  strokeWidth={isSelected ? 2.5 : 1.5} />
                 <text x={coords.x} y={coords.y - 8} textAnchor="middle"
                   className="fill-ballpark text-[10px] font-bold font-stat">{pos}</text>
                 <text x={coords.x} y={coords.y + 6} textAnchor="middle"

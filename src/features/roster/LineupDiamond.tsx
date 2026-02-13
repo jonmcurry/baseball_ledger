@@ -1,8 +1,8 @@
-﻿/**
+/**
  * LineupDiamond
  *
- * Wraps DiamondField with lineup editing capability.
- * Click a position to assign a player from the roster.
+ * SVG baseball diamond showing defensive positions with current starters.
+ * Click a position to select it for bench player assignment.
  * Feature-scoped sub-component. No store imports.
  */
 
@@ -10,18 +10,22 @@ import { DiamondField } from '@components/baseball/DiamondField';
 import type { FieldPosition } from '@components/baseball/DiamondField';
 import type { RosterEntry } from '@lib/types/roster';
 
+/** Defensive lineup positions (8 field + DH). No pitcher -- DH league. */
+const LINEUP_POSITIONS = ['C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF', 'DH'];
+
 export interface LineupDiamondProps {
   readonly starters: readonly RosterEntry[];
-  readonly roster: readonly RosterEntry[];
-  readonly isEditable: boolean;
-  readonly onAssign: (position: string) => void;
+  readonly selectedPosition: string | null;
+  readonly onPositionClick: (position: string) => void;
   readonly onPlayerClick?: (entry: RosterEntry) => void;
 }
 
-export function LineupDiamond({ starters, isEditable, onAssign, onPlayerClick }: LineupDiamondProps) {
-  const positions: FieldPosition[] = [
-    'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF', 'P',
-  ].map((pos) => {
+export function LineupDiamond({
+  starters,
+  selectedPosition,
+  onPositionClick,
+}: LineupDiamondProps) {
+  const positions: FieldPosition[] = LINEUP_POSITIONS.map((pos) => {
     const starter = starters.find((s) => s.lineupPosition === pos);
     return {
       position: pos,
@@ -32,37 +36,24 @@ export function LineupDiamond({ starters, isEditable, onAssign, onPlayerClick }:
   });
 
   return (
-    <div className="space-y-2">
-      <h3 className="font-headline text-sm font-bold text-ballpark">Lineup</h3>
+    <div className="vintage-card">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="pennant-header text-base">Field</h3>
+        <span className="font-stat text-xs text-muted">
+          {starters.length}/9 positions filled
+        </span>
+      </div>
       <DiamondField
         positions={positions}
-        isEditable={isEditable}
-        onPositionClick={onAssign}
+        isEditable
+        onPositionClick={onPositionClick}
+        selectedPosition={selectedPosition ?? undefined}
       />
-      <div className="flex flex-wrap gap-2">
-        {starters.map((s) => (
-          <div
-            key={s.id}
-            className="flex items-center gap-1 rounded-card border border-sandstone/50 px-2 py-0.5 text-xs"
-          >
-            <span className="font-stat text-muted">{s.lineupOrder}.</span>
-            {onPlayerClick ? (
-              <button
-                type="button"
-                className="font-medium text-ballpark underline-offset-2 hover:underline"
-                onClick={() => onPlayerClick(s)}
-              >
-                {s.playerCard.nameFirst} {s.playerCard.nameLast}
-              </button>
-            ) : (
-              <span className="font-medium text-ink">
-                {s.playerCard.nameFirst} {s.playerCard.nameLast}
-              </span>
-            )}
-            <span className="text-muted">{s.lineupPosition}</span>
-          </div>
-        ))}
-      </div>
+      {starters.length < 9 && (
+        <p className="mt-2 text-center font-body text-xs text-muted">
+          Click a position to assign a bench player
+        </p>
+      )}
     </div>
   );
 }

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-12 - Roster Page Redesign: Batting Order, Lineup Fixes, Pitcher Roles (Phase 82)
+
+Redesigned the roster management page to fix multiple bugs and add missing
+functionality:
+
+1. **Batting order reordering**: New BattingOrder component with numbered 1-9 list,
+   move up/down arrows, and remove-to-bench button. Added `swapBattingOrder` store
+   action to swap lineup order between two starters.
+2. **Lineup capped at 9**: Starters filter now uses `rosterSlot === 'starter'` with
+   `.slice(0, 9)` instead of `lineupOrder !== null` which incorrectly included
+   pitchers and allowed >9 starters.
+3. **Diamond shows DH not P**: LineupDiamond position list changed from 'P' to 'DH'
+   so the DH slot renders correctly on the field diamond.
+4. **Pitcher role management**: PitchingRotation now shows role-change buttons (SP/BP/CL)
+   so closers can be moved to bullpen and relievers promoted to rotation. Added
+   `changePitcherRole` store action with automatic demotion of current closer.
+5. **Bench player position matching**: BenchPanel highlights players who can fill the
+   selected diamond position and dims those who cannot. Button text changes
+   contextually ("Add to Lineup" vs "Add DH").
+6. **New layout**: Diamond + batting order side by side, bench + pitching side by side.
+
+- Rewrote RosterPage, LineupDiamond, BattingOrder, BenchPanel, PitchingRotation
+- Added swapBattingOrder and changePitcherRole to rosterStore
+- DiamondField supports selectedPosition highlight prop
+- Updated all roster feature tests including displacement and position selection tests
+
 ## 2026-02-12 - Fix Blank Screen on AuthGuard Routes (Phase 81)
 
 Fixed blank screen when navigating to protected routes (e.g., "Create a League").

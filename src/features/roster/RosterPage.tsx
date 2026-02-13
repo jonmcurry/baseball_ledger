@@ -2,7 +2,7 @@
  * RosterPage
  *
  * Team roster management with lineup configuration.
- * Composes LineupDiamond, BenchPanel, and PitchingRotation.
+ * Composes LineupDiamond, BattingOrder, BenchPanel, and PitchingRotation.
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
@@ -14,6 +14,7 @@ import { useRosterStore } from '@stores/rosterStore';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LineupDiamond } from './LineupDiamond';
+import { BattingOrder } from './BattingOrder';
 import { BenchPanel } from './BenchPanel';
 import { PitchingRotation } from './PitchingRotation';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
@@ -28,6 +29,8 @@ export function RosterPage() {
   const fetchRoster = useRosterStore((s) => s.fetchRoster);
   const saveLineup = useRosterStore((s) => s.saveLineup);
   const updateRosterSlot = useRosterStore((s) => s.updateRosterSlot);
+  const swapBattingOrder = useRosterStore((s) => s.swapBattingOrder);
+  const changePitcherRole = useRosterStore((s) => s.changePitcherRole);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
   const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
@@ -70,24 +73,40 @@ export function RosterPage() {
       targetPosition = ['LF', 'CF', 'RF'].find((s) => !occupiedSlots.has(s)) ?? 'RF';
     }
 
-    // Find the current starter at the target position
-    const currentStarter = starters.find((s) => s.lineupPosition === targetPosition);
-
-    // Determine lineup order: use displaced starter's order, or next available
-    const lineupOrder = currentStarter?.lineupOrder
-      ?? (Math.max(0, ...starters.map((s) => s.lineupOrder ?? 0)) + 1);
-
-    // Move current starter to bench if one exists at target position
-    if (currentStarter) {
+    // Enforce 9-player limit: must displace someone if lineup is full
+    if (starters.length >= 9) {
+      const currentStarter = starters.find((s) => s.lineupPosition === targetPosition);
+      if (!currentStarter) return;
+      const lineupOrder = currentStarter.lineupOrder;
       updateRosterSlot(currentStarter.id, 'bench', null, null);
+      updateRosterSlot(entry.id, 'starter', lineupOrder, targetPosition);
+    } else {
+      const lineupOrder = Math.max(0, ...starters.map((s) => s.lineupOrder ?? 0)) + 1;
+      updateRosterSlot(entry.id, 'starter', lineupOrder, targetPosition);
     }
 
-    // Promote bench player to starter
-    updateRosterSlot(entry.id, 'starter', lineupOrder, targetPosition);
-
-    // Clear position selection
     setSelectedPosition(null);
   }, [selectedPosition, starters, updateRosterSlot]);
+
+  const handleRemoveFromLineup = useCallback((entry: RosterEntry) => {
+    updateRosterSlot(entry.id, 'bench', null, null);
+  }, [updateRosterSlot]);
+
+  const handleMoveUp = useCallback((entry: RosterEntry) => {
+    const idx = starters.findIndex((s) => s.id === entry.id);
+    if (idx <= 0) return;
+    swapBattingOrder(entry.id, starters[idx - 1].id);
+  }, [starters, swapBattingOrder]);
+
+  const handleMoveDown = useCallback((entry: RosterEntry) => {
+    const idx = starters.findIndex((s) => s.id === entry.id);
+    if (idx < 0 || idx >= starters.length - 1) return;
+    swapBattingOrder(entry.id, starters[idx + 1].id);
+  }, [starters, swapBattingOrder]);
+
+  const handlePitcherRoleChange = useCallback((entry: RosterEntry, newSlot: 'rotation' | 'bullpen' | 'closer') => {
+    changePitcherRole(entry.id, newSlot);
+  }, [changePitcherRole]);
 
   const handleSaveLineup = useCallback(async () => {
     if (!league?.id || !myTeam?.id) return;
@@ -104,14 +123,20 @@ export function RosterPage() {
   }
 
   return (
-    <div className="space-y-gutter-lg">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-headline text-2xl font-bold text-ballpark">Roster</h2>
+        <div>
+          <h2 className="pennant-header text-2xl">Roster</h2>
+          {myTeam && (
+            <p className="mt-2 font-body text-sm text-muted">{myTeam.name}</p>
+          )}
+        </div>
         <button
           type="button"
           onClick={handleSaveLineup}
           disabled={isSaving}
-          className="rounded-button bg-ballpark px-4 py-2 text-sm font-medium text-ink hover:opacity-90 disabled:opacity-40"
+          className="btn-vintage btn-vintage-primary"
         >
           {isSaving ? 'Saving...' : 'Save Lineup'}
         </button>
@@ -119,35 +144,49 @@ export function RosterPage() {
 
       {rosterError && <ErrorBanner severity="error" message={rosterError} />}
 
+      {/* Position selection indicator */}
       {selectedPosition && (
-        <div className="rounded-card border border-ballpark/40 bg-ballpark/5 px-gutter py-2">
-          <p className="text-sm text-ink">
-            Selected: {selectedPosition}
-            <span className="ml-2 text-xs text-muted">-- Click a bench player to assign</span>
+        <div className="rounded-card border border-accent/40 bg-accent/5 px-gutter py-2">
+          <p className="font-display text-sm uppercase tracking-wide text-accent">
+            Assigning: {selectedPosition}
+            <span className="ml-2 text-xs normal-case tracking-normal text-muted">
+              -- Select a bench player below
+            </span>
           </p>
         </div>
       )}
 
       {roster.length === 0 && !isRosterLoading && (
-        <div className="rounded-card border border-sandstone bg-old-lace px-gutter py-3">
-          <p className="font-headline text-sm font-bold text-ink">No Roster</p>
-          <p className="text-xs text-muted">Complete the draft to populate your roster.</p>
+        <div className="vintage-card text-center">
+          <p className="pennant-header text-lg">No Roster</p>
+          <p className="mt-2 text-sm text-muted">Complete the draft to populate your roster.</p>
         </div>
       )}
 
       {roster.length > 0 && (
         <>
-          <LineupDiamond
-            starters={starters}
-            roster={roster}
-            isEditable
-            onAssign={handlePositionClick}
-            onPlayerClick={handlePlayerClick}
-          />
+          {/* Diamond + Batting Order side by side */}
+          <div className="grid items-start gap-6 lg:grid-cols-2">
+            <LineupDiamond
+              starters={starters}
+              selectedPosition={selectedPosition}
+              onPositionClick={handlePositionClick}
+              onPlayerClick={handlePlayerClick}
+            />
+            <BattingOrder
+              starters={starters}
+              onMoveUp={handleMoveUp}
+              onMoveDown={handleMoveDown}
+              onRemove={handleRemoveFromLineup}
+              onPlayerClick={handlePlayerClick}
+            />
+          </div>
 
-          <div className="grid gap-gutter lg:grid-cols-2">
+          {/* Bench + Pitching side by side */}
+          <div className="grid gap-6 lg:grid-cols-2">
             <BenchPanel
               bench={bench}
+              selectedPosition={selectedPosition}
               onPlayerSelect={handleBenchPlayerSelect}
               onPlayerClick={handlePlayerClick}
             />
@@ -156,6 +195,7 @@ export function RosterPage() {
               bullpen={bullpen}
               closer={closer}
               nextStarterIdx={0}
+              onRoleChange={handlePitcherRoleChange}
             />
           </div>
         </>

@@ -46,7 +46,7 @@ describe('PitchingRotation', () => {
     ];
     render(<PitchingRotation rotation={rotation} bullpen={[]} closer={null} nextStarterIdx={0} />);
     expect(screen.getByText('Greg Maddux')).toBeInTheDocument();
-    expect(screen.getByText('NEXT')).toBeInTheDocument();
+    expect(screen.getByText('Next')).toBeInTheDocument();
     expect(screen.getByText('G3')).toBeInTheDocument();
   });
 

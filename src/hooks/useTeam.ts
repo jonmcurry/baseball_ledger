@@ -26,7 +26,10 @@ export function useTeam() {
   }, [user, teams]);
 
   const starters = useMemo(
-    () => roster.filter((r) => r.lineupOrder !== null).sort((a, b) => a.lineupOrder! - b.lineupOrder!),
+    () => roster
+      .filter((r) => r.rosterSlot === 'starter' && r.lineupOrder !== null)
+      .sort((a, b) => a.lineupOrder! - b.lineupOrder!)
+      .slice(0, 9),
     [roster],
   );
 

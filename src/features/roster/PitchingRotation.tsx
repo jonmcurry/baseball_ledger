@@ -1,7 +1,7 @@
-﻿/**
+/**
  * PitchingRotation
  *
- * SP1-SP4 with next-up indicator, bullpen, and closer.
+ * SP1-SP4 with next-up indicator, bullpen with role change, and closer.
  * Feature-scoped sub-component. No store imports.
  */
 
@@ -12,6 +12,53 @@ export interface PitchingRotationProps {
   readonly bullpen: readonly RosterEntry[];
   readonly closer: RosterEntry | null;
   readonly nextStarterIdx: number;
+  readonly onRoleChange?: (entry: RosterEntry, newSlot: 'rotation' | 'bullpen' | 'closer') => void;
+}
+
+function PitcherRow({
+  entry,
+  label,
+  isNext,
+  actions,
+}: {
+  entry: RosterEntry;
+  label?: string;
+  isNext?: boolean;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between rounded-card border px-2 py-1.5 text-sm transition-colors ${
+        isNext
+          ? 'border-accent/40 bg-accent/5'
+          : 'border-[var(--border-subtle)]'
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        {label && (
+          <span className="position-badge position-badge-pitcher w-8 shrink-0 text-center">
+            {label}
+          </span>
+        )}
+        <span className="min-w-0 truncate font-body font-medium text-[var(--text-primary)]">
+          {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
+        </span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {entry.playerCard.pitching?.grade != null && (
+          <span className="font-stat text-xs text-muted">
+            G{entry.playerCard.pitching.grade}
+          </span>
+        )}
+        {isNext && (
+          <span className="rounded-full bg-accent px-1.5 py-0.5 font-display text-[10px] font-bold uppercase text-[var(--surface-base)]">
+            Next
+          </span>
+        )}
+        {actions}
+      </div>
+    </div>
+  );
 }
 
 export function PitchingRotation({
@@ -19,82 +66,105 @@ export function PitchingRotation({
   bullpen,
   closer,
   nextStarterIdx,
+  onRoleChange,
 }: PitchingRotationProps) {
   return (
-    <div className="space-y-3">
-      <h3 className="font-headline text-sm font-bold text-ballpark">Pitching Staff</h3>
+    <div className="vintage-card space-y-4">
+      <h3 className="pennant-header text-base">Pitching Staff</h3>
 
+      {/* Rotation */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted">Rotation</p>
+        <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
+          Rotation
+        </p>
         {rotation.length === 0 && (
           <p className="text-xs text-muted">No starters assigned</p>
         )}
         {rotation.map((entry, idx) => (
-          <div
+          <PitcherRow
             key={entry.id}
-            className={`flex items-center justify-between rounded-card border px-2 py-1 text-sm ${
-              idx === nextStarterIdx
-                ? 'border-ballpark bg-ballpark/10'
-                : 'border-sandstone/50'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-stat text-xs text-muted">SP{idx + 1}</span>
-              <span className="font-medium text-ink">
-                {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {entry.playerCard.pitching?.grade != null && (
-                <span className="font-stat text-xs text-muted">
-                  G{entry.playerCard.pitching?.grade}
-                </span>
-              )}
-              {idx === nextStarterIdx && (
-                <span className="rounded-full bg-ballpark px-1.5 py-0.5 text-[10px] font-bold text-ink">
-                  NEXT
-                </span>
-              )}
-            </div>
-          </div>
+            entry={entry}
+            label={`SP${idx + 1}`}
+            isNext={idx === nextStarterIdx}
+            actions={
+              onRoleChange ? (
+                <button
+                  type="button"
+                  onClick={() => onRoleChange(entry, 'bullpen')}
+                  className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
+                  title="Move to bullpen"
+                >
+                  BP
+                </button>
+              ) : undefined
+            }
+          />
         ))}
       </div>
 
+      {/* Bullpen */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted">Bullpen</p>
+        <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
+          Bullpen
+        </p>
         {bullpen.length === 0 && (
           <p className="text-xs text-muted">No relievers assigned</p>
         )}
         {bullpen.map((entry) => (
-          <div
+          <PitcherRow
             key={entry.id}
-            className="flex items-center justify-between rounded-card border border-sandstone/50 px-2 py-1 text-sm"
-          >
-            <span className="font-medium text-ink">
-              {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
-            </span>
-            {entry.playerCard.pitching?.grade != null && (
-              <span className="font-stat text-xs text-muted">
-                G{entry.playerCard.pitching?.grade}
-              </span>
-            )}
-          </div>
+            entry={entry}
+            label="RP"
+            actions={
+              onRoleChange ? (
+                <div className="flex gap-0.5">
+                  {rotation.length < 4 && (
+                    <button
+                      type="button"
+                      onClick={() => onRoleChange(entry, 'rotation')}
+                      className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
+                      title="Move to rotation"
+                    >
+                      SP
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onRoleChange(entry, 'closer')}
+                    className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
+                    title="Make closer"
+                  >
+                    CL
+                  </button>
+                </div>
+              ) : undefined
+            }
+          />
         ))}
       </div>
 
+      {/* Closer */}
       <div className="space-y-1">
-        <p className="text-xs font-medium text-muted">Closer</p>
+        <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
+          Closer
+        </p>
         {closer ? (
-          <div className="flex items-center justify-between rounded-card border border-stitch-red/30 bg-stitch-red/5 px-2 py-1 text-sm">
-            <span className="font-medium text-ink">
-              {closer.playerCard.nameFirst} {closer.playerCard.nameLast}
-            </span>
-            {closer.playerCard.pitching?.grade != null && (
-              <span className="font-stat text-xs text-muted">
-                G{closer.playerCard.pitching?.grade}
-              </span>
-            )}
-          </div>
+          <PitcherRow
+            entry={closer}
+            label="CL"
+            actions={
+              onRoleChange ? (
+                <button
+                  type="button"
+                  onClick={() => onRoleChange(closer, 'bullpen')}
+                  className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
+                  title="Move to bullpen"
+                >
+                  BP
+                </button>
+              ) : undefined
+            }
+          />
         ) : (
           <p className="text-xs text-muted">No closer assigned</p>
         )}

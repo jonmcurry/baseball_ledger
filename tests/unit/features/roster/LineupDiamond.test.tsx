@@ -8,23 +8,23 @@ import { LineupDiamond } from '@features/roster/LineupDiamond';
 import { createMockRosterEntry } from '../../../fixtures/mock-roster';
 
 describe('LineupDiamond', () => {
-  const mockOnAssign = vi.fn();
+  const mockOnPositionClick = vi.fn();
 
   it('renders heading', () => {
     render(
-      <LineupDiamond starters={[]} roster={[]} isEditable onAssign={mockOnAssign} />,
+      <LineupDiamond starters={[]} selectedPosition={null} onPositionClick={mockOnPositionClick} />,
     );
-    expect(screen.getByText('Lineup')).toBeInTheDocument();
+    expect(screen.getByText('Field')).toBeInTheDocument();
   });
 
   it('renders the diamond field', () => {
     render(
-      <LineupDiamond starters={[]} roster={[]} isEditable onAssign={mockOnAssign} />,
+      <LineupDiamond starters={[]} selectedPosition={null} onPositionClick={mockOnPositionClick} />,
     );
     expect(screen.getByLabelText('Baseball diamond lineup')).toBeInTheDocument();
   });
 
-  it('displays starter names with lineup order', () => {
+  it('displays starter names on the diamond', () => {
     const starters = [
       createMockRosterEntry({
         id: 'r-1',
@@ -54,18 +54,23 @@ describe('LineupDiamond', () => {
       }),
     ];
     render(
-      <LineupDiamond starters={starters} roster={starters} isEditable onAssign={mockOnAssign} />,
+      <LineupDiamond starters={starters} selectedPosition={null} onPositionClick={mockOnPositionClick} />,
     );
-    // Player name appears in the starter list below the diamond
     expect(screen.getAllByText('Ken Griffey').length).toBeGreaterThan(0);
   });
 
   it('renders empty position slots when no starters', () => {
     render(
-      <LineupDiamond starters={[]} roster={[]} isEditable onAssign={mockOnAssign} />,
+      <LineupDiamond starters={[]} selectedPosition={null} onPositionClick={mockOnPositionClick} />,
     );
-    // The diamond field should render with positions
     const diamond = screen.getByLabelText('Baseball diamond lineup');
     expect(diamond).toBeInTheDocument();
+  });
+
+  it('shows position count', () => {
+    render(
+      <LineupDiamond starters={[]} selectedPosition={null} onPositionClick={mockOnPositionClick} />,
+    );
+    expect(screen.getByText('0/9 positions filled')).toBeInTheDocument();
   });
 });
