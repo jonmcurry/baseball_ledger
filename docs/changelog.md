@@ -20,6 +20,10 @@ Fixed roster composition being wrong after draft. Four root causes addressed:
 - **Human pick composition guard**: New `composition-guard.ts` module prevents
   human picks that would make valid roster composition impossible. Integrated
   into `handlePick()` in draft endpoint with `INVALID_COMPOSITION` error.
+- **Draft pool reliever coverage**: `fetchDraftPool` now fetches RP/CL
+  pitchers separately (top 80 by valuation). RP/CL valuations are 4-8x lower
+  than SP/batters, so the previous top-150-pitchers query was entirely SPs.
+  Without RP/CL in the pool, the AI could not draft relievers at all.
 - **DB migration**: `00024_remove_closer_roster_slot.sql` converts existing
   'closer' entries to 'bullpen' and updates CHECK constraint.
 

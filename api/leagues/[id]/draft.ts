@@ -97,7 +97,7 @@ async function fetchDraftPool(
     .order('valuation_score', { ascending: false })
     .limit(350);
 
-  // Top 150 undrafted pitchers specifically (ensures RP/CL coverage)
+  // Top 150 undrafted pitchers (SP dominates due to higher valuations)
   const { data: topPitchers } = await supabase
     .from('player_pool')
     .select('*')
@@ -107,10 +107,23 @@ async function fetchDraftPool(
     .order('valuation_score', { ascending: false })
     .limit(150);
 
+  // Top 80 undrafted relievers specifically (RP/CL valuations are 4-8x lower
+  // than SP, so they never appear in the top-150-pitchers query above).
+  // Without this, the AI has no RP/CL to draft and produces invalid rosters.
+  const { data: topRelievers } = await supabase
+    .from('player_pool')
+    .select('*')
+    .eq('league_id', leagueId)
+    .eq('is_drafted', false)
+    .filter('player_card->>isPitcher', 'eq', 'true')
+    .or('player_card->>primaryPosition.eq.RP,player_card->>primaryPosition.eq.CL')
+    .order('valuation_score', { ascending: false })
+    .limit(80);
+
   // Merge and deduplicate
   const seen = new Set<string>();
   const merged: PoolRow[] = [];
-  for (const row of [...(topOverall ?? []), ...(topPitchers ?? [])]) {
+  for (const row of [...(topOverall ?? []), ...(topPitchers ?? []), ...(topRelievers ?? [])]) {
     const r = row as PoolRow;
     const key = `${r.player_id}_${r.season_year}`;
     if (!seen.has(key)) {
