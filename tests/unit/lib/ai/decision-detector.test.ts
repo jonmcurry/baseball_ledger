@@ -95,11 +95,12 @@ describe('detectDecisions', () => {
     expect(decisions).toHaveLength(3);
   });
 
-  it('includes outs and score diff in detected decision', () => {
+  it('includes outs, halfInning, and score diff in detected decision', () => {
     const plays = [
       createPlay({
         outcome: OutcomeCategory.WALK_INTENTIONAL,
         inning: 8,
+        halfInning: 'bottom',
         outs: 2,
         scoreAfter: { home: 3, away: 5 },
       }),
@@ -107,6 +108,31 @@ describe('detectDecisions', () => {
 
     const decisions = detectDecisions(plays);
     expect(decisions[0].outs).toBe(2);
+    expect(decisions[0].halfInning).toBe('bottom');
     expect(decisions[0].scoreDiff).toBe(-2);
+  });
+
+  it('does NOT flag pitcher change when half-inning switches (different team pitching)', () => {
+    const plays = [
+      createPlay({ pitcherId: 'home-pitcher', halfInning: 'top', inning: 1 }),
+      createPlay({ pitcherId: 'away-pitcher', halfInning: 'bottom', inning: 1 }),
+    ];
+
+    const decisions = detectDecisions(plays);
+    expect(decisions.filter((d) => d.type === 'pull_pitcher')).toHaveLength(0);
+  });
+
+  it('detects pitcher change between innings for the same team', () => {
+    const plays = [
+      createPlay({ pitcherId: 'pitcher-A', halfInning: 'top', inning: 5 }),
+      createPlay({ pitcherId: 'away-p', halfInning: 'bottom', inning: 5 }),
+      createPlay({ pitcherId: 'pitcher-B', halfInning: 'top', inning: 6 }),
+    ];
+
+    const decisions = detectDecisions(plays);
+    const pitcherChanges = decisions.filter((d) => d.type === 'pull_pitcher');
+    expect(pitcherChanges).toHaveLength(1);
+    expect(pitcherChanges[0].playIndex).toBe(2);
+    expect(pitcherChanges[0].inning).toBe(6);
   });
 });

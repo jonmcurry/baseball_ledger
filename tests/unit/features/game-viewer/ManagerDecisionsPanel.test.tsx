@@ -18,7 +18,7 @@ import { ManagerDecisionsPanel } from '@features/game-viewer/ManagerDecisionsPan
 import type { DetectedDecision } from '@lib/ai/decision-detector';
 
 const mockDecisions: DetectedDecision[] = [
-  { type: 'intentional_walk', playIndex: 10, inning: 7, outs: 1, scoreDiff: -1 },
+  { type: 'intentional_walk', playIndex: 10, inning: 7, halfInning: 'top', outs: 1, scoreDiff: -1 },
 ];
 
 describe('ManagerDecisionsPanel', () => {
@@ -44,7 +44,8 @@ describe('ManagerDecisionsPanel', () => {
       <ManagerDecisionsPanel
         decisions={mockDecisions}
         managerStyle="balanced"
-        managerName="Joe Manager"
+        homeTeamName="New York Yankees"
+        awayTeamName="Boston Red Sox"
       />,
     );
 
@@ -57,7 +58,8 @@ describe('ManagerDecisionsPanel', () => {
       <ManagerDecisionsPanel
         decisions={mockDecisions}
         managerStyle="balanced"
-        managerName="Joe Manager"
+        homeTeamName="New York Yankees"
+        awayTeamName="Boston Red Sox"
       />,
     );
 
@@ -70,7 +72,8 @@ describe('ManagerDecisionsPanel', () => {
       <ManagerDecisionsPanel
         decisions={mockDecisions}
         managerStyle="balanced"
-        managerName="Joe Manager"
+        homeTeamName="New York Yankees"
+        awayTeamName="Boston Red Sox"
       />,
     );
 
@@ -88,7 +91,8 @@ describe('ManagerDecisionsPanel', () => {
       <ManagerDecisionsPanel
         decisions={[]}
         managerStyle="balanced"
-        managerName="Joe Manager"
+        homeTeamName="New York Yankees"
+        awayTeamName="Boston Red Sox"
       />,
     );
 

@@ -510,7 +510,8 @@ export function GameViewerPage() {
         <ManagerDecisionsPanel
           decisions={detectedDecisions}
           managerStyle="balanced"
-          managerName={gameData.awayTeamName + ' Manager'}
+          homeTeamName={gameData.homeTeamName}
+          awayTeamName={gameData.awayTeamName}
         />
       )}
     </div>

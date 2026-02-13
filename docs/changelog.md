@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-13 - Fix Manager Decisions Accuracy
+
+Fixed false-positive pitcher change detection and wrong team attribution:
+
+- **Pitcher change tracking**: Now tracks last pitcher per half-inning side
+  (top/bottom) instead of comparing consecutive plays. Eliminates ~17 false
+  "Pitching Change" decisions per game caused by normal half-inning switches
+  where different teams pitch.
+- **Between-inning changes detected**: Real pitcher changes between innings
+  (same team, new pitcher) are still detected correctly.
+- **Team attribution**: Each decision now shows which team's manager made it,
+  based on half-inning side and decision type (pitching vs batting decisions).
+- **Added halfInning field** to `DetectedDecision` interface for proper context.
+
 ## 2026-02-13 - Animated Game Replay Mode
 
 Added "Watch Replay" feature to the game viewer that reveals plays one at a
