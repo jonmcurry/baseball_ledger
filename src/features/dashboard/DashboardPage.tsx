@@ -14,11 +14,10 @@ import { useNavigate } from 'react-router-dom';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulation } from '@hooks/useSimulation';
 import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
-import { StandingsTable } from '@components/data-display/StandingsTable';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { SimulationControls } from './SimulationControls';
-import { ScheduleView } from './ScheduleView';
+import { SeasonScheduleView } from './SeasonScheduleView';
 import { ResultsTicker } from './ResultsTicker';
 import type { TickerResult } from './ResultsTicker';
 import { SimulationNotification } from './SimulationNotification';
@@ -43,7 +42,7 @@ export function DashboardPage() {
   usePageTitle('Season');
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
+  const { league, teams, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
   const { status, totalDays, completedGames, isRunning, progressPct, runSimulation, lastPlayoffResult } = useSimulation();
 
   // REQ-STATE-014: Cache invalidation on simulation completion
@@ -136,8 +135,6 @@ export function DashboardPage() {
   if (isLoading) {
     return <LoadingLedger message="Loading league data..." />;
   }
-
-  const todaySchedule = schedule.find((d) => d.dayNumber === currentDay) ?? null;
 
   // Build ticker results from the most recent completed games
   const teamMap = new Map(teams.map((t) => [t.id, t]));
@@ -274,45 +271,24 @@ export function DashboardPage() {
         />
       )}
 
-      {/* Main content grid -- hidden during setup (empty standings/schedule) */}
+      {/* Season schedule -- hidden during setup */}
       {league?.status !== 'setup' && (
-        <div className="grid grid-cols-1 gap-gutter-lg md:grid-cols-2">
-          {/* Standings */}
-          <div className="vintage-card">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent-primary)]/20">
-                <svg
-                  className="h-5 w-5 text-[var(--accent-primary)]"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M3 5v14h18V5H3zm4 2v2H5V7h2zm-2 6v-2h2v2H5zm0 2h2v2H5v-2zm14 2H9v-2h10v2zm0-4H9v-2h10v2zm0-4H9V7h10v2z" />
-                </svg>
-              </div>
-              <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--accent-primary)]">
-                Standings
-              </h3>
-            </div>
-            <StandingsTable
-              standings={standings}
-              userTeamId=""
-              onTeamClick={() => {}}
+        <>
+          {leagueStatus === 'playoffs' && playoffBracket ? (
+            <PlayoffStatusPanel
+              playoffBracket={playoffBracket}
+              teams={teams}
+              lastGameResult={lastPlayoffResult}
             />
-          </div>
-
-          {/* Schedule or Playoff status */}
-          <div>
-            {leagueStatus === 'playoffs' && playoffBracket ? (
-              <PlayoffStatusPanel
-                playoffBracket={playoffBracket}
-                teams={teams}
-                lastGameResult={lastPlayoffResult}
-              />
-            ) : (
-              <ScheduleView day={todaySchedule} teams={teams} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
-            )}
-          </div>
-        </div>
+          ) : (
+            <SeasonScheduleView
+              schedule={schedule}
+              teams={teams}
+              currentDay={currentDay}
+              onGameClick={(gameId) => navigate(`../game/${gameId}`)}
+            />
+          )}
+        </>
       )}
     </div>
   );

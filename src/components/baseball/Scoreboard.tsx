@@ -18,6 +18,7 @@ export interface ScoreboardProps {
   halfInning: 'top' | 'bottom';
   outs: number;
   bases: BaseState;
+  isComplete?: boolean;
 }
 
 export function Scoreboard({
@@ -29,8 +30,11 @@ export function Scoreboard({
   halfInning,
   outs,
   bases,
+  isComplete,
 }: ScoreboardProps) {
-  const inningLabel = `${halfInning === 'top' ? 'Top' : 'Bot'} ${inning}`;
+  const inningLabel = isComplete
+    ? 'Final'
+    : `${halfInning === 'top' ? 'Top' : 'Bot'} ${inning}`;
 
   return (
     <div

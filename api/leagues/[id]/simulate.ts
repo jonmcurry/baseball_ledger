@@ -158,17 +158,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Run simulation
     const dayResult = await simulateDayOnServer(supabase, leagueId, nextDay, dayGames, baseSeed);
 
-    // Mark schedule rows complete
-    for (const game of dayResult.games) {
-      await supabase
+    // Mark schedule rows complete (parallel to reduce latency)
+    await Promise.all(dayResult.games.map((game) =>
+      supabase
         .from('schedule')
         .update({
           is_complete: true,
           home_score: game.homeScore,
           away_score: game.awayScore,
         })
-        .eq('id', game.gameId);
-    }
+        .eq('id', game.gameId),
+    ));
 
     // Accumulate season stats (REQ-STS-001)
     const starterPitcherIds = new Set<string>();

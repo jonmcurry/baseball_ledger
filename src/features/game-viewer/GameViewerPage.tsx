@@ -279,6 +279,7 @@ export function GameViewerPage() {
           awayScore: gameData.awayScore,
           inning: gameData.innings,
           halfInning: 'bottom',
+          isComplete: true,
         }}
         homeTeam={gameData.homeTeamName}
         awayTeam={gameData.awayTeamName}

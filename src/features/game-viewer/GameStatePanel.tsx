@@ -16,6 +16,7 @@ export interface GameStatePanelProps {
     awayScore: number;
     inning: number;
     halfInning: 'top' | 'bottom';
+    isComplete?: boolean;
   };
   readonly homeTeam: string;
   readonly awayTeam: string;
@@ -34,6 +35,7 @@ export function GameStatePanel({ gameState, homeTeam, awayTeam }: GameStatePanel
         halfInning={gameState.halfInning}
         outs={gameState.outs}
         bases={gameState.bases}
+        isComplete={gameState.isComplete}
       />
     </div>
   );

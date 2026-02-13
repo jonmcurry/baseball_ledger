@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-13 - Season Page Overhaul (Full Schedule, Simulate Fix, Game Viewer Final)
+
+Four issues addressed across simulation, schedule, and game viewer:
+
+- **Simulate 502 fix**: Parallelized sequential schedule row updates (14 games
+  done one-by-one -> Promise.all) to reduce Vercel function execution time
+- **Full season schedule**: Replaced standings + single-day ScheduleView on the
+  Season page with a scrollable SeasonScheduleView showing all days, auto-scrolled
+  to the current day, with completed games clickable for box scores
+- **Game viewer "Final" status**: Scoreboard now shows "Final" instead of "Bot 9"
+  for completed games via new `isComplete` prop on Scoreboard and GameStatePanel
+- **Standings removed from Season page**: Per user request, standings panel
+  removed from the Season page grid (accessible via dedicated Standings nav link)
+
 ## 2026-02-13 - Dashboard Fixes (Season Rename, Ticker Redesign, Game Viewer, CRLF)
 
 Six issues addressed across the dashboard, game viewer, and configuration:

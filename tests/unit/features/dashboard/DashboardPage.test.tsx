@@ -129,9 +129,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Full Season')).toBeInTheDocument();
   });
 
-  it('renders standings section', () => {
+  it('renders season schedule section', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Standings')).toBeInTheDocument();
+    expect(screen.getByText('Season Schedule')).toBeInTheDocument();
   });
 
   it('displays error banner when error exists', () => {
@@ -181,7 +181,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Day 42')).toBeInTheDocument();
   });
 
-  it('shows "No games scheduled" when no schedule for current day', () => {
+  it('shows "No schedule available" when schedule is empty', () => {
     mockUseLeague.mockReturnValue({
       league: createMockLeague(),
       teams: createMockTeams(),
@@ -196,7 +196,7 @@ describe('DashboardPage', () => {
     });
 
     render(<DashboardPage />);
-    expect(screen.getByText('No games scheduled')).toBeInTheDocument();
+    expect(screen.getByText('No schedule available')).toBeInTheDocument();
   });
 
   it('disables sim buttons when simulation is running', () => {
@@ -421,9 +421,10 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('No games scheduled')).not.toBeInTheDocument();
   });
 
-  it('renders ScheduleView during regular_season, not PlayoffStatusPanel', () => {
+  it('renders SeasonScheduleView during regular_season, not PlayoffStatusPanel', () => {
     render(<DashboardPage />);
     expect(screen.queryByTestId('playoff-status-panel')).not.toBeInTheDocument();
+    expect(screen.getByText('Season Schedule')).toBeInTheDocument();
   });
 
   it('passes playoffMessage to SimulationNotification from lastPlayoffResult', () => {
