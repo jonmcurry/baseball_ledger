@@ -65,6 +65,61 @@ function toDraftablePlayer(row: { player_card: unknown }): DraftablePlayer {
   };
 }
 
+// Row shape returned from player_pool queries
+interface PoolRow {
+  id: string;
+  player_id: string;
+  season_year: number;
+  player_card: unknown;
+  valuation_score: number;
+  [key: string]: unknown;
+}
+
+/**
+ * Fetch a diverse draft pool that includes both top overall players AND
+ * top pitchers. Pitcher valuation scores are systematically lower than
+ * batter scores (average RP ~13 vs average batter ~100+), so a pure
+ * top-N fetch would exclude most pitchers from AI consideration.
+ *
+ * Fetches top 350 overall + top 150 pitchers, merged and deduplicated.
+ */
+async function fetchDraftPool(
+  supabase: ReturnType<typeof createServerClient>,
+  leagueId: string,
+): Promise<PoolRow[]> {
+  // Top 350 undrafted players by valuation (mostly batters + elite SP)
+  const { data: topOverall } = await supabase
+    .from('player_pool')
+    .select('*')
+    .eq('league_id', leagueId)
+    .eq('is_drafted', false)
+    .order('valuation_score', { ascending: false })
+    .limit(350);
+
+  // Top 150 undrafted pitchers specifically (ensures RP/CL coverage)
+  const { data: topPitchers } = await supabase
+    .from('player_pool')
+    .select('*')
+    .eq('league_id', leagueId)
+    .eq('is_drafted', false)
+    .filter('player_card->>isPitcher', 'eq', 'true')
+    .order('valuation_score', { ascending: false })
+    .limit(150);
+
+  // Merge and deduplicate
+  const seen = new Set<string>();
+  const merged: PoolRow[] = [];
+  for (const row of [...(topOverall ?? []), ...(topPitchers ?? [])]) {
+    const r = row as PoolRow;
+    const key = `${r.player_id}_${r.season_year}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(r);
+    }
+  }
+  return merged;
+}
+
 /**
  * Process all consecutive CPU team picks starting from the current draft position.
  * Loops until a human-owned team's turn is reached or the draft completes.
@@ -123,19 +178,11 @@ async function processCpuPicks(
 
     const roster: DraftablePlayer[] = (rosterRows ?? []).map(toDraftablePlayer);
 
-    // CPU team: fetch top-valued undrafted players for AI evaluation.
-    // ORDER BY valuation_score DESC ensures the AI sees the best candidates
-    // regardless of insertion order. LIMIT 500 covers all positions adequately
-    // while avoiding fetching 55K+ JSONB rows.
-    const { data: available } = await supabase
-      .from('player_pool')
-      .select('*')
-      .eq('league_id', leagueId)
-      .eq('is_drafted', false)
-      .order('valuation_score', { ascending: false })
-      .limit(500);
+    // Fetch diverse pool including pitchers (pitchers have lower valuation
+    // scores than batters, so a pure top-N fetch would exclude most RP/CL).
+    const available = await fetchDraftPool(supabase, leagueId);
 
-    if (!available || available.length === 0) {
+    if (available.length === 0) {
       return { picksMade, isComplete: false, nextRound: currentRound, nextPick: currentPick, nextTeamId: currentTeamId };
     }
 
@@ -596,15 +643,9 @@ async function handleAutoPick(req: VercelRequest, res: VercelResponse, requestId
 
         const roster: DraftablePlayer[] = (rosterRows ?? []).map(toDraftablePlayer);
 
-        const { data: available } = await supabase
-          .from('player_pool')
-          .select('*')
-          .eq('league_id', leagueId)
-          .eq('is_drafted', false)
-          .order('valuation_score', { ascending: false })
-          .limit(500);
+        const available = await fetchDraftPool(supabase, leagueId);
 
-        if (available && available.length > 0) {
+        if (available.length > 0) {
           const pool: DraftablePlayer[] = available.map(toDraftablePlayer);
           const selected = selectAIPick(currentRound, roster, pool, rng);
           const selectedIdx = available.findIndex(

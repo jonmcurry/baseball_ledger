@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-13 - Fix Draft Pool Pitcher Shortage
+
+Fixed root cause of wrong roster composition after draft (only 2-3 pitchers
+instead of 8):
+
+- **Diverse pool fetch**: Draft endpoint now fetches top 350 overall players PLUS
+  top 150 pitchers separately (merged/deduplicated). Pitcher valuation scores are
+  systematically lower than batters (average RP ~13 vs average batter ~100+), so
+  a pure top-N fetch excluded most RP/CL from AI consideration.
+- **Roster composition test**: Added integration test verifying each AI team drafts
+  exactly 4 SP + 4 RP/CL + 13 position players after a full 21-round draft.
+- **Larger test pool**: Expanded test pool to 20 SP + 12 RP + 8 CL (from 12/8/4)
+  to ensure sufficient pitchers for 4-team draft tests.
+
 ## 2026-02-13 - Draft Randomness + Roster Makeup Fix
 
 Two draft improvements:

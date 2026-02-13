@@ -110,7 +110,8 @@ function buildLargePool(): DraftablePlayer[] {
     }
   }
 
-  for (let i = 0; i < 12; i++) {
+  // 20 SP (enough for 4 teams x 4 SP = 16, plus extras)
+  for (let i = 0; i < 20; i++) {
     id++;
     pool.push({
       card: makePitcherCard('SP', {
@@ -119,13 +120,13 @@ function buildLargePool(): DraftablePlayer[] {
         nameLast: `Pitcher${i}`,
         pitching: {
           role: 'SP',
-          grade: 12 - i,
-          stamina: 7 - i * 0.3,
-          era: 2.80 + i * 0.25,
-          whip: 1.05 + i * 0.05,
-          k9: 10 - i * 0.3,
-          bb9: 2.0 + i * 0.2,
-          hr9: 0.7 + i * 0.05,
+          grade: 12 - Math.floor(i / 2),
+          stamina: 7 - (i % 10) * 0.3,
+          era: 2.80 + i * 0.15,
+          whip: 1.05 + i * 0.03,
+          k9: 10 - i * 0.2,
+          bb9: 2.0 + i * 0.1,
+          hr9: 0.7 + i * 0.03,
           usageFlags: [],
           isReliever: false,
         },
@@ -135,7 +136,8 @@ function buildLargePool(): DraftablePlayer[] {
     });
   }
 
-  for (let i = 0; i < 8; i++) {
+  // 12 RP (enough for 4 teams needing RP/CL, plus extras)
+  for (let i = 0; i < 12; i++) {
     id++;
     pool.push({
       card: makePitcherCard('RP', {
@@ -144,13 +146,13 @@ function buildLargePool(): DraftablePlayer[] {
         nameLast: `Reliever${i}`,
         pitching: {
           role: 'RP',
-          grade: 9 - i,
+          grade: 9 - Math.floor(i / 2),
           stamina: 2,
-          era: 3.00 + i * 0.30,
-          whip: 1.10 + i * 0.05,
-          k9: 9.5 - i * 0.3,
-          bb9: 2.5 + i * 0.2,
-          hr9: 0.8 + i * 0.05,
+          era: 3.00 + i * 0.20,
+          whip: 1.10 + i * 0.03,
+          k9: 9.5 - i * 0.2,
+          bb9: 2.5 + i * 0.15,
+          hr9: 0.8 + i * 0.03,
           usageFlags: [],
           isReliever: true,
         },
@@ -160,7 +162,8 @@ function buildLargePool(): DraftablePlayer[] {
     });
   }
 
-  for (let i = 0; i < 4; i++) {
+  // 8 CL (enough for 4 teams, some closers fill bullpen slots)
+  for (let i = 0; i < 8; i++) {
     id++;
     pool.push({
       card: makePitcherCard('CL', {
@@ -169,13 +172,13 @@ function buildLargePool(): DraftablePlayer[] {
         nameLast: `Closer${i}`,
         pitching: {
           role: 'CL',
-          grade: 10 - i,
+          grade: 10 - Math.floor(i / 2),
           stamina: 1.5,
-          era: 2.20 + i * 0.40,
-          whip: 0.95 + i * 0.10,
-          k9: 11 - i * 0.5,
-          bb9: 2.2 + i * 0.3,
-          hr9: 0.5 + i * 0.1,
+          era: 2.20 + i * 0.25,
+          whip: 0.95 + i * 0.06,
+          k9: 11 - i * 0.3,
+          bb9: 2.2 + i * 0.2,
+          hr9: 0.5 + i * 0.06,
           usageFlags: [],
           isReliever: true,
         },
@@ -300,6 +303,29 @@ describe('runFullAIDraft', () => {
 
     for (const teamId of teamIds) {
       expect(state.teamRosters.get(teamId)!).toHaveLength(21);
+    }
+  });
+
+  it('each team drafts proper roster composition (4 SP, 4 RP/CL)', () => {
+    const pool = buildLargePool();
+    const teamIds = Array.from(AI_TEAMS.keys());
+    const state = initializeDraft({ teamIds, playerPool: pool }, new SeededRNG(42));
+    runFullAIDraft(state, AI_TEAMS, new SeededRNG(42));
+
+    for (const teamId of teamIds) {
+      const roster = state.teamRosters.get(teamId)!;
+      const spCount = roster.filter(
+        (p) => p.card.isPitcher && p.card.pitching?.role === 'SP',
+      ).length;
+      const rpClCount = roster.filter(
+        (p) => p.card.isPitcher && (p.card.pitching?.role === 'RP' || p.card.pitching?.role === 'CL'),
+      ).length;
+      const positionCount = roster.filter((p) => !p.card.isPitcher).length;
+
+      // Each team should have 4 SP, 4 RP/CL, and 13 position players
+      expect(spCount).toBe(4);
+      expect(rpClCount).toBe(4);
+      expect(positionCount).toBe(13);
     }
   });
 
