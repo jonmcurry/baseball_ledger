@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-02-13 - Draft Board UX Fixes (Search, Badges, Position Filters)
+
+Six draft board issues addressed:
+
+- **Search input**: Fixed white-on-white text in player search field by using
+  proper surface/text CSS variables instead of `--color-ink` opacity
+- **Position badges**: Fixed blue-on-blue badges by switching to predefined CSS
+  badge classes (`position-badge-pitcher`, `position-badge-outfield`, etc.)
+- **Position filter dropdown**: Consolidated LF/CF/RF into single "Outfielder"
+  option; added "Closer" as separate filter option distinct from "Relief Pitcher"
+- **API outfield filter**: When filtering by "Outfielder", the draft API now
+  matches all outfield positions (OF, LF, CF, RF) using PostgREST `.in()` filter
+- **Timer auto-pick**: Confirmed already working via `useDraftTimer` hook
+- **Backlog coverage**: Confirmed all backlog-plan.md items implemented (box
+  score, play-by-play, stats, trade evaluation)
+
 ## 2026-02-13 - Roster Bug Fixes (Pitcher Slots, Draft Completion)
 
 Three bug fixes for roster and draft management:

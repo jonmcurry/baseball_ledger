@@ -46,12 +46,21 @@ const POSITION_FILTER_OPTIONS = [
   { value: '2B', label: 'Second Base' },
   { value: 'SS', label: 'Shortstop' },
   { value: '3B', label: 'Third Base' },
-  { value: 'LF', label: 'Left Field' },
-  { value: 'CF', label: 'Center Field' },
-  { value: 'RF', label: 'Right Field' },
+  { value: 'OF', label: 'Outfielder' },
   { value: 'SP', label: 'Starting Pitcher' },
   { value: 'RP', label: 'Relief Pitcher' },
+  { value: 'CL', label: 'Closer' },
 ];
+
+/** Map a position to its CSS badge class. */
+function positionBadgeClass(pos: string): string {
+  if (['SP', 'RP', 'CL'].includes(pos)) return 'position-badge position-badge-pitcher';
+  if (pos === 'C') return 'position-badge position-badge-catcher';
+  if (['1B', '2B', '3B', 'SS'].includes(pos)) return 'position-badge position-badge-infield';
+  if (['LF', 'CF', 'RF', 'OF'].includes(pos)) return 'position-badge position-badge-outfield';
+  if (pos === 'DH') return 'position-badge position-badge-dh';
+  return 'position-badge';
+}
 
 function SortableHeader({
   label,
@@ -204,7 +213,7 @@ export function AvailablePlayersTable({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Name..."
-            className="w-full rounded border border-[var(--color-ink)]/30 bg-[var(--color-ink)]/20 px-3 py-1.5 font-stat text-sm text-[var(--color-scoreboard-text)] placeholder:text-[var(--color-scoreboard-text)]/40 focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50"
+            className="w-full rounded border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-1.5 font-stat text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/40 focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50"
           />
         </div>
 
@@ -216,7 +225,7 @@ export function AvailablePlayersTable({
           <select
             value={posFilter}
             onChange={(e) => handlePositionChange(e.target.value)}
-            className="w-full rounded border border-[var(--color-ink)]/30 bg-[var(--color-ink)]/20 px-3 py-1.5 font-stat text-sm text-[var(--color-scoreboard-text)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50"
+            className="w-full rounded border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-1.5 font-stat text-sm text-[var(--text-primary)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50 [&>option]:bg-[var(--surface-base)] [&>option]:text-[var(--text-primary)]"
           >
             {POSITION_FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -299,13 +308,7 @@ export function AvailablePlayersTable({
                   )}
                 </td>
                 <td className="px-2 py-1.5">
-                  <span
-                    className={`inline-block rounded px-1.5 py-0.5 font-stat text-[10px] font-bold ${
-                      ['SP', 'RP'].includes(p.primaryPosition)
-                        ? 'bg-[var(--color-leather)]/30 text-[var(--color-leather)]'
-                        : 'bg-[var(--accent-primary)]/20 text-[var(--color-cream)]'
-                    }`}
-                  >
+                  <span className={`inline-block text-[10px] ${positionBadgeClass(p.primaryPosition)}`}>
                     {p.primaryPosition}
                   </span>
                 </td>

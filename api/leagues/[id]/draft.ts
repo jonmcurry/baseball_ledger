@@ -214,7 +214,12 @@ async function handleGetPlayers(req: VercelRequest, res: VercelResponse, request
     .eq('is_drafted', drafted);
 
   if (position) {
-    query = query.eq('player_card->>primaryPosition', position);
+    if (position === 'OF') {
+      // Match all outfield positions (generic OF plus specific LF/CF/RF)
+      query = query.in('player_card->>primaryPosition', ['OF', 'LF', 'CF', 'RF']);
+    } else {
+      query = query.eq('player_card->>primaryPosition', position);
+    }
   }
 
   if (search) {
