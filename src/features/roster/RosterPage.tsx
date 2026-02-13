@@ -51,8 +51,8 @@ export function RosterPage() {
     [roster],
   );
 
-  const closer = useMemo(
-    () => roster.find((r) => r.rosterSlot === 'closer') ?? null,
+  const closers = useMemo(
+    () => roster.filter((r) => r.rosterSlot === 'closer'),
     [roster],
   );
 
@@ -193,7 +193,7 @@ export function RosterPage() {
             <PitchingRotation
               rotation={rotation}
               bullpen={bullpen}
-              closer={closer}
+              closers={closers}
               nextStarterIdx={0}
               onRoleChange={handlePitcherRoleChange}
             />

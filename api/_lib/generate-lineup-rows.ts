@@ -113,7 +113,8 @@ export async function generateAndInsertLineups(
     // Bench position players stay as 'bench' (already the default from draft)
     // No update needed for bench players
 
-    // 6. Assign pitchers by role
+    // 6. Assign pitchers by role (only one closer allowed; extras go to bullpen)
+    let closerAssigned = false;
     for (const pitcher of pitcherEntries) {
       const pitching = pitcher.player_card.pitching;
       if (!pitching) continue;
@@ -121,8 +122,9 @@ export async function generateAndInsertLineups(
       let rosterSlot: string;
       if (pitching.role === 'SP') {
         rosterSlot = 'rotation';
-      } else if (pitching.role === 'CL') {
+      } else if (pitching.role === 'CL' && !closerAssigned) {
         rosterSlot = 'closer';
+        closerAssigned = true;
       } else {
         rosterSlot = 'bullpen';
       }

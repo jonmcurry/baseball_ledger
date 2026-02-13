@@ -10,7 +10,7 @@ import type { RosterEntry } from '@lib/types/roster';
 export interface PitchingRotationProps {
   readonly rotation: readonly RosterEntry[];
   readonly bullpen: readonly RosterEntry[];
-  readonly closer: RosterEntry | null;
+  readonly closers: readonly RosterEntry[];
   readonly nextStarterIdx: number;
   readonly onRoleChange?: (entry: RosterEntry, newSlot: 'rotation' | 'bullpen' | 'closer') => void;
 }
@@ -64,7 +64,7 @@ function PitcherRow({
 export function PitchingRotation({
   rotation,
   bullpen,
-  closer,
+  closers,
   nextStarterIdx,
   onRoleChange,
 }: PitchingRotationProps) {
@@ -148,15 +148,19 @@ export function PitchingRotation({
         <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
           Closer
         </p>
-        {closer ? (
+        {closers.length === 0 && (
+          <p className="text-xs text-muted">No closer assigned</p>
+        )}
+        {closers.map((entry) => (
           <PitcherRow
-            entry={closer}
+            key={entry.id}
+            entry={entry}
             label="CL"
             actions={
               onRoleChange ? (
                 <button
                   type="button"
-                  onClick={() => onRoleChange(closer, 'bullpen')}
+                  onClick={() => onRoleChange(entry, 'bullpen')}
                   className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
                   title="Move to bullpen"
                 >
@@ -165,9 +169,7 @@ export function PitchingRotation({
               ) : undefined
             }
           />
-        ) : (
-          <p className="text-xs text-muted">No closer assigned</p>
-        )}
+        ))}
       </div>
     </div>
   );

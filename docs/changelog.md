@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-02-12 - Fix Multiple Closers Not Showing in Pitching Staff (Phase 82b)
+
+When multiple CL-role pitchers were drafted (e.g., Mariano Rivera + Dennis Eckersley),
+`generateAndInsertLineups` assigned all of them `roster_slot = 'closer'`. The UI used
+`roster.find()` which returns only the first match, making extra closers invisible.
+
+- Server: `generate-lineup-rows.ts` now assigns only the first CL as closer; extras go
+  to bullpen
+- Client: `RosterPage` uses `roster.filter()` for closers (shows all)
+- `PitchingRotation` accepts `closers: RosterEntry[]` array instead of single entry
+- Added test for multi-closer lineup generation
+
 ## 2026-02-12 - Roster Page Redesign: Batting Order, Lineup Fixes, Pitcher Roles (Phase 82)
 
 Redesigned the roster management page to fix multiple bugs and add missing

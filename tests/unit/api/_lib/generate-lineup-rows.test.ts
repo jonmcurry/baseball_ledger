@@ -272,6 +272,39 @@ describe('generateAndInsertLineups', () => {
     expect(closerCalls.length).toBe(1); // 1 CL pitcher
   });
 
+  it('assigns only one CL as closer, extras go to bullpen', async () => {
+    // Add a second CL pitcher to the roster
+    const rosterWithTwoClosers = [
+      ...allRosterRows,
+      {
+        id: 'r-22',
+        player_id: 'cl02',
+        player_card: makePlayerCard('cl02', 'CL', true, { role: 'CL', grade: 9 }),
+        team_id: 'team-1',
+        season_year: 2020,
+        roster_slot: 'bench',
+        lineup_order: null,
+        lineup_position: null,
+      },
+    ];
+    const { client, updateFn } = createMockSupabase({ rosterRows: rosterWithTwoClosers });
+
+    await generateAndInsertLineups(client, 'league-1');
+
+    const allCalls = updateFn.mock.calls;
+    const closerCalls = allCalls.filter((call: unknown[]) => {
+      const data = call[0] as Record<string, unknown>;
+      return data.roster_slot === 'closer';
+    });
+    const bullpenCalls = allCalls.filter((call: unknown[]) => {
+      const data = call[0] as Record<string, unknown>;
+      return data.roster_slot === 'bullpen';
+    });
+    expect(closerCalls.length).toBe(1);
+    // 3 RP + 1 extra CL = 4 bullpen
+    expect(bullpenCalls.length).toBe(4);
+  });
+
   it('throws if team fetch fails', async () => {
     const { client } = createMockSupabase({
       teamRows: [],

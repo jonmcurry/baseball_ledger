@@ -32,7 +32,7 @@ describe('PitchingRotation', () => {
   };
 
   it('renders heading', () => {
-    render(<PitchingRotation rotation={[]} bullpen={[]} closer={null} nextStarterIdx={0} />);
+    render(<PitchingRotation rotation={[]} bullpen={[]} closers={[]} nextStarterIdx={0} />);
     expect(screen.getByText('Pitching Staff')).toBeInTheDocument();
   });
 
@@ -44,14 +44,14 @@ describe('PitchingRotation', () => {
         playerCard: mockPitcherCard,
       }),
     ];
-    render(<PitchingRotation rotation={rotation} bullpen={[]} closer={null} nextStarterIdx={0} />);
+    render(<PitchingRotation rotation={rotation} bullpen={[]} closers={[]} nextStarterIdx={0} />);
     expect(screen.getByText('Greg Maddux')).toBeInTheDocument();
     expect(screen.getByText('Next')).toBeInTheDocument();
     expect(screen.getByText('G3')).toBeInTheDocument();
   });
 
   it('shows no closer message when none assigned', () => {
-    render(<PitchingRotation rotation={[]} bullpen={[]} closer={null} nextStarterIdx={0} />);
+    render(<PitchingRotation rotation={[]} bullpen={[]} closers={[]} nextStarterIdx={0} />);
     expect(screen.getByText('No closer assigned')).toBeInTheDocument();
   });
 });
