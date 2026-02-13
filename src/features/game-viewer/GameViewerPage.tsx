@@ -11,7 +11,7 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLeague } from '@hooks/useLeague';
 import { useSimulationStore } from '@stores/simulationStore';
@@ -24,6 +24,7 @@ import { BoxScoreDisplay } from './BoxScoreDisplay';
 import { CommentarySection } from './CommentarySection';
 import { GameSummaryPanel } from './GameSummaryPanel';
 import { ManagerDecisionsPanel } from './ManagerDecisionsPanel';
+import { ReplayControls, type ReplaySpeed } from './ReplayControls';
 import { detectDecisions } from '@lib/ai/decision-detector';
 import type { GameSummaryRequest } from '@lib/types/ai';
 import type { BoxScore, BattingLine, PitchingLine, PlayByPlayEntry } from '@lib/types/game';
@@ -31,6 +32,14 @@ import { apiGet } from '@services/api-client';
 import { usePageTitle } from '@hooks/usePageTitle';
 
 type ViewTab = 'play-by-play' | 'box-score';
+
+/** Milliseconds between plays at each speed. */
+const SPEED_MS: Record<ReplaySpeed, number> = {
+  '1x': 2000,
+  '2x': 1000,
+  '5x': 400,
+  'Max': 50,
+};
 
 /** Shape returned by the game detail API (camelCase from snakeToCamel). */
 interface GameDetailResponse {
@@ -84,6 +93,13 @@ export function GameViewerPage() {
   const [dbGame, setDbGame] = useState<GameDetailResponse | null>(null);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+
+  // Replay state
+  const [replayActive, setReplayActive] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [replaySpeed, setReplaySpeed] = useState<ReplaySpeed>('2x');
+  const replayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const teamNameMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -208,6 +224,90 @@ export function GameViewerPage() {
     return null;
   }, [storeResult, workerSim.result, dbGame, teamNameMap]);
 
+  // --- Replay auto-advance timer ---
+  useEffect(() => {
+    if (replayTimerRef.current) {
+      clearTimeout(replayTimerRef.current);
+      replayTimerRef.current = null;
+    }
+    if (!isPlaying || !replayActive || !gameData) return;
+    const totalPlays = gameData.playByPlay.length;
+    if (replayIndex >= totalPlays) {
+      setIsPlaying(false);
+      return;
+    }
+    replayTimerRef.current = setTimeout(() => {
+      setReplayIndex((i) => i + 1);
+    }, SPEED_MS[replaySpeed] ?? 1000);
+    return () => {
+      if (replayTimerRef.current) clearTimeout(replayTimerRef.current);
+    };
+  }, [isPlaying, replayActive, replayIndex, replaySpeed, gameData]);
+
+  // Derived: plays visible during replay (or all when replay is off)
+  const visiblePlays = useMemo(() => {
+    if (!gameData) return [];
+    if (!replayActive) return gameData.playByPlay;
+    return gameData.playByPlay.slice(0, replayIndex);
+  }, [gameData, replayActive, replayIndex]);
+
+  // Derived: game state from current play during replay
+  const currentGameState = useMemo(() => {
+    if (!gameData) return null;
+    if (!replayActive || replayIndex === 0) {
+      return {
+        bases: { first: null, second: null, third: null },
+        outs: 0,
+        homeScore: gameData.homeScore,
+        awayScore: gameData.awayScore,
+        inning: gameData.innings,
+        halfInning: 'bottom' as const,
+        isComplete: !replayActive,
+      };
+    }
+    const play = gameData.playByPlay[replayIndex - 1];
+    if (!play) return null;
+    return {
+      bases: play.basesAfter,
+      outs: play.outs,
+      homeScore: play.scoreAfter.home,
+      awayScore: play.scoreAfter.away,
+      inning: play.inning,
+      halfInning: play.halfInning,
+      isComplete: replayIndex >= gameData.playByPlay.length,
+    };
+  }, [gameData, replayActive, replayIndex]);
+
+  const startReplay = useCallback(() => {
+    setReplayActive(true);
+    setReplayIndex(0);
+    setIsPlaying(true);
+    setActiveTab('play-by-play');
+  }, []);
+
+  const togglePlayPause = useCallback(() => {
+    if (!replayActive) return;
+    if (replayIndex >= (gameData?.playByPlay.length ?? 0)) {
+      // Restart if at end
+      setReplayIndex(0);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying((p) => !p);
+    }
+  }, [replayActive, replayIndex, gameData]);
+
+  const skipToEnd = useCallback(() => {
+    if (!gameData) return;
+    setReplayIndex(gameData.playByPlay.length);
+    setIsPlaying(false);
+  }, [gameData]);
+
+  const exitReplay = useCallback(() => {
+    setReplayActive(false);
+    setReplayIndex(0);
+    setIsPlaying(false);
+  }, []);
+
   const gameSummaryRequest = useMemo((): GameSummaryRequest | null => {
     if (!gameData?.boxScore) return null;
     return {
@@ -285,19 +385,13 @@ export function GameViewerPage() {
         {gameData.awayScore} - {gameData.homeScore}
       </div>
 
-      <GameStatePanel
-        gameState={{
-          bases: { first: null, second: null, third: null },
-          outs: 0,
-          homeScore: gameData.homeScore,
-          awayScore: gameData.awayScore,
-          inning: gameData.innings,
-          halfInning: 'bottom',
-          isComplete: true,
-        }}
-        homeTeam={gameData.homeTeamName}
-        awayTeam={gameData.awayTeamName}
-      />
+      {currentGameState && (
+        <GameStatePanel
+          gameState={currentGameState}
+          homeTeam={gameData.homeTeamName}
+          awayTeam={gameData.awayTeamName}
+        />
+      )}
 
       {/* Worker simulation status (only when using in-memory store result) */}
       {storeResult && workerSim.status === 'running' && (
@@ -311,6 +405,33 @@ export function GameViewerPage() {
 
       {storeResult && workerSim.status === 'error' && workerSim.error && (
         <ErrorBanner severity="error" message={workerSim.error} />
+      )}
+
+      {/* Replay button */}
+      {hasDetailedData && gameData.playByPlay.length > 0 && !replayActive && (
+        <div className="text-center">
+          <button
+            type="button"
+            className="rounded-card border border-sandstone bg-old-lace px-4 py-2 font-headline text-sm uppercase tracking-wider text-ballpark shadow-card hover:bg-sandstone/30 transition-colors"
+            onClick={startReplay}
+          >
+            Watch Replay
+          </button>
+        </div>
+      )}
+
+      {/* Replay controls */}
+      {replayActive && (
+        <ReplayControls
+          currentPlay={replayIndex}
+          totalPlays={gameData.playByPlay.length}
+          isPlaying={isPlaying}
+          speed={replaySpeed}
+          onTogglePlay={togglePlayPause}
+          onSpeedChange={setReplaySpeed}
+          onSkipToEnd={skipToEnd}
+          onExit={exitReplay}
+        />
       )}
 
       {/* Tab navigation */}
@@ -357,7 +478,7 @@ export function GameViewerPage() {
 
           {activeTab === 'play-by-play' && (
             <PlayByPlayFeed
-              plays={gameData.playByPlay}
+              plays={visiblePlays}
               teams={teamNameMap}
             />
           )}

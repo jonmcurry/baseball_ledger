@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-13 - Animated Game Replay Mode
+
+Added "Watch Replay" feature to the game viewer that reveals plays one at a
+time with a live-updating scoreboard:
+
+- **ReplayControls component**: Transport-style controls with play/pause,
+  speed selection (1x/2x/5x/Max), progress bar, skip-to-end, and exit.
+- **Dynamic scoreboard**: GameStatePanel updates inning, score, outs, and
+  base runners as each play is revealed during replay.
+- **Replay state in GameViewerPage**: Manages replay index, auto-advance
+  timer, and derived visible plays. Switches to play-by-play tab on start.
+- **Speed presets**: 1x = 2s/play, 2x = 1s/play, 5x = 400ms/play,
+  Max = 50ms/play. Restart from end supported.
+
 ## 2026-02-13 - Fix Stats Accumulation + Display Names
 
 Fixed season stats not accumulating and stats page showing raw IDs:
