@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-12 - Player Season Stats Display (Phase 85)
+
+Added individual player season stats viewing. The PlayerProfileModal now has a
+"Season" tab (shown during regular season) that fetches and displays the player's
+accumulated batting and pitching stats from the simulation.
+
+- Extended stats API (`stats.ts`) with `?type=player&playerId=X` handler using
+  `maybeSingle()` query
+- Added `fetchPlayerSeasonStats` to `stats-service.ts`
+- Added `SeasonStatsTab` component to `PlayerProfileModal` with loading/error states
+- Modal accepts optional `leagueId` prop; when provided, the Season tab appears
+- RosterPage passes `league.id` to the modal for season stats access
+- 3 new API tests for the player stats handler
+
 ## 2026-02-12 - Fix Season Stats Accumulation (Phase 84)
 
 Season stats were not tracking at all. The `accumulator.ts` pure logic existed and was

@@ -207,6 +207,7 @@ export function RosterPage() {
           player={profilePlayer}
           isOpen={true}
           onClose={() => setProfilePlayer(null)}
+          leagueId={league?.id}
         />
       )}
     </div>

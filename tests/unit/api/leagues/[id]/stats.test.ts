@@ -390,6 +390,67 @@ describe('GET /api/leagues/:id/stats?type=team', () => {
   });
 });
 
+// ---------- Player (individual season stats) ----------
+
+describe('GET /api/leagues/:id/stats?type=player&playerId=X', () => {
+  it('returns 400 when playerId is missing', async () => {
+    const builder = createMockQueryBuilder({ data: null, error: null, count: null });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(builder) } as never);
+
+    const req = createMockRequest({ method: 'GET', query: { id: 'league-1', type: 'player' } });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(400);
+    expect(res._body.error).toHaveProperty('code', 'MISSING_PLAYER_ID');
+  });
+
+  it('returns 200 with player season stats', async () => {
+    const statsData = {
+      player_id: 'batter01',
+      team_id: 'team-a',
+      season_year: 2020,
+      batting_stats: { G: 10, AB: 40, H: 12, HR: 2, BA: 0.300, OBP: 0.350, SLG: 0.475, OPS: 0.825 },
+      pitching_stats: null,
+    };
+
+    const builder = createMockQueryBuilder({ data: statsData, error: null, count: null });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(builder) } as never);
+
+    const req = createMockRequest({
+      method: 'GET',
+      query: { id: 'league-1', type: 'player', playerId: 'batter01' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toHaveProperty('playerId', 'batter01');
+    expect(res._body.data).toHaveProperty('battingStats');
+    expect(res._body.data.battingStats).toHaveProperty('G', 10);
+  });
+
+  it('returns 200 with null stats when player has no season stats', async () => {
+    const builder = createMockQueryBuilder({ data: null, error: null, count: null });
+    mockCreateServerClient.mockReturnValue({ from: vi.fn().mockReturnValue(builder) } as never);
+
+    const req = createMockRequest({
+      method: 'GET',
+      query: { id: 'league-1', type: 'player', playerId: 'unknown01' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(200);
+    expect(res._body.data).toHaveProperty('playerId', 'unknown01');
+    expect(res._body.data).toHaveProperty('battingStats', null);
+    expect(res._body.data).toHaveProperty('pitchingStats', null);
+  });
+});
+
 // ---------- Standings ----------
 
 describe('GET /api/leagues/:id/stats?type=standings', () => {

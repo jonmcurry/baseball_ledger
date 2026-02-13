@@ -7,14 +7,18 @@
  * Layer 6: Presentational component.
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import type { PlayerCard } from '@lib/types/player';
+import type { BattingStats, PitchingStats } from '@lib/types/stats';
 import { useFocusTrap } from '@hooks/useFocusTrap';
+import { fetchPlayerSeasonStats } from '@services/stats-service';
 
 export interface PlayerProfileModalProps {
   player: PlayerCard;
   isOpen: boolean;
   onClose: () => void;
+  /** When provided, enables the "Season Stats" tab with simulation stats. */
+  leagueId?: string;
 }
 
 const POWER_LABELS: Record<number, string> = {
@@ -28,7 +32,7 @@ const POWER_LABELS: Record<number, string> = {
   21: 'Excellent',
 };
 
-type TabId = 'card' | 'mlb';
+type TabId = 'card' | 'mlb' | 'season';
 
 function pctLabel(value: number): string {
   return (value * 100).toFixed(0) + '%';
@@ -357,7 +361,179 @@ function MlbStatsTab({ player }: { player: PlayerCard }) {
   );
 }
 
-export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileModalProps) {
+function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: string }) {
+  const [battingStats, setBattingStats] = useState<BattingStats | null>(null);
+  const [pitchingStats, setPitchingStats] = useState<PitchingStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetchPlayerSeasonStats(leagueId, player.playerId)
+      .then((data) => {
+        if (cancelled) return;
+        setBattingStats(data.battingStats);
+        setPitchingStats(data.pitchingStats);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err?.message ?? 'Failed to load season stats');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [leagueId, player.playerId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-gold)] border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <p className="font-headline text-sm text-[var(--color-stitch)]">{error}</p>
+      </div>
+    );
+  }
+
+  if (!battingStats && !pitchingStats) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <p className="font-headline text-sm text-[var(--color-muted)]">
+          No season stats recorded yet. Play some games first.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {battingStats && battingStats.G > 0 && (
+        <div className="vintage-card overflow-hidden">
+          <div className="bg-[var(--color-scoreboard)] px-3 py-2">
+            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
+              Season Batting
+            </h4>
+          </div>
+          <div className="p-3">
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
+                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
+                  {battingStats.BA.toFixed(3).replace('0.', '.')}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">AVG</div>
+              </div>
+              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
+                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
+                  {battingStats.HR}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">HR</div>
+              </div>
+              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
+                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
+                  {battingStats.RBI}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">RBI</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 text-sm">
+              <StatRow label="Games" value={battingStats.G} />
+              <StatRow label="At Bats" value={battingStats.AB} />
+              <StatRow label="Runs" value={battingStats.R} />
+              <StatRow label="Hits" value={battingStats.H} />
+              <StatRow label="Doubles" value={battingStats.doubles} />
+              <StatRow label="Triples" value={battingStats.triples} />
+              <StatRow label="Stolen Bases" value={battingStats.SB} />
+              <StatRow label="Walks" value={battingStats.BB} />
+              <StatRow label="Strikeouts" value={battingStats.SO} />
+            </div>
+
+            <div className="mt-3 border-t border-[var(--color-leather)]/20 pt-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="font-stat text-lg font-bold text-[var(--color-gold)]">
+                    {battingStats.OBP.toFixed(3)}
+                  </div>
+                  <div className="text-[10px] uppercase text-[var(--color-muted)]">OBP</div>
+                </div>
+                <div>
+                  <div className="font-stat text-lg font-bold text-[var(--color-gold)]">
+                    {battingStats.SLG.toFixed(3)}
+                  </div>
+                  <div className="text-[10px] uppercase text-[var(--color-muted)]">SLG</div>
+                </div>
+                <div>
+                  <div className="font-stat text-lg font-bold text-[var(--color-stitch)]">
+                    {battingStats.OPS.toFixed(3)}
+                  </div>
+                  <div className="text-[10px] uppercase text-[var(--color-muted)]">OPS</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pitchingStats && pitchingStats.G > 0 && (
+        <div className="vintage-card overflow-hidden">
+          <div className="bg-[var(--color-stitch)] px-3 py-2">
+            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-white">
+              Season Pitching
+            </h4>
+          </div>
+          <div className="p-3">
+            <div className="mb-4 grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
+                <div className="font-scoreboard text-2xl font-bold text-[var(--color-gold)]">
+                  {pitchingStats.ERA.toFixed(2)}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">ERA</div>
+              </div>
+              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
+                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
+                  {pitchingStats.W}-{pitchingStats.L}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">W-L</div>
+              </div>
+              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
+                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
+                  {pitchingStats.SO}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">K</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 text-sm">
+              <StatRow label="Games" value={pitchingStats.G} />
+              <StatRow label="Games Started" value={pitchingStats.GS} />
+              <StatRow label="Saves" value={pitchingStats.SV} />
+              <StatRow label="Holds" value={pitchingStats.HLD} />
+              <StatRow label="Innings" value={pitchingStats.IP.toFixed(1)} />
+              <StatRow label="Hits" value={pitchingStats.H} />
+              <StatRow label="Earned Runs" value={pitchingStats.ER} />
+              <StatRow label="Home Runs" value={pitchingStats.HR} />
+              <StatRow label="Walks" value={pitchingStats.BB} />
+              <StatRow label="WHIP" value={pitchingStats.WHIP.toFixed(2)} highlight />
+              <StatRow label="FIP" value={pitchingStats.FIP.toFixed(2)} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: PlayerProfileModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabId>('card');
   useFocusTrap(containerRef, isOpen, onClose);
@@ -457,6 +633,13 @@ export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileMod
               isActive={activeTab === 'mlb'}
               onClick={() => setActiveTab('mlb')}
             />
+            {leagueId && (
+              <TabButton
+                label="Season"
+                isActive={activeTab === 'season'}
+                onClick={() => setActiveTab('season')}
+              />
+            )}
           </div>
         </div>
 
@@ -466,6 +649,9 @@ export function PlayerProfileModal({ player, isOpen, onClose }: PlayerProfileMod
         <div className="max-h-[60vh] overflow-y-auto p-4">
           {activeTab === 'card' && <CardRatingsTab player={player} />}
           {activeTab === 'mlb' && <MlbStatsTab player={player} />}
+          {activeTab === 'season' && leagueId && (
+            <SeasonStatsTab player={player} leagueId={leagueId} />
+          )}
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════

@@ -7,8 +7,17 @@
  */
 
 import type { BattingLeaderEntry, PitchingLeaderEntry, TeamAggregateStats } from '@lib/stats/leaders';
+import type { BattingStats, PitchingStats } from '@lib/types/stats';
 import type { PaginatedResponse } from '@lib/types/api';
 import { apiGet, apiGetPaginated } from './api-client';
+
+export interface PlayerSeasonStats {
+  playerId: string;
+  teamId: string | null;
+  seasonYear: number | null;
+  battingStats: BattingStats | null;
+  pitchingStats: PitchingStats | null;
+}
 
 export async function fetchBattingLeaders(
   leagueId: string,
@@ -35,6 +44,16 @@ export async function fetchPitchingLeaders(
 export async function fetchTeamStats(leagueId: string): Promise<TeamAggregateStats[]> {
   const response = await apiGet<TeamAggregateStats[]>(
     `/api/leagues/${leagueId}/stats?type=team`,
+  );
+  return response.data;
+}
+
+export async function fetchPlayerSeasonStats(
+  leagueId: string,
+  playerId: string,
+): Promise<PlayerSeasonStats> {
+  const response = await apiGet<PlayerSeasonStats>(
+    `/api/leagues/${leagueId}/stats?type=player&playerId=${encodeURIComponent(playerId)}`,
   );
   return response.data;
 }
