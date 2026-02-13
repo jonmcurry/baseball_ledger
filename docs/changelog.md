@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-02-12 - Fix Dashboard Crash: Schedule Row Grouping (Phase 83)
+
+Dashboard crashed with "h.games is not iterable" because the schedule API returns
+flat game rows (`{id, dayNumber, homeTeamId, ...}`) but the dashboard expects
+`ScheduleDay[]` objects with a `games` array. Added grouping transform in
+`fetchSchedule` to convert flat rows into `{dayNumber, games: [...]}` grouped by day.
+
+- `league-service.ts:fetchSchedule` groups flat API rows into `ScheduleDay[]`
+- Updated league-service tests to use flat row mock data
+
 ## 2026-02-12 - Fix Multiple Closers Not Showing in Pitching Staff (Phase 82b)
 
 When multiple CL-role pitchers were drafted (e.g., Mariano Rivera + Dennis Eckersley),

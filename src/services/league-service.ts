@@ -5,7 +5,7 @@
  */
 
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';
-import type { ScheduleDay } from '@lib/types/schedule';
+import type { ScheduleDay, ScheduleGameSummary } from '@lib/types/schedule';
 import type { JoinLeagueResult } from '@lib/types/api';
 import { apiGet, apiPost, apiDelete } from './api-client';
 
@@ -44,10 +44,44 @@ export async function fetchStandings(leagueId: string): Promise<DivisionStanding
   return response.data;
 }
 
+/** Raw row shape returned by the schedule API (flat, one row per game) */
+interface ScheduleRow {
+  id: string;
+  dayNumber: number;
+  homeTeamId: string;
+  awayTeamId: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  isComplete: boolean;
+  gameLogId: string | null;
+}
+
 export async function fetchSchedule(leagueId: string, day?: number): Promise<ScheduleDay[]> {
   const params = day !== undefined ? `?day=${day}` : '';
-  const response = await apiGet<ScheduleDay[]>(`/api/leagues/${leagueId}/schedule${params}`);
-  return response.data;
+  const response = await apiGet<ScheduleRow[]>(`/api/leagues/${leagueId}/schedule${params}`);
+
+  // Group flat game rows into ScheduleDay[] keyed by dayNumber
+  const dayMap = new Map<number, ScheduleGameSummary[]>();
+  for (const row of response.data) {
+    let games = dayMap.get(row.dayNumber);
+    if (!games) {
+      games = [];
+      dayMap.set(row.dayNumber, games);
+    }
+    games.push({
+      id: row.id,
+      homeTeamId: row.homeTeamId,
+      awayTeamId: row.awayTeamId,
+      homeScore: row.homeScore,
+      awayScore: row.awayScore,
+      isComplete: row.isComplete,
+      gameLogId: row.gameLogId,
+    });
+  }
+
+  return Array.from(dayMap.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([dayNumber, games]) => ({ dayNumber, games }));
 }
 
 export async function startDraft(leagueId: string): Promise<void> {

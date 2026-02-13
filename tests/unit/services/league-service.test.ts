@@ -96,22 +96,37 @@ describe('league-service', () => {
   });
 
   it('fetchSchedule calls apiGet without day param when day is omitted', async () => {
-    const schedule = [{ day: 1, games: [] }];
-    mockApiGet.mockResolvedValue({ data: schedule, meta: defaultMeta });
+    // API returns flat game rows; fetchSchedule groups them into ScheduleDay[]
+    const flatRows = [
+      { id: 'g-1', dayNumber: 1, homeTeamId: 't-1', awayTeamId: 't-2', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+      { id: 'g-2', dayNumber: 1, homeTeamId: 't-3', awayTeamId: 't-4', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+    ];
+    mockApiGet.mockResolvedValue({ data: flatRows, meta: defaultMeta });
 
     const result = await fetchSchedule('lg-1');
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/schedule');
-    expect(result).toEqual(schedule);
+    expect(result).toEqual([
+      { dayNumber: 1, games: [
+        { id: 'g-1', homeTeamId: 't-1', awayTeamId: 't-2', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+        { id: 'g-2', homeTeamId: 't-3', awayTeamId: 't-4', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+      ] },
+    ]);
   });
 
   it('fetchSchedule calls apiGet with day query param when day is provided', async () => {
-    const schedule = [{ day: 5, games: [] }];
-    mockApiGet.mockResolvedValue({ data: schedule, meta: defaultMeta });
+    const flatRows = [
+      { id: 'g-5', dayNumber: 5, homeTeamId: 't-1', awayTeamId: 't-2', homeScore: 3, awayScore: 1, isComplete: true, gameLogId: 'gl-5' },
+    ];
+    mockApiGet.mockResolvedValue({ data: flatRows, meta: defaultMeta });
 
     const result = await fetchSchedule('lg-1', 5);
 
     expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/schedule?day=5');
-    expect(result).toEqual(schedule);
+    expect(result).toEqual([
+      { dayNumber: 5, games: [
+        { id: 'g-5', homeTeamId: 't-1', awayTeamId: 't-2', homeScore: 3, awayScore: 1, isComplete: true, gameLogId: 'gl-5' },
+      ] },
+    ]);
   });
 });
