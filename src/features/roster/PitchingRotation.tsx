@@ -1,7 +1,7 @@
 /**
  * PitchingRotation
  *
- * SP1-SP4 with next-up indicator, bullpen with role change, and closer.
+ * SP1-SP4 with next-up indicator, bullpen with role labels (RP/CL).
  * Feature-scoped sub-component. No store imports.
  */
 
@@ -10,9 +10,8 @@ import type { RosterEntry } from '@lib/types/roster';
 export interface PitchingRotationProps {
   readonly rotation: readonly RosterEntry[];
   readonly bullpen: readonly RosterEntry[];
-  readonly closers: readonly RosterEntry[];
   readonly nextStarterIdx: number;
-  readonly onRoleChange?: (entry: RosterEntry, newSlot: 'rotation' | 'bullpen' | 'closer') => void;
+  readonly onRoleChange?: (entry: RosterEntry, newSlot: 'rotation' | 'bullpen') => void;
   readonly onPlayerClick?: (entry: RosterEntry) => void;
 }
 
@@ -77,7 +76,6 @@ function PitcherRow({
 export function PitchingRotation({
   rotation,
   bullpen,
-  closers,
   nextStarterIdx,
   onRoleChange,
   onPlayerClick,
@@ -117,7 +115,7 @@ export function PitchingRotation({
         ))}
       </div>
 
-      {/* Bullpen */}
+      {/* Bullpen (RP and CL unified) */}
       <div className="space-y-1">
         <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
           Bullpen
@@ -129,59 +127,17 @@ export function PitchingRotation({
           <PitcherRow
             key={entry.id}
             entry={entry}
-            label="RP"
+            label={entry.playerCard.pitching?.role === 'CL' ? 'CL' : 'RP'}
             onPlayerClick={onPlayerClick}
             actions={
-              onRoleChange ? (
-                <div className="flex gap-0.5">
-                  {rotation.length < 4 && (
-                    <button
-                      type="button"
-                      onClick={() => onRoleChange(entry, 'rotation')}
-                      className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
-                      title="Move to rotation"
-                    >
-                      SP
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => onRoleChange(entry, 'closer')}
-                    className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
-                    title="Make closer"
-                  >
-                    CL
-                  </button>
-                </div>
-              ) : undefined
-            }
-          />
-        ))}
-      </div>
-
-      {/* Closer */}
-      <div className="space-y-1">
-        <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
-          Closer
-        </p>
-        {closers.length === 0 && (
-          <p className="text-xs text-muted">No closer assigned</p>
-        )}
-        {closers.map((entry) => (
-          <PitcherRow
-            key={entry.id}
-            entry={entry}
-            label="CL"
-            onPlayerClick={onPlayerClick}
-            actions={
-              onRoleChange ? (
+              onRoleChange && rotation.length < 4 ? (
                 <button
                   type="button"
-                  onClick={() => onRoleChange(entry, 'bullpen')}
+                  onClick={() => onRoleChange(entry, 'rotation')}
                   className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
-                  title="Move to bullpen"
+                  title="Move to rotation"
                 >
-                  BP
+                  SP
                 </button>
               ) : undefined
             }

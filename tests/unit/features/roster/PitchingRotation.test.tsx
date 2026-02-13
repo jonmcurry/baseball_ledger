@@ -31,8 +31,16 @@ describe('PitchingRotation', () => {
     pitching: { role: 'SP' as const, grade: 3, stamina: 7, era: 2.36, whip: 1.05, k9: 7.5, bb9: 1.8, hr9: 0.7, usageFlags: [] as string[], isReliever: false },
   };
 
+  const mockCloserCard = {
+    ...mockPitcherCard,
+    playerId: 'p-cl1',
+    nameFirst: 'Trevor',
+    nameLast: 'Hoffman',
+    pitching: { role: 'CL' as const, grade: 9, stamina: 2, era: 2.14, whip: 0.95, k9: 10.5, bb9: 2.0, hr9: 0.7, usageFlags: [] as string[], isReliever: true },
+  };
+
   it('renders heading', () => {
-    render(<PitchingRotation rotation={[]} bullpen={[]} closers={[]} nextStarterIdx={0} />);
+    render(<PitchingRotation rotation={[]} bullpen={[]} nextStarterIdx={0} />);
     expect(screen.getByText('Pitching Staff')).toBeInTheDocument();
   });
 
@@ -44,14 +52,24 @@ describe('PitchingRotation', () => {
         playerCard: mockPitcherCard,
       }),
     ];
-    render(<PitchingRotation rotation={rotation} bullpen={[]} closers={[]} nextStarterIdx={0} />);
+    render(<PitchingRotation rotation={rotation} bullpen={[]} nextStarterIdx={0} />);
     expect(screen.getByText('Greg Maddux')).toBeInTheDocument();
     expect(screen.getByText('Next')).toBeInTheDocument();
     expect(screen.getByText('G3')).toBeInTheDocument();
   });
 
-  it('shows no closer message when none assigned', () => {
-    render(<PitchingRotation rotation={[]} bullpen={[]} closers={[]} nextStarterIdx={0} />);
-    expect(screen.getByText('No closer assigned')).toBeInTheDocument();
+  it('shows CL role label for closers in bullpen', () => {
+    const bullpen = [
+      createMockRosterEntry({
+        id: 'r-cl1',
+        rosterSlot: 'bullpen',
+        playerCard: mockCloserCard,
+        lineupOrder: null,
+        lineupPosition: null,
+      }),
+    ];
+    render(<PitchingRotation rotation={[]} bullpen={bullpen} nextStarterIdx={0} />);
+    expect(screen.getByText('Trevor Hoffman')).toBeInTheDocument();
+    expect(screen.getByText('CL')).toBeInTheDocument();
   });
 });

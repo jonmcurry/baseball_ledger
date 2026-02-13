@@ -65,16 +65,50 @@ export async function generateAndInsertLineups(
     const positionPlayers = entries.filter((e) => !e.player_card.isPitcher);
     const pitcherEntries = entries.filter((e) => e.player_card.isPitcher);
 
-    // 4. Position players: pick best 9, generate lineup
-    const withStats: Array<{ entry: typeof entries[0]; stats: ReturnType<typeof estimateBattingStats> }> = positionPlayers.map((e) => ({
+    // 4. Position players: position-aware starter selection
+    type PlayerWithStats = { entry: typeof entries[0]; stats: ReturnType<typeof estimateBattingStats> };
+    const withStats: PlayerWithStats[] = positionPlayers.map((e) => ({
       entry: e,
       stats: estimateBattingStats(e.player_card),
     }));
 
-    // Sort by OPS descending, take top 9
-    withStats.sort((a, b) => b.stats.ops - a.stats.ops);
-    const starters = withStats.slice(0, 9);
-    const benchPlayers = withStats.slice(9);
+    // Select 9 starters ensuring all defensive positions are covered
+    const REQUIRED_POS = ['C', '1B', '2B', 'SS', '3B'] as const;
+    const OF_POS = ['LF', 'CF', 'RF', 'OF'] as const;
+    const starters: PlayerWithStats[] = [];
+    const usedIds = new Set<string>();
+
+    // Pass 1: Best player at each required infield/catcher position
+    for (const pos of REQUIRED_POS) {
+      const candidates = withStats
+        .filter((p) => !usedIds.has(p.entry.player_id) && p.entry.player_card.primaryPosition === pos)
+        .sort((a, b) => b.stats.ops - a.stats.ops);
+      if (candidates.length > 0) {
+        starters.push(candidates[0]);
+        usedIds.add(candidates[0].entry.player_id);
+      }
+    }
+
+    // Pass 2: Best 3 outfielders (LF/CF/RF/OF all qualify)
+    const ofCandidates = withStats
+      .filter((p) => !usedIds.has(p.entry.player_id) && (OF_POS as readonly string[]).includes(p.entry.player_card.primaryPosition))
+      .sort((a, b) => b.stats.ops - a.stats.ops);
+    for (let i = 0; i < 3 && i < ofCandidates.length; i++) {
+      starters.push(ofCandidates[i]);
+      usedIds.add(ofCandidates[i].entry.player_id);
+    }
+
+    // Pass 3: Fill remaining slots (up to 9) with best available by OPS (becomes DH)
+    const remaining = withStats
+      .filter((p) => !usedIds.has(p.entry.player_id))
+      .sort((a, b) => b.stats.ops - a.stats.ops);
+    while (starters.length < 9 && remaining.length > 0) {
+      const next = remaining.shift()!;
+      starters.push(next);
+      usedIds.add(next.entry.player_id);
+    }
+
+    const benchPlayers = withStats.filter((p) => !usedIds.has(p.entry.player_id));
 
     // Build LineupInput[] for the generator
     const lineupInputs: LineupInput[] = starters.map((s) => ({
@@ -113,21 +147,12 @@ export async function generateAndInsertLineups(
     // Bench position players stay as 'bench' (already the default from draft)
     // No update needed for bench players
 
-    // 6. Assign pitchers by role (only one closer allowed; extras go to bullpen)
-    let closerAssigned = false;
+    // 6. Assign pitchers by role (all non-SP go to bullpen; closer derived at runtime)
     for (const pitcher of pitcherEntries) {
       const pitching = pitcher.player_card.pitching;
       if (!pitching) continue;
 
-      let rosterSlot: string;
-      if (pitching.role === 'SP') {
-        rosterSlot = 'rotation';
-      } else if (pitching.role === 'CL' && !closerAssigned) {
-        rosterSlot = 'closer';
-        closerAssigned = true;
-      } else {
-        rosterSlot = 'bullpen';
-      }
+      const rosterSlot = pitching.role === 'SP' ? 'rotation' : 'bullpen';
 
       await supabase
         .from('rosters')

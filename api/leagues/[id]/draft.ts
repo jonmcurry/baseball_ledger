@@ -21,7 +21,8 @@ import { handleApiError } from '../../_lib/errors';
 import { createServerClient } from '../../../src/lib/supabase/server';
 import type { Json } from '../../../src/lib/types/database';
 import { generateDraftOrder, getPickingTeam, getNextPick, TOTAL_ROUNDS } from '../../../src/lib/draft/draft-order';
-import { selectAIPick, type DraftablePlayer } from '../../../src/lib/draft/ai-strategy';
+import { selectAIPick, getRosterNeeds, type DraftablePlayer } from '../../../src/lib/draft/ai-strategy';
+import { wouldViolateComposition } from '../../../src/lib/draft/composition-guard';
 import type { PlayerCard, MlbBattingStats } from '../../../src/lib/types/player';
 import { SeededRNG } from '../../../src/lib/rng/seeded-rng';
 import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
@@ -499,6 +500,31 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
         category: 'VALIDATION',
         code: 'NOT_YOUR_TURN',
         message: `It is not your turn to pick. Expected team: ${expectedTeamId}`,
+      };
+    }
+  }
+
+  // REQ-DFT-008: Composition guard -- reject picks that make valid roster impossible
+  {
+    const { data: rosterRows } = await supabase
+      .from('rosters')
+      .select('player_card')
+      .eq('team_id', userTeam.id);
+
+    const currentRoster: DraftablePlayer[] = (rosterRows ?? []).map(toDraftablePlayer);
+    const proposedCard = body.playerCard as unknown as PlayerCard;
+    const proposedPick: DraftablePlayer = {
+      card: proposedCard,
+      ops: (proposedCard.mlbBattingStats as MlbBattingStats | undefined)?.OPS ?? 0,
+      sb: (proposedCard.mlbBattingStats as MlbBattingStats | undefined)?.SB ?? 0,
+    };
+
+    const check = wouldViolateComposition(currentRoster, proposedPick);
+    if (!check.allowed) {
+      throw {
+        category: 'VALIDATION',
+        code: 'INVALID_COMPOSITION',
+        message: check.reason ?? 'This pick would make valid roster composition impossible',
       };
     }
   }

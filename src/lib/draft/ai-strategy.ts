@@ -251,6 +251,20 @@ export function selectAIPick(
   }
 
   // -----------------------------------------------------------------------
+  // Hard guard: When remaining picks <= mandatory needs, MUST fill a
+  // mandatory position. Prevents AI from wasting late picks on bench when
+  // starters/rotation/bullpen are still incomplete.
+  // -----------------------------------------------------------------------
+  const totalRosterSize = 21;
+  const remainingPicks = totalRosterSize - roster.length;
+  const mandatoryNeeds = needs.filter((n) => n.slot !== 'bench');
+  if (remainingPicks <= mandatoryNeeds.length && mandatoryNeeds.length > 0) {
+    const mandatoryPositions = mandatoryNeeds.map((n) => n.position);
+    const forced = bestAtPositions(available, mandatoryPositions, rng);
+    if (forced) return forced;
+  }
+
+  // -----------------------------------------------------------------------
   // Early rounds (1-3): Best SP or elite position player, no CL/RP
   // -----------------------------------------------------------------------
   if (round <= EARLY_ROUND_END) {

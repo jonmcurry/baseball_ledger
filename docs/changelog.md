@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-13 - Fix Roster Composition (Position-Aware Starters + Unified Bullpen)
+
+Fixed roster composition being wrong after draft. Four root causes addressed:
+
+- **Position-aware starter selection**: Replaced position-blind top-9-by-OPS
+  selection in `generate-lineup-rows.ts` with 3-pass algorithm: (1) best player
+  at each required position (C, 1B, 2B, SS, 3B), (2) best 3 outfielders, (3)
+  fill remaining DH slot with best available. Guarantees all defensive positions
+  covered in starting lineup.
+- **Unified bullpen**: Eliminated separate 'closer' roster_slot. All RP/CL
+  pitchers now use 'bullpen' slot. Simulation engine derives closer at runtime
+  from bullpen entries with `pitching.role === 'CL'`. Updated types, API
+  endpoints, UI components, and 15+ test files.
+- **AI draft hard guard**: Added mandatory composition enforcement to
+  `selectAIPick()`. When remaining picks equals remaining mandatory positions
+  (starters, rotation, bullpen), AI is forced to fill mandatory needs first.
+  Full 21-round draft composition validated across 50 RNG seeds.
+- **Human pick composition guard**: New `composition-guard.ts` module prevents
+  human picks that would make valid roster composition impossible. Integrated
+  into `handlePick()` in draft endpoint with `INVALID_COMPOSITION` error.
+- **DB migration**: `00024_remove_closer_roster_slot.sql` converts existing
+  'closer' entries to 'bullpen' and updates CHECK constraint.
+
 ## 2026-02-13 - Fix Manager Decisions Accuracy
 
 Fixed false-positive pitcher change detection and wrong team attribution:

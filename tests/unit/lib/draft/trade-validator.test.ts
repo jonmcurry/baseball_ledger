@@ -46,7 +46,7 @@ function mockEntry(id: string, pos: string, isPitcher = false, pitchingRole?: 'S
         pitching: { role: pitchingRole, grade: 5, stamina: 6, era: 3.50, whip: 1.20, k9: 7, bb9: 3, hr9: 1, usageFlags: [], isReliever: pitchingRole !== 'SP' },
       } : {}),
     }),
-    rosterSlot: isPitcher ? (pitchingRole === 'SP' ? 'rotation' : pitchingRole === 'CL' ? 'closer' : 'bullpen') : 'starter',
+    rosterSlot: isPitcher ? (pitchingRole === 'SP' ? 'rotation' : 'bullpen') : 'starter',
     lineupOrder: null,
     lineupPosition: null,
   };

@@ -98,13 +98,12 @@ export async function loadTeamConfig(
     (e: { player_card: unknown }) => (e as { player_card: unknown }).player_card as unknown as PlayerCard,
   );
 
-  // Closer
-  const closerEntries = entries.filter(
-    (e: { roster_slot: string }) => e.roster_slot === 'closer',
-  );
-  const closer = closerEntries.length > 0
-    ? (closerEntries[0] as { player_card: unknown }).player_card as unknown as PlayerCard
-    : null;
+  // Closer: derive from bullpen entries (first with pitching.role === 'CL')
+  const closerIdx = bullpen.findIndex((c) => c.pitching?.role === 'CL');
+  const closer = closerIdx >= 0 ? bullpen[closerIdx] : null;
+  if (closerIdx >= 0) {
+    bullpen.splice(closerIdx, 1);
+  }
 
   // Bench position players
   const benchOnly = entries.filter(

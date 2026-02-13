@@ -54,9 +54,9 @@ describe('Roster types', () => {
 
     it('supports all roster slot types', () => {
       const slots: RosterEntry['rosterSlot'][] = [
-        'starter', 'bench', 'rotation', 'bullpen', 'closer',
+        'starter', 'bench', 'rotation', 'bullpen',
       ];
-      expect(slots).toHaveLength(5);
+      expect(slots).toHaveLength(4);
     });
   });
 

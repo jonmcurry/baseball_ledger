@@ -51,11 +51,6 @@ export function RosterPage() {
     [roster],
   );
 
-  const closers = useMemo(
-    () => roster.filter((r) => r.rosterSlot === 'closer'),
-    [roster],
-  );
-
   const handlePlayerClick = useCallback((entry: RosterEntry) => {
     setProfilePlayer(entry.playerCard);
   }, []);
@@ -104,7 +99,7 @@ export function RosterPage() {
     swapBattingOrder(entry.id, starters[idx + 1].id);
   }, [starters, swapBattingOrder]);
 
-  const handlePitcherRoleChange = useCallback((entry: RosterEntry, newSlot: 'rotation' | 'bullpen' | 'closer') => {
+  const handlePitcherRoleChange = useCallback((entry: RosterEntry, newSlot: 'rotation' | 'bullpen') => {
     changePitcherRole(entry.id, newSlot);
   }, [changePitcherRole]);
 
@@ -193,7 +188,6 @@ export function RosterPage() {
             <PitchingRotation
               rotation={rotation}
               bullpen={bullpen}
-              closers={closers}
               nextStarterIdx={0}
               onRoleChange={handlePitcherRoleChange}
               onPlayerClick={handlePlayerClick}

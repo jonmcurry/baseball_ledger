@@ -7,7 +7,7 @@
  * - Teams and rosters are fetched for the league
  * - Position players are separated from pitchers
  * - generateLineup is called for position player starters
- * - Pitchers are assigned rotation/bullpen/closer by role
+ * - Pitchers are assigned rotation/bullpen by role
  * - Roster rows are updated with correct slots, order, positions
  * - Errors are propagated
  */
@@ -69,7 +69,7 @@ function makePlayerCard(id: string, position: Position, isPitcher: boolean, pitc
   } as PlayerCard;
 }
 
-// 9 position players + 4 SP + 3 RP + 1 CL + 4 bench = 21 total (per REQ-DFT-001)
+// 9 position players + 4 SP + 4 RP/CL + 4 bench = 21 total (per REQ-DFT-001)
 const positionPlayers = [
   { id: 'r-1', player_id: 'c-01', player_card: makePlayerCard('c-01', 'C', false) },
   { id: 'r-2', player_id: '1b01', player_card: makePlayerCard('1b01', '1B', false) },
@@ -256,10 +256,10 @@ describe('generateAndInsertLineups', () => {
       const data = call[0] as Record<string, unknown>;
       return data.roster_slot === 'bullpen';
     });
-    expect(bullpenCalls.length).toBe(3); // 3 RP pitchers
+    expect(bullpenCalls.length).toBe(4); // 3 RP + 1 CL pitchers
   });
 
-  it('assigns CL pitcher to closer slot', async () => {
+  it('assigns CL pitcher to bullpen slot', async () => {
     const { client, updateFn } = createMockSupabase();
 
     await generateAndInsertLineups(client, 'league-1');
@@ -269,10 +269,10 @@ describe('generateAndInsertLineups', () => {
       const data = call[0] as Record<string, unknown>;
       return data.roster_slot === 'closer';
     });
-    expect(closerCalls.length).toBe(1); // 1 CL pitcher
+    expect(closerCalls.length).toBe(0); // CL goes to bullpen, not closer
   });
 
-  it('assigns only one CL as closer, extras go to bullpen', async () => {
+  it('assigns all CL pitchers to bullpen slot alongside RP', async () => {
     // Add a second CL pitcher to the roster
     const rosterWithTwoClosers = [
       ...allRosterRows,
@@ -300,9 +300,9 @@ describe('generateAndInsertLineups', () => {
       const data = call[0] as Record<string, unknown>;
       return data.roster_slot === 'bullpen';
     });
-    expect(closerCalls.length).toBe(1);
-    // 3 RP + 1 extra CL = 4 bullpen
-    expect(bullpenCalls.length).toBe(4);
+    expect(closerCalls.length).toBe(0);
+    // 3 RP + 2 CL = 5 bullpen
+    expect(bullpenCalls.length).toBe(5);
   });
 
   it('throws if team fetch fails', async () => {

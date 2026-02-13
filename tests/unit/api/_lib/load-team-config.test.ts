@@ -161,8 +161,24 @@ describe('loadTeamConfig', () => {
   });
 
   it('returns closer or null', async () => {
+    const closerCard = mockPlayerCard('cl1', {
+      isPitcher: true,
+      primaryPosition: 'CL' as any,
+      pitching: {
+        role: 'CL',
+        grade: 10,
+        stamina: 2,
+        era: 2.50,
+        whip: 1.00,
+        k9: 10.5,
+        bb9: 2.0,
+        hr9: 0.8,
+        usageFlags: [],
+        isReliever: true,
+      },
+    } as any);
     const entriesWithCloser = [
-      { player_id: 'cl1', player_card: mockPitcherCard('cl1'), roster_slot: 'closer', lineup_order: null, lineup_position: null },
+      { player_id: 'cl1', player_card: closerCard, roster_slot: 'bullpen', lineup_order: null, lineup_position: null },
     ];
     const { client: c1 } = createMockSupabase(entriesWithCloser);
     const config1 = await loadTeamConfig(c1, 'team-1');

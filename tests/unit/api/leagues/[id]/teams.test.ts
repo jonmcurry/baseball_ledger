@@ -886,7 +886,7 @@ describe('POST /api/leagues/:id/teams (transactions)', () => {
     );
   });
 
-  it('assigns closer slot when adding a closer', async () => {
+  it('assigns bullpen slot when adding a closer', async () => {
     const teamsBuilder = createMockQueryBuilder({
       data: { id: '550e8400-e29b-41d4-a716-446655440000', owner_id: 'user-123', league_id: 'league-1' },
       error: null,
@@ -924,7 +924,7 @@ describe('POST /api/leagues/:id/teams (transactions)', () => {
 
     expect(res._status).toBe(201);
     expect(rostersBuilder.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ roster_slot: 'closer' }),
+      expect.objectContaining({ roster_slot: 'bullpen' }),
     );
   });
 

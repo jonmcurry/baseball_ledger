@@ -306,6 +306,98 @@ describe('selectAIPick (REQ-DFT-006)', () => {
     }
   });
 
+  describe('hard guard (mandatory composition enforcement)', () => {
+    it('forces RP/CL pick when remaining rounds equal remaining bullpen needs', () => {
+      // 17 players drafted: all starters + 4 SP, no RP/CL yet.
+      // 4 picks remaining, 4 bullpen spots needed -- hard guard must force RP/CL.
+      const roster: DraftablePlayer[] = [
+        makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: '1b', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.8, 0),
+        makeDraftable(makeCard({ playerId: '2b', primaryPosition: '2B', eligiblePositions: ['2B'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'ss', primaryPosition: 'SS', eligiblePositions: ['SS'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: '3b', primaryPosition: '3B', eligiblePositions: ['3B'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'lf', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'cf', primaryPosition: 'CF', eligiblePositions: ['CF'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'rf', primaryPosition: 'RF', eligiblePositions: ['RF'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'dh', primaryPosition: 'DH', eligiblePositions: ['DH'] }), 0.7, 0),
+        // 4 bench
+        makeDraftable(makeCard({ playerId: 'b1', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.6, 0),
+        makeDraftable(makeCard({ playerId: 'b2', primaryPosition: '2B', eligiblePositions: ['2B'] }), 0.6, 0),
+        makeDraftable(makeCard({ playerId: 'b3', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.6, 0),
+        makeDraftable(makeCard({ playerId: 'b4', primaryPosition: 'RF', eligiblePositions: ['RF'] }), 0.6, 0),
+        // 4 SP
+        { card: makePitcherCard('SP', { playerId: 'sp1' }), ops: 0, sb: 0 },
+        { card: makePitcherCard('SP', { playerId: 'sp2' }), ops: 0, sb: 0 },
+        { card: makePitcherCard('SP', { playerId: 'sp3' }), ops: 0, sb: 0 },
+        { card: makePitcherCard('SP', { playerId: 'sp4' }), ops: 0, sb: 0 },
+      ];
+
+      for (let seed = 0; seed < 30; seed++) {
+        const pick = selectAIPick(18, roster, pool, new SeededRNG(seed));
+        expect(pick.card.isPitcher).toBe(true);
+        expect(['RP', 'CL']).toContain(pick.card.pitching?.role);
+      }
+    });
+
+    it('forces SP when rotation incomplete and remaining picks equal mandatory needs', () => {
+      // 18 players drafted: starters + bench + 1 SP + 0 RP.
+      // 3 picks remaining, 3 mandatory needs (3 SP).
+      // But we also need 4 RP... so 7 mandatory needs with only 3 picks.
+      // Wait - let me build a roster where SP is the only mandatory need.
+      // 18 players: starters + bench + 1 SP + 4 RP = 18
+      const roster: DraftablePlayer[] = [
+        makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: '1b', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.8, 0),
+        makeDraftable(makeCard({ playerId: '2b', primaryPosition: '2B', eligiblePositions: ['2B'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'ss', primaryPosition: 'SS', eligiblePositions: ['SS'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: '3b', primaryPosition: '3B', eligiblePositions: ['3B'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'lf', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'cf', primaryPosition: 'CF', eligiblePositions: ['CF'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'rf', primaryPosition: 'RF', eligiblePositions: ['RF'] }), 0.7, 0),
+        makeDraftable(makeCard({ playerId: 'dh', primaryPosition: 'DH', eligiblePositions: ['DH'] }), 0.7, 0),
+        // 4 bench
+        makeDraftable(makeCard({ playerId: 'b1', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.6, 0),
+        makeDraftable(makeCard({ playerId: 'b2', primaryPosition: '2B', eligiblePositions: ['2B'] }), 0.6, 0),
+        makeDraftable(makeCard({ playerId: 'b3', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.6, 0),
+        makeDraftable(makeCard({ playerId: 'b4', primaryPosition: 'RF', eligiblePositions: ['RF'] }), 0.6, 0),
+        // 1 SP only
+        { card: makePitcherCard('SP', { playerId: 'sp1' }), ops: 0, sb: 0 },
+        // 4 RP
+        { card: makePitcherCard('RP', { playerId: 'rp1' }), ops: 0, sb: 0 },
+        { card: makePitcherCard('RP', { playerId: 'rp2' }), ops: 0, sb: 0 },
+        { card: makePitcherCard('CL', { playerId: 'cl1' }), ops: 0, sb: 0 },
+        { card: makePitcherCard('CL', { playerId: 'cl2' }), ops: 0, sb: 0 },
+      ];
+
+      // 3 picks remaining, 3 SP needed -- hard guard must force SP
+      for (let seed = 0; seed < 30; seed++) {
+        const pick = selectAIPick(19, roster, pool, new SeededRNG(seed));
+        expect(pick.card.isPitcher).toBe(true);
+        expect(pick.card.pitching?.role).toBe('SP');
+      }
+    });
+
+    it('full 21-round draft always produces valid composition (50 seeds)', () => {
+      for (let seed = 0; seed < 50; seed++) {
+        const roster: DraftablePlayer[] = [];
+        const rng = new SeededRNG(seed);
+
+        for (let round = 1; round <= 21; round++) {
+          const pick = selectAIPick(round, roster, pool, rng);
+          roster.push(pick);
+        }
+
+        expect(roster).toHaveLength(21);
+
+        const needs = getRosterNeeds(roster);
+        if (needs.length > 0) {
+          const unfilled = needs.map((n) => `${n.position}(${n.slot})`).join(', ');
+          throw new Error(`Seed ${seed}: roster incomplete, unfilled: ${unfilled}`);
+        }
+      }
+    });
+  });
+
   it('considers roster gaps (picks SS when SP is filled and SS is missing)', () => {
     // Roster with SP rotation filled but missing SS (premium position gap)
     const roster: DraftablePlayer[] = [

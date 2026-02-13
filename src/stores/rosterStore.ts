@@ -34,7 +34,7 @@ export interface RosterActions {
     lineupPosition: string | null,
   ) => void;
   swapBattingOrder: (rosterId1: string, rosterId2: string) => void;
-  changePitcherRole: (rosterId: string, newSlot: 'rotation' | 'bullpen' | 'closer') => void;
+  changePitcherRole: (rosterId: string, newSlot: 'rotation' | 'bullpen') => void;
   reset: () => void;
   clearRoster: () => void;
   invalidateRosterCache: (leagueId: string) => void;
@@ -129,13 +129,6 @@ export const useRosterStore = create<RosterStore>()(
             (state) => {
               const entry = state.roster.find((r) => r.id === rosterId);
               if (!entry) return;
-              // If moving to closer, demote current closer to bullpen
-              if (newSlot === 'closer') {
-                const currentCloser = state.roster.find((r) => r.rosterSlot === 'closer');
-                if (currentCloser) {
-                  currentCloser.rosterSlot = 'bullpen';
-                }
-              }
               entry.rosterSlot = newSlot;
               entry.lineupOrder = null;
               entry.lineupPosition = null;

@@ -42,7 +42,7 @@ const LineupUpdateSchema = z.object({
     lineupPosition: z.enum([
       'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'DH',
     ]).nullable(),
-    rosterSlot: z.enum(['starter', 'bench', 'rotation', 'bullpen', 'closer']),
+    rosterSlot: z.enum(['starter', 'bench', 'rotation', 'bullpen']),
   })),
 });
 
@@ -528,19 +528,14 @@ async function handleTrade(
 
 /**
  * Determine the correct roster_slot for an added player based on their card data.
- * Pitchers go to rotation/bullpen/closer based on their pitching role;
+ * Pitchers go to rotation/bullpen based on their pitching role;
  * position players go to bench.
  */
-function determineRosterSlot(playerCard: Record<string, unknown>): 'bench' | 'rotation' | 'bullpen' | 'closer' {
+function determineRosterSlot(playerCard: Record<string, unknown>): 'bench' | 'rotation' | 'bullpen' {
   if (!playerCard.isPitcher) return 'bench';
   const pitching = playerCard.pitching as { role?: string } | undefined;
   if (!pitching?.role) return 'bullpen';
-  switch (pitching.role) {
-    case 'SP': return 'rotation';
-    case 'RP': return 'bullpen';
-    case 'CL': return 'closer';
-    default: return 'bullpen';
-  }
+  return pitching.role === 'SP' ? 'rotation' : 'bullpen';
 }
 
 function toRosterEntry(row: Record<string, unknown>): RosterEntry {

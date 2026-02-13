@@ -5,8 +5,7 @@
  * - 9 starters: C, 1B, 2B, SS, 3B, LF, CF, RF, DH
  * - 4 bench position players
  * - 4 SP (rotation)
- * - 3 RP (bullpen)
- * - 1 CL (closer)
+ * - 4 RP/CL (bullpen)
  * Total: 21 players
  */
 
@@ -119,12 +118,11 @@ function makeCompleteRoster(): DraftablePlayer[] {
     makePitcher('sp000002', 'SP', 3.50),
     makePitcher('sp000003', 'SP', 3.80),
     makePitcher('sp000004', 'SP', 4.00),
-    // 3 RP
+    // 4 RP/CL (bullpen)
     makePitcher('rp000001', 'RP', 3.00),
     makePitcher('rp000002', 'RP', 3.20),
-    makePitcher('rp000003', 'RP', 3.50),
-    // 1 CL
     makePitcher('cl000001', 'CL', 2.80),
+    makePitcher('cl000002', 'CL', 3.10),
   ];
 }
 
@@ -177,20 +175,20 @@ describe('validateRoster', () => {
 
   it('detects missing RP', () => {
     const roster = makeCompleteRoster().filter(
-      (p) => p.card.playerId !== 'rp000003',
+      (p) => p.card.playerId !== 'rp000002',
     );
     const result = validateRoster(roster);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.includes('RP'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('RP') || e.includes('CL') || e.toLowerCase().includes('bullpen'))).toBe(true);
   });
 
-  it('detects missing CL', () => {
+  it('detects missing bullpen pitcher when CL removed', () => {
     const roster = makeCompleteRoster().filter(
       (p) => p.card.playerId !== 'cl000001',
     );
     const result = validateRoster(roster);
     expect(result.valid).toBe(false);
-    expect(result.errors.some((e) => e.includes('CL'))).toBe(true);
+    expect(result.errors.some((e) => e.includes('RP') || e.includes('CL') || e.toLowerCase().includes('bullpen'))).toBe(true);
   });
 
   it('detects multiple gaps simultaneously', () => {
@@ -277,7 +275,7 @@ describe('getRosterGaps', () => {
   it('returns gap for each unfilled position individually', () => {
     // Empty roster -- all positions are gaps
     const gaps = getRosterGaps([]);
-    // 9 starters + 4 bench + 4 SP + 3 RP + 1 CL = 21
+    // 9 starters + 4 bench + 4 SP + 4 RP/CL = 21
     expect(gaps).toHaveLength(21);
   });
 });
@@ -331,7 +329,7 @@ describe('autoFillRoster', () => {
   });
 
   it('fills multiple gaps at once', () => {
-    // Remove CL and one RP
+    // Remove two bullpen pitchers (one CL and one RP)
     const roster = makeCompleteRoster().filter(
       (p) => p.card.playerId !== 'cl000001' && p.card.playerId !== 'rp000001',
     );
@@ -384,22 +382,22 @@ describe('autoFillRoster', () => {
   });
 
   it('handles case when pool lacks needed position', () => {
-    // Missing a CL, but pool has no CL
+    // Missing a bullpen pitcher (CL removed), but pool has no RP or CL
     const roster = makeCompleteRoster().filter(
       (p) => p.card.playerId !== 'cl000001',
     );
     const pool: DraftablePlayer[] = [
       makeBatter('poolX01', '1B'),
-      makePitcher('poolRP99', 'RP', 3.00),
+      makePitcher('poolSP99', 'SP', 3.00),
     ];
     const filled = autoFillRoster(roster, pool);
     // Should still return what it can, even if incomplete
     expect(filled.length).toBeLessThanOrEqual(REQUIRED_ROSTER_SIZE);
-    // CL gap remains unfilled
-    const clPlayers = filled.filter(
-      (p) => p.card.isPitcher && p.card.pitching?.role === 'CL',
+    // Bullpen gap remains unfilled (only 3 bullpen: rp000001, rp000002, cl000002)
+    const bullpenPlayers = filled.filter(
+      (p) => p.card.isPitcher && (p.card.pitching?.role === 'RP' || p.card.pitching?.role === 'CL'),
     );
-    expect(clPlayers).toHaveLength(0);
+    expect(bullpenPlayers).toHaveLength(3);
   });
 });
 

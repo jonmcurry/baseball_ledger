@@ -9,8 +9,7 @@
  *   9 starters: C, 1B, 2B, SS, 3B, 3 OF (LF/CF/RF), DH
  *   4 bench position players
  *   4 SP (rotation)
- *   3 RP (bullpen)
- *   1 CL (closer)
+ *   4 RP/CL (bullpen) -- RP and CL are interchangeable
  *
  * Layer 1: Pure logic, no I/O, deterministic given inputs.
  */
@@ -31,7 +30,7 @@ const INDIVIDUAL_STARTER_POSITIONS: Position[] = ['C', '1B', '2B', 'SS', '3B', '
 /** A gap in the roster that needs filling. */
 export interface RosterGap {
   position: Position;
-  slot: 'starter' | 'bench' | 'rotation' | 'bullpen' | 'closer';
+  slot: 'starter' | 'bench' | 'rotation' | 'bullpen';
 }
 
 /** Result of roster validation. */
@@ -49,14 +48,12 @@ function countPositions(roster: DraftablePlayer[]): {
   ofCount: number;
   spCount: number;
   rpCount: number;
-  clCount: number;
   benchCount: number;
 } {
   const startersFilled = new Map<Position, number>();
   let ofCount = 0;
   let spCount = 0;
   let rpCount = 0;
-  let clCount = 0;
   let benchCount = 0;
 
   // Track which individual starter slots are filled
@@ -66,10 +63,11 @@ function countPositions(roster: DraftablePlayer[]): {
     const card = entry.card;
 
     if (card.isPitcher && card.pitching) {
-      switch (card.pitching.role) {
-        case 'SP': spCount++; break;
-        case 'RP': rpCount++; break;
-        case 'CL': clCount++; break;
+      if (card.pitching.role === 'SP') {
+        spCount++;
+      } else {
+        // RP and CL both count toward the unified bullpen pool
+        rpCount++;
       }
     } else {
       const pos = card.primaryPosition;
@@ -89,7 +87,7 @@ function countPositions(roster: DraftablePlayer[]): {
   }
 
   // Copy individual fills into the map
-  return { startersFilled, ofCount, spCount, rpCount, clCount, benchCount };
+  return { startersFilled, ofCount, spCount, rpCount, benchCount };
 }
 
 /**
@@ -123,15 +121,10 @@ export function getRosterGaps(roster: DraftablePlayer[]): RosterGap[] {
     gaps.push({ position: 'SP', slot: 'rotation' });
   }
 
-  // Check RP (need 3)
-  const rpNeeded = 3 - counts.rpCount;
+  // Check RP/CL (need 4 total, RP and CL interchangeable)
+  const rpNeeded = 4 - counts.rpCount;
   for (let i = 0; i < rpNeeded; i++) {
     gaps.push({ position: 'RP', slot: 'bullpen' });
-  }
-
-  // Check CL (need 1)
-  if (counts.clCount < 1) {
-    gaps.push({ position: 'CL', slot: 'closer' });
   }
 
   // Check bench (need 4)
@@ -170,10 +163,7 @@ export function validateRoster(roster: DraftablePlayer[]): RosterValidationResul
         errors.push(`Missing SP in rotation`);
         break;
       case 'bullpen':
-        errors.push(`Missing RP in bullpen`);
-        break;
-      case 'closer':
-        errors.push(`Missing CL (closer)`);
+        errors.push(`Missing RP/CL in bullpen`);
         break;
       case 'bench':
         errors.push(`Missing bench position player`);
@@ -229,6 +219,12 @@ export function autoFillRoster(
         if (gap.slot === 'starter' && OF_POSITIONS.includes(gap.position)) {
           // OF gaps accept any OF player
           return !p.card.isPitcher && OF_POSITIONS.includes(p.card.primaryPosition);
+        }
+
+        // Bullpen: RP and CL both qualify
+        if (gap.slot === 'bullpen') {
+          return p.card.isPitcher && p.card.pitching &&
+            (p.card.pitching.role === 'RP' || p.card.pitching.role === 'CL');
         }
 
         // Direct position match

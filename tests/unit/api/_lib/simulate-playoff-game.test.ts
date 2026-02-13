@@ -105,13 +105,13 @@ function buildMockRosterEntries(teamId: string) {
       lineup_position: null,
     });
   }
-  // 1 closer
+  // 1 closer (in bullpen with CL role)
   entries.push({
     id: `roster-${teamId}-cl`,
     team_id: teamId,
     player_id: `${teamId}-cl1`,
-    player_card: { ...mockPlayerCard(`${teamId}-cl1`), pitcherGrade: 9, positions: ['P'] },
-    roster_slot: 'closer',
+    player_card: { ...mockPlayerCard(`${teamId}-cl1`), pitcherGrade: 9, positions: ['P'], pitching: { role: 'CL' } },
+    roster_slot: 'bullpen',
     lineup_order: null,
     lineup_position: null,
   });
