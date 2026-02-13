@@ -81,12 +81,34 @@ describe('GET /api/leagues/:id/stats?type=batting', () => {
       },
     ];
 
-    let fromCallCount = 0;
     const countBuilder = addNotMethod(createMockQueryBuilder({ data: null, error: null, count: 75 }));
     const dataBuilder = addNotMethod(createMockQueryBuilder({ data: battingData, error: null, count: null }));
-    const mockFrom = vi.fn().mockImplementation(() => {
-      fromCallCount++;
-      return fromCallCount === 1 ? countBuilder : dataBuilder;
+    const teamsBuilder = createMockQueryBuilder({
+      data: [
+        { id: 't1', name: 'Yankees', league_division: 'AL' },
+        { id: 't2', name: 'Red Sox', league_division: 'NL' },
+      ],
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({
+      data: [
+        { player_id: 'p1', player_card: { nameFirst: 'John', nameLast: 'Smith' } },
+        { player_id: 'p2', player_card: { nameFirst: 'Jane', nameLast: 'Doe' } },
+      ],
+      error: null,
+      count: null,
+    });
+
+    let statsCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'season_stats') {
+        statsCallCount++;
+        return statsCallCount === 1 ? countBuilder : dataBuilder;
+      }
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      return createMockQueryBuilder();
     });
     mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
 
@@ -100,6 +122,8 @@ describe('GET /api/leagues/:id/stats?type=batting', () => {
     // Verify camelCase transformation
     expect(res._body.data[0]).toHaveProperty('playerId', 'p1');
     expect(res._body.data[0]).toHaveProperty('teamId', 't1');
+    expect(res._body.data[0]).toHaveProperty('playerName', 'John Smith');
+    expect(res._body.data[0]).toHaveProperty('teamName', 'Yankees');
     expect(res._body.data[0]).toHaveProperty('stats');
     expect(res._body.data[0]).not.toHaveProperty('player_id');
     expect(res._body.meta).toHaveProperty('requestId');
@@ -214,12 +238,34 @@ describe('GET /api/leagues/:id/stats?type=pitching', () => {
       },
     ];
 
-    let fromCallCount = 0;
     const countBuilder = addNotMethod(createMockQueryBuilder({ data: null, error: null, count: 40 }));
     const dataBuilder = addNotMethod(createMockQueryBuilder({ data: pitchingData, error: null, count: null }));
-    const mockFrom = vi.fn().mockImplementation(() => {
-      fromCallCount++;
-      return fromCallCount === 1 ? countBuilder : dataBuilder;
+    const teamsBuilder = createMockQueryBuilder({
+      data: [
+        { id: 't1', name: 'Yankees', league_division: 'AL' },
+        { id: 't2', name: 'Red Sox', league_division: 'NL' },
+      ],
+      error: null,
+      count: null,
+    });
+    const rostersBuilder = createMockQueryBuilder({
+      data: [
+        { player_id: 'p1', player_card: { nameFirst: 'Ace', nameLast: 'Pitcher' } },
+        { player_id: 'p2', player_card: { nameFirst: 'Sam', nameLast: 'Hurler' } },
+      ],
+      error: null,
+      count: null,
+    });
+
+    let statsCallCount = 0;
+    const mockFrom = vi.fn().mockImplementation((table: string) => {
+      if (table === 'season_stats') {
+        statsCallCount++;
+        return statsCallCount === 1 ? countBuilder : dataBuilder;
+      }
+      if (table === 'teams') return teamsBuilder;
+      if (table === 'rosters') return rostersBuilder;
+      return createMockQueryBuilder();
     });
     mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
 
@@ -233,6 +279,8 @@ describe('GET /api/leagues/:id/stats?type=pitching', () => {
     // Verify camelCase transformation
     expect(res._body.data[0]).toHaveProperty('playerId', 'p1');
     expect(res._body.data[0]).toHaveProperty('teamId', 't1');
+    expect(res._body.data[0]).toHaveProperty('playerName', 'Ace Pitcher');
+    expect(res._body.data[0]).toHaveProperty('teamName', 'Yankees');
     expect(res._body.data[0]).toHaveProperty('stats');
     expect(res._body.data[0]).not.toHaveProperty('player_id');
     expect(res._body.meta).toHaveProperty('requestId');

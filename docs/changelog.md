@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-13 - Fix Stats Accumulation + Display Names
+
+Fixed season stats not accumulating and stats page showing raw IDs:
+
+- **Accumulator bug**: `accumulateSeasonStats` queried `rosters` table with
+  `.eq('league_id', leagueId)` but `rosters` has no `league_id` column, causing
+  a silent failure. Fixed to query through `teams` table first to get team IDs,
+  then query `rosters` by `team_id`.
+- **Stats API name resolution**: Added `getPlayerNameMap()` and `getTeamNameMap()`
+  helpers to the stats endpoint. Batting and pitching leaders now return
+  `playerName` and `teamName` alongside the raw IDs.
+- **Column display**: Updated `StatColumnConfigs.ts` to display player/team names
+  with fallback to IDs.
+- **Updated types**: Added optional `playerName` and `teamName` to leader entry
+  types in `leaders.ts`.
+- **Test mocks updated**: Stats API tests and accumulator tests updated for new
+  table-routing query pattern.
+
 ## 2026-02-13 - Fix Draft Pool Pitcher Shortage
 
 Fixed root cause of wrong roster composition after draft (only 2-3 pitchers

@@ -20,14 +20,18 @@ import { computePythagorean } from './standings';
 
 export interface BattingLeaderEntry {
   playerId: string;
+  playerName?: string;
   teamId: string;
+  teamName?: string;
   leagueDivision: 'AL' | 'NL';
   stats: BattingStats;
 }
 
 export interface PitchingLeaderEntry {
   playerId: string;
+  playerName?: string;
   teamId: string;
+  teamName?: string;
   leagueDivision: 'AL' | 'NL';
   stats: PitchingStats;
 }

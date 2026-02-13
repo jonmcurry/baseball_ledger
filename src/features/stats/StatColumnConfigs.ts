@@ -17,15 +17,15 @@ import { ipToDecimal } from '@lib/stats/derived';
 // ---------------------------------------------------------------------------
 
 const BATTING_ID_COLUMNS: StatColumn<BattingLeaderEntry>[] = [
-  { key: 'name', header: 'Player', getValue: (r) => r.playerId },
-  { key: 'team', header: 'Team', getValue: (r) => r.teamId },
+  { key: 'name', header: 'Player', getValue: (r) => r.playerName ?? r.playerId },
+  { key: 'team', header: 'Team', getValue: (r) => r.teamName ?? r.teamId },
   { key: 'G', header: 'G', getValue: (r) => r.stats.G, numeric: true },
   { key: 'AB', header: 'AB', getValue: (r) => r.stats.AB, numeric: true },
 ];
 
 const PITCHING_ID_COLUMNS: StatColumn<PitchingLeaderEntry>[] = [
-  { key: 'name', header: 'Player', getValue: (r) => r.playerId },
-  { key: 'team', header: 'Team', getValue: (r) => r.teamId },
+  { key: 'name', header: 'Player', getValue: (r) => r.playerName ?? r.playerId },
+  { key: 'team', header: 'Team', getValue: (r) => r.teamName ?? r.teamId },
   { key: 'W', header: 'W', getValue: (r) => r.stats.W, numeric: true },
   { key: 'L', header: 'L', getValue: (r) => r.stats.L, numeric: true },
 ];

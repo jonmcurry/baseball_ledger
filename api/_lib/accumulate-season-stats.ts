@@ -101,11 +101,17 @@ export async function accumulateSeasonStats(
     }
   }
 
-  // Step 5: Fetch player -> team_id mapping from rosters
+  // Step 5: Fetch player -> team_id mapping from rosters (via teams in this league)
+  const { data: leagueTeams } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('league_id', leagueId);
+  const teamIds = (leagueTeams ?? []).map((t) => t.id);
+
   const { data: rosterRows, error: rosterError } = await supabase
     .from('rosters')
     .select('player_id, team_id')
-    .eq('league_id', leagueId)
+    .in('team_id', teamIds)
     .in('player_id', playerIdArray);
 
   if (rosterError) {

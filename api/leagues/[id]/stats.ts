@@ -30,6 +30,50 @@ async function getTeamDivisionMap(
   return map;
 }
 
+/** Build player_id -> {nameFirst, nameLast} lookup from rosters in the league. */
+async function getPlayerNameMap(
+  supabase: ReturnType<typeof createServerClient>,
+  leagueId: string,
+): Promise<Map<string, { nameFirst: string; nameLast: string }>> {
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('league_id', leagueId);
+  const teamIds = (teams ?? []).map((t) => t.id);
+  if (teamIds.length === 0) return new Map();
+
+  const { data: rosters } = await supabase
+    .from('rosters')
+    .select('player_id, player_card')
+    .in('team_id', teamIds);
+
+  const map = new Map<string, { nameFirst: string; nameLast: string }>();
+  for (const r of rosters ?? []) {
+    const card = r.player_card as { nameFirst?: string; nameLast?: string };
+    map.set(r.player_id, {
+      nameFirst: card.nameFirst ?? '',
+      nameLast: card.nameLast ?? '',
+    });
+  }
+  return map;
+}
+
+/** Build team_id -> team name lookup. */
+async function getTeamNameMap(
+  supabase: ReturnType<typeof createServerClient>,
+  leagueId: string,
+): Promise<Map<string, string>> {
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('id, name')
+    .eq('league_id', leagueId);
+  const map = new Map<string, string>();
+  for (const t of teams ?? []) {
+    map.set(t.id, t.name);
+  }
+  return map;
+}
+
 async function handleBatting(req: VercelRequest, res: VercelResponse, requestId: string) {
   const leagueId = req.query.id as string;
   const page = Math.max(1, parseInt(req.query.page as string || '1', 10));
@@ -37,14 +81,16 @@ async function handleBatting(req: VercelRequest, res: VercelResponse, requestId:
 
   const supabase = createServerClient();
 
-  // Get total count + team division map in parallel
-  const [countResult, teamDivMap] = await Promise.all([
+  // Get total count + lookups in parallel
+  const [countResult, teamDivMap, playerNameMap, teamNameMap] = await Promise.all([
     supabase
       .from('season_stats')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', leagueId)
       .not('batting_stats', 'is', null),
     getTeamDivisionMap(supabase, leagueId),
+    getPlayerNameMap(supabase, leagueId),
+    getTeamNameMap(supabase, leagueId),
   ]);
 
   if (countResult.error) {
@@ -63,12 +109,17 @@ async function handleBatting(req: VercelRequest, res: VercelResponse, requestId:
     throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
   }
 
-  const leaders = (data ?? []).map((row) => ({
-    player_id: row.player_id,
-    team_id: row.team_id,
-    league_division: teamDivMap.get(row.team_id) ?? 'AL',
-    stats: row.batting_stats,
-  }));
+  const leaders = (data ?? []).map((row) => {
+    const names = playerNameMap.get(row.player_id);
+    return {
+      player_id: row.player_id,
+      player_name: names ? `${names.nameFirst} ${names.nameLast}`.trim() : row.player_id,
+      team_id: row.team_id,
+      team_name: teamNameMap.get(row.team_id) ?? row.team_id,
+      league_division: teamDivMap.get(row.team_id) ?? 'AL',
+      stats: row.batting_stats,
+    };
+  });
 
   paginated(
     res,
@@ -85,14 +136,16 @@ async function handlePitching(req: VercelRequest, res: VercelResponse, requestId
 
   const supabase = createServerClient();
 
-  // Get total count + team division map in parallel
-  const [countResult, teamDivMap] = await Promise.all([
+  // Get total count + lookups in parallel
+  const [countResult, teamDivMap, playerNameMap, teamNameMap] = await Promise.all([
     supabase
       .from('season_stats')
       .select('*', { count: 'exact', head: true })
       .eq('league_id', leagueId)
       .not('pitching_stats', 'is', null),
     getTeamDivisionMap(supabase, leagueId),
+    getPlayerNameMap(supabase, leagueId),
+    getTeamNameMap(supabase, leagueId),
   ]);
 
   if (countResult.error) {
@@ -110,12 +163,17 @@ async function handlePitching(req: VercelRequest, res: VercelResponse, requestId
     throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
   }
 
-  const leaders = (data ?? []).map((row) => ({
-    player_id: row.player_id,
-    team_id: row.team_id,
-    league_division: teamDivMap.get(row.team_id) ?? 'AL',
-    stats: row.pitching_stats,
-  }));
+  const leaders = (data ?? []).map((row) => {
+    const names = playerNameMap.get(row.player_id);
+    return {
+      player_id: row.player_id,
+      player_name: names ? `${names.nameFirst} ${names.nameLast}`.trim() : row.player_id,
+      team_id: row.team_id,
+      team_name: teamNameMap.get(row.team_id) ?? row.team_id,
+      league_division: teamDivMap.get(row.team_id) ?? 'AL',
+      stats: row.pitching_stats,
+    };
+  });
 
   paginated(
     res,

@@ -118,10 +118,22 @@ function createMockSupabase(options: {
         upsert: upsertFn,
       };
     }
+    if (table === 'teams') {
+      // Return team IDs for the league (used to query rosters)
+      const uniqueTeamIds = [...new Set(rosterRows.map((r) => r.team_id))];
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValue({
+            data: uniqueTeamIds.map((id) => ({ id })),
+            error: null,
+          }),
+        }),
+      };
+    }
     if (table === 'rosters') {
       return {
         select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
+          in: vi.fn().mockReturnValue({
             in: vi.fn().mockResolvedValue({
               data: rosterRows,
               error: null,
