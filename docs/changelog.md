@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-02-13 - Draft Modal Text Contrast Review (Phase 89)
+
+Investigation of reported "white textbox with barely visible text" in draft
+modals. All draft components use the Ballpark Night dark theme: dark navy
+backgrounds (#132337, #0C1B2A) with cream/tan text (#F5F0E6, #BDB5A7).
+All color pairs pass WCAG AA+ contrast standards. No contrast issues found
+in current codebase -- the issue was resolved by the Phase 82 UI redesign.
+
 ## 2026-02-13 - Trade Evaluation Improvements (Phase 88)
 
 Improved trade evaluation scoring, transparency, and team needs awareness.
