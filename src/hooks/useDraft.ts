@@ -29,6 +29,8 @@ export function useDraft() {
   const tickTimer = useDraftStore((s) => s.tickTimer);
   const resetTimer = useDraftStore((s) => s.resetTimer);
   const triggerAutoPick = useDraftStore((s) => s.triggerAutoPick);
+  const autoDraftEnabled = useDraftStore((s) => s.autoDraftEnabled);
+  const setAutoDraftEnabled = useDraftStore((s) => s.setAutoDraftEnabled);
 
   const myTeam = useMemo(() => {
     if (!user) return null;
@@ -60,6 +62,8 @@ export function useDraft() {
     timeRemaining: pickTimerSeconds,
     submitPick,
     triggerAutoPick,
+    autoDraftEnabled,
+    setAutoDraftEnabled,
     fetchDraftState,
     fetchAvailablePlayers,
     tickTimer,

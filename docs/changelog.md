@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-02-13 - Auto-Draft Toggle
+
+Added ability for human players to have the CPU draft for them:
+
+- **Auto-Draft toggle button**: Lightning bolt button in draft board header toggles
+  auto-draft ON/OFF. Gold styling when active, muted when inactive.
+- **Auto-fire on turn**: When enabled, auto-pick fires 500ms after it becomes the
+  player's turn, using the existing server-side AI strategy (round-aware, position
+  needs-based). Brief delay gives visual feedback of "on the clock" state.
+- **Timer disabled**: Pick timer shows --:-- when auto-draft is active since picks
+  fire automatically. Player table is also disabled to prevent accidental manual picks.
+- **Banner update**: "On the Clock" banner shows "Auto-Drafting..." when enabled.
+- Store: `autoDraftEnabled` boolean + `setAutoDraftEnabled` action in draftStore.
+  Resets on store reset (new draft session).
+
 ## 2026-02-13 - Stats Page Data Loading + Box Score Resilience
 
 Fixed stats not populating and box score "Detailed game data not available":

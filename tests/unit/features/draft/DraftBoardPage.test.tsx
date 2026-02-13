@@ -10,13 +10,14 @@ import {
   createMockAvailablePlayer,
 } from '../../../fixtures/mock-draft';
 
-const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTriggerAutoPick, mockTickTimer, mockResetTimer, mockUseDraft, mockUseDraftTimer } = vi.hoisted(() => {
+const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTriggerAutoPick, mockTickTimer, mockResetTimer, mockSetAutoDraftEnabled, mockUseDraft, mockUseDraftTimer } = vi.hoisted(() => {
   const mockFetchDraftState = vi.fn();
   const mockFetchAvailablePlayers = vi.fn();
   const mockSubmitPick = vi.fn();
   const mockTriggerAutoPick = vi.fn();
   const mockTickTimer = vi.fn();
   const mockResetTimer = vi.fn();
+  const mockSetAutoDraftEnabled = vi.fn();
   const mockUseDraftTimer = vi.fn();
   const mockUseDraft = vi.fn().mockReturnValue({
     draftState: null,
@@ -29,12 +30,14 @@ const { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTrig
     timeRemaining: 60,
     submitPick: mockSubmitPick,
     triggerAutoPick: mockTriggerAutoPick,
+    autoDraftEnabled: false,
+    setAutoDraftEnabled: mockSetAutoDraftEnabled,
     fetchDraftState: mockFetchDraftState,
     fetchAvailablePlayers: mockFetchAvailablePlayers,
     tickTimer: mockTickTimer,
     resetTimer: mockResetTimer,
   });
-  return { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTriggerAutoPick, mockTickTimer, mockResetTimer, mockUseDraft, mockUseDraftTimer };
+  return { mockFetchDraftState, mockFetchAvailablePlayers, mockSubmitPick, mockTriggerAutoPick, mockTickTimer, mockResetTimer, mockSetAutoDraftEnabled, mockUseDraft, mockUseDraftTimer };
 });
 
 vi.mock('@hooks/useLeague', () => ({
@@ -80,6 +83,8 @@ describe('DraftBoardPage', () => {
       timeRemaining: 60,
       submitPick: mockSubmitPick,
       triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -103,8 +108,13 @@ describe('DraftBoardPage', () => {
       currentTeamName: null,
       timeRemaining: 60,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
+      tickTimer: mockTickTimer,
+      resetTimer: mockResetTimer,
     });
     render(<DraftBoardPage />);
     expect(screen.getByText('Loading draft board...')).toBeInTheDocument();
@@ -126,8 +136,13 @@ describe('DraftBoardPage', () => {
       currentTeamName: null,
       timeRemaining: 0,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
+      tickTimer: mockTickTimer,
+      resetTimer: mockResetTimer,
     });
     render(<DraftBoardPage />);
     expect(screen.getByText('Draft Complete')).toBeInTheDocument();
@@ -144,8 +159,13 @@ describe('DraftBoardPage', () => {
       currentTeamName: 'New York Yankees',
       timeRemaining: 45,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
+      tickTimer: mockTickTimer,
+      resetTimer: mockResetTimer,
     });
     render(<DraftBoardPage />);
     // "On the Clock" appears in both banner and PickTimer; verify at least one
@@ -184,6 +204,9 @@ describe('DraftBoardPage', () => {
       currentTeamName: 'New York Yankees',
       timeRemaining: 45,
       submitPick: mockSubmitPick,
+      triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -214,6 +237,8 @@ describe('DraftBoardPage', () => {
       timeRemaining: 0,
       submitPick: mockSubmitPick,
       triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -243,6 +268,8 @@ describe('DraftBoardPage', () => {
       timeRemaining: 0,
       submitPick: mockSubmitPick,
       triggerAutoPick: mockTriggerAutoPick,
+      autoDraftEnabled: false,
+      setAutoDraftEnabled: mockSetAutoDraftEnabled,
       fetchDraftState: mockFetchDraftState,
       fetchAvailablePlayers: mockFetchAvailablePlayers,
       tickTimer: mockTickTimer,
@@ -257,5 +284,176 @@ describe('DraftBoardPage', () => {
 
     // Server-side auto-pick does not depend on client-side player list
     expect(mockTriggerAutoPick).toHaveBeenCalledWith('league-1', true);
+  });
+
+  // Auto-draft toggle tests
+  describe('auto-draft toggle', () => {
+    it('renders auto-draft toggle button when draft is active', () => {
+      mockUseDraft.mockReturnValue({
+        draftState: createMockDraftState({ status: 'in_progress' }),
+        availablePlayers: [createMockAvailablePlayer()],
+        isLoading: false,
+        error: null,
+        myTeam: { id: 'team-1', city: 'New York', name: 'Yankees', ownerId: 'user-1' },
+        isMyPick: false,
+        currentTeamName: 'Boston Red Sox',
+        timeRemaining: 60,
+        submitPick: mockSubmitPick,
+        triggerAutoPick: mockTriggerAutoPick,
+        autoDraftEnabled: false,
+        setAutoDraftEnabled: mockSetAutoDraftEnabled,
+        fetchDraftState: mockFetchDraftState,
+        fetchAvailablePlayers: mockFetchAvailablePlayers,
+        tickTimer: mockTickTimer,
+        resetTimer: mockResetTimer,
+      });
+
+      render(<DraftBoardPage />);
+      expect(screen.getByText('Auto-Draft OFF')).toBeInTheDocument();
+    });
+
+    it('shows Auto-Draft ON when enabled', () => {
+      mockUseDraft.mockReturnValue({
+        draftState: createMockDraftState({ status: 'in_progress' }),
+        availablePlayers: [createMockAvailablePlayer()],
+        isLoading: false,
+        error: null,
+        myTeam: { id: 'team-1', city: 'New York', name: 'Yankees', ownerId: 'user-1' },
+        isMyPick: true,
+        currentTeamName: 'New York Yankees',
+        timeRemaining: 60,
+        submitPick: mockSubmitPick,
+        triggerAutoPick: mockTriggerAutoPick,
+        autoDraftEnabled: true,
+        setAutoDraftEnabled: mockSetAutoDraftEnabled,
+        fetchDraftState: mockFetchDraftState,
+        fetchAvailablePlayers: mockFetchAvailablePlayers,
+        tickTimer: mockTickTimer,
+        resetTimer: mockResetTimer,
+      });
+
+      render(<DraftBoardPage />);
+      expect(screen.getByText('Auto-Draft ON')).toBeInTheDocument();
+    });
+
+    it('shows Auto-Drafting... banner when enabled and it is my pick', () => {
+      mockUseDraft.mockReturnValue({
+        draftState: createMockDraftState({ status: 'in_progress' }),
+        availablePlayers: [createMockAvailablePlayer()],
+        isLoading: false,
+        error: null,
+        myTeam: { id: 'team-1', city: 'New York', name: 'Yankees', ownerId: 'user-1' },
+        isMyPick: true,
+        currentTeamName: 'New York Yankees',
+        timeRemaining: 60,
+        submitPick: mockSubmitPick,
+        triggerAutoPick: mockTriggerAutoPick,
+        autoDraftEnabled: true,
+        setAutoDraftEnabled: mockSetAutoDraftEnabled,
+        fetchDraftState: mockFetchDraftState,
+        fetchAvailablePlayers: mockFetchAvailablePlayers,
+        tickTimer: mockTickTimer,
+        resetTimer: mockResetTimer,
+      });
+
+      render(<DraftBoardPage />);
+      expect(screen.getByText('Auto-Drafting...')).toBeInTheDocument();
+    });
+
+    it('disables timer when auto-draft is enabled', () => {
+      mockUseDraft.mockReturnValue({
+        draftState: createMockDraftState({ status: 'in_progress', currentTeamId: 'team-1' }),
+        availablePlayers: [createMockAvailablePlayer()],
+        isLoading: false,
+        error: null,
+        myTeam: { id: 'team-1', city: 'New York', name: 'Yankees', ownerId: 'user-1' },
+        isMyPick: true,
+        currentTeamName: 'New York Yankees',
+        timeRemaining: 45,
+        submitPick: mockSubmitPick,
+        triggerAutoPick: mockTriggerAutoPick,
+        autoDraftEnabled: true,
+        setAutoDraftEnabled: mockSetAutoDraftEnabled,
+        fetchDraftState: mockFetchDraftState,
+        fetchAvailablePlayers: mockFetchAvailablePlayers,
+        tickTimer: mockTickTimer,
+        resetTimer: mockResetTimer,
+      });
+
+      render(<DraftBoardPage />);
+
+      // Timer should be inactive when auto-draft is on
+      expect(mockUseDraftTimer).toHaveBeenCalledWith(
+        expect.objectContaining({ isActive: false }),
+      );
+    });
+
+    it('fires auto-pick after delay when auto-draft enabled and it is my pick', async () => {
+      vi.useFakeTimers();
+      mockUseDraftTimer.mockImplementation(() => {});
+
+      mockUseDraft.mockReturnValue({
+        draftState: createMockDraftState({ status: 'in_progress', currentTeamId: 'team-1' }),
+        availablePlayers: [createMockAvailablePlayer()],
+        isLoading: false,
+        error: null,
+        myTeam: { id: 'team-1', city: 'New York', name: 'Yankees', ownerId: 'user-1' },
+        isMyPick: true,
+        currentTeamName: 'New York Yankees',
+        timeRemaining: 60,
+        submitPick: mockSubmitPick,
+        triggerAutoPick: mockTriggerAutoPick,
+        autoDraftEnabled: true,
+        setAutoDraftEnabled: mockSetAutoDraftEnabled,
+        fetchDraftState: mockFetchDraftState,
+        fetchAvailablePlayers: mockFetchAvailablePlayers,
+        tickTimer: mockTickTimer,
+        resetTimer: mockResetTimer,
+      });
+
+      render(<DraftBoardPage />);
+
+      // Should not fire immediately
+      expect(mockTriggerAutoPick).not.toHaveBeenCalled();
+
+      // Advance past the 500ms delay
+      vi.advanceTimersByTime(600);
+
+      expect(mockTriggerAutoPick).toHaveBeenCalledWith('league-1', true);
+
+      vi.useRealTimers();
+    });
+
+    it('does not auto-fire when auto-draft is disabled', async () => {
+      vi.useFakeTimers();
+      mockUseDraftTimer.mockImplementation(() => {});
+
+      mockUseDraft.mockReturnValue({
+        draftState: createMockDraftState({ status: 'in_progress', currentTeamId: 'team-1' }),
+        availablePlayers: [createMockAvailablePlayer()],
+        isLoading: false,
+        error: null,
+        myTeam: { id: 'team-1', city: 'New York', name: 'Yankees', ownerId: 'user-1' },
+        isMyPick: true,
+        currentTeamName: 'New York Yankees',
+        timeRemaining: 60,
+        submitPick: mockSubmitPick,
+        triggerAutoPick: mockTriggerAutoPick,
+        autoDraftEnabled: false,
+        setAutoDraftEnabled: mockSetAutoDraftEnabled,
+        fetchDraftState: mockFetchDraftState,
+        fetchAvailablePlayers: mockFetchAvailablePlayers,
+        tickTimer: mockTickTimer,
+        resetTimer: mockResetTimer,
+      });
+
+      render(<DraftBoardPage />);
+
+      vi.advanceTimersByTime(1000);
+
+      expect(mockTriggerAutoPick).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
   });
 });

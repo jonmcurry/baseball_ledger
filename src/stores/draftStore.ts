@@ -39,6 +39,7 @@ export interface DraftStoreState {
   isLoading: boolean;
   error: string | null;
   pickTimerSeconds: number;
+  autoDraftEnabled: boolean;
 }
 
 export interface DraftStoreActions {
@@ -49,6 +50,7 @@ export interface DraftStoreActions {
   setAvailablePlayers: (players: AvailablePlayer[]) => void;
   tickTimer: () => void;
   resetTimer: (seconds: number) => void;
+  setAutoDraftEnabled: (enabled: boolean) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
@@ -65,6 +67,7 @@ const initialState: DraftStoreState = {
   isLoading: false,
   error: null,
   pickTimerSeconds: 60,
+  autoDraftEnabled: false,
 };
 
 export const useDraftStore = create<DraftStoreType>()(
@@ -198,6 +201,9 @@ export const useDraftStore = create<DraftStoreType>()(
 
       setAvailablePlayers: (players) =>
         set((state) => { state.availablePlayers = players; }, false, 'setAvailablePlayers'),
+
+      setAutoDraftEnabled: (enabled) =>
+        set((state) => { state.autoDraftEnabled = enabled; }, false, 'setAutoDraftEnabled'),
 
       tickTimer: () =>
         set((state) => {

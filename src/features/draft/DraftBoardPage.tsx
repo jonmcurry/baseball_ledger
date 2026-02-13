@@ -44,6 +44,8 @@ export function DraftBoardPage() {
     timeRemaining,
     submitPick,
     triggerAutoPick,
+    autoDraftEnabled,
+    setAutoDraftEnabled,
     fetchDraftState,
     fetchAvailablePlayers,
     tickTimer,
@@ -72,6 +74,16 @@ export function DraftBoardPage() {
     if (!league?.id) return;
     triggerAutoPick(league.id, true);
   }, [league?.id, triggerAutoPick]);
+
+  // Auto-draft: fire auto-pick immediately when it becomes the user's turn
+  useEffect(() => {
+    if (!league?.id || !isMyPick || !autoDraftEnabled || isLoading) return;
+    if (draftState?.status !== 'in_progress') return;
+    const timeout = setTimeout(() => {
+      triggerAutoPick(league.id, true);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [isMyPick, autoDraftEnabled, league?.id, draftState?.status, isLoading, triggerAutoPick]);
 
   const handleFilterChange = useCallback((filters: PlayerTableFilters) => {
     if (!league?.id) return;
@@ -102,9 +114,9 @@ export function DraftBoardPage() {
     };
   }, [draftState?.picks, currentTeamName, availablePlayers]);
 
-  // REQ-DFT-004: 60-second pick timer
+  // REQ-DFT-004: 60-second pick timer (disabled when auto-draft is active)
   useDraftTimer({
-    isActive: isMyPick && draftState?.status === 'in_progress',
+    isActive: isMyPick && draftState?.status === 'in_progress' && !autoDraftEnabled,
     currentTeamId: draftState?.currentTeamId ?? null,
     pickTimerSeconds: timeRemaining,
     tickTimer,
@@ -145,7 +157,25 @@ export function DraftBoardPage() {
         </div>
 
         {isDraftActive && (
-          <PickTimer timeRemaining={timeRemaining} isActive={isMyPick} />
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
+              className={`vintage-card flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                autoDraftEnabled
+                  ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/20 text-[var(--color-gold)]'
+                  : 'border-[var(--border-default)] text-[var(--color-muted)] hover:text-[var(--color-ink)]'
+              }`}
+              aria-pressed={autoDraftEnabled}
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Auto-Draft {autoDraftEnabled ? 'ON' : 'OFF'}
+            </button>
+            <PickTimer timeRemaining={timeRemaining} isActive={isMyPick && !autoDraftEnabled} />
+          </div>
         )}
       </div>
 
@@ -212,7 +242,9 @@ export function DraftBoardPage() {
                 isMyPick ? 'text-[var(--color-gold)]' : 'text-[var(--color-ink)]'
               }`}
             >
-              {isMyPick ? "You're On the Clock!" : `Waiting for ${currentTeamName ?? 'next team'}...`}
+              {isMyPick
+                ? (autoDraftEnabled ? 'Auto-Drafting...' : "You're On the Clock!")
+                : `Waiting for ${currentTeamName ?? 'next team'}...`}
             </p>
             <p className="font-stat text-xs text-[var(--color-muted)]">
               Round {draftState.currentRound}, Pick {draftState.currentPick}
@@ -242,7 +274,7 @@ export function DraftBoardPage() {
             onSelect={handlePlayerSelect}
             onPlayerClick={handlePlayerClick}
             onFilterChange={handleFilterChange}
-            disabled={!isMyPick}
+            disabled={!isMyPick || autoDraftEnabled}
           />
         </div>
 

@@ -35,6 +35,7 @@ describe('draftStore', () => {
     expect(state.draftState).toBeNull();
     expect(state.isLoading).toBe(false);
     expect(state.error).toBeNull();
+    expect(state.autoDraftEnabled).toBe(false);
   });
 
   it('sets available players', () => {
@@ -61,15 +62,25 @@ describe('draftStore', () => {
     expect(useDraftStore.getState().isLoading).toBe(true);
   });
 
+  it('toggles autoDraftEnabled', () => {
+    expect(useDraftStore.getState().autoDraftEnabled).toBe(false);
+    useDraftStore.getState().setAutoDraftEnabled(true);
+    expect(useDraftStore.getState().autoDraftEnabled).toBe(true);
+    useDraftStore.getState().setAutoDraftEnabled(false);
+    expect(useDraftStore.getState().autoDraftEnabled).toBe(false);
+  });
+
   it('resets to initial state', () => {
     useDraftStore.getState().setError('some error');
     useDraftStore.getState().setAvailablePlayers([createMockAvailablePlayer()]);
+    useDraftStore.getState().setAutoDraftEnabled(true);
     useDraftStore.getState().reset();
 
     const state = useDraftStore.getState();
     expect(state.draftState).toBeNull();
     expect(state.error).toBeNull();
     expect(state.availablePlayers).toHaveLength(0);
+    expect(state.autoDraftEnabled).toBe(false);
   });
 
   describe('fetchDraftState league refresh on completion', () => {
