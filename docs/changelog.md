@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-02-13 - Trade Evaluation Improvements (Phase 88)
+
+Improved trade evaluation scoring, transparency, and team needs awareness.
+
+- Replaced crude card byte sum with stats-based valuation:
+  batters use OPS*100 + SB*0.5 + fieldingPct*20; pitchers use
+  (4.50-ERA)*30 + K9*5; falls back to card bytes when stats unavailable
+- Added 10% value bonus for incoming players that fill a team positional need
+- Added per-player value breakdown (`playerBreakdowns`) to evaluation response
+  showing raw value, adjusted value, positional premiums, and needs bonuses
+- Updated `TradeEvaluationPanel` with manager style badge, percentage-based
+  value diff display, and two-column "Giving Up" / "Receiving" breakdown table
+- Extended `PlayerBreakdown` type in `ai.ts` with position, premium, needsBonus
+- Updated `useTradeEvaluation` hook to expose playerBreakdowns
+- 6 new tests: 2 for stats-based valuation, 4 for breakdowns and needs bonus
+
 ## 2026-02-13 - Box Score and Play-by-Play Persistence (Phase 86+87)
 
 Box scores and play-by-play data were generated during simulation but discarded

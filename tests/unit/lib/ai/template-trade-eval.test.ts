@@ -42,9 +42,11 @@ describe('evaluateTradeTemplate', () => {
 
   it('balanced manager counters when value is close to threshold', () => {
     // Close but slightly below +5% threshold -> counter
+    // Use teamNeeds: [] so needs bonus doesn't apply
     const result = evaluateTradeTemplate(makeRequest({
       playersOffered: [{ name: 'A', position: 'LF', value: 100 }],
       playersRequested: [{ name: 'B', position: 'RF', value: 100 }],
+      teamNeeds: [],
     }));
     expect(result.recommendation).toBe('counter');
   });
@@ -56,6 +58,7 @@ describe('evaluateTradeTemplate', () => {
       managerName: 'Cap Spalding',
       playersOffered: [{ name: 'A', position: 'LF', value: 50 }],
       playersRequested: [{ name: 'B', position: 'RF', value: 55 }],
+      teamNeeds: [],
     }));
     // +10% doesn't meet conservative +15% threshold
     expect(result.recommendation).not.toBe('accept');
@@ -112,6 +115,7 @@ describe('evaluateTradeTemplate', () => {
     const result = evaluateTradeTemplate(makeRequest({
       playersOffered: [{ name: 'A', position: 'LF', value: 100 }],
       playersRequested: [{ name: 'B', position: 'RF', value: 133 }],
+      teamNeeds: [],
     }));
     expect(result.valueDiff).toBe(0.33);
   });
@@ -122,5 +126,65 @@ describe('evaluateTradeTemplate', () => {
       playersRequested: [{ name: 'B', position: 'RF', value: 50 }],
     }));
     expect(result.valueDiff).toBe(0);
+  });
+
+  it('includes per-player breakdowns in response', () => {
+    const result = evaluateTradeTemplate(makeRequest({
+      playersOffered: [
+        { name: 'Player A', position: 'LF', value: 50 },
+        { name: 'Player B', position: '1B', value: 40 },
+      ],
+      playersRequested: [
+        { name: 'Player C', position: 'RF', value: 55 },
+      ],
+    }));
+
+    expect(result.playerBreakdowns).toBeDefined();
+    expect(result.playerBreakdowns).toHaveLength(3);
+
+    const offeredPlayers = result.playerBreakdowns!.filter((p) => p.side === 'offered');
+    const requestedPlayers = result.playerBreakdowns!.filter((p) => p.side === 'requested');
+    expect(offeredPlayers).toHaveLength(2);
+    expect(requestedPlayers).toHaveLength(1);
+    expect(offeredPlayers[0].name).toBe('Player A');
+    expect(offeredPlayers[0].rawValue).toBe(50);
+  });
+
+  it('applies team needs bonus to incoming players that fill needs', () => {
+    // Balanced threshold = +5%, but the player fills a team need (RF)
+    // Without needs bonus: (50-50)/50 = 0% -> counter
+    // With 10% needs bonus on RF: requestedValue = 50*1.10 = 55, diff = +10% -> accept
+    const result = evaluateTradeTemplate(makeRequest({
+      managerStyle: 'balanced',
+      playersOffered: [{ name: 'A', position: 'LF', value: 50 }],
+      playersRequested: [{ name: 'B', position: 'RF', value: 50 }],
+      teamNeeds: ['RF'],
+    }));
+    expect(result.recommendation).toBe('accept');
+  });
+
+  it('does not apply team needs bonus to positions not in teamNeeds', () => {
+    const result = evaluateTradeTemplate(makeRequest({
+      managerStyle: 'balanced',
+      playersOffered: [{ name: 'A', position: 'LF', value: 50 }],
+      playersRequested: [{ name: 'B', position: 'LF', value: 50 }],
+      teamNeeds: ['SP'],
+    }));
+    // No needs bonus, so 0% diff < 5% threshold -> counter
+    expect(result.recommendation).toBe('counter');
+  });
+
+  it('breakdown shows adjusted values with needs bonus applied', () => {
+    const result = evaluateTradeTemplate(makeRequest({
+      playersOffered: [{ name: 'A', position: 'LF', value: 50 }],
+      playersRequested: [{ name: 'B', position: 'RF', value: 50 }],
+      teamNeeds: ['RF'],
+    }));
+
+    const requested = result.playerBreakdowns!.find((p) => p.name === 'B');
+    expect(requested).toBeDefined();
+    expect(requested!.rawValue).toBe(50);
+    expect(requested!.adjustedValue).toBeCloseTo(55, 0); // 50 * 1.10 needs bonus
+    expect(requested!.needsBonus).toBe(true);
   });
 });

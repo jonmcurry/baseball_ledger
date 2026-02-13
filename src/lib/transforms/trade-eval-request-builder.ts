@@ -10,17 +10,36 @@
 
 import type { TradeEvaluationRequest } from '../types/ai';
 import type { ManagerStyle } from '../simulation/manager-profiles';
+import type { PlayerCard } from '../types/player';
 import type { RosterEntry } from '../types/roster';
 
 /** Core positions that define team needs. */
 const CORE_POSITIONS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP'] as const;
 
 /**
- * Sum the first 35 APBA card bytes to get a raw player value.
+ * Compute player value using real MLB stats when available, falling back to
+ * raw APBA card byte sum. Aligns with draft valuation formula (migration 00022).
+ *
+ * Batters: OPS * 100 + SB * 0.5 + fieldingPct * 20
+ * Pitchers: (4.50 - ERA) * 30 + K9 * 5
+ * Fallback: sum of all 35 card bytes
  */
-function cardValue(card: readonly number[] | undefined): number {
-  if (!card || card.length === 0) return 0;
-  return card.reduce((sum, v) => sum + v, 0);
+function playerValue(card: PlayerCard): number {
+  // Pitcher with real stats
+  if (card.isPitcher && card.pitching) {
+    return Math.max(0, (4.50 - card.pitching.era) * 30 + card.pitching.k9 * 5);
+  }
+
+  // Batter with real MLB stats
+  if (!card.isPitcher && card.mlbBattingStats) {
+    return card.mlbBattingStats.OPS * 100
+      + card.mlbBattingStats.SB * 0.5
+      + card.fieldingPct * 20;
+  }
+
+  // Fallback: raw APBA card byte sum
+  if (!card.card || card.card.length === 0) return 0;
+  return card.card.reduce((sum, v) => sum + v, 0);
 }
 
 /**
@@ -45,7 +64,7 @@ function mapPlayer(
   return {
     name: `${card.nameFirst} ${card.nameLast}`,
     position: card.eligiblePositions?.[0] ?? 'UT',
-    value: cardValue(card.card),
+    value: playerValue(card),
   };
 }
 

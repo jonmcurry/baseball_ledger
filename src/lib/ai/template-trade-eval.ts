@@ -12,7 +12,7 @@
  * Layer 1: Pure logic, no I/O, no side effects.
  */
 
-import type { TradeEvaluationRequest, TradeEvaluationResponse } from '../types/ai';
+import type { TradeEvaluationRequest, TradeEvaluationResponse, PlayerBreakdown } from '../types/ai';
 import type { ManagerStyle } from '../simulation/manager-profiles';
 
 /** Minimum value threshold (percentage) for each manager style to accept a trade. */
@@ -32,19 +32,39 @@ const POSITIONAL_PREMIUMS: Record<string, number> = {
   CL: 1.05,
 };
 
+/** Bonus multiplier for incoming players that fill a team positional need. */
+const NEEDS_BONUS = 1.10;
+
 /**
- * Calculate total value of a set of players, with optional positional weighting.
+ * Calculate total value of a set of players, with optional positional weighting
+ * and team needs bonus for incoming players.
  */
 function calculateSideValue(
   players: ReadonlyArray<{ readonly value: number; readonly position: string }>,
   usePositionalPremiums: boolean,
-): number {
-  return players.reduce((sum, p) => {
+  teamNeeds: ReadonlyArray<string>,
+  applyNeedsBonus: boolean,
+): { total: number; breakdowns: Array<{ rawValue: number; adjustedValue: number; premium: number; needsBonus: boolean }> } {
+  let total = 0;
+  const breakdowns: Array<{ rawValue: number; adjustedValue: number; premium: number; needsBonus: boolean }> = [];
+
+  for (const p of players) {
     const premium = usePositionalPremiums
       ? (POSITIONAL_PREMIUMS[p.position] ?? 1.0)
       : 1.0;
-    return sum + p.value * premium;
-  }, 0);
+    const needsMatch = applyNeedsBonus && teamNeeds.includes(p.position);
+    const needsMult = needsMatch ? NEEDS_BONUS : 1.0;
+    const adjusted = p.value * premium * needsMult;
+    total += adjusted;
+    breakdowns.push({
+      rawValue: p.value,
+      adjustedValue: adjusted,
+      premium,
+      needsBonus: needsMatch,
+    });
+  }
+
+  return { total, breakdowns };
 }
 
 /**
@@ -97,12 +117,12 @@ function buildReasoning(
 export function evaluateTradeTemplate(request: TradeEvaluationRequest): TradeEvaluationResponse {
   const isAnalytical = request.managerStyle === 'analytical';
 
-  const offeredValue = calculateSideValue(request.playersOffered, false);
-  const requestedValue = calculateSideValue(request.playersRequested, isAnalytical);
+  const offered = calculateSideValue(request.playersOffered, false, request.teamNeeds, false);
+  const requested = calculateSideValue(request.playersRequested, isAnalytical, request.teamNeeds, true);
 
-  const valueDiff = offeredValue === 0
+  const valueDiff = offered.total === 0
     ? 0
-    : (requestedValue - offeredValue) / offeredValue;
+    : (requested.total - offered.total) / offered.total;
 
   const threshold = ACCEPTANCE_THRESHOLDS[request.managerStyle];
 
@@ -117,10 +137,40 @@ export function evaluateTradeTemplate(request: TradeEvaluationRequest): TradeEva
 
   const reasoning = buildReasoning(request, valueDiff, recommendation);
 
+  // Build per-player breakdowns for transparency
+  const playerBreakdowns: PlayerBreakdown[] = [];
+  for (let i = 0; i < request.playersOffered.length; i++) {
+    const p = request.playersOffered[i];
+    const bd = offered.breakdowns[i];
+    playerBreakdowns.push({
+      name: p.name,
+      side: 'offered',
+      position: p.position,
+      rawValue: bd.rawValue,
+      adjustedValue: bd.adjustedValue,
+      premium: bd.premium,
+      needsBonus: bd.needsBonus,
+    });
+  }
+  for (let i = 0; i < request.playersRequested.length; i++) {
+    const p = request.playersRequested[i];
+    const bd = requested.breakdowns[i];
+    playerBreakdowns.push({
+      name: p.name,
+      side: 'requested',
+      position: p.position,
+      rawValue: bd.rawValue,
+      adjustedValue: bd.adjustedValue,
+      premium: bd.premium,
+      needsBonus: bd.needsBonus,
+    });
+  }
+
   return {
     recommendation,
     reasoning,
     valueDiff: Math.round(valueDiff * 100) / 100,
     source: 'template',
+    playerBreakdowns,
   };
 }

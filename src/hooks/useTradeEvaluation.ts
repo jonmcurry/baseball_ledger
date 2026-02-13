@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useCallback, useState } from 'react';
-import type { TradeEvaluationRequest, AiSource } from '@lib/types/ai';
+import type { TradeEvaluationRequest, AiSource, PlayerBreakdown } from '@lib/types/ai';
 import { evaluateTradeTemplate } from '@lib/ai/template-trade-eval';
 import { evaluateTrade } from '@services/ai-service';
 
@@ -17,6 +17,7 @@ export interface UseTradeEvaluationReturn {
   reasoning: string | null;
   valueDiff: number;
   source: AiSource | null;
+  playerBreakdowns: ReadonlyArray<PlayerBreakdown> | undefined;
   fetchAiEval: () => Promise<void>;
 }
 
@@ -39,6 +40,7 @@ export function useTradeEvaluation(
   const reasoning = aiOverride?.reasoning ?? template?.reasoning ?? null;
   const valueDiff = aiOverride?.valueDiff ?? template?.valueDiff ?? 0;
   const source = aiOverride?.source ?? template?.source ?? null;
+  const playerBreakdowns = template?.playerBreakdowns;
 
   const fetchAiEval = useCallback(async () => {
     if (!request) return;
@@ -56,5 +58,5 @@ export function useTradeEvaluation(
     }
   }, [request]);
 
-  return { recommendation, reasoning, valueDiff, source, fetchAiEval };
+  return { recommendation, reasoning, valueDiff, source, playerBreakdowns, fetchAiEval };
 }

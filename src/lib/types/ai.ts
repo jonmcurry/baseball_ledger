@@ -84,11 +84,22 @@ export interface TradeEvaluationRequest {
   readonly teamNeeds: ReadonlyArray<string>;
 }
 
+export interface PlayerBreakdown {
+  readonly name: string;
+  readonly side: 'offered' | 'requested';
+  readonly position: string;
+  readonly rawValue: number;
+  readonly adjustedValue: number;
+  readonly premium: number;
+  readonly needsBonus: boolean;
+}
+
 export interface TradeEvaluationResponse {
   readonly recommendation: 'accept' | 'reject' | 'counter';
   readonly reasoning: string;
   readonly valueDiff: number;
   readonly source: AiSource;
+  readonly playerBreakdowns?: ReadonlyArray<PlayerBreakdown>;
 }
 
 // --- Draft Pick Reasoning ---
