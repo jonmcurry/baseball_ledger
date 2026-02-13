@@ -118,15 +118,17 @@ describe('season-runner', () => {
       expect(result.games[1].gameId).toBe('game-2');
     });
 
-    it('returns compact results without play-by-play (REQ-NFR-010)', () => {
+    it('returns compact results with box score and play-by-play', () => {
       const games = [makeDayGameConfig('teamA', 'teamB', 'game-1')];
       const result = runDay(1, games, 42);
 
       const game = result.games[0];
-      // CompactGameResult should NOT have playByPlay or boxScore
-      expect(game).not.toHaveProperty('playByPlay');
-      expect(game).not.toHaveProperty('boxScore');
-      // But should have scores and stat lines
+      // CompactGameResult retains boxScore and playByPlay for persistence
+      expect(game).toHaveProperty('playByPlay');
+      expect(game).toHaveProperty('boxScore');
+      expect(game.boxScore.lineScore.home.length).toBeGreaterThanOrEqual(9);
+      expect(game.playByPlay.length).toBeGreaterThan(0);
+      // And should have scores and stat lines
       expect(game.homeScore).toBeGreaterThanOrEqual(0);
       expect(game.awayScore).toBeGreaterThanOrEqual(0);
       expect(game.playerBattingLines.length).toBeGreaterThan(0);

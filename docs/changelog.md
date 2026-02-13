@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-13 - Box Score and Play-by-Play Persistence (Phase 86+87)
+
+Box scores and play-by-play data were generated during simulation but discarded
+before database persistence. The `compactResult()` function stripped these fields
+from `GameResult` to save memory, leaving `game_logs.box_score` and
+`game_logs.play_by_play` columns always NULL.
+
+- Added `boxScore` and `playByPlay` fields to `CompactGameResult` interface
+- Updated `compactResult()` to preserve box score and play-by-play data
+- Updated `simulate-day.ts` to include `box_score` and `play_by_play` as
+  JSON-stringified columns in game log entries
+- Updated `simulate-playoff-game.ts` to persist box_score and play_by_play
+  for playoff games as well
+- Created migration `00023_simulate_day_rpc_box_score.sql` to update the
+  `simulate_day_commit` RPC function with `box_score` and `play_by_play` columns
+- Game detail endpoint (`games/[gid].ts`) already uses `select('*')` so it
+  automatically returns the now-populated data
+- Updated season-runner test to verify box score and play-by-play are retained
+- Updated migration count tests (22 -> 23)
+
 ## 2026-02-12 - Player Season Stats Display (Phase 85)
 
 Added individual player season stats viewing. The PlayerProfileModal now has a

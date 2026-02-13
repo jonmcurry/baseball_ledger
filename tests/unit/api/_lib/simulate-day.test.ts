@@ -41,6 +41,23 @@ function createMockSupabase(options: {
   };
 }
 
+const mockBoxScore = {
+  lineScore: { away: [0, 0, 1, 0, 0, 2, 0, 0, 0], home: [1, 0, 0, 3, 0, 0, 2, 1, 0] },
+  awayHits: 6,
+  homeHits: 10,
+  awayErrors: 1,
+  homeErrors: 0,
+};
+
+const mockPlayByPlay = [
+  {
+    inning: 1, halfInning: 'top', outs: 0, batterId: 'b1', pitcherId: 'p1',
+    cardPosition: 7, cardValue: 15, outcomeTableRow: 2, outcome: 15,
+    description: 'Single to left', basesAfter: { first: 'b1', second: null, third: null },
+    scoreAfter: { home: 0, away: 0 },
+  },
+];
+
 const mockDayResult = {
   dayNumber: 5,
   games: [
@@ -56,6 +73,8 @@ const mockDayResult = {
       savePitcherId: null,
       playerBattingLines: [],
       playerPitchingLines: [],
+      boxScore: mockBoxScore,
+      playByPlay: mockPlayByPlay,
     },
     {
       gameId: 'g-2',
@@ -69,6 +88,8 @@ const mockDayResult = {
       savePitcherId: 'p-5',
       playerBattingLines: [],
       playerPitchingLines: [],
+      boxScore: mockBoxScore,
+      playByPlay: [],
     },
   ],
 };
@@ -155,6 +176,23 @@ describe('simulateDayOnServer', () => {
 
     expect(fromFn).toHaveBeenCalledWith('leagues');
     expect(updateBuilder.eq).toHaveBeenCalledWith('id', 'league-1');
+  });
+
+  it('includes box_score and play_by_play in game log entries', async () => {
+    const { client, rpcFn } = createMockSupabase();
+
+    await simulateDayOnServer(client, 'league-1', 5, [], 42);
+
+    const gameLogEntries = rpcFn.mock.calls[0][1].p_game_logs;
+    const entry = gameLogEntries[0];
+
+    expect(entry).toHaveProperty('box_score');
+    expect(entry).toHaveProperty('play_by_play');
+    // Verify they are JSON stringified
+    const boxScore = JSON.parse(entry.box_score);
+    expect(boxScore).toHaveProperty('lineScore');
+    expect(boxScore).toHaveProperty('awayHits', 6);
+    expect(boxScore).toHaveProperty('homeHits', 10);
   });
 
   it('throws on RPC error', async () => {

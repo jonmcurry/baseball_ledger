@@ -13,7 +13,7 @@
  * Layer 1: Pure logic, no I/O, deterministic given seed.
  */
 
-import type { GameResult, BattingLine, PitchingLine } from '../types/game';
+import type { GameResult, BattingLine, PitchingLine, BoxScore, PlayByPlayEntry } from '../types/game';
 import type { PlayerCard, Position } from '../types/player';
 import type { ManagerStyle } from './manager-profiles';
 import { runGame } from './game-runner';
@@ -42,7 +42,9 @@ export interface DayGameConfig {
 }
 
 /**
- * A game result with play-by-play stripped for memory efficiency.
+ * A game result retained after simulation. Box score and play-by-play are
+ * kept for single-day server-side simulation (needed for game_logs persistence)
+ * but may be stripped for bulk multi-day simulation to save memory (REQ-NFR-010).
  */
 export interface CompactGameResult {
   gameId: string;
@@ -56,6 +58,8 @@ export interface CompactGameResult {
   savePitcherId: string | null;
   playerBattingLines: BattingLine[];
   playerPitchingLines: PitchingLine[];
+  boxScore: BoxScore;
+  playByPlay: PlayByPlayEntry[];
 }
 
 /**
@@ -75,8 +79,12 @@ export interface SeasonResult {
 }
 
 /**
- * Strip play-by-play and box score from a GameResult to save memory.
- * Per REQ-NFR-010: only batting/pitching lines and scores are retained.
+ * Convert a full GameResult to a CompactGameResult, dropping only
+ * playerNames (not needed for persistence). Box score and play-by-play
+ * are retained for game_logs persistence.
+ *
+ * For bulk multi-day simulation (runSeason), play-by-play is stripped
+ * after the day callback to release memory per REQ-NFR-010.
  */
 function compactResult(result: GameResult): CompactGameResult {
   return {
@@ -91,6 +99,8 @@ function compactResult(result: GameResult): CompactGameResult {
     savePitcherId: result.savePitcherId,
     playerBattingLines: result.playerBattingLines,
     playerPitchingLines: result.playerPitchingLines,
+    boxScore: result.boxScore,
+    playByPlay: result.playByPlay,
   };
 }
 

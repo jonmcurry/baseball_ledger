@@ -72,6 +72,6 @@ describe('League deletion CASCADE constraints (REQ-LGE-010)', () => {
 
   it('total migration file count matches expected', () => {
     const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql'));
-    expect(files.length).toBe(22);
+    expect(files.length).toBe(23);
   });
 });

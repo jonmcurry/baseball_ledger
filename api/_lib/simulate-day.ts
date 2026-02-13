@@ -58,6 +58,8 @@ export async function simulateDayOnServer(
     save_pitcher_id: game.savePitcherId,
     batting_lines: JSON.stringify(game.playerBattingLines),
     pitching_lines: JSON.stringify(game.playerPitchingLines),
+    box_score: JSON.stringify(game.boxScore),
+    play_by_play: JSON.stringify(game.playByPlay),
   }));
 
   // Step 3: Build standings deltas

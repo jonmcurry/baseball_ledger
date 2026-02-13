@@ -133,7 +133,7 @@ export async function simulatePlayoffGame(
     };
   }
 
-  // Step 8: Insert game_log
+  // Step 8: Insert game_log (including box_score and play_by_play)
   await supabase
     .from('game_logs')
     .insert({
@@ -150,6 +150,8 @@ export async function simulatePlayoffGame(
       save_pitcher_id: gameResult.savePitcherId,
       batting_lines: JSON.stringify(gameResult.playerBattingLines),
       pitching_lines: JSON.stringify(gameResult.playerPitchingLines),
+      box_score: JSON.stringify(gameResult.boxScore),
+      play_by_play: JSON.stringify(gameResult.playByPlay),
     });
 
   return {
