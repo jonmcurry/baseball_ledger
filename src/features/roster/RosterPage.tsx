@@ -196,6 +196,7 @@ export function RosterPage() {
               closers={closers}
               nextStarterIdx={0}
               onRoleChange={handlePitcherRoleChange}
+              onPlayerClick={handlePlayerClick}
             />
           </div>
         </>

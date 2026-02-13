@@ -13,6 +13,7 @@ export interface PitchingRotationProps {
   readonly closers: readonly RosterEntry[];
   readonly nextStarterIdx: number;
   readonly onRoleChange?: (entry: RosterEntry, newSlot: 'rotation' | 'bullpen' | 'closer') => void;
+  readonly onPlayerClick?: (entry: RosterEntry) => void;
 }
 
 function PitcherRow({
@@ -20,11 +21,13 @@ function PitcherRow({
   label,
   isNext,
   actions,
+  onPlayerClick,
 }: {
   entry: RosterEntry;
   label?: string;
   isNext?: boolean;
   actions?: React.ReactNode;
+  onPlayerClick?: (entry: RosterEntry) => void;
 }) {
   return (
     <div
@@ -40,9 +43,19 @@ function PitcherRow({
             {label}
           </span>
         )}
-        <span className="min-w-0 truncate font-body font-medium text-[var(--text-primary)]">
-          {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
-        </span>
+        {onPlayerClick ? (
+          <button
+            type="button"
+            className="min-w-0 truncate text-left font-body font-medium text-[var(--text-primary)] underline-offset-2 hover:underline"
+            onClick={() => onPlayerClick(entry)}
+          >
+            {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
+          </button>
+        ) : (
+          <span className="min-w-0 truncate font-body font-medium text-[var(--text-primary)]">
+            {entry.playerCard.nameFirst} {entry.playerCard.nameLast}
+          </span>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {entry.playerCard.pitching?.grade != null && (
@@ -67,6 +80,7 @@ export function PitchingRotation({
   closers,
   nextStarterIdx,
   onRoleChange,
+  onPlayerClick,
 }: PitchingRotationProps) {
   return (
     <div className="vintage-card space-y-4">
@@ -86,6 +100,7 @@ export function PitchingRotation({
             entry={entry}
             label={`SP${idx + 1}`}
             isNext={idx === nextStarterIdx}
+            onPlayerClick={onPlayerClick}
             actions={
               onRoleChange ? (
                 <button
@@ -115,6 +130,7 @@ export function PitchingRotation({
             key={entry.id}
             entry={entry}
             label="RP"
+            onPlayerClick={onPlayerClick}
             actions={
               onRoleChange ? (
                 <div className="flex gap-0.5">
@@ -156,6 +172,7 @@ export function PitchingRotation({
             key={entry.id}
             entry={entry}
             label="CL"
+            onPlayerClick={onPlayerClick}
             actions={
               onRoleChange ? (
                 <button
