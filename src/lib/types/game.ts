@@ -73,6 +73,8 @@ export interface GamePitcherStats {
 
 export interface BattingLine {
   playerId: string;
+  playerName?: string;
+  teamSide?: 'home' | 'away';
   AB: number;
   R: number;
   H: number;
@@ -90,6 +92,8 @@ export interface BattingLine {
 
 export interface PitchingLine {
   playerId: string;
+  playerName?: string;
+  teamSide?: 'home' | 'away';
   IP: number;
   H: number;
   R: number;

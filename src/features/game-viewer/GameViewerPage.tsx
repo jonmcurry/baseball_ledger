@@ -175,6 +175,17 @@ export function GameViewerPage() {
       const awayName = dbGame.awayTeam
         ? `${dbGame.awayTeam.city} ${dbGame.awayTeam.name}`
         : teamNameMap.get(dbGame.awayTeamId) ?? 'Away';
+
+      // Build playerNames from stored batting/pitching lines (available when
+      // lines include playerName field from simulation)
+      const names: Record<string, string> = {};
+      for (const bl of dbGame.battingLines ?? []) {
+        if (bl.playerName) names[bl.playerId] = bl.playerName;
+      }
+      for (const pl of dbGame.pitchingLines ?? []) {
+        if (pl.playerName) names[pl.playerId] = pl.playerName;
+      }
+
       return {
         homeTeamId: dbGame.homeTeamId,
         awayTeamId: dbGame.awayTeamId,
@@ -188,7 +199,7 @@ export function GameViewerPage() {
         winningPitcherId: dbGame.winningPitcherId ?? '',
         losingPitcherId: dbGame.losingPitcherId ?? '',
         savePitcherId: dbGame.savePitcherId ?? null,
-        playerNames: {},
+        playerNames: names,
         homeTeamName: homeName,
         awayTeamName: awayName,
       };

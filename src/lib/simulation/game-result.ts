@@ -155,9 +155,15 @@ export function assignPitcherDecisions(
 /**
  * Create an empty batting line for a player.
  */
-export function buildEmptyBattingLine(playerId: string): BattingLine {
+export function buildEmptyBattingLine(
+  playerId: string,
+  playerName?: string,
+  teamSide?: 'home' | 'away',
+): BattingLine {
   return {
     playerId,
+    playerName,
+    teamSide,
     AB: 0,
     R: 0,
     H: 0,

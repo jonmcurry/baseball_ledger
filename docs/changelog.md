@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-02-13 - Box Score Display Fixes (Names, Team Split, Pitcher Decisions)
+
+Fixed three box score display bugs:
+
+- **Player names instead of IDs**: Added `playerName` and `teamSide` fields to
+  BattingLine and PitchingLine types. Simulation now populates these fields during
+  game execution. BoxScoreDisplay shows player names with fallback to playerId
+  for legacy game data.
+- **Team-split box score**: Batting and pitching lines now split by team (away/home)
+  when `teamSide` data is available. Each team gets its own section header with
+  separate batting and pitching tables. Falls back to combined view for older games.
+- **Pitcher decision names**: GameViewerPage now builds `playerNames` map from
+  stored batting/pitching lines for DB-sourced games, so game summary correctly
+  shows pitcher names instead of "Unknown".
+
 ## 2026-02-13 - Auto-Draft Toggle
 
 Added ability for human players to have the CPU draft for them:

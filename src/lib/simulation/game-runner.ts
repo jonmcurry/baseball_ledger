@@ -212,10 +212,15 @@ function initPitcherState(): PitcherGameState {
   };
 }
 
-function getOrCreateBattingLine(tracker: GameTracker, playerId: string): BattingLine {
+function getOrCreateBattingLine(
+  tracker: GameTracker,
+  playerId: string,
+  playerName?: string,
+  teamSide?: 'home' | 'away',
+): BattingLine {
   let line = tracker.battingLines.get(playerId);
   if (!line) {
-    line = buildEmptyBattingLine(playerId);
+    line = buildEmptyBattingLine(playerId, playerName, teamSide);
     tracker.battingLines.set(playerId, line);
   }
   return line;
@@ -364,6 +369,7 @@ export function runGame(config: RunGameConfig): GameResult {
     const fieldingProfile = isTopHalf ? homeProfile : awayProfile;
     const battingProfile = isTopHalf ? awayProfile : homeProfile;
     const fieldingSide: 'home' | 'away' = isTopHalf ? 'home' : 'away';
+    const battingSide: 'home' | 'away' = isTopHalf ? 'away' : 'home';
     const battingBench = isTopHalf ? tracker.awayBenchAvailable : tracker.homeBenchAvailable;
 
     // Process plate appearances until 3 outs
@@ -454,7 +460,7 @@ export function runGame(config: RunGameConfig): GameResult {
 
       // 3. Intentional walk check
       if (evaluateIntentionalWalkDecision(fieldingProfile, situation, rng)) {
-        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId);
+        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide);
         battingLine.BB++;
         const pitchingLine = getOrCreatePitchingLine(tracker, currentPitcher.playerId, false, fieldingSide);
         pitchingLine.BB++;
@@ -491,7 +497,7 @@ export function runGame(config: RunGameConfig): GameResult {
       // 4. Bunt check (batting team manager)
       if (evaluateBuntDecision(battingProfile, situation, rng)) {
         const buntResult = resolveBunt(rng, batterCard.speed, 0);
-        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId);
+        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide);
         const pitchingLine = getOrCreatePitchingLine(tracker, currentPitcher.playerId, false, fieldingSide);
         pitchingLine.BF++;
 
@@ -605,7 +611,7 @@ export function runGame(config: RunGameConfig): GameResult {
       const resolution = resolveOutcome(outcome, state.bases, state.outs, batterSlot.playerId);
 
       // Update batting line
-      const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId);
+      const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide);
       if (!resolution.isNoPA) {
         if (!isWalkOutcome(outcome) && !resolution.sacrificeFly) {
           battingLine.AB++;
@@ -809,20 +815,6 @@ export function runGame(config: RunGameConfig): GameResult {
   const loserLine = withDecisions.find((l) => l.decision === 'L');
   const saveLine = withDecisions.find((l) => l.decision === 'SV');
 
-  // Build clean PitchingLine array (without internal metadata)
-  const cleanPitchingLines: PitchingLine[] = withDecisions.map((l) => ({
-    playerId: l.playerId,
-    IP: l.IP,
-    H: l.H,
-    R: l.R,
-    ER: l.ER,
-    BB: l.BB,
-    SO: l.SO,
-    HR: l.HR,
-    BF: l.BF,
-    decision: l.decision,
-  }));
-
   // Build player name map from lineups + pitchers used
   const playerNames: Record<string, string> = {};
   for (const slot of state.homeTeam.lineup) {
@@ -837,6 +829,22 @@ export function runGame(config: RunGameConfig): GameResult {
   for (const p of state.awayTeam.pitchersUsed) {
     playerNames[p.playerId] = `${p.nameFirst} ${p.nameLast}`;
   }
+
+  // Build clean PitchingLine array (strip internal isStarter, include playerName/teamSide)
+  const cleanPitchingLines: PitchingLine[] = withDecisions.map((l) => ({
+    playerId: l.playerId,
+    playerName: playerNames[l.playerId],
+    teamSide: l.teamSide,
+    IP: l.IP,
+    H: l.H,
+    R: l.R,
+    ER: l.ER,
+    BB: l.BB,
+    SO: l.SO,
+    HR: l.HR,
+    BF: l.BF,
+    decision: l.decision,
+  }));
 
   return {
     gameId: config.gameId,
