@@ -5,7 +5,8 @@
  * Tabs for batting/pitching, league filter, pagination.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useStatsStore } from '@stores/statsStore';
 import { StatTable } from '@components/data-display/StatTable';
 import { Pagination } from '@components/data-display/Pagination';
@@ -36,8 +37,11 @@ function resolveSortValue(obj: unknown, key: string): unknown {
 
 export function StatsPage() {
   usePageTitle('Statistics');
+  const { leagueId } = useParams<{ leagueId: string }>();
   const battingLeaders = useStatsStore((s) => s.battingLeaders);
   const pitchingLeaders = useStatsStore((s) => s.pitchingLeaders);
+  const fetchBattingLeaders = useStatsStore((s) => s.fetchBattingLeaders);
+  const fetchPitchingLeaders = useStatsStore((s) => s.fetchPitchingLeaders);
   const activeTab = useStatsStore((s) => s.activeTab);
   const [sortBy, setSortBy] = useState<string>('BA');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -51,6 +55,15 @@ export function StatsPage() {
   const setLeagueFilter = useStatsStore((s) => s.setLeagueFilter);
   const setStatView = useStatsStore((s) => s.setStatView);
   const setPage = useStatsStore((s) => s.setPage);
+
+  // Fetch stats on mount when store is empty
+  useEffect(() => {
+    if (!leagueId) return;
+    if (battingLeaders.length === 0 && pitchingLeaders.length === 0 && !isLoading) {
+      fetchBattingLeaders(leagueId);
+      fetchPitchingLeaders(leagueId);
+    }
+  }, [leagueId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredBatting = leagueFilter === 'combined'
     ? battingLeaders

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-13 - Stats Page Data Loading + Box Score Resilience
+
+Fixed stats not populating and box score "Detailed game data not available":
+
+- **StatsPage loads data on mount**: Added useEffect with leagueId from useParams
+  to fetch batting/pitching leaders when the page mounts with empty store data.
+  Previously stats only loaded after simulation completed (invalidateStatsCache).
+- **Stats API includes league_division**: Batting and pitching endpoints now join
+  with teams table to include league_division, enabling AL/NL filtering.
+- **Box score shows batting/pitching lines**: hasDetailedData check now includes
+  battingLines and pitchingLines (not just boxScore and playByPlay). BoxScoreDisplay
+  accepts null boxScore, rendering the LineScore only when available. Games stored
+  before migration 00023 now show stat lines instead of "not yet available".
+
 ## 2026-02-13 - Simulate Endpoint Resilience (502 Fix for Multi-Day Sim)
 
 Fixed the simulate endpoint crashing mid-loop, causing Sim Week/Month/Season to

@@ -14,6 +14,22 @@ import { createServerClient } from '../../../src/lib/supabase/server';
 
 const PAGE_SIZE = 50;
 
+/** Build team_id -> league_division lookup for the league. */
+async function getTeamDivisionMap(
+  supabase: ReturnType<typeof createServerClient>,
+  leagueId: string,
+): Promise<Map<string, string>> {
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('id, league_division')
+    .eq('league_id', leagueId);
+  const map = new Map<string, string>();
+  for (const t of teams ?? []) {
+    map.set(t.id, t.league_division);
+  }
+  return map;
+}
+
 async function handleBatting(req: VercelRequest, res: VercelResponse, requestId: string) {
   const leagueId = req.query.id as string;
   const page = Math.max(1, parseInt(req.query.page as string || '1', 10));
@@ -21,15 +37,18 @@ async function handleBatting(req: VercelRequest, res: VercelResponse, requestId:
 
   const supabase = createServerClient();
 
-  // Get total count
-  const { count, error: countError } = await supabase
-    .from('season_stats')
-    .select('*', { count: 'exact', head: true })
-    .eq('league_id', leagueId)
-    .not('batting_stats', 'is', null);
+  // Get total count + team division map in parallel
+  const [countResult, teamDivMap] = await Promise.all([
+    supabase
+      .from('season_stats')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', leagueId)
+      .not('batting_stats', 'is', null),
+    getTeamDivisionMap(supabase, leagueId),
+  ]);
 
-  if (countError) {
-    throw { category: 'DATA', code: 'QUERY_FAILED', message: countError.message };
+  if (countResult.error) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: countResult.error.message };
   }
 
   // Get paginated data
@@ -47,13 +66,14 @@ async function handleBatting(req: VercelRequest, res: VercelResponse, requestId:
   const leaders = (data ?? []).map((row) => ({
     player_id: row.player_id,
     team_id: row.team_id,
+    league_division: teamDivMap.get(row.team_id) ?? 'AL',
     stats: row.batting_stats,
   }));
 
   paginated(
     res,
     snakeToCamel(leaders) as unknown[],
-    { page, pageSize: PAGE_SIZE, totalRows: count ?? 0 },
+    { page, pageSize: PAGE_SIZE, totalRows: countResult.count ?? 0 },
     requestId,
   );
 }
@@ -65,14 +85,18 @@ async function handlePitching(req: VercelRequest, res: VercelResponse, requestId
 
   const supabase = createServerClient();
 
-  const { count, error: countError } = await supabase
-    .from('season_stats')
-    .select('*', { count: 'exact', head: true })
-    .eq('league_id', leagueId)
-    .not('pitching_stats', 'is', null);
+  // Get total count + team division map in parallel
+  const [countResult, teamDivMap] = await Promise.all([
+    supabase
+      .from('season_stats')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', leagueId)
+      .not('pitching_stats', 'is', null),
+    getTeamDivisionMap(supabase, leagueId),
+  ]);
 
-  if (countError) {
-    throw { category: 'DATA', code: 'QUERY_FAILED', message: countError.message };
+  if (countResult.error) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: countResult.error.message };
   }
 
   const { data, error } = await supabase
@@ -89,13 +113,14 @@ async function handlePitching(req: VercelRequest, res: VercelResponse, requestId
   const leaders = (data ?? []).map((row) => ({
     player_id: row.player_id,
     team_id: row.team_id,
+    league_division: teamDivMap.get(row.team_id) ?? 'AL',
     stats: row.pitching_stats,
   }));
 
   paginated(
     res,
     snakeToCamel(leaders) as unknown[],
-    { page, pageSize: PAGE_SIZE, totalRows: count ?? 0 },
+    { page, pageSize: PAGE_SIZE, totalRows: countResult.count ?? 0 },
     requestId,
   );
 }

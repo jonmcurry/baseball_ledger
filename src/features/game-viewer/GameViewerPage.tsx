@@ -259,7 +259,10 @@ export function GameViewerPage() {
     );
   }
 
-  const hasDetailedData = gameData.boxScore !== null || gameData.playByPlay.length > 0;
+  const hasDetailedData = gameData.boxScore !== null
+    || gameData.playByPlay.length > 0
+    || gameData.battingLines.length > 0
+    || gameData.pitchingLines.length > 0;
 
   return (
     <div className="space-y-gutter-lg">
@@ -331,7 +334,7 @@ export function GameViewerPage() {
             </button>
           </div>
 
-          {activeTab === 'box-score' && gameData.boxScore && (
+          {activeTab === 'box-score' && (
             <BoxScoreDisplay
               boxScore={gameData.boxScore}
               battingLines={gameData.battingLines}

@@ -11,7 +11,7 @@ import type { InningScore, LineScoreTotals } from '@components/baseball/LineScor
 import type { BoxScore, BattingLine, PitchingLine } from '@lib/types/game';
 
 export interface BoxScoreDisplayProps {
-  readonly boxScore: BoxScore;
+  readonly boxScore: BoxScore | null;
   readonly battingLines: readonly BattingLine[];
   readonly pitchingLines: readonly PitchingLine[];
   readonly homeTeam: string;
@@ -25,35 +25,36 @@ export function BoxScoreDisplay({
   homeTeam,
   awayTeam,
 }: BoxScoreDisplayProps) {
-  const maxInnings = Math.max(boxScore.lineScore.away.length, boxScore.lineScore.home.length);
-  const innings: InningScore[] = Array.from({ length: maxInnings }, (_, i) => ({
-    away: boxScore.lineScore.away[i] ?? null,
-    home: boxScore.lineScore.home[i] ?? null,
-  }));
-
-  const awayTotal: LineScoreTotals = {
-    R: boxScore.lineScore.away.reduce((s, v) => s + v, 0),
-    H: boxScore.awayHits,
-    E: boxScore.awayErrors,
-  };
-
-  const homeTotal: LineScoreTotals = {
-    R: boxScore.lineScore.home.reduce((s, v) => s + v, 0),
-    H: boxScore.homeHits,
-    E: boxScore.homeErrors,
-  };
-
   return (
     <div className="space-y-4">
       <h3 className="font-headline text-sm font-bold text-ballpark">Box Score</h3>
 
-      <LineScore
-        awayTeamName={awayTeam}
-        homeTeamName={homeTeam}
-        innings={innings}
-        awayTotal={awayTotal}
-        homeTotal={homeTotal}
-      />
+      {boxScore && (() => {
+        const maxInnings = Math.max(boxScore.lineScore.away.length, boxScore.lineScore.home.length);
+        const innings: InningScore[] = Array.from({ length: maxInnings }, (_, i) => ({
+          away: boxScore.lineScore.away[i] ?? null,
+          home: boxScore.lineScore.home[i] ?? null,
+        }));
+        const awayTotal: LineScoreTotals = {
+          R: boxScore.lineScore.away.reduce((s, v) => s + v, 0),
+          H: boxScore.awayHits,
+          E: boxScore.awayErrors,
+        };
+        const homeTotal: LineScoreTotals = {
+          R: boxScore.lineScore.home.reduce((s, v) => s + v, 0),
+          H: boxScore.homeHits,
+          E: boxScore.homeErrors,
+        };
+        return (
+          <LineScore
+            awayTeamName={awayTeam}
+            homeTeamName={homeTeam}
+            innings={innings}
+            awayTotal={awayTotal}
+            homeTotal={homeTotal}
+          />
+        );
+      })()}
 
       <div className="grid gap-gutter lg:grid-cols-2">
         <div className="space-y-1">
