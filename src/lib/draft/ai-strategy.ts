@@ -7,13 +7,16 @@
  *
  * Strategy:
  *  - Early (1-3): Best available SP or elite position player. No CL/RP.
- *  - Mid (4-8): Fill rotation to 4 SP. Premium positions (C, SS, CF).
- *  - Late (9+): Relievers, closer, bench, defensive specialists.
+ *  - Mid (4-8): Fill rotation to 4 SP. Premium positions (C, SS).
+ *  - Late (9+): Bullpen (RP/CL), bench, defensive specialists.
  *
- * In mid/late rounds, the AI targets specific position needs first,
- * then falls back to best available.
+ * Roster composition: 1C, 1 1B, 1 2B, 1 SS, 1 3B, 3 OF, 1 DH, 4 bench,
+ * 4 SP, 4 RP (RP and CL interchangeable). Total = 21.
  *
- * Layer 1: Pure logic, no I/O, deterministic given inputs.
+ * Weighted random selection: AI picks from the top 3 candidates weighted
+ * by valuation score, so different RNG seeds produce different drafts.
+ *
+ * Layer 1: Pure logic, no I/O, deterministic given inputs + seed.
  */
 
 import type { PlayerCard, Position } from '../types/player';
@@ -30,7 +33,7 @@ export interface DraftablePlayer {
 /** A roster need with priority weighting. */
 export interface PositionNeed {
   position: Position;
-  slot: 'starter' | 'bench' | 'rotation' | 'bullpen' | 'closer';
+  slot: 'starter' | 'bench' | 'rotation' | 'bullpen';
   priority: number; // Higher = more urgent
 }
 
@@ -41,19 +44,41 @@ const ROSTER_REQUIREMENTS: Array<{ position: Position; slot: string; count: numb
   { position: '2B', slot: 'starter', count: 1 },
   { position: 'SS', slot: 'starter', count: 1 },
   { position: '3B', slot: 'starter', count: 1 },
-  { position: 'LF', slot: 'starter', count: 1 },
-  { position: 'CF', slot: 'starter', count: 1 },
-  { position: 'RF', slot: 'starter', count: 1 },
+  { position: 'OF', slot: 'starter', count: 3 },   // Any LF/CF/RF/OF qualifies
   { position: 'DH', slot: 'starter', count: 1 },
   { position: 'SP', slot: 'rotation', count: 4 },
-  { position: 'RP', slot: 'bullpen', count: 3 },
-  { position: 'CL', slot: 'closer', count: 1 },
+  { position: 'RP', slot: 'bullpen', count: 4 },    // RP and CL both qualify
 ];
 
 const BENCH_SIZE = 4;
 const EARLY_ROUND_END = 3;
 const MID_ROUND_END = 8;
-const PREMIUM_POSITIONS: Position[] = ['C', 'SS', 'CF'];
+const PREMIUM_POSITIONS: Position[] = ['C', 'SS'];
+/** Number of top candidates to consider for weighted random selection. */
+const TOP_CANDIDATE_COUNT = 3;
+
+/** Outfield positions that count toward the generic OF starter pool. */
+const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
+/** Relief pitcher roles that count toward the bullpen pool. */
+const RELIEVER_POSITIONS: Position[] = ['RP', 'CL'];
+
+/**
+ * Expand abstract position needs to concrete player positions.
+ * 'OF' -> LF, CF, RF, OF; 'RP' -> RP, CL.
+ */
+function expandPositions(positions: Position[]): Position[] {
+  const expanded = new Set<Position>();
+  for (const pos of positions) {
+    if (pos === 'OF') {
+      for (const p of OUTFIELD_POSITIONS) expanded.add(p);
+    } else if (pos === 'RP') {
+      for (const p of RELIEVER_POSITIONS) expanded.add(p);
+    } else {
+      expanded.add(pos);
+    }
+  }
+  return [...expanded];
+}
 
 /**
  * Analyze the current roster to determine what positions still need filling.
@@ -66,24 +91,38 @@ export function getRosterNeeds(roster: DraftablePlayer[]): PositionNeed[] {
   for (const entry of roster) {
     const card = entry.card;
     if (card.isPitcher && card.pitching) {
-      const key = `${card.pitching.role}_pitch`;
+      // RP and CL both count toward the shared bullpen pool
+      const role = card.pitching.role === 'SP' ? 'SP' : 'RP';
+      const key = `${role}_pitch`;
       positionCounts.set(key, (positionCounts.get(key) ?? 0) + 1);
     } else {
-      const key = `${card.primaryPosition}_starter`;
-      const current = positionCounts.get(key) ?? 0;
-      const req = ROSTER_REQUIREMENTS.find(
-        (r) => r.position === card.primaryPosition && r.slot === 'starter',
-      );
-      if (req && current < req.count) {
-        positionCounts.set(key, current + 1);
+      const pos = card.primaryPosition;
+      // Outfielders (LF/CF/RF/OF) share a generic OF pool
+      if (OUTFIELD_POSITIONS.includes(pos as Position)) {
+        const key = 'OF_starter';
+        const current = positionCounts.get(key) ?? 0;
+        if (current < 3) {
+          positionCounts.set(key, current + 1);
+        } else {
+          benchCount++;
+        }
       } else {
-        benchCount++;
+        const key = `${pos}_starter`;
+        const current = positionCounts.get(key) ?? 0;
+        const req = ROSTER_REQUIREMENTS.find(
+          (r) => r.position === pos && r.slot === 'starter',
+        );
+        if (req && current < req.count) {
+          positionCounts.set(key, current + 1);
+        } else {
+          benchCount++;
+        }
       }
     }
   }
 
   for (const req of ROSTER_REQUIREMENTS) {
-    const key = (req.slot === 'rotation' || req.slot === 'bullpen' || req.slot === 'closer')
+    const key = (req.slot === 'rotation' || req.slot === 'bullpen')
       ? `${req.position}_pitch`
       : `${req.position}_starter`;
     const have = positionCounts.get(key) ?? 0;
@@ -145,19 +184,47 @@ function sortByValue(players: DraftablePlayer[], rng: SeededRNG): DraftablePlaye
 }
 
 /**
+ * Pick from the top K candidates with probability weighted by valuation.
+ *
+ * The #1 valued player is most likely to be selected, but #2 and #3 also
+ * have a chance proportional to their value. This introduces meaningful
+ * variation across different RNG seeds while still favoring better players.
+ */
+function pickFromTop(
+  sorted: DraftablePlayer[],
+  rng: SeededRNG,
+  k: number = TOP_CANDIDATE_COUNT,
+): DraftablePlayer {
+  if (sorted.length <= 1) return sorted[0];
+  const topK = sorted.slice(0, Math.min(k, sorted.length));
+  const values = topK.map((p) => Math.max(getPlayerValue(p), 0.01));
+  const total = values.reduce((s, v) => s + v, 0);
+  let roll = rng.nextFloat() * total;
+  for (let i = 0; i < topK.length; i++) {
+    roll -= values[i];
+    if (roll <= 0) return topK[i];
+  }
+  return topK[topK.length - 1];
+}
+
+/**
  * Find best available player matching any of the given positions.
+ * Uses expanded position matching (OF -> LF/CF/RF, RP -> RP/CL).
+ * Selects from top candidates with weighted random.
  */
 function bestAtPositions(
   available: DraftablePlayer[],
   positions: Position[],
   rng: SeededRNG,
 ): DraftablePlayer | null {
+  const expanded = expandPositions(positions);
   const candidates = available.filter((p) => {
     const pos = getPlayerPosition(p);
-    return positions.includes(pos as Position);
+    return expanded.includes(pos as Position);
   });
   if (candidates.length === 0) return null;
-  return sortByValue(candidates, rng)[0];
+  const sorted = sortByValue(candidates, rng);
+  return pickFromTop(sorted, rng);
 }
 
 /**
@@ -166,7 +233,7 @@ function bestAtPositions(
  * @param round - Current draft round (1-based)
  * @param roster - Current team roster (picks made so far)
  * @param pool - All available players
- * @param rng - Seeded RNG for tiebreaking
+ * @param rng - Seeded RNG for weighted random selection
  * @returns The selected player
  */
 export function selectAIPick(
@@ -191,7 +258,7 @@ export function selectAIPick(
       const pos = getPlayerPosition(p);
       return pos !== 'CL' && pos !== 'RP';
     });
-    return eligible.length > 0 ? eligible[0] : sorted[0];
+    return eligible.length > 0 ? pickFromTop(eligible, rng) : pickFromTop(sorted, rng);
   }
 
   // -----------------------------------------------------------------------
@@ -205,7 +272,7 @@ export function selectAIPick(
       if (sp) return sp;
     }
 
-    // Priority 2: Premium position gaps
+    // Priority 2: Premium position gaps (C, SS)
     const premiumNeeds = needs.filter(
       (n) => PREMIUM_POSITIONS.includes(n.position) && n.slot === 'starter',
     );
@@ -224,28 +291,21 @@ export function selectAIPick(
     }
 
     // Fallback: best available
-    return sorted[0];
+    return pickFromTop(sorted, rng);
   }
 
   // -----------------------------------------------------------------------
-  // Late rounds (9+): RP, CL, bench, defensive specialists
+  // Late rounds (9+): Bullpen, bench, defensive specialists
   // -----------------------------------------------------------------------
 
-  // Priority 1: Closer if needed
-  const clNeeds = needs.filter((n) => n.position === 'CL');
-  if (clNeeds.length > 0) {
-    const cl = bestAtPositions(available, ['CL'], rng);
-    if (cl) return cl;
-  }
-
-  // Priority 2: Relief pitchers if needed
-  const rpNeeds = needs.filter((n) => n.position === 'RP');
-  if (rpNeeds.length > 0) {
+  // Priority 1: Bullpen (RP and CL both qualify) if needed
+  const bullpenNeeds = needs.filter((n) => n.position === 'RP');
+  if (bullpenNeeds.length > 0) {
     const rp = bestAtPositions(available, ['RP'], rng);
     if (rp) return rp;
   }
 
-  // Priority 3: Any remaining starter positions
+  // Priority 2: Any remaining starter positions
   const starterNeeds = needs.filter((n) => n.slot === 'starter');
   if (starterNeeds.length > 0) {
     const positions = starterNeeds.map((n) => n.position);
@@ -253,7 +313,7 @@ export function selectAIPick(
     if (starter) return starter;
   }
 
-  // Priority 4: SP if still needed
+  // Priority 3: SP if still needed
   const spNeeds = needs.filter((n) => n.position === 'SP');
   if (spNeeds.length > 0) {
     const sp = bestAtPositions(available, ['SP'], rng);
@@ -261,5 +321,5 @@ export function selectAIPick(
   }
 
   // Fallback: best available (fills bench)
-  return sorted[0];
+  return pickFromTop(sorted, rng);
 }

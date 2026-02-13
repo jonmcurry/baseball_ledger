@@ -17,7 +17,7 @@ import type { SeededRNG } from '../rng/seeded-rng';
 
 /**
  * Total draft rounds per REQ-DFT-001:
- * 9 starters + 4 bench + 4 SP + 3 RP + 1 CL = 21
+ * 9 starters + 4 bench + 4 SP + 4 RP = 21
  */
 export const TOTAL_ROUNDS = 21;
 

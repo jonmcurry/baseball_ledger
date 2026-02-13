@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-13 - Draft Randomness + Roster Makeup Fix
+
+Two draft improvements:
+
+- **Weighted random selection**: AI draft picks now select from the top 3
+  candidates weighted by valuation score instead of always picking the #1 valued
+  player. Different drafts produce different team compositions while still
+  favoring higher-valued players. Uses existing SeededRNG for determinism within
+  a single draft session.
+- **Roster makeup update**: Outfield slots changed from specific LF/CF/RF to 3
+  generic OF positions (any LF/CF/RF/OF qualifies). Relief pitcher slots changed
+  from 3 RP + 1 CL to 4 RP (RP and CL interchangeable, all 4 can be closers).
+  Total roster remains 21 players (9 starters + 4 bench + 4 SP + 4 RP).
+- **Premium positions simplified**: Mid-round premium targeting narrowed from
+  C/SS/CF to C/SS since outfield is now easier to fill with generic OF slots.
+- **Late-round bullpen**: Merged separate CL and RP draft priorities into a
+  single bullpen priority that accepts both RP and CL players.
+
 ## 2026-02-13 - Box Score Display Fixes (Names, Team Split, Pitcher Decisions)
 
 Fixed three box score display bugs:

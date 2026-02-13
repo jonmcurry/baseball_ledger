@@ -103,12 +103,42 @@ function buildPool(): DraftablePlayer[] {
 describe('getRosterNeeds', () => {
   it('returns all positions for empty roster', () => {
     const needs = getRosterNeeds([]);
-    // Need: C, 1B, 2B, SS, 3B, 3xOF, DH, 4xSP, 3xRP, 1xCL, 4 bench
+    // Need: C, 1B, 2B, SS, 3B, 3xOF, DH, 4xSP, 4xRP, 4 bench
     expect(needs.length).toBeGreaterThanOrEqual(8);
     expect(needs.some((n) => n.position === 'C')).toBe(true);
     expect(needs.some((n) => n.position === 'SS')).toBe(true);
     expect(needs.some((n) => n.position === 'SP')).toBe(true);
-    expect(needs.some((n) => n.position === 'CL')).toBe(true);
+    expect(needs.some((n) => n.position === 'RP')).toBe(true);
+  });
+
+  it('counts LF/CF/RF toward shared OF starter pool of 3', () => {
+    // 3 LF players should fill all 3 generic OF slots (no specific LF/CF/RF requirement)
+    const roster: DraftablePlayer[] = [
+      makeDraftable(makeCard({ playerId: 'lf1', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.7, 0),
+      makeDraftable(makeCard({ playerId: 'lf2', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.7, 0),
+      makeDraftable(makeCard({ playerId: 'lf3', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.7, 0),
+    ];
+    const needs = getRosterNeeds(roster);
+    // All 3 OF slots filled - no outfield starter need should remain
+    const ofNeeds = needs.filter(
+      (n) => n.slot === 'starter' && ['OF', 'LF', 'CF', 'RF'].includes(n.position),
+    );
+    expect(ofNeeds).toHaveLength(0);
+  });
+
+  it('counts RP and CL toward shared bullpen pool of 4', () => {
+    const roster: DraftablePlayer[] = [
+      { card: makePitcherCard('RP', { playerId: 'rp1' }), ops: 0, sb: 0 },
+      { card: makePitcherCard('RP', { playerId: 'rp2' }), ops: 0, sb: 0 },
+      { card: makePitcherCard('CL', { playerId: 'cl1' }), ops: 0, sb: 0 },
+      { card: makePitcherCard('CL', { playerId: 'cl2' }), ops: 0, sb: 0 },
+    ];
+    const needs = getRosterNeeds(roster);
+    // 2 RP + 2 CL = 4 bullpen slots filled - no bullpen need should remain
+    const bullpenNeeds = needs.filter(
+      (n) => n.slot === 'bullpen' || (n.position === 'RP') || (n.position === 'CL'),
+    );
+    expect(bullpenNeeds).toHaveLength(0);
   });
 
   it('removes needs as positions are filled', () => {
@@ -133,7 +163,7 @@ describe('getRosterNeeds', () => {
   it('returns empty when roster is complete', () => {
     // Build a full 21-player roster
     const roster: DraftablePlayer[] = [
-      // 9 starters
+      // 9 starters: C, 1B, 2B, SS, 3B, 3 OF, DH
       makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
       makeDraftable(makeCard({ playerId: '1b', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.8, 0),
       makeDraftable(makeCard({ playerId: '2b', primaryPosition: '2B', eligiblePositions: ['2B'] }), 0.7, 0),
@@ -153,12 +183,11 @@ describe('getRosterNeeds', () => {
       { card: makePitcherCard('SP', { playerId: 'sp2' }), ops: 0, sb: 0 },
       { card: makePitcherCard('SP', { playerId: 'sp3' }), ops: 0, sb: 0 },
       { card: makePitcherCard('SP', { playerId: 'sp4' }), ops: 0, sb: 0 },
-      // 3 RP
+      // 4 RP (2 RP + 2 CL -- both count toward bullpen)
       { card: makePitcherCard('RP', { playerId: 'rp1' }), ops: 0, sb: 0 },
       { card: makePitcherCard('RP', { playerId: 'rp2' }), ops: 0, sb: 0 },
-      { card: makePitcherCard('RP', { playerId: 'rp3' }), ops: 0, sb: 0 },
-      // 1 CL
       { card: makePitcherCard('CL', { playerId: 'cl1' }), ops: 0, sb: 0 },
+      { card: makePitcherCard('CL', { playerId: 'cl2' }), ops: 0, sb: 0 },
     ];
     const needs = getRosterNeeds(roster);
     expect(needs).toHaveLength(0);
@@ -212,15 +241,15 @@ describe('selectAIPick (REQ-DFT-006)', () => {
       expect(spPicks).toBeGreaterThan(10);
     });
 
-    it('prefers premium positions (C, SS, CF) when roster has gaps', () => {
-      // Empty roster - round 5 should consider premium positions
-      let premiumPicks = 0;
+    it('prefers premium positions (C, SS) and SP when roster has gaps', () => {
+      // Empty roster - round 5 should target SP first, then premium (C, SS)
+      let targetPicks = 0;
       for (let seed = 0; seed < 20; seed++) {
         const pick = selectAIPick(5, [], pool, new SeededRNG(seed));
         const pos = pick.card.primaryPosition;
-        if (['C', 'SS', 'CF', 'SP'].includes(pos)) premiumPicks++;
+        if (['C', 'SS', 'SP'].includes(pos)) targetPicks++;
       }
-      expect(premiumPicks).toBeGreaterThan(10);
+      expect(targetPicks).toBeGreaterThan(10);
     });
   });
 
@@ -258,6 +287,17 @@ describe('selectAIPick (REQ-DFT-006)', () => {
     expect(pick1.card.playerId).toBe(pick2.card.playerId);
   });
 
+  it('produces different picks across different seeds (not always same player)', () => {
+    const ids = new Set<string>();
+    for (let seed = 0; seed < 50; seed++) {
+      const pick = selectAIPick(1, [], pool, new SeededRNG(seed));
+      ids.add(pick.card.playerId);
+    }
+    // With weighted random selection, different seeds should occasionally
+    // produce different picks (not always the #1 valued player)
+    expect(ids.size).toBeGreaterThan(1);
+  });
+
   it('does not pick a player already on the roster', () => {
     const roster = [pool[0]]; // c01 is on the roster
     for (let seed = 0; seed < 30; seed++) {
@@ -278,13 +318,13 @@ describe('selectAIPick (REQ-DFT-006)', () => {
       { card: makePitcherCard('SP', { playerId: 'sp_c' }), ops: 0, sb: 0 },
       { card: makePitcherCard('SP', { playerId: 'sp_d' }), ops: 0, sb: 0 },
     ];
-    let premiumPicks = 0;
+    let ssPicks = 0;
     for (let seed = 0; seed < 20; seed++) {
       const pick = selectAIPick(5, roster, pool, new SeededRNG(seed));
-      const pos = pick.card.primaryPosition;
-      if (pos === 'SS' || pos === 'CF') premiumPicks++;
+      if (pick.card.primaryPosition === 'SS') ssPicks++;
     }
-    // With SP filled, should target premium position gaps (SS/CF)
-    expect(premiumPicks).toBe(20);
+    // With SP filled and C filled, SS is the only premium gap -- should pick SS
+    // (weighted random may occasionally pick ss02 instead of ss01, but still SS)
+    expect(ssPicks).toBe(20);
   });
 });
