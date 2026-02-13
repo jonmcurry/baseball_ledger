@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-13 - Dashboard Fixes (Season Rename, Ticker Redesign, Game Viewer, CRLF)
+
+Six issues addressed across the dashboard, game viewer, and configuration:
+
+- **Dashboard -> Season rename**: Navigation label, page title, and heading all
+  changed from "Dashboard" to "Season"
+- **Score ticker redesign**: Complete redesign with "Press Box Wire" vintage
+  scoreboard aesthetic -- miniature riveted-metal cards with winner badges,
+  glowing gold scores, snap scrolling, and "View Box Score" hover reveal
+- **Box score click-through**: ResultsTicker and ScheduleView now navigate to
+  the game viewer when clicking a completed game result
+- **Game viewer DB fallback**: GameViewerPage now fetches from the database
+  game_logs API when game data is not in the in-memory simulation store, so
+  games persist across page refreshes and sessions
+- **Game detail API fix**: Changed query from `.eq('id', ...)` to
+  `.eq('game_id', ...)` to match schedule row IDs to game_logs entries
+- **Env var CRLF fix**: All three `requireEnv()` functions now return trimmed
+  values, preventing Windows line-ending corruption (`\r\n`) from breaking
+  Supabase WebSocket URLs and API keys
+- **Schedule games clickable**: Completed games in ScheduleView are now
+  interactive with click/keyboard navigation to the game viewer
+
 ## 2026-02-13 - Draft Board UX Fixes (Search, Badges, Position Filters)
 
 Six draft board issues addressed:

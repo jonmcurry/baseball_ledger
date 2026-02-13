@@ -21,7 +21,7 @@ function requireServerEnv(key: string, fallbackKey?: string): string {
       'Set it in Vercel dashboard or .env.local.'
     );
   }
-  return value;
+  return value.trim();
 }
 
 export function createServerClient(): SupabaseClient<Database> {

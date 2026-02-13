@@ -42,14 +42,14 @@ describe('Header', () => {
 
   it('shows nav links when league is active', () => {
     render(<Header {...defaultProps} />);
-    expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/season/i)).toBeInTheDocument();
     expect(screen.getByText(/roster/i)).toBeInTheDocument();
     expect(screen.getByText(/stats/i)).toBeInTheDocument();
   });
 
   it('shows nav links even when leagueStatus is "setup"', () => {
     render(<Header {...defaultProps} leagueStatus="setup" />);
-    expect(screen.getByText(/dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/season/i)).toBeInTheDocument();
     expect(screen.getByText(/roster/i)).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('Header', () => {
     const onNavigate = vi.fn();
     render(<Header {...defaultProps} onNavigate={onNavigate} />);
 
-    await user.click(screen.getByText(/dashboard/i));
+    await user.click(screen.getByText(/season/i));
     expect(onNavigate).toHaveBeenCalledWith('/dashboard');
   });
 

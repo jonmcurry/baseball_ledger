@@ -16,17 +16,17 @@ describe('usePageTitle', () => {
   });
 
   it('sets document.title with suffix on mount', () => {
-    renderHook(() => usePageTitle('Dashboard'));
-    expect(document.title).toBe('Dashboard | Baseball Ledger');
+    renderHook(() => usePageTitle('Season'));
+    expect(document.title).toBe('Season | Baseball Ledger');
   });
 
   it('updates document.title when title changes', () => {
     const { rerender } = renderHook(
       ({ title }) => usePageTitle(title),
-      { initialProps: { title: 'Dashboard' } },
+      { initialProps: { title: 'Season' } },
     );
 
-    expect(document.title).toBe('Dashboard | Baseball Ledger');
+    expect(document.title).toBe('Season | Baseball Ledger');
 
     rerender({ title: 'Roster' });
     expect(document.title).toBe('Roster | Baseball Ledger');
@@ -35,8 +35,8 @@ describe('usePageTitle', () => {
   it('restores previous title on unmount', () => {
     document.title = 'Previous Title';
 
-    const { unmount } = renderHook(() => usePageTitle('Dashboard'));
-    expect(document.title).toBe('Dashboard | Baseball Ledger');
+    const { unmount } = renderHook(() => usePageTitle('Season'));
+    expect(document.title).toBe('Season | Baseball Ledger');
 
     unmount();
     expect(document.title).toBe('Previous Title');

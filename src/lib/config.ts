@@ -26,7 +26,7 @@ function requireEnv(key: string): string {
       'Set it in .env.local (see .env.example for reference).'
     );
   }
-  return value;
+  return value.trim();
 }
 
 let _cached: ClientConfig | null = null;

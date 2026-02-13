@@ -15,7 +15,7 @@ export class DashboardPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: /dashboard/i });
+    this.heading = page.getByRole('heading', { name: /season/i });
     this.simulateButton = page.getByRole('button', { name: /simulate/i });
     this.standingsSection = page.getByText(/standings/i);
     this.scheduleSection = page.getByText(/schedule/i);

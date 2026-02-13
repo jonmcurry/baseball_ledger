@@ -3,11 +3,11 @@
  * Tests for GameViewerPage
  */
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { GameViewerPage } from '@features/game-viewer/GameViewerPage';
 
 const { mockUseParams } = vi.hoisted(() => {
-  const mockUseParams = vi.fn().mockReturnValue({ gameId: 'game-1' });
+  const mockUseParams = vi.fn().mockReturnValue({ gameId: 'game-1', leagueId: 'league-1' });
   return { mockUseParams };
 });
 
@@ -52,10 +52,20 @@ vi.mock('@stores/simulationStore', () => ({
   ),
 }));
 
+const { mockApiGet } = vi.hoisted(() => {
+  const mockApiGet = vi.fn();
+  return { mockApiGet };
+});
+
+vi.mock('@services/api-client', () => ({
+  apiGet: mockApiGet,
+}));
+
 describe('GameViewerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseParams.mockReturnValue({ gameId: 'game-1' });
+    mockUseParams.mockReturnValue({ gameId: 'game-1', leagueId: 'league-1' });
+    mockApiGet.mockRejectedValue(new Error('Not found'));
     mockUseWorkerSimulation.mockReturnValue({
       status: 'idle',
       result: null,
@@ -75,10 +85,21 @@ describe('GameViewerPage', () => {
     expect(screen.getByText('3 - 4')).toBeInTheDocument();
   });
 
-  it('shows game not found when gameId has no result', () => {
-    mockUseParams.mockReturnValue({ gameId: 'nonexistent' });
+  it('shows error when gameId has no result in store or DB', async () => {
+    mockUseParams.mockReturnValue({ gameId: 'nonexistent', leagueId: 'league-1' });
     render(<GameViewerPage />);
-    expect(screen.getByText('Game Not Found')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Not found')).toBeInTheDocument();
+    });
+  });
+
+  it('shows game not found when DB returns no data and no error', async () => {
+    mockUseParams.mockReturnValue({ gameId: 'nonexistent', leagueId: 'league-1' });
+    mockApiGet.mockResolvedValue({ data: null });
+    render(<GameViewerPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Game Not Found')).toBeInTheDocument();
+    });
   });
 
   it('shows warning when no gameId provided', () => {
@@ -109,19 +130,6 @@ describe('GameViewerPage', () => {
     expect(screen.getByText('Simulating replay...')).toBeInTheDocument();
   });
 
-  it('shows replay result when worker completes', () => {
-    mockUseWorkerSimulation.mockReturnValue({
-      status: 'complete',
-      result: { awayScore: 7, homeScore: 2 },
-      error: null,
-      simulateGame: vi.fn(),
-      reset: vi.fn(),
-    });
-
-    render(<GameViewerPage />);
-    expect(screen.getByText(/Replay complete: 7 - 2/)).toBeInTheDocument();
-  });
-
   it('shows error when worker simulation fails', () => {
     mockUseWorkerSimulation.mockReturnValue({
       status: 'error',
@@ -139,44 +147,18 @@ describe('GameViewerPage', () => {
   // Play-by-Play and Box Score Tabs (REQ-UI-010)
   // ---------------------------------------------------------------------------
 
-  it('renders Play-by-Play and Box Score tabs', () => {
+  it('shows no detailed data message when no worker result', () => {
     render(<GameViewerPage />);
-    expect(screen.getByRole('tab', { name: 'Play-by-Play' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Box Score' })).toBeInTheDocument();
+    expect(screen.getByText(/Detailed game data is not yet available/)).toBeInTheDocument();
   });
 
-  it('shows Play-by-Play tab as active by default', () => {
-    render(<GameViewerPage />);
-    const pbpTab = screen.getByRole('tab', { name: 'Play-by-Play' });
-    expect(pbpTab).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('shows empty play-by-play message when no worker result', () => {
-    render(<GameViewerPage />);
-    expect(screen.getByText('No plays recorded')).toBeInTheDocument();
-  });
-
-  it('switches to Box Score tab on click', () => {
-    render(<GameViewerPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Box Score' }));
-
-    const boxTab = screen.getByRole('tab', { name: 'Box Score' });
-    expect(boxTab).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('shows box score unavailable message when no worker result', () => {
-    render(<GameViewerPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Box Score' }));
-
-    expect(screen.getByText(/Box score not available/)).toBeInTheDocument();
-  });
-
-  it('renders PlayByPlayFeed when worker result has plays', () => {
+  it('renders Box Score and Play-by-Play tabs when worker has data', () => {
     mockUseWorkerSimulation.mockReturnValue({
       status: 'complete',
       result: {
         awayScore: 3,
         homeScore: 4,
+        innings: 9,
         playByPlay: [
           {
             inning: 1,
@@ -202,15 +184,17 @@ describe('GameViewerPage', () => {
     });
 
     render(<GameViewerPage />);
-    expect(screen.getByText('Single to left field')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Box Score' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Play-by-Play' })).toBeInTheDocument();
   });
 
-  it('renders BoxScoreDisplay when worker result is available and tab is selected', () => {
+  it('shows Box Score tab as active by default', () => {
     mockUseWorkerSimulation.mockReturnValue({
       status: 'complete',
       result: {
         awayScore: 3,
         homeScore: 4,
+        innings: 9,
         playByPlay: [],
         boxScore: { lineScore: { away: [1, 2], home: [3, 1] }, awayHits: 5, homeHits: 8, awayErrors: 0, homeErrors: 1 },
         playerBattingLines: [],
@@ -223,9 +207,105 @@ describe('GameViewerPage', () => {
     });
 
     render(<GameViewerPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Box Score' }));
+    const boxTab = screen.getByRole('tab', { name: 'Box Score' });
+    expect(boxTab).toHaveAttribute('aria-selected', 'true');
+  });
 
-    // BoxScoreDisplay renders batting and pitching sections
+  it('switches to Play-by-Play tab on click', () => {
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'complete',
+      result: {
+        awayScore: 3,
+        homeScore: 4,
+        innings: 9,
+        playByPlay: [
+          {
+            inning: 1,
+            halfInning: 'top',
+            outs: 0,
+            batterId: 'p1',
+            pitcherId: 'p2',
+            cardPosition: 0,
+            cardValue: 7,
+            outcomeTableRow: 1,
+            description: 'Single to left field',
+            scoreAfter: { away: 0, home: 0 },
+          },
+        ],
+        boxScore: { lineScore: { away: [1, 2], home: [3, 1] }, awayHits: 5, homeHits: 8, awayErrors: 0, homeErrors: 1 },
+        playerBattingLines: [],
+        playerPitchingLines: [],
+        playerNames: {},
+      },
+      error: null,
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<GameViewerPage />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Play-by-Play' }));
+
+    const pbpTab = screen.getByRole('tab', { name: 'Play-by-Play' });
+    expect(pbpTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('renders PlayByPlayFeed when worker result has plays', () => {
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'complete',
+      result: {
+        awayScore: 3,
+        homeScore: 4,
+        innings: 9,
+        playByPlay: [
+          {
+            inning: 1,
+            halfInning: 'top',
+            outs: 0,
+            batterId: 'p1',
+            pitcherId: 'p2',
+            cardPosition: 0,
+            cardValue: 7,
+            outcomeTableRow: 1,
+            description: 'Single to left field',
+            scoreAfter: { away: 0, home: 0 },
+          },
+        ],
+        boxScore: { lineScore: { away: [1, 2], home: [3, 1] }, awayHits: 5, homeHits: 8, awayErrors: 0, homeErrors: 1 },
+        playerBattingLines: [],
+        playerPitchingLines: [],
+        playerNames: {},
+      },
+      error: null,
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<GameViewerPage />);
+    // Default tab is box-score, switch to play-by-play
+    fireEvent.click(screen.getByRole('tab', { name: 'Play-by-Play' }));
+    expect(screen.getByText('Single to left field')).toBeInTheDocument();
+  });
+
+  it('renders BoxScoreDisplay when worker result is available and box score tab active', () => {
+    mockUseWorkerSimulation.mockReturnValue({
+      status: 'complete',
+      result: {
+        awayScore: 3,
+        homeScore: 4,
+        innings: 9,
+        playByPlay: [],
+        boxScore: { lineScore: { away: [1, 2], home: [3, 1] }, awayHits: 5, homeHits: 8, awayErrors: 0, homeErrors: 1 },
+        playerBattingLines: [],
+        playerPitchingLines: [],
+        playerNames: {},
+      },
+      error: null,
+      simulateGame: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    render(<GameViewerPage />);
+    // Box score tab is active by default
     expect(screen.getByText('Batting')).toBeInTheDocument();
     expect(screen.getByText('Pitching')).toBeInTheDocument();
   });

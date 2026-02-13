@@ -29,7 +29,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', route: '/dashboard' },
+  { label: 'Season', route: '/dashboard' },
   { label: 'Draft Board', route: '/draft' },
   { label: 'Roster', route: '/roster' },
   { label: 'Stats', route: '/stats' },

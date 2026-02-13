@@ -117,7 +117,7 @@ describe('GET /api/leagues/:id/games/:gid', () => {
     await handler(req as any, res as any);
 
     expect(mockFrom).toHaveBeenCalledWith('game_logs');
-    expect(builder.eq).toHaveBeenCalledWith('id', 'game-42');
+    expect(builder.eq).toHaveBeenCalledWith('game_id', 'game-42');
     expect(builder.single).toHaveBeenCalled();
   });
 });

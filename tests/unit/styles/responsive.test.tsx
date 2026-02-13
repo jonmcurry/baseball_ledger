@@ -142,7 +142,7 @@ describe('Header responsive (REQ-COMP-010)', () => {
     // Open the menu
     await user.click(screen.getByRole('button', { name: /open menu/i }));
     // Click a nav item
-    await user.click(screen.getByText(/dashboard/i));
+    await user.click(screen.getByText(/season/i));
 
     expect(onNavigate).toHaveBeenCalledWith('/dashboard');
     const nav = screen.getByRole('navigation');

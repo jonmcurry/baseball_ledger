@@ -11,9 +11,10 @@ import type { TeamSummary } from '@lib/types/league';
 export interface ScheduleViewProps {
   day: ScheduleDay | null;
   teams: readonly TeamSummary[];
+  onGameClick?: (gameId: string) => void;
 }
 
-export function ScheduleView({ day, teams }: ScheduleViewProps) {
+export function ScheduleView({ day, teams, onGameClick }: ScheduleViewProps) {
   if (!day) {
     return (
       <div className="vintage-card text-center">
@@ -57,10 +58,18 @@ export function ScheduleView({ day, teams }: ScheduleViewProps) {
           const awayWon = game.isComplete && (game.awayScore ?? 0) > (game.homeScore ?? 0);
           const homeWon = game.isComplete && (game.homeScore ?? 0) > (game.awayScore ?? 0);
 
+          const isClickable = game.isComplete && !!onGameClick;
+
           return (
             <div
               key={game.id}
-              className="flex items-center justify-between rounded border border-[var(--border-default)]/50 bg-[var(--border-default)]/10 px-3 py-2 transition-colors hover:bg-[var(--border-default)]/20"
+              role={isClickable ? 'button' : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              onClick={isClickable ? () => onGameClick(game.id) : undefined}
+              onKeyDown={isClickable ? (e) => { if (e.key === 'Enter') onGameClick(game.id); } : undefined}
+              className={`flex items-center justify-between rounded border border-[var(--border-default)]/50 bg-[var(--border-default)]/10 px-3 py-2 transition-colors hover:bg-[var(--border-default)]/20 ${
+                isClickable ? 'cursor-pointer hover:border-[var(--accent-primary)]/50' : ''
+              }`}
             >
               {/* Away team */}
               <div className="flex w-32 items-center justify-end gap-2">

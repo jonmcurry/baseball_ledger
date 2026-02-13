@@ -94,9 +94,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Loading league data...')).toBeInTheDocument();
   });
 
-  it('displays Dashboard heading', () => {
+  it('displays Season heading', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Season')).toBeInTheDocument();
   });
 
   it('displays current day and status', () => {
@@ -105,7 +105,7 @@ describe('DashboardPage', () => {
     expect(screen.getAllByText(/Day 42/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows "Dashboard" when no league', () => {
+  it('shows "Season" when no league', () => {
     mockUseLeague.mockReturnValue({
       league: null,
       teams: [],
@@ -120,7 +120,7 @@ describe('DashboardPage', () => {
     });
 
     render(<DashboardPage />);
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Season')).toBeInTheDocument();
   });
 
   it('renders simulation control buttons', () => {

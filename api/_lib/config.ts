@@ -27,7 +27,7 @@ function requireEnv(key: string, fallbackKey?: string): string {
       'Set it in Vercel dashboard or .env.local.'
     );
   }
-  return value;
+  return value.trim();
 }
 
 let _cached: ServerConfig | null = null;

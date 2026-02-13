@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data, error } = await supabase
       .from('game_logs')
       .select('*, home_team:teams!home_team_id(id, name, city), away_team:teams!away_team_id(id, name, city)')
-      .eq('id', gameId)
+      .eq('game_id', gameId)
       .single();
 
     if (error || !data) {

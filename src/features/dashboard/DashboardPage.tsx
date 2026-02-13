@@ -40,7 +40,7 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 };
 
 export function DashboardPage() {
-  usePageTitle('Dashboard');
+  usePageTitle('Season');
   const navigate = useNavigate();
   const { user } = useAuth();
   const { league, teams, standings, schedule, playoffBracket, currentDay, isLoading, error, isCommissioner, leagueStatus } = useLeague();
@@ -166,7 +166,7 @@ export function DashboardPage() {
       <div className="flex items-center gap-4">
         <div>
           <h2 className="pennant-header">
-            Dashboard
+            Season
           </h2>
           {league && (
             <p className="mt-1 font-stat text-sm text-[var(--color-muted)]">
@@ -243,7 +243,7 @@ export function DashboardPage() {
 
       {/* Results ticker */}
       {recentResults.length > 0 && (
-        <ResultsTicker results={recentResults} />
+        <ResultsTicker results={recentResults} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
       )}
 
       {/* Simulation controls or season complete */}
@@ -309,7 +309,7 @@ export function DashboardPage() {
                 lastGameResult={lastPlayoffResult}
               />
             ) : (
-              <ScheduleView day={todaySchedule} teams={teams} />
+              <ScheduleView day={todaySchedule} teams={teams} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
             )}
           </div>
         </div>
