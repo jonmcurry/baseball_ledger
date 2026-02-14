@@ -145,10 +145,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Grade 15 = 7% suppression (centered at grade 8).
-      // Should suppress some hits but not most.
-      expect(pitcherWins).toBeGreaterThan(0);
-      expect(pitcherWins).toBeLessThan(samples * 0.20);
+      // Grade 15 = (15/15) * 0.20 = 20% combined suppression.
+      // With 1000 samples, expect 150-250 suppressions.
+      expect(pitcherWins).toBeGreaterThan(samples * 0.12);
+      expect(pitcherWins).toBeLessThan(samples * 0.30);
     });
 
     it('low grade pitchers rarely win the matchup', () => {
@@ -243,7 +243,7 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
       const samples = 100;
 
       for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 8, rng); // Grade 8 = 0% suppression
+        const result = resolvePlateAppearance(card, 8, rng); // Grade 8 = ~10.7% suppression
         if (
           result.outcome === OutcomeCategory.SINGLE_CLEAN ||
           result.outcome === OutcomeCategory.SINGLE_ADVANCE
@@ -253,8 +253,63 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
       }
 
       // All 26 variable positions have value 7 (SINGLE_CLEAN).
-      // With grade 8 (0% suppression), all should be singles.
-      expect(singles).toBe(samples);
+      // Grade 8 suppresses ~10.7% of hits, so expect ~89-100 singles out of 100.
+      expect(singles).toBeGreaterThanOrEqual(80);
+      expect(singles).toBeLessThanOrEqual(samples);
+    });
+
+    it('grade 15 suppresses approximately 20% of hits', () => {
+      const rng = new SeededRNG(42);
+      let pitcherWins = 0;
+      const samples = 5000;
+
+      for (let i = 0; i < samples; i++) {
+        const result = applyPitcherGradeGate(7, 15, rng);
+        if (result.pitcherWon) {
+          pitcherWins++;
+        }
+      }
+
+      // Combined suppression = (15/15) * 0.20 = 20%, expect 15-25% range
+      const rate = pitcherWins / samples;
+      expect(rate).toBeGreaterThanOrEqual(0.15);
+      expect(rate).toBeLessThanOrEqual(0.25);
+    });
+
+    it('grade 8 suppresses approximately 10% of hits', () => {
+      const rng = new SeededRNG(42);
+      let pitcherWins = 0;
+      const samples = 5000;
+
+      for (let i = 0; i < samples; i++) {
+        const result = applyPitcherGradeGate(7, 8, rng);
+        if (result.pitcherWon) {
+          pitcherWins++;
+        }
+      }
+
+      // Combined suppression = (8/15) * 0.20 = 10.7%, expect 7-15% range
+      const rate = pitcherWins / samples;
+      expect(rate).toBeGreaterThanOrEqual(0.07);
+      expect(rate).toBeLessThanOrEqual(0.15);
+    });
+
+    it('grade 1 suppresses approximately 1.3% of hits', () => {
+      const rng = new SeededRNG(42);
+      let pitcherWins = 0;
+      const samples = 5000;
+
+      for (let i = 0; i < samples; i++) {
+        const result = applyPitcherGradeGate(7, 1, rng);
+        if (result.pitcherWon) {
+          pitcherWins++;
+        }
+      }
+
+      // Combined suppression = (1/15) * 0.20 = 1.3%, expect 0-4% range
+      const rate = pitcherWins / samples;
+      expect(rate).toBeGreaterThanOrEqual(0);
+      expect(rate).toBeLessThanOrEqual(0.04);
     });
 
     it('higher pitcher grade produces more outs', () => {

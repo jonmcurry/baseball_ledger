@@ -115,6 +115,7 @@ interface GameTracker {
   awayErrors: number;
   currentHalfInningRuns: number;
   consecutiveHitsWalks: number;
+  unearnedRunBudget: number;
 }
 
 function isHitOutcome(outcome: OutcomeCategory): boolean {
@@ -337,6 +338,7 @@ export function runGame(config: RunGameConfig): GameResult {
     awayErrors: 0,
     currentHalfInningRuns: 0,
     consecutiveHitsWalks: 0,
+    unearnedRunBudget: 0,
   };
 
   // Initialize pitching lines for starters
@@ -360,6 +362,7 @@ export function runGame(config: RunGameConfig): GameResult {
 
     tracker.currentHalfInningRuns = 0;
     tracker.consecutiveHitsWalks = 0;
+    tracker.unearnedRunBudget = 0;
 
     const isTopHalf = state.halfInning === 'top';
     const batterCards = isTopHalf ? localAwayBatterCards : localHomeBatterCards;
@@ -481,7 +484,11 @@ export function runGame(config: RunGameConfig): GameResult {
         if (ibbResolution.runsScored > 0) {
           battingLine.RBI += ibbResolution.rbiCredits;
           tracker.currentHalfInningRuns += ibbResolution.runsScored;
-          currentPitcherState.earnedRuns += ibbResolution.runsScored;
+          const unearned = Math.min(ibbResolution.runsScored, tracker.unearnedRunBudget);
+          tracker.unearnedRunBudget -= unearned;
+          pitchingLine.R += ibbResolution.runsScored;
+          pitchingLine.ER += ibbResolution.runsScored - unearned;
+          currentPitcherState.earnedRuns += ibbResolution.runsScored - unearned;
           currentPitcherState.isShutout = false;
         }
 
@@ -535,7 +542,11 @@ export function runGame(config: RunGameConfig): GameResult {
 
         if (buntResolution.runsScored > 0) {
           tracker.currentHalfInningRuns += buntResolution.runsScored;
-          currentPitcherState.earnedRuns += buntResolution.runsScored;
+          const unearned = Math.min(buntResolution.runsScored, tracker.unearnedRunBudget);
+          tracker.unearnedRunBudget -= unearned;
+          pitchingLine.R += buntResolution.runsScored;
+          pitchingLine.ER += buntResolution.runsScored - unearned;
+          currentPitcherState.earnedRuns += buntResolution.runsScored - unearned;
           currentPitcherState.isShutout = false;
         }
 
@@ -657,8 +668,8 @@ export function runGame(config: RunGameConfig): GameResult {
       // Runners who scored
       if (resolution.runsScored > 0) {
         tracker.currentHalfInningRuns += resolution.runsScored;
-        currentPitcherState.earnedRuns += resolution.runsScored;
         currentPitcherState.isShutout = false;
+        // earnedRuns updated below alongside pitchingLine ER
       }
 
       // Error check for outs
@@ -667,6 +678,7 @@ export function runGame(config: RunGameConfig): GameResult {
         if (errorResult.errorOccurred) {
           if (isTopHalf) tracker.homeErrors++;
           else tracker.awayErrors++;
+          tracker.unearnedRunBudget++;
         }
       }
 
@@ -684,8 +696,14 @@ export function runGame(config: RunGameConfig): GameResult {
       if (outcome === OutcomeCategory.HOME_RUN || outcome === OutcomeCategory.HOME_RUN_VARIANT) {
         pitchingLine.HR++;
       }
-      pitchingLine.R += resolution.runsScored;
-      pitchingLine.ER += resolution.runsScored; // Simplified: all runs are earned
+      // Earned run tracking: consume unearned budget before counting earned runs
+      if (resolution.runsScored > 0) {
+        const unearned = Math.min(resolution.runsScored, tracker.unearnedRunBudget);
+        tracker.unearnedRunBudget -= unearned;
+        pitchingLine.R += resolution.runsScored;
+        pitchingLine.ER += resolution.runsScored - unearned;
+        currentPitcherState.earnedRuns += resolution.runsScored - unearned;
+      }
 
       // Update game state
       state = {
@@ -726,7 +744,11 @@ export function runGame(config: RunGameConfig): GameResult {
               awayScore: isTopHalf ? state.awayScore + 1 : state.awayScore,
             };
             tracker.currentHalfInningRuns++;
-            currentPitcherState.earnedRuns++;
+            const aggrUnearned = Math.min(1, tracker.unearnedRunBudget);
+            tracker.unearnedRunBudget -= aggrUnearned;
+            pitchingLine.R++;
+            pitchingLine.ER += 1 - aggrUnearned;
+            currentPitcherState.earnedRuns += 1 - aggrUnearned;
             currentPitcherState.isShutout = false;
             battingLine.RBI++;
           }

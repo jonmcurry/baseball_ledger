@@ -98,13 +98,26 @@ export interface GradeGateResult {
 }
 
 /**
+ * Calibration constant for hit suppression.
+ * When the pitcher wins the R2 roll, this is the probability a hit becomes
+ * a ground out. Combined suppression = (pitcherGrade / 15) * scale.
+ *
+ *   Grade 15 (ace):  20.0% total suppression
+ *   Grade 8  (avg):  10.7% total suppression
+ *   Grade 1  (poor):  1.3% total suppression
+ */
+export const HIT_SUPPRESSION_SCALE = 0.20;
+
+/**
  * Apply the pitcher grade gate to a card value.
  *
- * From REQ-SIM-004 step 4d:
- * - Generate random integer R2 in [1, 15]
- * - If R2 <= pitcher.grade: pitcher "wins" the matchup
- * - If the card value is a hit type, there's a (pitcher.grade / 15) probability
- *   it becomes an out instead
+ * From REQ-SIM-004 step 4d (calibrated two-roll system):
+ * - Roll 1: Generate random integer R2 in [1, 15]
+ *   If R2 <= pitcher.grade: pitcher "wins" the matchup
+ * - Roll 2: If pitcher won AND card value is a hit type,
+ *   there is a HIT_SUPPRESSION_SCALE (20%) chance it becomes a ground out
+ *
+ * Combined suppression = (grade / 15) * HIT_SUPPRESSION_SCALE
  *
  * @param cardValue - The card value to potentially modify
  * @param pitcherGrade - Pitcher's grade (1-15)
@@ -126,15 +139,13 @@ export function applyPitcherGradeGate(
     };
   }
 
-  // Single calibrated gate centered at the average pitcher grade (8).
-  // The card already encodes performance against average pitching, so only
-  // above-average pitchers suppress hits, and below-average pitchers don't.
-  // Grade 8 (avg) = 0%, grade 15 (ace) = 7%, grade 1 (poor) = 0%.
+  // Roll 1: R2 in [1, 15] -- pitcher wins if R2 <= grade
   const r2 = rng.nextInt(1, 15);
-  const suppressionChance = Math.max(0, (pitcherGrade - 8) * 0.01);
+  const pitcherWinsRoll = r2 <= pitcherGrade;
 
-  if (rng.chance(suppressionChance)) {
-    // Hit becomes an out - use ground out (26) as default
+  // Roll 2: If pitcher won the matchup, apply calibrated suppression
+  if (pitcherWinsRoll && rng.chance(HIT_SUPPRESSION_SCALE)) {
+    // Hit becomes a ground out
     return {
       originalValue: cardValue,
       finalValue: 26, // GROUND_OUT

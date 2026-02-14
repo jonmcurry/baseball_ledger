@@ -88,9 +88,10 @@ describe('Realism Check: Batting Average Simulation', () => {
 
     const ba = atBats > 0 ? hits / atBats : 0;
 
-    // Batting average should be realistic: .220 to .320
+    // Batting average should be realistic: .220 to .300
+    // Lower bound accounts for seed variance + ~10.7% grade-8 suppression
     expect(ba).toBeGreaterThanOrEqual(0.220);
-    expect(ba).toBeLessThanOrEqual(0.320);
+    expect(ba).toBeLessThanOrEqual(0.300);
   });
 
   it('produces walk rate in [.05, .15] for a .09 walk-rate hitter', () => {
@@ -131,6 +132,57 @@ describe('Realism Check: Batting Average Simulation', () => {
     const kRate = strikeouts / totalPA;
     expect(kRate).toBeGreaterThanOrEqual(0.10);
     expect(kRate).toBeLessThanOrEqual(0.25);
+  });
+
+  it('elite .350+ hitter produces BA below .400 vs grade 8 pitcher', () => {
+    // Build a card for a .350+ hitter (e.g., Shoeless Joe Jackson)
+    const rates: PlayerRates = {
+      PA: 600,
+      walkRate: 0.06,
+      strikeoutRate: 0.08,
+      homeRunRate: 0.02,
+      singleRate: 0.22,
+      doubleRate: 0.06,
+      tripleRate: 0.02,
+      sbRate: 0.50,
+      iso: 0.120,
+      hbpRate: 0.005,
+      sfRate: 0.005,
+      shRate: 0,
+      gdpRate: 0.01,
+    };
+
+    const card: CardValue[] = new Array(CARD_LENGTH).fill(0);
+    applyStructuralConstants(card);
+    const alloc = computeSlotAllocation(rates);
+    fillVariablePositions(card, alloc, 0.340);
+
+    const pitcherGrade = 8;
+    const rng = new SeededRNG(42);
+    const totalPA = 600;
+
+    let hits = 0;
+    let atBats = 0;
+
+    for (let i = 0; i < totalPA; i++) {
+      const result = resolvePlateAppearance(card, pitcherGrade, rng);
+
+      if (WALK_OUTCOMES.has(result.outcome)) {
+        continue;
+      }
+
+      atBats++;
+      if (HIT_OUTCOMES.has(result.outcome)) {
+        hits++;
+      }
+    }
+
+    const ba = atBats > 0 ? hits / atBats : 0;
+
+    // With proper pitcher grade suppression, even elite hitters should stay below .400
+    expect(ba).toBeLessThan(0.400);
+    // But they should still hit well
+    expect(ba).toBeGreaterThan(0.280);
   });
 
   it('higher pitcher grade suppresses hits more than lower grade', () => {

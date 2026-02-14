@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-02-14 - Fix Simulation Engine Inflated Stats (Dice Roll Calibration)
+
+Two critical bugs fixed in the simulation engine that caused grossly inflated
+batting averages (e.g. .461 for a .356 hitter) and pitcher ERAs:
+
+### Pitcher Grade Gate (Primary Fix)
+The old formula `(pitcherGrade - 8) * 0.01` gave 0-7% suppression across the
+entire 1-15 grade scale, with grade 8 (average) giving 0%. Replaced with a
+calibrated two-roll system per REQ-SIM-004 step 4d:
+
+- Roll 1: R2 in [1,15] -- pitcher wins if R2 <= grade
+- Roll 2: If pitcher won, 20% chance hit becomes ground out
+- Combined suppression = (grade/15) x 0.20
+  - Grade 15 (ace): 20.0% suppression
+  - Grade 8 (avg): 10.7% suppression
+  - Grade 1 (poor): 1.3% suppression
+
+### Earned Run Tracking
+Previously all runs were marked as earned (ER = R). Added per-half-inning
+`unearnedRunBudget` counter: incremented when errors occur, consumed when
+runs score. Applied at all 4 run-scoring locations (standard PA, IBB, bunt,
+aggressive baserunning).
+
+### Test Updates
+- 3 new suppression rate tests (grade 1/8/15 calibration)
+- Elite hitter test (.350+ hitter stays below .400 vs grade 8)
+- 2 new earned/unearned run tests (ER <= R, ER < R exists)
+- Updated existing tests for new suppression behavior
+- Fixed walk-off test to handle non-walk-off home wins
+
+### Files Changed
+- `src/lib/simulation/plate-appearance.ts` - Two-roll grade gate, HIT_SUPPRESSION_SCALE constant
+- `src/lib/simulation/game-runner.ts` - unearnedRunBudget, earned/unearned split at 4 scoring sites
+- `tests/unit/lib/simulation/plate-appearance.test.ts` - New + updated tests
+- `tests/unit/lib/simulation/realism-check.test.ts` - Tightened ranges, elite hitter test
+- `tests/unit/lib/simulation/game-runner.test.ts` - Earned run tests, walk-off fix
+
 ## 2026-02-13 - Standings Enhancements + Negro League Player Option
 
 ### Standings (Part 1)

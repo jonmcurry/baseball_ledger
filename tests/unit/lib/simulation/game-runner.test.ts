@@ -357,14 +357,16 @@ describe('game-runner', () => {
 
     it('respects walk-off rule (home team wins in bottom of 9th+)', () => {
       let walkoffFound = false;
-      for (let seed = 1; seed <= 100; seed++) {
+      for (let seed = 1; seed <= 200; seed++) {
         const result = runGame(makeDefaultConfig(seed));
         if (result.homeScore > result.awayScore) {
-          // Home win: last play should be in bottom half
           const lastPlay = result.playByPlay[result.playByPlay.length - 1];
-          expect(lastPlay.halfInning).toBe('bottom');
-          walkoffFound = true;
-          break;
+          if (lastPlay.halfInning === 'bottom') {
+            // Walk-off: home scored the winning run in the bottom half
+            walkoffFound = true;
+            break;
+          }
+          // If last play is top half, home was already ahead and bottom was skipped -- valid
         }
       }
       expect(walkoffFound).toBe(true);
@@ -508,6 +510,31 @@ describe('game-runner', () => {
         expect(awayLineTotal).toBe(result.awayScore);
         expect(homeLineTotal).toBe(result.homeScore);
       }
+    });
+
+    it('ER never exceeds R for any pitching line', () => {
+      for (let seed = 1; seed <= 20; seed++) {
+        const result = runGame(makeDefaultConfig(seed));
+        for (const line of result.playerPitchingLines) {
+          expect(line.ER).toBeLessThanOrEqual(line.R);
+        }
+      }
+    });
+
+    it('at least one game produces ER < R (unearned runs exist)', () => {
+      let foundUnearnedRuns = false;
+      for (let seed = 1; seed <= 50; seed++) {
+        const result = runGame(makeDefaultConfig(seed));
+        for (const line of result.playerPitchingLines) {
+          if (line.ER < line.R) {
+            foundUnearnedRuns = true;
+            break;
+          }
+        }
+        if (foundUnearnedRuns) break;
+      }
+      // Across 50 games, errors should produce at least one case of ER < R
+      expect(foundUnearnedRuns).toBe(true);
     });
 
     it('remains deterministic with new decision integrations (REQ-NFR-007)', () => {
