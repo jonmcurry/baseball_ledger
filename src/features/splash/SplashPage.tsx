@@ -13,7 +13,7 @@ export function SplashPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-base p-gutter-xl">
       <h1 className="font-headline text-4xl font-bold text-ballpark">Baseball Ledger</h1>
-      <p className="mt-gutter text-lg text-ink">APBA Baseball Simulation</p>
+      <p className="mt-gutter text-lg text-ink">Tabletop Baseball Simulation</p>
       <div className="mt-gutter-xl flex gap-gutter-lg">
         <Link
           to="/leagues/new"

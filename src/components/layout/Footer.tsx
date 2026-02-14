@@ -12,7 +12,7 @@ export function Footer() {
       role="contentinfo"
       className="border-t border-[var(--border-subtle)] px-gutter py-3 text-center text-xs text-[var(--text-tertiary)]"
     >
-      Baseball Ledger -- APBA Baseball Simulation
+      Copyright 2026 - Ledger Baseball
     </footer>
   );
 }

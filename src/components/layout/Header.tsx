@@ -96,14 +96,14 @@ export function Header({
       <div
         className="relative overflow-hidden"
         style={{
-          background: 'linear-gradient(180deg, #081422 0%, #0C1B2A 40%, #132337 100%)',
+          background: 'linear-gradient(180deg, var(--surface-overlay) 0%, var(--surface-base) 40%, var(--surface-raised) 100%)',
         }}
       >
         {/* Subtle radial gold glow */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(212,168,67,0.06) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(27,77,62,0.06) 0%, transparent 70%)',
           }}
           aria-hidden="true"
         />

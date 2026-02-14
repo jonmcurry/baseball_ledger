@@ -333,7 +333,7 @@ export function AvailablePlayersTable({
                     type="button"
                     onClick={() => onSelect(p)}
                     disabled={disabled}
-                    className="rounded border border-[var(--color-gold)] bg-gradient-to-b from-[var(--color-gold)] to-[#B8860B] px-3 py-1 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink)] shadow-sm transition-all hover:shadow-md hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded border border-[var(--color-gold)] bg-gradient-to-b from-[var(--color-gold)] to-[var(--color-gold-dark)] px-3 py-1 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--surface-raised)] shadow-sm transition-all hover:shadow-md hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Draft
                   </button>

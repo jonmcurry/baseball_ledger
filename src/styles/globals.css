@@ -4,85 +4,87 @@
 
 /**
  * Baseball Ledger Design System
- * "Ballpark Night" -- Warm Baseball Aesthetic
+ * "Vintage Almanac" -- Classic Baseball Record Book Aesthetic
  *
- * Deep navy evoking night games under the lights, warm cream text like
- * vintage baseball cards, rich gold accents, classic red and blue.
+ * Warm parchment backgrounds evoking leather-bound almanacs, dark ink
+ * text like printed record books, deep ballpark green accents, and
+ * stitch red for emphasis. Slab-serif headlines recall newspaper
+ * sports pages from the golden age.
  */
 
 @layer base {
   :root {
     /* ===================================================================
-       COLOR PALETTE - "Ballpark Night"
+       COLOR PALETTE - "Vintage Almanac"
        =================================================================== */
 
-    /* Surfaces -- warm navy (night game sky) */
-    --surface-base: #0C1B2A;
-    --surface-raised: #132337;
-    --surface-overlay: #1A2E45;
-    --surface-highlight: #243A54;
+    /* Surfaces -- warm cream/parchment (aged almanac pages) */
+    --surface-base: #F5ECD7;
+    --surface-raised: #FDF8EE;
+    --surface-overlay: #EDE3CC;
+    --surface-highlight: #E4D9BF;
 
-    /* Text -- warm cream (vintage card stock) */
-    --text-primary: #F5F0E6;
-    --text-secondary: #BDB5A7;
-    --text-tertiary: #7D7568;
+    /* Text -- dark ink (printed almanac text) */
+    --text-primary: #2C1810;
+    --text-secondary: #5C4A3A;
+    --text-tertiary: #8B7D6B;
 
-    /* Accent -- championship gold */
-    --accent-primary: #D4A843;
-    --accent-hover: #E4BC5A;
-    --accent-muted: rgba(212, 168, 67, 0.15);
+    /* Accent -- classic ballpark green (deep outfield green) */
+    --accent-primary: #1B4D3E;
+    --accent-hover: #24634F;
+    --accent-muted: rgba(27, 77, 62, 0.12);
 
     /* Semantic */
-    --semantic-success: #2D8B4E;
-    --semantic-danger: #C53030;
-    --semantic-warning: #D4A843;
-    --semantic-info: #3B72CF;
+    --semantic-success: #2D6B3F;
+    --semantic-danger: #B22222;
+    --semantic-warning: #C49115;
+    --semantic-info: #2B5797;
 
     /* Borders */
-    --border-default: #1E3350;
-    --border-subtle: #152740;
-    --border-accent: #D4A843;
+    --border-default: #D2B48C;
+    --border-subtle: #E0D2B8;
+    --border-accent: #1B4D3E;
 
     /* ===================================================================
        LEGACY TOKEN ALIASES
        Map old CSS variable names to new values so existing var() refs work
        =================================================================== */
-    --color-scoreboard: #0C1B2A;
-    --color-scoreboard-green: #0C1B2A;
-    --color-scoreboard-light: #132337;
-    --color-scoreboard-dark: #06101A;
-    --color-scoreboard-text: #F5F0E6;
-    --color-scoreboard-glow: rgba(245, 240, 230, 0.1);
+    --color-scoreboard: #EDE3CC;
+    --color-scoreboard-green: #1B4D3E;
+    --color-scoreboard-light: #FDF8EE;
+    --color-scoreboard-dark: #E4D9BF;
+    --color-scoreboard-text: #2C1810;
+    --color-scoreboard-glow: rgba(27, 77, 62, 0.1);
 
-    --color-cream: #132337;
-    --color-cream-dark: #0E1C2D;
-    --color-parchment: #1A2E45;
+    --color-cream: #FDF8EE;
+    --color-cream-dark: #EDE3CC;
+    --color-parchment: #E4D9BF;
 
-    --color-stitch: #C53030;
-    --color-stitch-light: #E04848;
-    --color-leather: #1E3350;
-    --color-leather-dark: #152740;
+    --color-stitch: #B22222;
+    --color-stitch-light: #D43F3F;
+    --color-leather: #8B6F47;
+    --color-leather-dark: #6B5535;
 
-    --color-gold: #D4A843;
-    --color-gold-light: #E4BC5A;
-    --color-gold-dark: #B8912E;
+    --color-gold: #C49115;
+    --color-gold-light: #D9A52A;
+    --color-gold-dark: #A67A0C;
 
-    --color-ink: #F5F0E6;
-    --color-ink-light: #E0D9CE;
-    --color-wood: #7D7568;
-    --color-wood-light: #958C7E;
-    --color-muted: #BDB5A7;
-    --color-muted-light: #D0C9BC;
+    --color-ink: #2C1810;
+    --color-ink-light: #3D2A1C;
+    --color-wood: #8B7D6B;
+    --color-wood-light: #A09282;
+    --color-muted: #5C4A3A;
+    --color-muted-light: #7A6B5C;
 
-    --color-grass: #2D8B4E;
+    --color-grass: #2D6B3F;
     --color-dirt: #A67B5B;
-    --color-chalk: #F5F0E6;
+    --color-chalk: #FDF8EE;
 
     /* ===================================================================
        TYPOGRAPHY
        =================================================================== */
-    --font-display: 'Barlow Condensed', 'Impact', sans-serif;
-    --font-headline: 'Barlow Condensed', 'Impact', sans-serif;
+    --font-display: 'Roboto Slab', 'Georgia', serif;
+    --font-headline: 'Roboto Slab', 'Georgia', serif;
     --font-scoreboard: 'IBM Plex Mono', 'Consolas', monospace;
     --font-stat: 'IBM Plex Mono', 'Consolas', monospace;
     --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
@@ -101,21 +103,21 @@
     --radius-card: 0.75rem;
 
     /* ===================================================================
-       SHADOWS & EFFECTS
+       SHADOWS & EFFECTS (softer for light backgrounds)
        =================================================================== */
     --shadow-card:
-      0 1px 3px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.2);
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      0 4px 12px rgba(0, 0, 0, 0.05);
 
     --shadow-elevated:
-      0 4px 8px rgba(0, 0, 0, 0.4),
-      0 12px 24px rgba(0, 0, 0, 0.3);
+      0 4px 8px rgba(0, 0, 0, 0.1),
+      0 12px 24px rgba(0, 0, 0, 0.08);
 
     --shadow-scoreboard:
-      0 1px 3px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.2);
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      0 4px 12px rgba(0, 0, 0, 0.05);
 
-    --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.06);
 
     /* ===================================================================
        BORDERS
@@ -124,28 +126,28 @@
     --border-scoreboard: 1px solid var(--border-default);
     --border-stitch: 1px solid var(--semantic-danger);
 
-    /* Clean design -- no texture patterns */
+    /* Textures -- subtle paper grain */
+    --pattern-paper: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
     --pattern-stitch: none;
-    --pattern-paper: none;
     --pattern-wood: none;
   }
 
   /* ===================================================================
-     POSTSEASON THEME (Championship Gold Accent)
+     POSTSEASON THEME (Pennant Red Accent)
      =================================================================== */
   [data-theme="postseason"] {
-    --accent-primary: #FFD700;
-    --accent-hover: #FFE44D;
-    --accent-muted: rgba(255, 215, 0, 0.15);
-    --border-accent: #FFD700;
+    --accent-primary: #B22222;
+    --accent-hover: #CC3333;
+    --accent-muted: rgba(178, 34, 34, 0.12);
+    --border-accent: #B22222;
 
-    --color-gold: #FFD700;
-    --color-gold-light: #FFE44D;
-    --color-gold-dark: #CCAC00;
-    --color-scoreboard: #FFD700;
-    --color-scoreboard-green: #FFD700;
-    --color-scoreboard-light: #FFE44D;
-    --color-scoreboard-dark: #CCAC00;
+    --color-gold: #C49115;
+    --color-gold-light: #D9A52A;
+    --color-gold-dark: #A67A0C;
+    --color-scoreboard: #B22222;
+    --color-scoreboard-green: #8B1A1A;
+    --color-scoreboard-light: #CC3333;
+    --color-scoreboard-dark: #7A1515;
   }
 
   /* ===================================================================
@@ -161,12 +163,13 @@
 
   body {
     background: var(--surface-base);
+    background-image: var(--pattern-paper);
     min-height: 100vh;
   }
 
   ::selection {
     background-color: var(--accent-primary);
-    color: var(--surface-base);
+    color: var(--surface-raised);
   }
 
   :focus-visible {
@@ -181,12 +184,12 @@
 
 @layer components {
 
-  /* ----- CARD -- clean dark card with thin border ----- */
+  /* ----- CARD -- warm paper card with sandstone border ----- */
   .vintage-card {
     background: var(--surface-raised);
     border: var(--border-card);
     border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
+    box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(0, 0, 0, 0.02);
     padding: var(--gutter-lg);
     position: relative;
   }
@@ -231,7 +234,7 @@
     text-align: center;
   }
 
-  /* ----- PENNANT HEADER -- bold condensed with accent underline ----- */
+  /* ----- PENNANT HEADER -- bold slab-serif with accent underline ----- */
   .pennant-header {
     font-family: var(--font-display);
     font-weight: 700;
@@ -267,20 +270,20 @@
 
   .btn-vintage-primary {
     background: var(--accent-primary);
-    color: var(--surface-base);
+    color: #FDF8EE;
     border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   }
 
   .btn-vintage-primary:hover {
     background: var(--accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
   .btn-vintage-primary:active {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
   .btn-vintage-primary:disabled {
@@ -388,7 +391,7 @@
     font-size: 1.25rem;
   }
 
-  /* ----- POSITION BADGES ----- */
+  /* ----- POSITION BADGES (adjusted for light backgrounds) ----- */
   .position-badge {
     font-family: var(--font-display);
     font-weight: 700;
@@ -400,28 +403,28 @@
   }
 
   .position-badge-pitcher {
-    background: rgba(234, 67, 53, 0.2);
-    color: #F06860;
+    background: rgba(178, 34, 34, 0.12);
+    color: #B22222;
   }
 
   .position-badge-catcher {
-    background: rgba(230, 168, 23, 0.2);
-    color: var(--accent-primary);
+    background: rgba(196, 145, 21, 0.12);
+    color: #A67A0C;
   }
 
   .position-badge-infield {
-    background: rgba(66, 133, 244, 0.2);
-    color: #6EA4F7;
+    background: rgba(43, 87, 151, 0.12);
+    color: #2B5797;
   }
 
   .position-badge-outfield {
-    background: rgba(52, 168, 83, 0.2);
-    color: #5EBB7A;
+    background: rgba(45, 107, 63, 0.12);
+    color: #2D6B3F;
   }
 
   .position-badge-dh {
-    background: rgba(230, 168, 23, 0.2);
-    color: var(--accent-primary);
+    background: rgba(196, 145, 21, 0.12);
+    color: #A67A0C;
   }
 
   /* ----- DIAMOND GRAPHIC ----- */

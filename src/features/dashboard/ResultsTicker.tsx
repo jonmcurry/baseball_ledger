@@ -33,7 +33,7 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
       <div
         className="flex items-center gap-2 px-4 py-1"
         style={{
-          background: 'linear-gradient(180deg, #1A2E45 0%, #132337 100%)',
+          background: 'linear-gradient(180deg, var(--surface-overlay) 0%, var(--surface-raised) 100%)',
           borderTop: '2px solid var(--accent-primary)',
         }}
       >
@@ -48,15 +48,15 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
 
       {/* Scoreboard strip */}
       <div className="relative overflow-hidden" style={{
-        background: 'linear-gradient(180deg, #0E1C2D 0%, #0C1B2A 40%, #081422 100%)',
+        background: 'linear-gradient(180deg, var(--surface-highlight) 0%, var(--surface-overlay) 40%, var(--surface-base) 100%)',
         borderBottom: '2px solid var(--accent-primary)',
       }}>
         {/* Edge fades */}
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10" style={{
-          background: 'linear-gradient(90deg, #0C1B2A 0%, transparent 100%)',
+          background: 'linear-gradient(90deg, var(--surface-overlay) 0%, transparent 100%)',
         }} />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10" style={{
-          background: 'linear-gradient(270deg, #0C1B2A 0%, transparent 100%)',
+          background: 'linear-gradient(270deg, var(--surface-overlay) 0%, transparent 100%)',
         }} />
 
         {/* Scrollable card rail */}
@@ -76,21 +76,21 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
                 <div
                   className="relative w-52 overflow-hidden rounded"
                   style={{
-                    background: 'linear-gradient(160deg, #1A2E45 0%, #132337 50%, #0E1C2D 100%)',
+                    background: 'linear-gradient(160deg, var(--surface-raised) 0%, var(--surface-overlay) 50%, var(--surface-highlight) 100%)',
                     boxShadow: `
-                      inset 0 1px 0 rgba(245,240,230,0.06),
-                      inset 0 -1px 0 rgba(0,0,0,0.3),
-                      0 2px 8px rgba(0,0,0,0.4),
-                      0 0 1px rgba(212,168,67,0.15)
+                      inset 0 1px 0 rgba(255,255,255,0.4),
+                      inset 0 -1px 0 rgba(0,0,0,0.05),
+                      0 2px 8px rgba(0,0,0,0.08),
+                      0 0 1px rgba(27,77,62,0.15)
                     `,
-                    border: '1px solid rgba(30,51,80,0.8)',
+                    border: '1px solid var(--border-default)',
                   }}
                 >
                   {/* Hover glow */}
                   <div
                     className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     style={{
-                      background: 'radial-gradient(ellipse at 50% 0%, rgba(212,168,67,0.08) 0%, transparent 70%)',
+                      background: 'radial-gradient(ellipse at 50% 0%, rgba(27,77,62,0.08) 0%, transparent 70%)',
                     }}
                   />
 
@@ -111,7 +111,7 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
                         <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-[7px] font-bold"
                           style={{
                             background: 'var(--accent-primary)',
-                            color: '#0C1B2A',
+                            color: 'var(--surface-raised)',
                           }}
                         >
                           W
@@ -121,8 +121,8 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
                         style={{
                           color: awayWon ? 'var(--accent-primary)' : 'var(--text-secondary)',
                           textShadow: awayWon
-                            ? '0 0 12px rgba(212,168,67,0.5), 0 0 4px rgba(212,168,67,0.3)'
-                            : '0 0 6px rgba(245,240,230,0.05)',
+                            ? '0 0 12px rgba(27,77,62,0.3), 0 0 4px rgba(27,77,62,0.2)'
+                            : 'none',
                         }}
                       >
                         {r.awayScore}
@@ -131,7 +131,7 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
 
                     {/* Divider */}
                     <div className="my-1 h-px" style={{
-                      background: 'linear-gradient(90deg, transparent 0%, rgba(245,240,230,0.08) 20%, rgba(245,240,230,0.08) 80%, transparent 100%)',
+                      background: 'linear-gradient(90deg, transparent 0%, var(--border-subtle) 20%, var(--border-subtle) 80%, transparent 100%)',
                     }} />
 
                     {/* Home line */}
@@ -149,7 +149,7 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
                         <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-[7px] font-bold"
                           style={{
                             background: 'var(--accent-primary)',
-                            color: '#0C1B2A',
+                            color: 'var(--surface-raised)',
                           }}
                         >
                           W
@@ -159,8 +159,8 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
                         style={{
                           color: homeWon ? 'var(--accent-primary)' : 'var(--text-secondary)',
                           textShadow: homeWon
-                            ? '0 0 12px rgba(212,168,67,0.5), 0 0 4px rgba(212,168,67,0.3)'
-                            : '0 0 6px rgba(245,240,230,0.05)',
+                            ? '0 0 12px rgba(27,77,62,0.3), 0 0 4px rgba(27,77,62,0.2)'
+                            : 'none',
                         }}
                       >
                         {r.homeScore}
@@ -172,8 +172,8 @@ export function ResultsTicker({ results, onGameClick }: ResultsTickerProps) {
                   <div
                     className="flex items-center justify-between px-3 py-1"
                     style={{
-                      background: 'rgba(0,0,0,0.2)',
-                      borderTop: '1px solid rgba(245,240,230,0.04)',
+                      background: 'rgba(0,0,0,0.04)',
+                      borderTop: '1px solid var(--border-subtle)',
                     }}
                   >
                     <span className="font-stat text-[8px] uppercase tracking-[0.15em] text-[var(--text-tertiary)]">

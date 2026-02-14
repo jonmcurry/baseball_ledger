@@ -91,7 +91,7 @@ export function SimulationControls({
             aria-valuemax={100}
           >
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[var(--color-gold)] to-[#D4AF37] transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-light)] transition-all duration-300"
               style={{
                 width: `${progressPct}%`,
                 boxShadow: '0 0 10px var(--color-gold)',

@@ -88,7 +88,7 @@ export function SeasonScheduleView({ schedule, teams, currentDay, onGameClick }:
                     Day {day.dayNumber}
                   </span>
                   {isCurrent && (
-                    <span className="rounded-full bg-[var(--accent-primary)] px-1.5 py-px font-stat text-[8px] font-bold uppercase text-[#0C1B2A]">
+                    <span className="rounded-full bg-[var(--accent-primary)] px-1.5 py-px font-stat text-[8px] font-bold uppercase text-[var(--surface-raised)]">
                       Today
                     </span>
                   )}

@@ -329,9 +329,9 @@ function LineupRow({
   if (!pick) return <EmptySlot label={slotLabel} />;
 
   const badgeCss: Record<string, { bg: string; fg: string }> = {
-    position: { bg: 'rgba(212,168,67,0.15)', fg: 'var(--accent-primary)' },
-    bench: { bg: 'rgba(125,117,104,0.2)', fg: 'var(--color-muted)' },
-    pitcher: { bg: 'rgba(30,51,80,0.5)', fg: 'var(--color-gold-light)' },
+    position: { bg: 'rgba(27,77,62,0.12)', fg: 'var(--accent-primary)' },
+    bench: { bg: 'rgba(139,127,107,0.15)', fg: 'var(--color-muted)' },
+    pitcher: { bg: 'rgba(178,34,34,0.12)', fg: 'var(--semantic-danger)' },
   };
   const colors = badgeCss[badgeStyle];
 
@@ -380,7 +380,7 @@ function EmptySlot({ label }: { label: string }) {
     >
       <span
         className="inline-flex h-5 w-8 shrink-0 items-center justify-center rounded font-stat text-[10px] font-bold"
-        style={{ background: 'rgba(30,51,80,0.25)', color: 'var(--text-tertiary)' }}
+        style={{ background: 'rgba(139,127,107,0.15)', color: 'var(--text-tertiary)' }}
       >
         {label}
       </span>

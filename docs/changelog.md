@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-02-13 - Vintage Baseball Almanac Restyle
+
+Complete visual redesign from "Ballpark Night" (dark navy/gold) to "Vintage
+Almanac" (warm parchment/green) aesthetic. The new design evokes classic
+baseball record books, old tobacco-era cards, and leather-bound almanacs.
+
+### Design System (globals.css)
+- **Surfaces**: Dark navy (#0C1B2A) replaced with warm parchment (#F5ECD7)
+- **Text**: Cream-on-dark inverted to dark brown ink (#2C1810) on light
+- **Accent**: Championship gold (#D4A843) replaced with deep ballpark green
+  (#1B4D3E) per original UI spec
+- **Borders**: Navy borders replaced with tan/sandstone (#D2B48C)
+- **Shadows**: Reduced opacity for light backgrounds
+- **Textures**: Enabled subtle SVG paper grain on body
+- **Postseason**: Accent shifts to pennant red (#B22222) instead of bright gold
+
+### Typography (fonts.css)
+- **Headlines**: Switched from Barlow Condensed (sans-serif) to Roboto Slab
+  (slab-serif) for vintage newspaper sports page feel
+- Added self-hosted Roboto Slab @font-face (WOFF2 already in /public/fonts/)
+- Updated Google Fonts preload links in index.html
+
+### Component Fixes (12 files)
+- Replaced all hardcoded hex colors in inline styles with CSS variable refs
+- Updated position badge colors for light-background visibility
+- Fixed button text contrast (light text on green buttons)
+- Files: Header, ResultsTicker, DashboardPage, NewSeasonPanel,
+  SimulationNotification, SeasonCompletePanel, PlayoffStatusPanel,
+  SeasonScheduleView, SimulationControls, PickTimer, AvailablePlayersTable,
+  RosterPreviewPanel
+
 ## 2026-02-13 - Fix Delete League Timeout (Migration 00025)
 
 Added indexes on FK columns referencing `teams(id)` that were missing indexes:

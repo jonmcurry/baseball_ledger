@@ -59,9 +59,9 @@ export function SimulationNotification({
   return (
     <div
       data-testid="simulation-notification"
-      className="relative overflow-hidden rounded border-2 border-[var(--color-gold)] bg-gradient-to-r from-[var(--color-scoreboard-green)] to-[#0A1520] px-4 py-3 shadow-lg"
+      className="relative overflow-hidden rounded border-2 border-[var(--color-gold)] bg-gradient-to-r from-[var(--color-scoreboard-green)] to-[var(--surface-overlay)] px-4 py-3 shadow-lg"
       style={{
-        boxShadow: '0 0 20px rgba(212, 175, 55, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+        boxShadow: '0 0 15px rgba(27,77,62,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
       }}
     >
       {/* Decorative ticker tape effect */}

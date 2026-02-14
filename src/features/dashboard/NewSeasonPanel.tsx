@@ -28,7 +28,7 @@ export function NewSeasonPanel({
       <div
         className="vintage-card relative overflow-hidden text-center"
         style={{
-          background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, #0A1520 100%)',
+          background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, var(--surface-overlay) 100%)',
           borderColor: 'var(--color-gold)',
           borderWidth: '2px',
         }}
@@ -58,7 +58,7 @@ export function NewSeasonPanel({
         <p
           className="font-headline text-3xl font-bold uppercase tracking-wider text-[var(--color-gold)]"
           style={{
-            textShadow: '0 0 15px var(--color-gold), 0 2px 4px rgba(0,0,0,0.3)',
+            textShadow: '0 1px 2px rgba(0,0,0,0.15)',
           }}
         >
           Season {seasonYear}

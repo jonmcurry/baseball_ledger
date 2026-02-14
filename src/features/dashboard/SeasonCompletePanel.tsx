@@ -48,8 +48,8 @@ export function SeasonCompletePanel({
           <div
             className="flex h-16 w-16 items-center justify-center rounded-full"
             style={{
-              background: 'linear-gradient(135deg, var(--color-gold) 0%, #B8860B 100%)',
-              boxShadow: '0 0 20px var(--color-gold), inset 0 2px 4px rgba(255,255,255,0.3)',
+              background: 'linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%)',
+              boxShadow: '0 0 15px rgba(196,145,21,0.3), inset 0 2px 4px rgba(255,255,255,0.3)',
             }}
           >
             <svg
@@ -68,7 +68,7 @@ export function SeasonCompletePanel({
         <p
           className="font-headline text-2xl font-bold uppercase tracking-wider text-[var(--color-gold)]"
           style={{
-            textShadow: '0 0 10px var(--color-gold), 0 2px 4px rgba(0,0,0,0.3)',
+            textShadow: '0 1px 2px rgba(0,0,0,0.15)',
           }}
         >
           {championName}

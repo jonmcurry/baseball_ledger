@@ -30,9 +30,9 @@ export function PickTimer({ timeRemaining, isActive }: PickTimerProps) {
       }`}
       style={{
         background: isExpired
-          ? 'linear-gradient(180deg, #8B2020 0%, #5C1515 100%)'
+          ? 'linear-gradient(180deg, #C03030 0%, #8B2020 100%)'
           : isUrgent
-            ? 'linear-gradient(180deg, #6B3A1A 0%, #4A2810 100%)'
+            ? 'linear-gradient(180deg, #C49115 0%, #A67A0C 100%)'
             : undefined,
       }}
     >

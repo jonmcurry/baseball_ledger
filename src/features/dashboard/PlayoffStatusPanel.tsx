@@ -61,8 +61,8 @@ export function PlayoffStatusPanel({
         <div
           className="flex h-10 w-10 items-center justify-center rounded-full"
           style={{
-            background: 'linear-gradient(135deg, var(--color-gold) 0%, #B8860B 100%)',
-            boxShadow: '0 0 10px var(--color-gold)',
+            background: 'linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%)',
+            boxShadow: '0 0 8px rgba(196,145,21,0.3)',
           }}
         >
           <svg

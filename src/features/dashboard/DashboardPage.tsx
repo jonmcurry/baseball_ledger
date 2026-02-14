@@ -199,7 +199,7 @@ export function DashboardPage() {
         <div
           className="vintage-card relative overflow-hidden"
           style={{
-            background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, #0A1520 100%)',
+            background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, var(--surface-overlay) 100%)',
             borderColor: 'var(--color-gold)',
           }}
         >
@@ -207,8 +207,8 @@ export function DashboardPage() {
             <div
               className="flex h-12 w-12 items-center justify-center rounded-full"
               style={{
-                background: 'linear-gradient(135deg, var(--color-gold) 0%, #B8860B 100%)',
-                boxShadow: '0 0 15px var(--color-gold)',
+                background: 'linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%)',
+                boxShadow: '0 0 10px rgba(196,145,21,0.3)',
               }}
             >
               <svg
