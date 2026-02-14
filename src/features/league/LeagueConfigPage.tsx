@@ -170,7 +170,10 @@ export function LeagueConfigPage() {
             <DeleteLeagueButton
               leagueId={league.id}
               leagueName={league.name}
-              onDeleted={() => navigate('/leagues/new')}
+              onDeleted={() => {
+                useLeagueStore.getState().clearLeague();
+                navigate('/leagues/new');
+              }}
             />
           </div>
         </div>
