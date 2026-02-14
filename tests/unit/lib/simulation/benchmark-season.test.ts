@@ -16,6 +16,21 @@ import type { DayGameConfig } from '../../../../src/lib/simulation/season-runner
 // Test Helpers (minimal cards for throughput testing)
 // ---------------------------------------------------------------------------
 
+/** Realistic 35-byte card with mix of hits, outs, BB, K. */
+function makeRealisticCard(): number[] {
+  const card = new Array(35).fill(0);
+  card[0] = 30; card[2] = 28; card[5] = 27; card[10] = 26; card[12] = 31;
+  card[17] = 29; card[22] = 25; card[24] = 32; card[31] = 35;
+  const variable = [7, 8, 1, 0, 9, 13, 13, 14, 14, 14, 14, 21,
+    30, 26, 31, 24, 30, 26, 31, 24, 30, 26, 31, 24, 30, 26];
+  const structuralSet = new Set([0, 2, 5, 10, 12, 17, 22, 24, 31]);
+  let vi = 0;
+  for (let i = 0; i < 35; i++) {
+    if (!structuralSet.has(i)) card[i] = variable[vi++];
+  }
+  return card;
+}
+
 function makePlayerCard(overrides: Partial<PlayerCard> & { playerId: string }): PlayerCard {
   return {
     nameFirst: 'Test',
@@ -26,7 +41,7 @@ function makePlayerCard(overrides: Partial<PlayerCard> & { playerId: string }): 
     primaryPosition: 'CF',
     eligiblePositions: ['CF'],
     isPitcher: false,
-    card: Array.from({ length: 35 }, () => 7),
+    card: makeRealisticCard(),
     powerRating: 17,
     archetype: { byte33: 7, byte34: 0 },
     speed: 0.5,

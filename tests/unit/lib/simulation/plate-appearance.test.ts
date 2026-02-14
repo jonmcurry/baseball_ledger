@@ -145,10 +145,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // With grade 15/15, pitcher should win roughly all the time
-      // The random R2 must be <= pitcher.grade, so for grade 15, R2 can be 1-15 (always wins)
-      // But the shift only happens with probability grade/15, so ~100% for grade 15
-      expect(pitcherWins).toBeGreaterThan(samples * 0.8);
+      // Grade 15 = 7% suppression (centered at grade 8).
+      // Should suppress some hits but not most.
+      expect(pitcherWins).toBeGreaterThan(0);
+      expect(pitcherWins).toBeLessThan(samples * 0.20);
     });
 
     it('low grade pitchers rarely win the matchup', () => {
@@ -234,28 +234,27 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
       expect(results1).toEqual(results2);
     });
 
-    it('uses fallback when OutcomeTable lookup fails', () => {
-      // Create a card with an unusual value that's unlikely to match table
+    it('maps card values directly to outcomes without IDT table', () => {
+      // Card filled with value 7 (SINGLE_CLEAN) should produce singles
+      // when not suppressed by grade gate
       const card = createTestCard();
-      for (let i = 0; i < 35; i++) {
-        if (!new Set(STRUCTURAL_POSITIONS).has(i)) {
-          card[i] = 42; // SPECIAL_EVENT, unlikely to match many rows
-        }
-      }
-
       const rng = new SeededRNG(42);
-      let fallbackUsed = 0;
+      let singles = 0;
       const samples = 100;
 
       for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 10, rng);
-        if (result.usedFallback) {
-          fallbackUsed++;
+        const result = resolvePlateAppearance(card, 8, rng); // Grade 8 = 0% suppression
+        if (
+          result.outcome === OutcomeCategory.SINGLE_CLEAN ||
+          result.outcome === OutcomeCategory.SINGLE_ADVANCE
+        ) {
+          singles++;
         }
       }
 
-      // Should sometimes use fallback
-      expect(fallbackUsed).toBeGreaterThan(0);
+      // All 26 variable positions have value 7 (SINGLE_CLEAN).
+      // With grade 8 (0% suppression), all should be singles.
+      expect(singles).toBe(samples);
     });
 
     it('higher pitcher grade produces more outs', () => {

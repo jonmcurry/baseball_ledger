@@ -35,25 +35,25 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     expect(total).toBe(26);
   });
 
-  it('scales walk slots by 1.5x rate', () => {
-    // walkRate 0.10 * 1.5 * 26 = 3.9 -> round to 4
+  it('maps walk slots at 1:1 rate', () => {
+    // walkRate 0.10 * 1.0 * 26 = 2.6 -> round to 3
     const rates = makeRates({ walkRate: 0.10 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.walks).toBe(4);
+    expect(alloc.walks).toBe(3);
   });
 
-  it('scales strikeout slots by 1.3x rate', () => {
-    // strikeoutRate 0.20 * 1.3 * 26 = 6.76 -> round to 7
+  it('maps strikeout slots at 1:1 rate', () => {
+    // strikeoutRate 0.20 * 1.0 * 26 = 5.2 -> round to 5
     const rates = makeRates({ strikeoutRate: 0.20 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.strikeouts).toBe(7);
+    expect(alloc.strikeouts).toBe(5);
   });
 
-  it('scales home run slots by 3.5x rate', () => {
-    // homeRunRate 0.06 * 3.5 * 26 = 5.46 -> round to 5
+  it('maps home run slots at 1:1 rate', () => {
+    // homeRunRate 0.06 * 1.0 * 26 = 1.56 -> round to 2
     const rates = makeRates({ homeRunRate: 0.06 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBe(5);
+    expect(alloc.homeRuns).toBe(2);
   });
 
   it('allocates at least 1 walk slot when walkRate > 0', () => {

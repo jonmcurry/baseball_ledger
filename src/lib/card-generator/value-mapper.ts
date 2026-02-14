@@ -34,12 +34,12 @@ export const CARD_VALUES = {
  * Higher scale = more card positions allocated for that outcome.
  */
 const SCALE_FACTORS = {
-  walk: 1.5,
-  strikeout: 1.3,
-  homeRun: 3.5,
+  walk: 1.0,
+  strikeout: 1.0,
+  homeRun: 1.0,
   single: 1.0,
-  double: 2.0,
-  triple: 3.0,
+  double: 1.0,
+  triple: 1.0,
 } as const;
 
 /**

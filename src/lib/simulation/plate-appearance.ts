@@ -15,7 +15,6 @@ import type { SeededRNG } from '../rng/seeded-rng';
 import type { CardValue } from '../types/player';
 import { OutcomeCategory } from '../types/game';
 import { STRUCTURAL_POSITIONS, CARD_LENGTH } from '../card-generator/structural';
-import { lookupOutcome } from './outcome-table';
 import { getDirectOutcome } from './card-value-fallback';
 
 /**
@@ -127,22 +126,21 @@ export function applyPitcherGradeGate(
     };
   }
 
-  // Generate R2 in [1, 15]
+  // Single calibrated gate centered at the average pitcher grade (8).
+  // The card already encodes performance against average pitching, so only
+  // above-average pitchers suppress hits, and below-average pitchers don't.
+  // Grade 8 (avg) = 0%, grade 15 (ace) = 7%, grade 1 (poor) = 0%.
   const r2 = rng.nextInt(1, 15);
+  const suppressionChance = Math.max(0, (pitcherGrade - 8) * 0.01);
 
-  // Check if pitcher wins the matchup
-  if (r2 <= pitcherGrade) {
-    // Pitcher wins - check if hit shifts to out
-    const shiftChance = pitcherGrade / 15;
-    if (rng.chance(shiftChance)) {
-      // Hit becomes an out - use ground out (26) as default
-      return {
-        originalValue: cardValue,
-        finalValue: 26, // GROUND_OUT
-        pitcherWon: true,
-        r2Roll: r2,
-      };
-    }
+  if (rng.chance(suppressionChance)) {
+    // Hit becomes an out - use ground out (26) as default
+    return {
+      originalValue: cardValue,
+      finalValue: 26, // GROUND_OUT
+      pitcherWon: true,
+      r2Roll: r2,
+    };
   }
 
   // Batter's card value stands
@@ -173,8 +171,7 @@ export interface PlateAppearanceResult {
  * 1. Select a random card position (skipping structural constants)
  * 2. Read the card value
  * 3. Apply pitcher grade gate (may shift hit to out)
- * 4. Look up outcome in OutcomeTable
- * 5. If table lookup fails, use direct card value fallback
+ * 4. Map card value directly to outcome category
  *
  * @param card - The batter's 35-element card array
  * @param pitcherGrade - Pitcher's current effective grade (1-15)
@@ -196,29 +193,17 @@ export function resolvePlateAppearance(
   const gradeEffect = applyPitcherGradeGate(rawCardValue, pitcherGrade, rng);
   const effectiveCardValue = gradeEffect.finalValue;
 
-  // Step 4: OutcomeTable lookup
-  const lookupResult = lookupOutcome(effectiveCardValue, rng);
-
-  if (lookupResult.success && lookupResult.outcome !== undefined) {
-    return {
-      cardPosition,
-      cardValue: rawCardValue,
-      outcome: lookupResult.outcome,
-      usedFallback: false,
-      pitcherGradeEffect: gradeEffect,
-      outcomeTableRow: lookupResult.rowIndex,
-    };
-  }
-
-  // Step 5: Fallback to direct card value mapping
-  const fallbackOutcome = getDirectOutcome(effectiveCardValue);
+  // Step 4: Direct card value mapping (primary path).
+  // APBA BBW resolves outcomes directly from card values. The IDT.OBJ
+  // outcome table is preserved in outcome-table.ts but not used here
+  // because it scrambles card value semantics and suppresses hits.
+  const outcome = getDirectOutcome(effectiveCardValue);
 
   return {
     cardPosition,
     cardValue: rawCardValue,
-    outcome: fallbackOutcome,
-    usedFallback: true,
+    outcome,
+    usedFallback: false,
     pitcherGradeEffect: gradeEffect,
-    outcomeTableRow: lookupResult.rowIndex,
   };
 }

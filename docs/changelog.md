@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-13 - Fix Unrealistically Low Batting Averages in Simulation
+
+Season batting averages were ~.135 when they should be ~.260. Three compounding
+root causes identified through reverse engineering analysis of APBA BBW:
+
+- **Double pitcher grade gate**: `applyPitcherGradeGate()` applied two sequential
+  checks with combined suppression of (grade/15)^2 = 44% for grade 10. Replaced
+  with single calibrated gate centered at the average pitcher grade (8):
+  `Math.max(0, (pitcherGrade - 8) * 0.01)`. Grade 8 = 0% suppression, grade 15
+  (ace) = 7%.
+- **IDT.OBJ table scrambling card values**: `lookupOutcome()` fed card values
+  through a weighted-random table that remapped hit values to outs (~30% extra
+  suppression). Replaced with direct card value mapping via `getDirectOutcome()`,
+  matching APBA BBW behavior where card values directly determine outcomes.
+- **Inflated SCALE_FACTORS**: Walk (1.5x), strikeout (1.3x), HR (3.5x), double
+  (2.0x), triple (3.0x) scale factors over-allocated card slots to non-hit
+  categories. Normalized all to 1.0 so card slots faithfully represent actual
+  per-PA rates.
+
+New realism test validates 600 PA simulation produces BA in [.220, .320] range.
+Updated test cards across simulation test files to use realistic distributions.
+
+## 2026-02-13 - Fix Box Score Missing Names for Relief Pitchers
+
+Relief pitchers and closers showed raw player IDs instead of full names in the
+box score pitching table. Root cause: when relievers entered the game in
+`game-runner.ts`, they were tracked in `tracker.homeCurrentPitcher` /
+`tracker.awayCurrentPitcher` but never added to `state.*.pitchersUsed`. The
+`playerNames` map (built from `pitchersUsed` at game end) therefore missed all
+relievers, causing `undefined` playerName on their pitching lines.
+
+Fix: push closer and bullpen pitchers to `pitchersUsed` at all four pitcher
+change paths (home closer, away closer, home reliever, away reliever).
+
 ## 2026-02-13 - Redesign Draft Board Roster Card
 
 Redesigned `RosterPreviewPanel` for the draft board page:

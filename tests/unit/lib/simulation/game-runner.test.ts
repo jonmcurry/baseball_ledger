@@ -18,6 +18,33 @@ import type { RunGameConfig } from '../../../../src/lib/simulation/game-runner';
 // Test Helpers
 // ---------------------------------------------------------------------------
 
+/** Realistic 35-byte card: 9 structural + 26 variable (mix of hits, outs, BB, K). */
+function makeRealisticCard(): number[] {
+  // Structural positions: [0]=30, [2]=28, [5]=27, [10]=26, [12]=31, [17]=29, [22]=25, [24]=32, [31]=35
+  const card = new Array(35).fill(0);
+  card[0] = 30; card[2] = 28; card[5] = 27; card[10] = 26; card[12] = 31;
+  card[17] = 29; card[22] = 25; card[24] = 32; card[31] = 35;
+  // Variable positions (26 total): realistic .270-hitter distribution
+  // ~5 hits (7,8,1,0,9), ~2 BB(13), ~4 K(14), ~1 speed(21), ~14 outs(30,26,31,24)
+  const variable = [
+    7, 8, 1, 0, 9,          // 5 hit values (singles, HR, double, single)
+    13, 13,                  // 2 walks
+    14, 14, 14, 14,          // 4 strikeouts
+    21,                      // 1 speed/SB opportunity
+    30, 26, 31, 24, 30, 26,  // 14 outs (rotating ground, contact, fly, line)
+    31, 24, 30, 26, 31, 24,
+    30, 26,
+  ];
+  const structuralSet = new Set([0, 2, 5, 10, 12, 17, 22, 24, 31]);
+  let vi = 0;
+  for (let i = 0; i < 35; i++) {
+    if (!structuralSet.has(i)) {
+      card[i] = variable[vi++];
+    }
+  }
+  return card;
+}
+
 function makePlayerCard(overrides: Partial<PlayerCard> & { playerId: string }): PlayerCard {
   return {
     nameFirst: 'Test',
@@ -28,7 +55,7 @@ function makePlayerCard(overrides: Partial<PlayerCard> & { playerId: string }): 
     primaryPosition: 'CF',
     eligiblePositions: ['CF'],
     isPitcher: false,
-    card: Array.from({ length: 35 }, () => 7), // All singles
+    card: makeRealisticCard(),
     powerRating: 17,
     archetype: { byte33: 7, byte34: 0 },
     speed: 0.5,
@@ -375,6 +402,51 @@ describe('game-runner', () => {
         (l) => l.playerId.startsWith('home-'),
       );
       expect(homePitchers.length).toBeGreaterThan(1);
+    });
+
+    it('includes playerName on all pitching lines including relievers', () => {
+      // Force bullpen usage with low-stamina starters and give relievers distinct names
+      const config = makeDefaultConfig(42);
+      config.homeStartingPitcher = makePitcherCard({
+        playerId: 'home-sp',
+        nameFirst: 'Home',
+        nameLast: 'Starter',
+        pitching: {
+          role: 'SP', grade: 6, stamina: 2, era: 5.50, whip: 1.60,
+          k9: 5.0, bb9: 4.5, hr9: 1.5, usageFlags: [], isReliever: false,
+        },
+      });
+      config.awayStartingPitcher = makePitcherCard({
+        playerId: 'away-sp',
+        nameFirst: 'Away',
+        nameLast: 'Starter',
+        pitching: {
+          role: 'SP', grade: 6, stamina: 2, era: 5.50, whip: 1.60,
+          k9: 5.0, bb9: 4.5, hr9: 1.5, usageFlags: [], isReliever: false,
+        },
+      });
+      config.homeBullpen = [
+        { ...makeRelieverCard('home-rp1'), nameFirst: 'Home', nameLast: 'Reliever1' },
+        { ...makeRelieverCard('home-rp2'), nameFirst: 'Home', nameLast: 'Reliever2' },
+      ];
+      config.awayBullpen = [
+        { ...makeRelieverCard('away-rp1'), nameFirst: 'Away', nameLast: 'Reliever1' },
+        { ...makeRelieverCard('away-rp2'), nameFirst: 'Away', nameLast: 'Reliever2' },
+      ];
+      config.homeCloser = { ...makeCloserCard('home-cl'), nameFirst: 'Home', nameLast: 'Closer' };
+      config.awayCloser = { ...makeCloserCard('away-cl'), nameFirst: 'Away', nameLast: 'Closer' };
+
+      const result = runGame(config);
+
+      // Must have more than 2 pitchers (at least one reliever entered)
+      expect(result.playerPitchingLines.length).toBeGreaterThan(2);
+
+      // Every pitching line must have a playerName (not undefined or empty)
+      for (const line of result.playerPitchingLines) {
+        expect(line.playerName).toBeDefined();
+        expect(line.playerName).not.toBe('');
+        expect(line.playerName).not.toBe(line.playerId);
+      }
     });
 
     it('runs games with aggressive manager and hit-and-run enabled (REQ-AI-002)', () => {
