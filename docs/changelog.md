@@ -3,16 +3,21 @@
 ## 2026-02-14 - Fix League Deletion Timeout
 
 `delete_league_cascade` RPC was timing out (code 57014) on leagues with large
-`player_pool` tables (~8000+ rows). The original function ran 10 sequential
-DELETEs which exceeded Supabase's default ~8s statement timeout.
+`player_pool` tables (~8000+ rows). Two issues:
 
-All child tables already have `ON DELETE CASCADE` on their `league_id` FK, and
-`rosters`/`transactions` have `ON DELETE CASCADE` on `team_id`. Simplified the
-function to a single `DELETE FROM leagues WHERE id = p_league_id` which
-cascades to all dependents automatically. Also set `statement_timeout = '30s'`
-as a safety net.
+1. The original function ran 10 sequential DELETEs which exceeded Supabase's
+   default ~8s statement timeout. All child tables already have `ON DELETE
+   CASCADE` on their `league_id` FK, so simplified to a single `DELETE FROM
+   leagues` which cascades automatically (migration 00030).
+
+2. `SET LOCAL statement_timeout = '30s'` inside the function body was
+   overridden by the session-level timeout that Supabase PostgREST imposes.
+   Used `ALTER FUNCTION ... SET statement_timeout = '60s'` which attaches the
+   GUC value to the function execution context, taking precedence over session
+   settings (migration 00031).
 
 - Migration: `supabase/migrations/00030_fix_delete_league_timeout.sql`
+- Migration: `supabase/migrations/00031_alter_function_timeout.sql`
 
 ## 2026-02-14 - Button Text Contrast Fix
 
