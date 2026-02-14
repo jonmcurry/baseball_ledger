@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-14 - Fix CPU Draft Roster Composition (SP Cap)
+
+CPU auto-drafting could draft 5+ starting pitchers instead of the SRD-mandated
+4 SP / 4 RP composition. Root cause: three fallback paths in `selectAIPick`
+picked from the full player pool without checking whether SP or RP slots were
+already at their cap.
+
+Added `excludeFullPitching` helper that filters out pitching positions at their
+roster limit. Applied to early-round eligible filter, mid-round fallback, and
+late-round fallback. New test with 8 SP in pool verifies the cap across 50 seeds.
+
+- `src/lib/draft/ai-strategy.ts` - `excludeFullPitching` filter at 3 fallback points
+- `tests/unit/lib/draft/ai-strategy.test.ts` - New deep-pool SP cap test
+
 ## 2026-02-14 - Fix League Deletion Timeout
 
 `delete_league_cascade` RPC was timing out (code 57014) on leagues with large

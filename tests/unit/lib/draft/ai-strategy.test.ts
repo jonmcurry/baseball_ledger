@@ -396,6 +396,52 @@ describe('selectAIPick (REQ-DFT-006)', () => {
         }
       }
     });
+
+    it('never drafts more than 4 SP even with deep SP pool (50 seeds)', () => {
+      // Build a pool with 8 SP (more than the 4-SP cap) plus enough position/RP players
+      const deepPool: DraftablePlayer[] = [
+        ...buildPool(), // includes 4 SP
+        { card: makePitcherCard('SP', { playerId: 'sp05', pitching: { role: 'SP', grade: 9, stamina: 7, era: 2.80, whip: 1.05, k9: 10.0, bb9: 2.0, hr9: 0.7, usageFlags: [], isReliever: false } }), ops: 0, sb: 0 },
+        { card: makePitcherCard('SP', { playerId: 'sp06', pitching: { role: 'SP', grade: 11, stamina: 7, era: 2.50, whip: 0.95, k9: 11.0, bb9: 1.8, hr9: 0.5, usageFlags: [], isReliever: false } }), ops: 0, sb: 0 },
+        { card: makePitcherCard('SP', { playerId: 'sp07', pitching: { role: 'SP', grade: 12, stamina: 8, era: 2.20, whip: 0.90, k9: 12.0, bb9: 1.5, hr9: 0.4, usageFlags: [], isReliever: false } }), ops: 0, sb: 0 },
+        { card: makePitcherCard('SP', { playerId: 'sp08', pitching: { role: 'SP', grade: 13, stamina: 8, era: 1.90, whip: 0.85, k9: 13.0, bb9: 1.2, hr9: 0.3, usageFlags: [], isReliever: false } }), ops: 0, sb: 0 },
+        // Extra position players for bench depth
+        makeDraftable(makeCard({ playerId: '3b02', primaryPosition: '3B', eligiblePositions: ['3B'] }), 0.760, 4),
+        makeDraftable(makeCard({ playerId: 'dh02', primaryPosition: 'DH', eligiblePositions: ['DH'] }), 0.800, 0),
+        makeDraftable(makeCard({ playerId: 'c03', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.680, 1),
+        makeDraftable(makeCard({ playerId: '1b03', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.710, 2),
+      ];
+
+      for (let seed = 0; seed < 50; seed++) {
+        const roster: DraftablePlayer[] = [];
+        const rng = new SeededRNG(seed);
+
+        for (let round = 1; round <= 21; round++) {
+          const pick = selectAIPick(round, roster, deepPool, rng);
+          roster.push(pick);
+        }
+
+        const spCount = roster.filter(
+          (p) => p.card.isPitcher && p.card.pitching?.role === 'SP',
+        ).length;
+        const rpCount = roster.filter(
+          (p) => p.card.isPitcher && ['RP', 'CL'].includes(p.card.pitching?.role ?? ''),
+        ).length;
+
+        if (spCount > 4) {
+          throw new Error(`Seed ${seed}: drafted ${spCount} SP (max 4). RP: ${rpCount}`);
+        }
+        if (rpCount > 4) {
+          throw new Error(`Seed ${seed}: drafted ${rpCount} RP/CL (max 4). SP: ${spCount}`);
+        }
+
+        const needs = getRosterNeeds(roster);
+        if (needs.length > 0) {
+          const unfilled = needs.map((n) => `${n.position}(${n.slot})`).join(', ');
+          throw new Error(`Seed ${seed}: roster incomplete, unfilled: ${unfilled}`);
+        }
+      }
+    });
   });
 
   it('considers roster gaps (picks SS when SP is filled and SS is missing)', () => {

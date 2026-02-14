@@ -63,6 +63,25 @@ const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
 const RELIEVER_POSITIONS: Position[] = ['RP', 'CL'];
 
 /**
+ * Filter out pitching positions that have already reached their roster cap.
+ * Prevents drafting a 5th SP or 5th RP/CL when those slots are full.
+ */
+function excludeFullPitching(
+  players: DraftablePlayer[],
+  needs: PositionNeed[],
+): DraftablePlayer[] {
+  const needsSP = needs.some((n) => n.position === 'SP');
+  const needsRP = needs.some((n) => n.position === 'RP');
+
+  return players.filter((p) => {
+    const pos = getPlayerPosition(p);
+    if (pos === 'SP' && !needsSP) return false;
+    if ((pos === 'RP' || pos === 'CL') && !needsRP) return false;
+    return true;
+  });
+}
+
+/**
  * Expand abstract position needs to concrete player positions.
  * 'OF' -> LF, CF, RF, OF; 'RP' -> RP, CL.
  */
@@ -268,10 +287,13 @@ export function selectAIPick(
   // Early rounds (1-3): Best SP or elite position player, no CL/RP
   // -----------------------------------------------------------------------
   if (round <= EARLY_ROUND_END) {
-    const eligible = sorted.filter((p) => {
-      const pos = getPlayerPosition(p);
-      return pos !== 'CL' && pos !== 'RP';
-    });
+    const eligible = excludeFullPitching(
+      sorted.filter((p) => {
+        const pos = getPlayerPosition(p);
+        return pos !== 'CL' && pos !== 'RP';
+      }),
+      needs,
+    );
     return eligible.length > 0 ? pickFromTop(eligible, rng) : pickFromTop(sorted, rng);
   }
 
@@ -304,8 +326,9 @@ export function selectAIPick(
       if (starter) return starter;
     }
 
-    // Fallback: best available
-    return pickFromTop(sorted, rng);
+    // Fallback: best available (exclude capped pitching positions)
+    const midFallback = excludeFullPitching(sorted, needs);
+    return midFallback.length > 0 ? pickFromTop(midFallback, rng) : pickFromTop(sorted, rng);
   }
 
   // -----------------------------------------------------------------------
@@ -334,6 +357,7 @@ export function selectAIPick(
     if (sp) return sp;
   }
 
-  // Fallback: best available (fills bench)
-  return pickFromTop(sorted, rng);
+  // Fallback: best available (fills bench, exclude capped pitching positions)
+  const lateFallback = excludeFullPitching(sorted, needs);
+  return lateFallback.length > 0 ? pickFromTop(lateFallback, rng) : pickFromTop(sorted, rng);
 }
