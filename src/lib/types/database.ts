@@ -232,6 +232,7 @@ export type Database = {
           player_card: Json
           player_id: string
           season_year: number
+          valuation_score: number
         }
         Insert: {
           created_at?: string
@@ -242,6 +243,7 @@ export type Database = {
           player_card: Json
           player_id: string
           season_year: number
+          valuation_score?: number
         }
         Update: {
           created_at?: string
@@ -252,6 +254,7 @@ export type Database = {
           player_card?: Json
           player_id?: string
           season_year?: number
+          valuation_score?: number
         }
         Relationships: [
           {

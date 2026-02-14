@@ -71,7 +71,7 @@ interface PoolRow {
   id: string;
   player_id: string;
   season_year: number;
-  player_card: unknown;
+  player_card: Json;
   valuation_score: number;
   [key: string]: unknown;
 }
