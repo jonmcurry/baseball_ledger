@@ -122,6 +122,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can delete this league' };
       }
 
+      // Explicitly delete child records in FK-safe order to avoid
+      // constraint violations between sibling tables (e.g.
+      // schedule.game_log_id -> game_logs.id has no ON DELETE CASCADE).
+      const childTables = [
+        'transactions',
+        'season_stats',
+        'schedule',
+        'game_logs',
+        'player_pool',
+        'simulation_progress',
+        'archives',
+        'rosters',
+      ] as const;
+
+      // Delete rosters via team_id (no direct league_id column)
+      const { data: teamRows } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('league_id', leagueId);
+      const teamIds = (teamRows ?? []).map((t: { id: string }) => t.id);
+
+      if (teamIds.length > 0) {
+        const { error: rosterErr } = await supabase
+          .from('rosters')
+          .delete()
+          .in('team_id', teamIds);
+        if (rosterErr) {
+          throw { category: 'DATA', code: 'DELETE_FAILED', message: `rosters: ${rosterErr.message}` };
+        }
+      }
+
+      // Delete tables that have a direct league_id column
+      for (const table of childTables) {
+        if (table === 'rosters') continue; // already handled above
+        const { error: childErr } = await supabase
+          .from(table)
+          .delete()
+          .eq('league_id', leagueId);
+        if (childErr) {
+          throw { category: 'DATA', code: 'DELETE_FAILED', message: `${table}: ${childErr.message}` };
+        }
+      }
+
+      // Delete teams
+      const { error: teamsErr } = await supabase
+        .from('teams')
+        .delete()
+        .eq('league_id', leagueId);
+      if (teamsErr) {
+        throw { category: 'DATA', code: 'DELETE_FAILED', message: `teams: ${teamsErr.message}` };
+      }
+
+      // Finally delete the league itself
       const { error: deleteError } = await supabase
         .from('leagues')
         .delete()

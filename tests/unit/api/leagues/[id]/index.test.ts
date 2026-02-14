@@ -556,6 +556,13 @@ describe('DELETE /api/leagues/:id', () => {
       count: null,
     });
 
+    // teams SELECT returns team IDs for roster cleanup
+    const teamsSelectBuilder = createMockQueryBuilder({
+      data: [{ id: 'team-1' }],
+      error: null,
+      count: null,
+    });
+
     const deleteBuilder = createMockQueryBuilder({
       data: null,
       error: null,
@@ -565,8 +572,9 @@ describe('DELETE /api/leagues/:id', () => {
     let callCount = 0;
     const mockFrom = vi.fn().mockImplementation(() => {
       callCount++;
-      if (callCount === 1) return selectBuilder;
-      return deleteBuilder;
+      if (callCount === 1) return selectBuilder;  // leagues SELECT
+      if (callCount === 2) return teamsSelectBuilder; // teams SELECT for IDs
+      return deleteBuilder; // all deletes
     });
 
     mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
@@ -577,8 +585,11 @@ describe('DELETE /api/leagues/:id', () => {
     await handler(req as never, res as never);
 
     expect(res._status).toBe(204);
-    expect(mockFrom).toHaveBeenCalledTimes(2);
+    // 1 leagues SELECT + 1 teams SELECT + 1 rosters delete + 7 child table deletes + 1 teams delete + 1 leagues delete = 12
+    expect(mockFrom).toHaveBeenCalledTimes(12);
     expect(mockFrom).toHaveBeenCalledWith('leagues');
+    expect(mockFrom).toHaveBeenCalledWith('teams');
+    expect(mockFrom).toHaveBeenCalledWith('rosters');
   });
 
   it('returns 403 when non-commissioner tries to delete', async () => {

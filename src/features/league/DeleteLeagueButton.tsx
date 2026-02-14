@@ -49,7 +49,13 @@ export function DeleteLeagueButton({
       setIsOpen(false);
       onDeleted();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete league');
+      const message =
+        err instanceof Error
+          ? err.message
+          : (err && typeof err === 'object' && 'message' in err)
+            ? String((err as { message: unknown }).message)
+            : 'Failed to delete league';
+      setError(message);
     } finally {
       setIsDeleting(false);
     }

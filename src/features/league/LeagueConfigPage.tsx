@@ -90,7 +90,13 @@ export function LeagueConfigPage() {
       await new Promise((r) => setTimeout(r, 400));
       navigate(`/leagues/${league.id}/dashboard`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create league');
+      const message =
+        err instanceof Error
+          ? err.message
+          : (err && typeof err === 'object' && 'message' in err)
+            ? String((err as { message: unknown }).message)
+            : 'Failed to create league';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -98,12 +104,14 @@ export function LeagueConfigPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-gutter-lg">
-      <h2 className="font-headline text-2xl font-bold text-ballpark">Create a League</h2>
+      <h2 className="font-headline text-2xl font-bold text-ballpark">
+        {isExistingLeague ? 'League Settings' : 'Create a League'}
+      </h2>
 
       {error && <ErrorBanner severity="error" message={error} />}
 
-      {createdInviteKey && (
-        <InviteKeyDisplay inviteKey={createdInviteKey} />
+      {(createdInviteKey || (isExistingLeague && league.inviteKey)) && (
+        <InviteKeyDisplay inviteKey={(createdInviteKey ?? league!.inviteKey)!} />
       )}
 
       {isSubmitting ? (

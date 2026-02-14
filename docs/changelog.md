@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-13 - League Config Page Improvements
+
+- **Show invite key**: Existing leagues now display their invite key on the
+  League Config page using the InviteKeyDisplay component. Previously the key
+  was only shown momentarily after league creation.
+- **Button label**: Changed "Create League" to "Save League" throughout the
+  form and tests.
+- **Fix Delete League**: The DELETE handler now explicitly deletes child records
+  in FK-safe order (rosters, transactions, season_stats, schedule, game_logs,
+  player_pool, simulation_progress, archives, teams) before deleting the league
+  itself. This avoids potential FK constraint violations between sibling tables
+  (e.g. schedule.game_log_id -> game_logs.id lacks ON DELETE CASCADE).
+- **Fix error display**: DeleteLeagueButton and LeagueConfigPage now properly
+  surface API error messages from thrown AppError objects (which are plain
+  objects, not Error instances).
+- **Heading**: Page heading changes to "League Settings" when viewing an
+  existing league.
+
 ## 2026-02-13 - Fix Unrealistically Low Batting Averages in Simulation
 
 Season batting averages were ~.135 when they should be ~.260. Three compounding

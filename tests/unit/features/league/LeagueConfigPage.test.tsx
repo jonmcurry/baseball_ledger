@@ -62,7 +62,7 @@ describe('LeagueConfigPage', () => {
 
   it('renders submit button', () => {
     render(<LeagueConfigPage />);
-    expect(screen.getByText('Create League')).toBeInTheDocument();
+    expect(screen.getByText('Save League')).toBeInTheDocument();
   });
 
   it('shows validation error for short league name', async () => {
@@ -71,7 +71,7 @@ describe('LeagueConfigPage', () => {
     render(<LeagueConfigPage />);
 
     await user.type(screen.getByLabelText('League Name'), 'AB');
-    await user.click(screen.getByText('Create League'));
+    await user.click(screen.getByText('Save League'));
 
     expect(screen.getByText('League name must be at least 3 characters')).toBeInTheDocument();
   });
@@ -88,7 +88,7 @@ describe('LeagueConfigPage', () => {
     render(<LeagueConfigPage />);
 
     await user.type(screen.getByLabelText('League Name'), 'Test League');
-    await user.click(screen.getByText('Create League'));
+    await user.click(screen.getByText('Save League'));
 
     // Progress indicator should appear
     expect(screen.getByRole('status')).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('LeagueConfigPage', () => {
     render(<LeagueConfigPage />);
 
     await user.type(screen.getByLabelText('League Name'), 'Test League');
-    await user.click(screen.getByText('Create League'));
+    await user.click(screen.getByText('Save League'));
 
     const bar = screen.getByRole('progressbar');
     expect(bar).toHaveAttribute('aria-valuemin', '0');
@@ -135,11 +135,11 @@ describe('LeagueConfigPage', () => {
     render(<LeagueConfigPage />);
 
     await user.type(screen.getByLabelText('League Name'), 'Test League');
-    await user.click(screen.getByText('Create League'));
+    await user.click(screen.getByText('Save League'));
 
     // Form elements should be hidden during submission
     expect(screen.queryByLabelText('League Name')).not.toBeInTheDocument();
-    expect(screen.queryByText('Create League')).not.toBeInTheDocument();
+    expect(screen.queryByText('Save League')).not.toBeInTheDocument();
 
     await act(async () => {
       resolveCreate({ id: 'league-1', inviteKey: 'ABC123' });
@@ -154,7 +154,7 @@ describe('LeagueConfigPage', () => {
     render(<LeagueConfigPage />);
 
     await user.type(screen.getByLabelText('League Name'), 'Test League');
-    await user.click(screen.getByText('Create League'));
+    await user.click(screen.getByText('Save League'));
 
     // Wait for error to appear (form is restored after failure)
     const errorMsg = await screen.findByText('Server error');
