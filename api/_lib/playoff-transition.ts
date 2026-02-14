@@ -120,6 +120,13 @@ function buildStandingsFromTeams(
       losses: t.losses,
       runsScored: t.runs_scored,
       runsAllowed: t.runs_allowed,
+      homeWins: 0,
+      homeLosses: 0,
+      awayWins: 0,
+      awayLosses: 0,
+      streak: '-',
+      lastTenWins: 0,
+      lastTenLosses: 0,
     });
   }
 

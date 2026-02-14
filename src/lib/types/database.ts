@@ -175,6 +175,7 @@ export type Database = {
           injuries_enabled: boolean
           invite_key: string
           name: string
+          negro_leagues_enabled: boolean
           player_name_cache: Json
           playoff_bracket: Json | null
           playoff_rules: Json
@@ -193,6 +194,7 @@ export type Database = {
           injuries_enabled?: boolean
           invite_key: string
           name: string
+          negro_leagues_enabled?: boolean
           player_name_cache?: Json
           playoff_bracket?: Json | null
           playoff_rules?: Json
@@ -211,6 +213,7 @@ export type Database = {
           injuries_enabled?: boolean
           invite_key?: string
           name?: string
+          negro_leagues_enabled?: boolean
           player_name_cache?: Json
           playoff_bracket?: Json | null
           playoff_rules?: Json
@@ -470,8 +473,12 @@ export type Database = {
       }
       teams: {
         Row: {
+          away_losses: number
+          away_wins: number
           city: string
           division: string
+          home_losses: number
+          home_wins: number
           id: string
           league_division: string
           league_id: string
@@ -484,8 +491,12 @@ export type Database = {
           wins: number
         }
         Insert: {
+          away_losses?: number
+          away_wins?: number
           city: string
           division: string
+          home_losses?: number
+          home_wins?: number
           id?: string
           league_division: string
           league_id: string
@@ -498,8 +509,12 @@ export type Database = {
           wins?: number
         }
         Update: {
+          away_losses?: number
+          away_wins?: number
           city?: string
           division?: string
+          home_losses?: number
+          home_wins?: number
           id?: string
           league_division?: string
           league_id?: string
@@ -568,6 +583,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_league_cascade: {
+        Args: {
+          p_league_id: string
+        }
+        Returns: undefined
+      }
       simulate_day_commit: {
         Args: {
           p_day_number: number
