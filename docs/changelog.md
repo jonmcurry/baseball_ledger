@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-02-13 - Fix Delete League Timeout (Migration 00025)
+
+Added indexes on FK columns referencing `teams(id)` that were missing indexes:
+`schedule.home_team_id`, `schedule.away_team_id`, `game_logs.home_team_id`,
+`game_logs.away_team_id`, `season_stats.team_id`, `player_pool.drafted_by_team_id`.
+Without indexes, `DELETE FROM teams` triggered full table scans on `player_pool`
+(100k+ rows) to verify FK constraints, exceeding the Supabase statement timeout.
+
 ## 2026-02-13 - League Config Page Improvements
 
 - **Show invite key**: Existing leagues now display their invite key on the
