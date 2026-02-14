@@ -16,6 +16,7 @@ import type { CardValue } from '../types/player';
 import { OutcomeCategory } from '../types/game';
 import { STRUCTURAL_POSITIONS, CARD_LENGTH } from '../card-generator/structural';
 import { getDirectOutcome } from './card-value-fallback';
+import { lookupOutcome } from './outcome-table';
 
 /**
  * Hit-type card values from SRD REQ-SIM-004 step 4d.
@@ -106,7 +107,7 @@ export interface GradeGateResult {
  *   Grade 8  (avg):  10.7% total suppression
  *   Grade 1  (poor):  1.3% total suppression
  */
-export const HIT_SUPPRESSION_SCALE = 0.20;
+export const HIT_SUPPRESSION_SCALE = 0.10;
 
 /**
  * Apply the pitcher grade gate to a card value.
@@ -204,17 +205,30 @@ export function resolvePlateAppearance(
   const gradeEffect = applyPitcherGradeGate(rawCardValue, pitcherGrade, rng);
   const effectiveCardValue = gradeEffect.finalValue;
 
-  // Step 4: Direct card value mapping (primary path).
-  // APBA BBW resolves outcomes directly from card values. The IDT.OBJ
-  // outcome table is preserved in outcome-table.ts but not used here
-  // because it scrambles card value semantics and suppresses hits.
-  const outcome = getDirectOutcome(effectiveCardValue);
+  // Step 4: IDT.OBJ table lookup (primary path per REQ-SIM-004).
+  // APBA BBW resolves outcomes through the IDT outcome table first.
+  // If no row matches after 3 attempts, fall back to direct card value mapping.
+  const tableResult = lookupOutcome(effectiveCardValue, rng);
+  let outcome: OutcomeCategory;
+  let outcomeTableRow: number | undefined;
+  let usedFallback: boolean;
+
+  if (tableResult.success && tableResult.outcome !== undefined) {
+    outcome = tableResult.outcome;
+    outcomeTableRow = tableResult.rowIndex;
+    usedFallback = false;
+  } else {
+    // Fallback: direct card value mapping (REQ-SIM-004a)
+    outcome = getDirectOutcome(effectiveCardValue);
+    usedFallback = true;
+  }
 
   return {
     cardPosition,
     cardValue: rawCardValue,
     outcome,
-    usedFallback: false,
+    usedFallback,
     pitcherGradeEffect: gradeEffect,
+    outcomeTableRow,
   };
 }

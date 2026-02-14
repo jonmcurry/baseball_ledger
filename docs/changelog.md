@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-02-14 - Enable IDT.OBJ Outcome Table (APBA BBW Faithful Simulation)
+
+The simulation engine produced grossly inflated stats (BA .330-.423, HR 92-122,
+ERA 12-16) because it bypassed the IDT.OBJ outcome table entirely, using direct
+1:1 card-value-to-outcome mapping instead. In APBA BBW, every plate appearance
+goes through the IDT table first (REQ-SIM-004), which acts as a probabilistic
+outcome scrambler that naturally suppresses hit rates.
+
+Changes:
+- Enabled IDT.OBJ as primary PA resolution path in `plate-appearance.ts`.
+  `lookupOutcome()` (already implemented in `outcome-table.ts`) is now called
+  first; direct mapping via `getDirectOutcome()` serves as fallback after 3
+  failed table matches.
+- Increased card generator SCALE_FACTORS in `value-mapper.ts` to compensate for
+  IDT scrambling: singles 2.0x, walks 2.0x, strikeouts 1.5x. HR/doubles/triples
+  keep 1.0x because their card values (0, 1, 37, 41) bypass the table.
+- Fixed overflow bug in `computeSlotAllocation`: replaced proportional floor()
+  (which killed small allocations like HR to 0) with greedy largest-first
+  reduction that preserves all categories.
+- Reduced HIT_SUPPRESSION_SCALE from 0.20 to 0.10 since IDT provides natural
+  suppression.
+- Fixed realism tests to skip non-PA outcomes (STOLEN_BASE_OPP, WILD_PITCH, etc.)
+  and added IDT variety test proving 8+ outcome types from 600 PAs.
+
+- `src/lib/simulation/plate-appearance.ts` - IDT primary, direct fallback
+- `src/lib/card-generator/value-mapper.ts` - Scale factors + overflow fix
+- `tests/unit/lib/simulation/realism-check.test.ts` - Non-PA handling, variety test
+- `tests/unit/lib/simulation/plate-appearance.test.ts` - Updated for IDT behavior
+- `tests/unit/lib/card-generator/value-mapper.test.ts` - Updated for scale factors
+
 ## 2026-02-14 - Fix CPU Draft Roster Composition (SP Cap)
 
 CPU auto-drafting could draft 5+ starting pitchers instead of the SRD-mandated

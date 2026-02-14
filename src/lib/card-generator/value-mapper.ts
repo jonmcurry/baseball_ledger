@@ -33,11 +33,18 @@ export const CARD_VALUES = {
  * Scale factors for mapping rates to card position counts.
  * Higher scale = more card positions allocated for that outcome.
  */
+/**
+ * Scale factors compensate for IDT.OBJ table scrambling.
+ * The outcome table converts ~40-60% of singles/walks to other outcomes,
+ * so the card needs MORE positive-outcome positions to achieve target rates.
+ * Values 0 (double), 1/37/41 (HR) bypass the table (below thresholdLow 5
+ * or above all thresholdHigh values), so they keep scale 1.0.
+ */
 const SCALE_FACTORS = {
-  walk: 1.0,
-  strikeout: 1.0,
+  walk: 2.0,
+  strikeout: 1.5,
   homeRun: 1.0,
-  single: 1.0,
+  single: 2.0,
   double: 1.0,
   triple: 1.0,
 } as const;
@@ -93,20 +100,33 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   // Calculate total allocated
   let total = walks + strikeouts + homeRuns + singles + doubles + triples + speed;
 
-  // If we exceed 26, scale down proportionally (out slots must exist)
-  if (total > VARIABLE_COUNT - 1) {
-    const scale = (VARIABLE_COUNT - 1) / total;
-    walks = Math.round(walks * scale);
-    strikeouts = Math.round(strikeouts * scale);
-    homeRuns = Math.round(homeRuns * scale);
-    singles = Math.round(singles * scale);
-    doubles = Math.round(doubles * scale);
-    triples = Math.round(triples * scale);
-    total = walks + strikeouts + homeRuns + singles + doubles + triples + speed;
+  // If we exceed budget, reduce one-at-a-time from the largest categories.
+  // This preserves small allocations (HR, doubles) that the proportional
+  // floor approach would kill to 0.
+  const budget = VARIABLE_COUNT - 1; // Reserve at least 1 out slot
+  while (total > budget) {
+    // Find the category with the most slots and reduce it by 1
+    const vals = [
+      { name: 'walks', count: walks },
+      { name: 'strikeouts', count: strikeouts },
+      { name: 'singles', count: singles },
+      { name: 'homeRuns', count: homeRuns },
+      { name: 'doubles', count: doubles },
+      { name: 'triples', count: triples },
+    ];
+    vals.sort((a, b) => b.count - a.count);
+    const largest = vals[0].name;
+    if (largest === 'walks') walks--;
+    else if (largest === 'strikeouts') strikeouts--;
+    else if (largest === 'singles') singles--;
+    else if (largest === 'homeRuns') homeRuns--;
+    else if (largest === 'doubles') doubles--;
+    else if (largest === 'triples') triples--;
+    total--;
   }
 
-  // Out slots absorb the remainder
-  const outs = Math.max(0, VARIABLE_COUNT - total);
+  // Out slots absorb the remainder -- always at least 1 out slot
+  const outs = Math.max(1, VARIABLE_COUNT - total);
 
   return { walks, strikeouts, homeRuns, singles, doubles, triples, speed, outs };
 }
