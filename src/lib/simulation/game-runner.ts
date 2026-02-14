@@ -396,12 +396,14 @@ export function runGame(config: RunGameConfig): GameResult {
           tracker.homeCurrentPitcher = tracker.homeCloser;
           tracker.homeCloser = null;
           tracker.homePitcherState = initPitcherState();
+          state.homeTeam.pitchersUsed.push(tracker.homeCurrentPitcher);
           getOrCreatePitchingLine(tracker, tracker.homeCurrentPitcher.playerId, false, 'home');
         } else if (fieldingSide === 'away' && tracker.awayCloser &&
             shouldBringInCloser(state.awayScore, state.homeScore, state.inning, runnersOn)) {
           tracker.awayCurrentPitcher = tracker.awayCloser;
           tracker.awayCloser = null;
           tracker.awayPitcherState = initPitcherState();
+          state.awayTeam.pitchersUsed.push(tracker.awayCurrentPitcher);
           getOrCreatePitchingLine(tracker, tracker.awayCurrentPitcher.playerId, false, 'away');
         } else {
           // Try reliever
@@ -412,10 +414,12 @@ export function runGame(config: RunGameConfig): GameResult {
               tracker.homeCurrentPitcher = reliever;
               tracker.homeBullpenAvailable = tracker.homeBullpenAvailable.filter((p) => p !== reliever);
               tracker.homePitcherState = initPitcherState();
+              state.homeTeam.pitchersUsed.push(reliever);
             } else {
               tracker.awayCurrentPitcher = reliever;
               tracker.awayBullpenAvailable = tracker.awayBullpenAvailable.filter((p) => p !== reliever);
               tracker.awayPitcherState = initPitcherState();
+              state.awayTeam.pitchersUsed.push(reliever);
             }
             getOrCreatePitchingLine(tracker, reliever.playerId, false, fieldingSide);
           }

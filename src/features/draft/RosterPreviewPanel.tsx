@@ -16,8 +16,8 @@ export interface RosterPreviewPanelProps {
   teamId: string;
 }
 
-/** Defensive starter slots in lineup order. */
-const STARTER_SLOTS = ['C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF', 'DH'] as const;
+/** Defensive starter slots in lineup order. 3 generic OF slots for any outfielder. */
+const STARTER_SLOTS = ['C', '1B', '2B', 'SS', '3B', 'OF', 'OF', 'OF', 'DH'] as const;
 
 /** Which natural positions can fill each starter slot. */
 const SLOT_ELIGIBLE: Record<string, string[]> = {
@@ -26,9 +26,7 @@ const SLOT_ELIGIBLE: Record<string, string[]> = {
   '2B': ['2B'],
   SS: ['SS'],
   '3B': ['3B'],
-  LF: ['LF'],
-  CF: ['CF'],
-  RF: ['RF'],
+  OF: ['LF', 'CF', 'RF'],
   DH: ['DH', 'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'],
 };
 
@@ -43,10 +41,12 @@ interface SlottedPick {
 /**
  * Assign each drafted player to a roster slot based on draft order.
  * First player at each defensive position becomes the starter.
+ * OF slots are generic -- first 3 outfielders (LF/CF/RF) fill them.
  * Pitchers go to SP or RP/CL groups. Excess position players go to bench.
  */
 function assignSlots(teamPicks: DraftPickResult[]): SlottedPick[] {
-  const filledStarters = new Set<string>();
+  // Track filled slots by index (needed because OF appears 3 times)
+  const filledIndices = new Set<number>();
   const result: SlottedPick[] = [];
 
   const ordered = [...teamPicks].sort((a, b) =>
@@ -66,12 +66,13 @@ function assignSlots(teamPicks: DraftPickResult[]): SlottedPick[] {
     }
 
     let assigned = false;
-    for (const slotName of STARTER_SLOTS) {
-      if (filledStarters.has(slotName)) continue;
+    for (let i = 0; i < STARTER_SLOTS.length; i++) {
+      if (filledIndices.has(i)) continue;
+      const slotName = STARTER_SLOTS[i];
       const eligible = SLOT_ELIGIBLE[slotName];
       if (eligible && eligible.includes(pos)) {
-        filledStarters.add(slotName);
-        result.push({ pick, slot: 'starter', lineupPosition: slotName });
+        filledIndices.add(i);
+        result.push({ pick, slot: 'starter', lineupPosition: `${slotName}:${i}` });
         assigned = true;
         break;
       }
@@ -94,12 +95,12 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
   const sps = slotted.filter((s) => s.slot === 'sp');
   const rps = slotted.filter((s) => s.slot === 'rp');
 
-  const starterOrder = STARTER_SLOTS.map((s) => s as string);
-  starters.sort(
-    (a, b) =>
-      starterOrder.indexOf(a.lineupPosition ?? '') -
-      starterOrder.indexOf(b.lineupPosition ?? ''),
-  );
+  // Sort starters by their slot index (encoded as "SLOT:index")
+  starters.sort((a, b) => {
+    const aIdx = parseInt((a.lineupPosition ?? '0').split(':')[1] ?? '99', 10);
+    const bIdx = parseInt((b.lineupPosition ?? '0').split(':')[1] ?? '99', 10);
+    return aIdx - bIdx;
+  });
 
   const totalPitchers = sps.length + rps.length;
   const totalPosition = starters.length + bench.length;
@@ -150,11 +151,12 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
           <div>
             <SectionHeader title="Starting Lineup" count={starters.length} target={9} />
             <div className="mt-1.5">
-              {STARTER_SLOTS.map((slotName) => {
-                const filled = starters.find((s) => s.lineupPosition === slotName);
+              {STARTER_SLOTS.map((slotName, idx) => {
+                const key = `${slotName}:${idx}`;
+                const filled = starters.find((s) => s.lineupPosition === key);
                 return (
                   <LineupRow
-                    key={slotName}
+                    key={key}
                     slotLabel={slotName}
                     pick={filled?.pick ?? null}
                     badgeStyle="position"
