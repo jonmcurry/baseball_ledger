@@ -34,6 +34,7 @@ const CreateLeagueSchema = z.object({
   yearRangeStart: z.number().int().min(1901).max(2025).optional().default(1901),
   yearRangeEnd: z.number().int().min(1901).max(2025).optional().default(2025),
   injuriesEnabled: z.boolean().optional().default(false),
+  negroLeaguesEnabled: z.boolean().optional().default(true),
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -57,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         year_range_start: body.yearRangeStart,
         year_range_end: body.yearRangeEnd,
         injuries_enabled: body.injuriesEnabled,
+        negro_leagues_enabled: body.negroLeaguesEnabled,
       })
       .select('*')
       .single();
@@ -97,6 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...csvFiles,
         yearRangeStart: body.yearRangeStart,
         yearRangeEnd: body.yearRangeEnd,
+        negroLeaguesEnabled: body.negroLeaguesEnabled,
       });
 
       // Batch insert cards into player_pool table

@@ -29,6 +29,7 @@ export function createMockLeague(overrides?: Partial<LeagueSummary>): LeagueSumm
     yearRangeStart: 1990,
     yearRangeEnd: 1995,
     injuriesEnabled: true,
+    negroLeaguesEnabled: true,
     status: 'regular_season',
     seasonYear: 1,
     currentDay: 42,
@@ -50,6 +51,13 @@ export function createMockTeam(overrides?: Partial<TeamSummary>): TeamSummary {
     losses: 40,
     runsScored: 420,
     runsAllowed: 380,
+    homeWins: 28,
+    homeLosses: 17,
+    awayWins: 22,
+    awayLosses: 23,
+    streak: 'W3',
+    lastTenWins: 6,
+    lastTenLosses: 4,
     ...overrides,
   };
 }

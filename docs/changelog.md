@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-02-13 - Standings Enhancements + Negro League Player Option
+
+### Standings (Part 1)
+Added HOME, AWAY, STRK, and L10 columns to the standings table alongside
+existing W, L, PCT, GB, RS, RA, DIFF columns.
+
+- **HOME/AWAY**: Stored on teams table (`home_wins`, `home_losses`,
+  `away_wins`, `away_losses`). Updated atomically via `simulate_day_commit`
+  RPC with new delta fields (hw/hl/aw/al).
+- **STRK** (streak): Computed from `game_logs` at query time. Shows current
+  winning or losing streak (e.g. "W3", "L2").
+- **L10** (last 10): Computed from `game_logs` at query time. Shows record
+  over last 10 games (e.g. "7-3").
+- Pure Layer 1 functions: `computeStreak()` and `computeLastN()` in
+  `src/lib/stats/standings.ts`.
+- Migration 00027: Adds home/away columns and updates RPC.
+
+### Negro League Player Option (Part 2)
+Added league creation toggle to include/exclude Negro League players from
+the draft pool. Lahman CSV data contains ~8,533 Negro League records across
+7 league codes: NNL, NN2, NAL, ECL, NSL, ANL, NAC.
+
+- `negro_leagues_enabled` BOOLEAN column on leagues table (default `true`).
+- When `false`, `buildPlayerPool()` filters out records matching Negro
+  League `lgID` codes during CSV pipeline execution.
+- Toggle added to LeagueConfigForm ("Include Negro League Players").
+- Migration 00028: Adds `negro_leagues_enabled` column.
+
+### Files Changed
+- `supabase/migrations/00027_standings_home_away.sql` - NEW
+- `supabase/migrations/00028_add_negro_leagues_enabled.sql` - NEW
+- `src/lib/stats/standings.ts` - computeStreak, computeLastN functions
+- `src/lib/types/league.ts` - TeamSummary + LeagueSummary extended
+- `src/lib/csv/player-pool.ts` - excludeLeagues filter, NEGRO_LEAGUE_CODES
+- `src/lib/csv/load-pipeline.ts` - negroLeaguesEnabled pipeline input
+- `src/lib/validation/league-schemas.ts` - negroLeaguesEnabled in schema
+- `src/components/data-display/StandingsTable.tsx` - New columns
+- `src/features/league/LeagueConfigForm.tsx` - Negro League toggle
+- `src/features/league/LeagueConfigPage.tsx` - Pass-through
+- `src/services/league-service.ts` - createLeague param
+- `api/_lib/simulate-day.ts` - Home/away delta fields
+- `api/_lib/generate-schedule-rows.ts` - Updated SELECT/mapping
+- `api/leagues/index.ts` - negroLeaguesEnabled schema + insert + pipeline
+- `api/leagues/[id]/stats.ts` - STRK/L10 from game_logs
+
+### Tests
+- 2907 passing, 1 pre-existing failure (Footer text)
+- New tests: standings streak/L10, player pool excludeLeagues filter
+- Updated: migration count (28), simulate-day deltas, mock factories
+
 ## 2026-02-13 - Team Count and Division Structure Overhaul
 
 Restructured league divisions to match MLB format: 3 divisions per league

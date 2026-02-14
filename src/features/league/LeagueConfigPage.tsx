@@ -83,6 +83,7 @@ export function LeagueConfigPage() {
         yearRangeStart: config.yearRangeStart,
         yearRangeEnd: config.yearRangeEnd,
         injuriesEnabled: config.injuriesEnabled,
+        negroLeaguesEnabled: config.negroLeaguesEnabled,
       });
       setProgress(100);
       setCreatedInviteKey(league.inviteKey ?? null);

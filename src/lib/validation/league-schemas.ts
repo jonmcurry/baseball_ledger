@@ -27,6 +27,7 @@ export const createLeagueSchema = z.object({
   yearRangeStart: z.number().int().min(1901).max(2025),
   yearRangeEnd: z.number().int().min(1901).max(2025),
   injuriesEnabled: z.boolean(),
+  negroLeaguesEnabled: z.boolean(),
 });
 
 export type CreateLeagueInput = z.infer<typeof createLeagueSchema>;

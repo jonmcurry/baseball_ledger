@@ -25,6 +25,13 @@ function makeTeam(overrides: Partial<TeamSummary> = {}): TeamSummary {
     losses: 0,
     runsScored: 0,
     runsAllowed: 0,
+    homeWins: 0,
+    homeLosses: 0,
+    awayWins: 0,
+    awayLosses: 0,
+    streak: '-',
+    lastTenWins: 0,
+    lastTenLosses: 0,
     ...overrides,
   };
 }

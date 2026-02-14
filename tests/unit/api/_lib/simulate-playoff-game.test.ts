@@ -31,10 +31,12 @@ const mockRunGame = vi.mocked(runGame);
 
 function makeTeam(id: string, wins: number): TeamSummary {
   return {
-    id, name: `Team ${id}`, city: 'City', abbreviation: 'TST',
+    id, name: `Team ${id}`, city: 'City',
     ownerId: null, managerProfile: 'balanced', leagueDivision: 'AL',
     division: 'East', wins, losses: 162 - wins, runsScored: wins * 5,
     runsAllowed: (162 - wins) * 5,
+    homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
+    streak: '-', lastTenWins: 0, lastTenLosses: 0,
   } as TeamSummary;
 }
 

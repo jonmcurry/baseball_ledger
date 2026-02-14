@@ -21,6 +21,7 @@ describe('createLeagueSchema', () => {
     yearRangeStart: 1950,
     yearRangeEnd: 2020,
     injuriesEnabled: false,
+    negroLeaguesEnabled: true,
   };
 
   it('accepts valid input', () => {
@@ -123,6 +124,16 @@ describe('createLeagueSchema', () => {
 
   it('rejects non-boolean injuriesEnabled', () => {
     const result = createLeagueSchema.safeParse({ ...validInput, injuriesEnabled: 'yes' });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts negroLeaguesEnabled true', () => {
+    const result = createLeagueSchema.safeParse({ ...validInput, negroLeaguesEnabled: true });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects non-boolean negroLeaguesEnabled', () => {
+    const result = createLeagueSchema.safeParse({ ...validInput, negroLeaguesEnabled: 'yes' });
     expect(result.success).toBe(false);
   });
 

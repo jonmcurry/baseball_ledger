@@ -1,7 +1,7 @@
-﻿/**
+/**
  * StandingsTable
  *
- * Division standings display with W, L, PCT, GB, RS, RA, DIFF columns.
+ * Division standings display with W, L, PCT, GB, HOME, AWAY, RS, RA, DIFF, STRK, L10 columns.
  * Uses computeWinPct and computeGamesBehind from Layer 1.
  *
  * Layer 6: Presentational component. Imports from Layer 0/1 only.
@@ -40,9 +40,13 @@ export function StandingsTable({
                   <th className="px-2 py-1.5 text-right font-medium">L</th>
                   <th className="px-2 py-1.5 text-right font-medium">PCT</th>
                   <th className="px-2 py-1.5 text-right font-medium max-md:hidden">GB</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-md:hidden">HOME</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-md:hidden">AWAY</th>
                   <th className="px-2 py-1.5 text-right font-medium max-md:hidden">RS</th>
                   <th className="px-2 py-1.5 text-right font-medium max-md:hidden">RA</th>
                   <th className="px-2 py-1.5 text-right font-medium max-md:hidden">DIFF</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-lg:hidden">STRK</th>
+                  <th className="px-2 py-1.5 text-right font-medium max-lg:hidden">L10</th>
                 </tr>
               </thead>
               <tbody>
@@ -75,10 +79,20 @@ export function StandingsTable({
                       <td className="px-2 py-1 text-right">{team.losses}</td>
                       <td className="px-2 py-1 text-right">{pct.toFixed(3).slice(1)}</td>
                       <td className="px-2 py-1 text-right max-md:hidden">{gb}</td>
+                      <td className="px-2 py-1 text-right max-md:hidden">
+                        {team.homeWins}-{team.homeLosses}
+                      </td>
+                      <td className="px-2 py-1 text-right max-md:hidden">
+                        {team.awayWins}-{team.awayLosses}
+                      </td>
                       <td className="px-2 py-1 text-right max-md:hidden">{team.runsScored}</td>
                       <td className="px-2 py-1 text-right max-md:hidden">{team.runsAllowed}</td>
                       <td className="px-2 py-1 text-right max-md:hidden">
                         {diff > 0 ? `+${diff}` : diff}
+                      </td>
+                      <td className="px-2 py-1 text-right max-lg:hidden">{team.streak}</td>
+                      <td className="px-2 py-1 text-right max-lg:hidden">
+                        {team.lastTenWins}-{team.lastTenLosses}
                       </td>
                     </tr>
                   );

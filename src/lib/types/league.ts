@@ -34,6 +34,7 @@ export interface LeagueSummary {
   readonly yearRangeStart: number;
   readonly yearRangeEnd: number;
   readonly injuriesEnabled: boolean;
+  readonly negroLeaguesEnabled: boolean;
   readonly status: LeagueStatus;
   readonly seasonYear: number;
   readonly currentDay: number;
@@ -52,6 +53,13 @@ export interface TeamSummary {
   losses: number;
   runsScored: number;
   runsAllowed: number;
+  homeWins: number;
+  homeLosses: number;
+  awayWins: number;
+  awayLosses: number;
+  streak: string;
+  lastTenWins: number;
+  lastTenLosses: number;
 }
 
 export interface DivisionStandings {

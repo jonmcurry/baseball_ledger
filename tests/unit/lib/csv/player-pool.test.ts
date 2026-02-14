@@ -227,3 +227,52 @@ describe('computeLeagueAverages', () => {
     expect(avgs.BABIP).toBe(0);
   });
 });
+
+describe('buildPlayerPool excludeLeagues filter', () => {
+  // Synthetic data: 3 players across AL, NNL, and NAL leagues
+  const people = new Map<string, import('@lib/csv/csv-types').PersonRecord>([
+    ['playerAL01', { playerID: 'playerAL01', nameFirst: 'Al', nameLast: 'Kaline', birthYear: 1934, battingHand: 'R', throwingHand: 'R', debutYear: 1953, finalYear: 1974 }],
+    ['playerNNL01', { playerID: 'playerNNL01', nameFirst: 'Josh', nameLast: 'Gibson', birthYear: 1911, battingHand: 'R', throwingHand: 'R', debutYear: 1930, finalYear: 1946 }],
+    ['playerNAL01', { playerID: 'playerNAL01', nameFirst: 'Satchel', nameLast: 'Paige', birthYear: 1906, battingHand: 'R', throwingHand: 'R', debutYear: 1926, finalYear: 1965 }],
+  ]);
+
+  const batting = new Map<string, BattingSeasonRecord[]>([
+    ['playerAL01', [{ playerID: 'playerAL01', yearID: 1960, teamIDs: ['DET'], lgID: 'AL', stats: makeBattingStats({ AB: 500, H: 150, HR: 20, BB: 50, SO: 40, HBP: 3, SF: 5, SH: 2, doubles: 25, triples: 5 }) }]],
+    ['playerNNL01', [{ playerID: 'playerNNL01', yearID: 1940, teamIDs: ['HGR'], lgID: 'NNL', stats: makeBattingStats({ AB: 400, H: 160, HR: 35, BB: 30, SO: 20, HBP: 2, SF: 3, SH: 1, doubles: 20, triples: 3 }) }]],
+  ]);
+
+  const pitching = new Map<string, PitchingSeasonRecord[]>([
+    ['playerNAL01', [{ playerID: 'playerNAL01', yearID: 1940, teamIDs: ['KCM'], lgID: 'NAL', stats: makePitchingStats({ IP: 200, W: 20, L: 5, ER: 30, SO: 180, BB: 40, H: 100, HR: 5, HBP: 3, BF: 800, GS: 30, G: 35 }) }]],
+  ]);
+
+  const fielding = new Map<string, import('@lib/csv/csv-types').FieldingSeasonRecord[]>();
+
+  it('returns all players when no excludeLeagues is passed', () => {
+    const result = buildPlayerPool(people, batting, pitching, fielding, { start: 1930, end: 1970 });
+    expect(result.data).toHaveLength(3);
+  });
+
+  it('filters out NNL and NAL players when excludeLeagues contains those codes', () => {
+    const exclude = new Set(['NNL', 'NN2', 'NAL', 'ECL', 'NSL', 'ANL', 'NAC']);
+    const result = buildPlayerPool(people, batting, pitching, fielding, { start: 1930, end: 1970 }, exclude);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].playerID).toBe('playerAL01');
+  });
+
+  it('keeps AL/NL players when excluding Negro League codes', () => {
+    const exclude = new Set(['NNL']);
+    const result = buildPlayerPool(people, batting, pitching, fielding, { start: 1930, end: 1970 }, exclude);
+    // Should exclude NNL player (Gibson) but keep AL (Kaline) and NAL (Paige)
+    expect(result.data).toHaveLength(2);
+    const ids = result.data.map((e) => e.playerID);
+    expect(ids).toContain('playerAL01');
+    expect(ids).toContain('playerNAL01');
+    expect(ids).not.toContain('playerNNL01');
+  });
+
+  it('returns empty pool when all players are excluded', () => {
+    const exclude = new Set(['AL', 'NNL', 'NAL']);
+    const result = buildPlayerPool(people, batting, pitching, fielding, { start: 1930, end: 1970 }, exclude);
+    expect(result.data).toHaveLength(0);
+  });
+});

@@ -62,16 +62,19 @@ export async function simulateDayOnServer(
     play_by_play: JSON.stringify(game.playByPlay),
   }));
 
-  // Step 3: Build standings deltas
-  const standingsDeltas: Record<string, { wins: number; losses: number; rs: number; ra: number }> = {};
+  // Step 3: Build standings deltas (including home/away splits)
+  const standingsDeltas: Record<string, {
+    wins: number; losses: number; rs: number; ra: number;
+    hw: number; hl: number; aw: number; al: number;
+  }> = {};
   for (const game of dayResult.games) {
     const homeWon = game.homeScore > game.awayScore;
 
     if (!standingsDeltas[game.homeTeamId]) {
-      standingsDeltas[game.homeTeamId] = { wins: 0, losses: 0, rs: 0, ra: 0 };
+      standingsDeltas[game.homeTeamId] = { wins: 0, losses: 0, rs: 0, ra: 0, hw: 0, hl: 0, aw: 0, al: 0 };
     }
     if (!standingsDeltas[game.awayTeamId]) {
-      standingsDeltas[game.awayTeamId] = { wins: 0, losses: 0, rs: 0, ra: 0 };
+      standingsDeltas[game.awayTeamId] = { wins: 0, losses: 0, rs: 0, ra: 0, hw: 0, hl: 0, aw: 0, al: 0 };
     }
 
     standingsDeltas[game.homeTeamId].rs += game.homeScore;
@@ -81,10 +84,14 @@ export async function simulateDayOnServer(
 
     if (homeWon) {
       standingsDeltas[game.homeTeamId].wins++;
+      standingsDeltas[game.homeTeamId].hw++;
       standingsDeltas[game.awayTeamId].losses++;
+      standingsDeltas[game.awayTeamId].al++;
     } else {
       standingsDeltas[game.awayTeamId].wins++;
+      standingsDeltas[game.awayTeamId].aw++;
       standingsDeltas[game.homeTeamId].losses++;
+      standingsDeltas[game.homeTeamId].hl++;
     }
   }
 

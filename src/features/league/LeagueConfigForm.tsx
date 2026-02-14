@@ -23,6 +23,7 @@ export interface LeagueFormData {
   yearRangeStart: number;
   yearRangeEnd: number;
   injuriesEnabled: boolean;
+  negroLeaguesEnabled: boolean;
 }
 
 const TEAM_COUNT_OPTIONS = [
@@ -37,6 +38,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
   const [yearStart, setYearStart] = useState('1901');
   const [yearEnd, setYearEnd] = useState('2025');
   const [injuriesEnabled, setInjuriesEnabled] = useState(false);
+  const [negroLeaguesEnabled, setNegroLeaguesEnabled] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
@@ -69,6 +71,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
       yearRangeStart: Number(yearStart),
       yearRangeEnd: Number(yearEnd),
       injuriesEnabled,
+      negroLeaguesEnabled,
     });
   }
 
@@ -116,6 +119,12 @@ export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormPro
         checked={injuriesEnabled}
         onChange={setInjuriesEnabled}
         label="Enable Injuries"
+      />
+
+      <Toggle
+        checked={negroLeaguesEnabled}
+        onChange={setNegroLeaguesEnabled}
+        label="Include Negro League Players"
       />
 
       <button

@@ -212,6 +212,7 @@ describe('POST /api/leagues', () => {
         yearRangeStart: 1950,
         yearRangeEnd: 2000,
         injuriesEnabled: true,
+        negroLeaguesEnabled: true,
       },
     });
     const res = createMockResponse();

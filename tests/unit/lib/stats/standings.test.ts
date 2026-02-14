@@ -14,7 +14,10 @@ import {
   computeStandings,
   getDivisionWinners,
   getWildCardTeams,
+  computeStreak,
+  computeLastN,
 } from '@lib/stats/standings';
+import type { GameResultForTeam } from '@lib/stats/standings';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,6 +36,8 @@ function makeTeam(
     id, name: `Team ${id}`, city: `City ${id}`, ownerId: null,
     managerProfile: 'balanced', leagueDivision: league, division,
     wins, losses, runsScored: rs, runsAllowed: ra,
+    homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
+    streak: '-', lastTenWins: 0, lastTenLosses: 0,
   };
 }
 
@@ -249,5 +254,113 @@ describe('getWildCardTeams', () => {
     const winners = new Set(['ae1', 'ne1']);
     const alWC = getWildCardTeams('AL', standings, winners, 3);
     expect(alWC.every((t) => t.leagueDivision === 'AL')).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeStreak
+// ---------------------------------------------------------------------------
+
+describe('computeStreak', () => {
+  function makeGame(won: boolean, dayNumber: number): GameResultForTeam {
+    return { won, dayNumber };
+  }
+
+  it('returns "-" for no games', () => {
+    expect(computeStreak([])).toBe('-');
+  });
+
+  it('returns "W1" for a single win', () => {
+    expect(computeStreak([makeGame(true, 1)])).toBe('W1');
+  });
+
+  it('returns "L1" for a single loss', () => {
+    expect(computeStreak([makeGame(false, 1)])).toBe('L1');
+  });
+
+  it('counts consecutive wins from most recent', () => {
+    const games = [
+      makeGame(false, 1),
+      makeGame(true, 2),
+      makeGame(true, 3),
+      makeGame(true, 4),
+    ];
+    expect(computeStreak(games)).toBe('W3');
+  });
+
+  it('counts consecutive losses from most recent', () => {
+    const games = [
+      makeGame(true, 1),
+      makeGame(true, 2),
+      makeGame(false, 3),
+      makeGame(false, 4),
+    ];
+    expect(computeStreak(games)).toBe('L2');
+  });
+
+  it('handles unsorted input by sorting by dayNumber DESC', () => {
+    const games = [
+      makeGame(true, 4),
+      makeGame(false, 1),
+      makeGame(true, 3),
+      makeGame(true, 2),
+    ];
+    // Most recent = day 4 (W), then day 3 (W), then day 2 (W), day 1 (L)
+    expect(computeStreak(games)).toBe('W3');
+  });
+
+  it('stops at first break in streak', () => {
+    const games = [
+      makeGame(true, 1),
+      makeGame(false, 2),
+      makeGame(true, 3),
+    ];
+    expect(computeStreak(games)).toBe('W1');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeLastN
+// ---------------------------------------------------------------------------
+
+describe('computeLastN', () => {
+  function makeGame(won: boolean, dayNumber: number): GameResultForTeam {
+    return { won, dayNumber };
+  }
+
+  it('returns {wins:0, losses:0} for no games', () => {
+    expect(computeLastN([], 10)).toEqual({ wins: 0, losses: 0 });
+  });
+
+  it('returns record for fewer games than N', () => {
+    const games = [makeGame(true, 1), makeGame(false, 2), makeGame(true, 3)];
+    expect(computeLastN(games, 10)).toEqual({ wins: 2, losses: 1 });
+  });
+
+  it('returns only the last N games', () => {
+    const games = [
+      makeGame(true, 1),   // oldest - excluded
+      makeGame(true, 2),   // excluded
+      makeGame(false, 3),  // excluded
+      makeGame(true, 4),
+      makeGame(false, 5),
+      makeGame(true, 6),
+      makeGame(true, 7),
+      makeGame(false, 8),
+      makeGame(true, 9),
+      makeGame(true, 10),
+      makeGame(false, 11),
+      makeGame(true, 12),
+      makeGame(true, 13),
+    ];
+    // Last 10: days 4-13 = W, L, W, W, L, W, W, L, W, W = 7-3
+    const result = computeLastN(games, 10);
+    expect(result).toEqual({ wins: 7, losses: 3 });
+  });
+
+  it('handles exactly N games', () => {
+    const games = Array.from({ length: 10 }, (_, i) => makeGame(i % 2 === 0, i + 1));
+    // 5 wins (0,2,4,6,8), 5 losses (1,3,5,7,9)
+    expect(computeLastN(games, 10)).toEqual({ wins: 5, losses: 5 });
   });
 });

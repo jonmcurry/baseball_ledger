@@ -160,13 +160,13 @@ describe('simulateDayOnServer', () => {
     const rpcCall = rpcFn.mock.calls[0];
     const deltas = rpcCall[1].p_standings_deltas;
 
-    // Game 1: team-a 7, team-b 3 (team-a wins)
-    expect(deltas['team-a']).toEqual({ wins: 1, losses: 0, rs: 7, ra: 3 });
-    expect(deltas['team-b']).toEqual({ wins: 0, losses: 1, rs: 3, ra: 7 });
+    // Game 1: team-a(home) 7, team-b(away) 3 -> home wins
+    expect(deltas['team-a']).toEqual({ wins: 1, losses: 0, rs: 7, ra: 3, hw: 1, hl: 0, aw: 0, al: 0 });
+    expect(deltas['team-b']).toEqual({ wins: 0, losses: 1, rs: 3, ra: 7, hw: 0, hl: 0, aw: 0, al: 1 });
 
-    // Game 2: team-c 2, team-d 4 (team-d wins)
-    expect(deltas['team-c']).toEqual({ wins: 0, losses: 1, rs: 2, ra: 4 });
-    expect(deltas['team-d']).toEqual({ wins: 1, losses: 0, rs: 4, ra: 2 });
+    // Game 2: team-c(home) 2, team-d(away) 4 -> away wins
+    expect(deltas['team-c']).toEqual({ wins: 0, losses: 1, rs: 2, ra: 4, hw: 0, hl: 1, aw: 0, al: 0 });
+    expect(deltas['team-d']).toEqual({ wins: 1, losses: 0, rs: 4, ra: 2, hw: 0, hl: 0, aw: 1, al: 0 });
   });
 
   it('advances league current_day after successful commit', async () => {

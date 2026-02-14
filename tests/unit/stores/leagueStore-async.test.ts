@@ -24,12 +24,13 @@ const mockLeague = {
   yearRangeStart: 1990,
   yearRangeEnd: 1995,
   injuriesEnabled: false,
+  negroLeaguesEnabled: true,
   status: 'regular_season' as const,
   currentDay: 81,
 };
 
 const mockTeams = [
-  { id: 't1', name: 'Eagles', city: 'East', ownerId: 'user-1', managerProfile: 'balanced', leagueDivision: 'AL' as const, division: 'East', wins: 50, losses: 40, runsScored: 400, runsAllowed: 350 },
+  { id: 't1', name: 'Eagles', city: 'East', ownerId: 'user-1', managerProfile: 'balanced', leagueDivision: 'AL' as const, division: 'East', wins: 50, losses: 40, runsScored: 400, runsAllowed: 350, homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0, streak: '-', lastTenWins: 0, lastTenLosses: 0 },
 ];
 
 const mockStandings = [

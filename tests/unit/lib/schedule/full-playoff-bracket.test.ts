@@ -30,11 +30,21 @@ function makeTeam(id: string, wins: number, losses: number): TeamSummary {
     id,
     name: `Team ${id}`,
     city: 'Test City',
-    abbreviation: id.toUpperCase().slice(0, 3),
+    ownerId: null,
+    managerProfile: 'balanced',
+    leagueDivision: 'AL',
+    division: 'East',
     wins,
     losses,
     runsScored: wins * 5,
     runsAllowed: losses * 5,
+    homeWins: 0,
+    homeLosses: 0,
+    awayWins: 0,
+    awayLosses: 0,
+    streak: '-',
+    lastTenWins: 0,
+    lastTenLosses: 0,
   };
 }
 

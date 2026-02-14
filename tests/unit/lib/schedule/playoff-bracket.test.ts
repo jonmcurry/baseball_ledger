@@ -38,6 +38,13 @@ function makeTeam(
     losses,
     runsScored: wins * 5,
     runsAllowed: losses * 5,
+    homeWins: 0,
+    homeLosses: 0,
+    awayWins: 0,
+    awayLosses: 0,
+    streak: '-',
+    lastTenWins: 0,
+    lastTenLosses: 0,
   };
 }
 

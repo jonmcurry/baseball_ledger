@@ -189,7 +189,7 @@ describe('authStore async initialize', () => {
     vi.mocked(leagueService.fetchLeague).mockResolvedValue({
       id: 'league-1', name: 'Test', commissionerId: 'u1', inviteKey: 'ABC',
       teamCount: 8, yearRangeStart: 1990, yearRangeEnd: 1995,
-      injuriesEnabled: false, status: 'regular_season', currentDay: 42,
+      injuriesEnabled: false, negroLeaguesEnabled: true, status: 'regular_season', currentDay: 42,
     });
     vi.mocked(leagueService.fetchTeams).mockResolvedValue([]);
     vi.mocked(leagueService.fetchStandings).mockResolvedValue([]);
@@ -217,7 +217,7 @@ describe('authStore async initialize', () => {
     vi.mocked(leagueService.fetchLeague).mockResolvedValue({
       id: 'league-1', name: 'Test', commissionerId: 'u1', inviteKey: 'ABC',
       teamCount: 8, yearRangeStart: 1990, yearRangeEnd: 1995,
-      injuriesEnabled: false, status: 'regular_season', currentDay: 42,
+      injuriesEnabled: false, negroLeaguesEnabled: true, status: 'regular_season', currentDay: 42,
     });
     vi.mocked(leagueService.fetchTeams).mockResolvedValue([]);
     vi.mocked(leagueService.fetchStandings).mockResolvedValue([]);

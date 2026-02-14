@@ -41,6 +41,10 @@ const mockTeamRows = [
     losses: 0,
     runs_scored: 0,
     runs_allowed: 0,
+    home_wins: 0,
+    home_losses: 0,
+    away_wins: 0,
+    away_losses: 0,
   },
   {
     id: 'team-2',
@@ -54,6 +58,10 @@ const mockTeamRows = [
     losses: 0,
     runs_scored: 0,
     runs_allowed: 0,
+    home_wins: 0,
+    home_losses: 0,
+    away_wins: 0,
+    away_losses: 0,
   },
 ];
 
@@ -149,6 +157,13 @@ describe('generateAndInsertSchedule', () => {
           losses: 0,
           runsScored: 0,
           runsAllowed: 0,
+          homeWins: 0,
+          homeLosses: 0,
+          awayWins: 0,
+          awayLosses: 0,
+          streak: '-',
+          lastTenWins: 0,
+          lastTenLosses: 0,
         }),
         expect.objectContaining({
           id: 'team-2',
@@ -178,6 +193,13 @@ describe('generateAndInsertSchedule', () => {
       losses: 0,
       runsScored: 0,
       runsAllowed: 0,
+      homeWins: 0,
+      homeLosses: 0,
+      awayWins: 0,
+      awayLosses: 0,
+      streak: '-',
+      lastTenWins: 0,
+      lastTenLosses: 0,
     });
   });
 

@@ -30,7 +30,7 @@ export async function generateAndInsertSchedule(
   // 1. Fetch teams
   const { data: teamRows, error: teamError } = await supabase
     .from('teams')
-    .select('id, name, city, owner_id, manager_profile, league_division, division, wins, losses, runs_scored, runs_allowed')
+    .select('id, name, city, owner_id, manager_profile, league_division, division, wins, losses, runs_scored, runs_allowed, home_wins, home_losses, away_wins, away_losses')
     .eq('league_id', leagueId)
     .order('league_division')
     .order('division')
@@ -53,6 +53,13 @@ export async function generateAndInsertSchedule(
     losses: row.losses as number,
     runsScored: row.runs_scored as number,
     runsAllowed: row.runs_allowed as number,
+    homeWins: (row.home_wins as number) ?? 0,
+    homeLosses: (row.home_losses as number) ?? 0,
+    awayWins: (row.away_wins as number) ?? 0,
+    awayLosses: (row.away_losses as number) ?? 0,
+    streak: '-',
+    lastTenWins: 0,
+    lastTenLosses: 0,
   }));
 
   // 3. Generate schedule

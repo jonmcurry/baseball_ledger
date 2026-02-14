@@ -20,6 +20,7 @@ export async function createLeague(data: {
   yearRangeStart?: number;
   yearRangeEnd?: number;
   injuriesEnabled?: boolean;
+  negroLeaguesEnabled?: boolean;
 }): Promise<LeagueSummary> {
   const response = await apiPost<LeagueSummary>('/api/leagues', data);
   return response.data;

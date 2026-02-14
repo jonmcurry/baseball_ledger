@@ -13,7 +13,7 @@ import { loadPeople } from './people-loader';
 import { loadBatting } from './batting-loader';
 import { loadPitching } from './pitching-loader';
 import { loadFielding } from './fielding-loader';
-import { buildPlayerPool, computeLeagueAverages } from './player-pool';
+import { buildPlayerPool, computeLeagueAverages, NEGRO_LEAGUE_CODES } from './player-pool';
 import { generateAllCards } from '../card-generator/generator';
 
 export interface CsvPipelineInput {
@@ -23,6 +23,7 @@ export interface CsvPipelineInput {
   readonly fieldingCsv: string;
   readonly yearRangeStart: number;
   readonly yearRangeEnd: number;
+  readonly negroLeaguesEnabled?: boolean;
 }
 
 export interface CsvPipelineResult {
@@ -57,13 +58,18 @@ export function runCsvPipeline(input: CsvPipelineInput): CsvPipelineResult {
   errors.push(...pitchingResult.errors);
   errors.push(...fieldingResult.errors);
 
-  // Step 2: Build player pool
+  // Step 2: Build player pool (optionally excluding Negro League records)
+  const excludeLeagues = input.negroLeaguesEnabled === false
+    ? new Set<string>(NEGRO_LEAGUE_CODES)
+    : undefined;
+
   const poolResult = buildPlayerPool(
     peopleResult.data,
     battingResult.data,
     pitchingResult.data,
     fieldingResult.data,
     yearRange,
+    excludeLeagues,
   );
   errors.push(...poolResult.errors);
   const pool = poolResult.data;

@@ -29,12 +29,18 @@ export function qualifiesAsPitcher(pitching: PitchingSeasonRecord): boolean {
  * Every qualifying season for a player is a separate draftable entity.
  * Qualification: batter >= 200 AB, pitcher >= 50 IP, two-way = EITHER.
  */
+/**
+ * Negro League lgID codes from the Lahman database.
+ */
+export const NEGRO_LEAGUE_CODES = ['NNL', 'NN2', 'NAL', 'ECL', 'NSL', 'ANL', 'NAC'] as const;
+
 export function buildPlayerPool(
   people: Map<string, PersonRecord>,
   batting: Map<string, BattingSeasonRecord[]>,
   pitching: Map<string, PitchingSeasonRecord[]>,
   fielding: Map<string, FieldingSeasonRecord[]>,
   yearRange: { start: number; end: number },
+  excludeLeagues?: Set<string>,
 ): CsvParseResult<PlayerPoolEntry[]> {
   const pool: PlayerPoolEntry[] = [];
   const errors: string[] = [];
@@ -45,6 +51,7 @@ export function buildPlayerPool(
   for (const [playerID, seasons] of batting) {
     for (const season of seasons) {
       if (season.yearID < yearRange.start || season.yearID > yearRange.end) continue;
+      if (excludeLeagues && excludeLeagues.has(season.lgID)) continue;
       let years = playerYears.get(playerID);
       if (!years) {
         years = new Set();
@@ -57,6 +64,7 @@ export function buildPlayerPool(
   for (const [playerID, seasons] of pitching) {
     for (const season of seasons) {
       if (season.yearID < yearRange.start || season.yearID > yearRange.end) continue;
+      if (excludeLeagues && excludeLeagues.has(season.lgID)) continue;
       let years = playerYears.get(playerID);
       if (!years) {
         years = new Set();

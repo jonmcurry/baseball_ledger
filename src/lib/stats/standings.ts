@@ -12,6 +12,12 @@
 
 import type { TeamSummary, DivisionStandings } from '../types/league';
 
+/** Minimal game result for streak/L10 computations. */
+export interface GameResultForTeam {
+  readonly won: boolean;
+  readonly dayNumber: number;
+}
+
 /** Detailed standings entry with computed fields. */
 export interface StandingsEntry {
   team: TeamSummary;
@@ -140,4 +146,47 @@ export function getWildCardTeams(
 
   const sorted = sortStandings(candidates);
   return sorted.slice(0, wildcardSlots);
+}
+
+/**
+ * Compute current win/loss streak from game results.
+ * Games are sorted by dayNumber DESC (most recent first).
+ * Returns "W3", "L2", or "-" if no games.
+ */
+export function computeStreak(games: readonly GameResultForTeam[]): string {
+  if (games.length === 0) return '-';
+
+  const sorted = [...games].sort((a, b) => b.dayNumber - a.dayNumber);
+  const streakType = sorted[0].won;
+  let count = 0;
+
+  for (const game of sorted) {
+    if (game.won !== streakType) break;
+    count++;
+  }
+
+  return `${streakType ? 'W' : 'L'}${count}`;
+}
+
+/**
+ * Compute win-loss record for the last N games.
+ * Games are sorted by dayNumber DESC, then only the first N are counted.
+ */
+export function computeLastN(
+  games: readonly GameResultForTeam[],
+  n: number,
+): { wins: number; losses: number } {
+  if (games.length === 0) return { wins: 0, losses: 0 };
+
+  const sorted = [...games].sort((a, b) => b.dayNumber - a.dayNumber);
+  const slice = sorted.slice(0, n);
+
+  let wins = 0;
+  let losses = 0;
+  for (const game of slice) {
+    if (game.won) wins++;
+    else losses++;
+  }
+
+  return { wins, losses };
 }

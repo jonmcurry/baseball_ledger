@@ -219,29 +219,73 @@ interface StandingsTeamRow {
   losses: number;
   runs_scored: number;
   runs_allowed: number;
+  home_wins: number;
+  home_losses: number;
+  away_wins: number;
+  away_losses: number;
+}
+
+interface GameLogRow {
+  home_team_id: string;
+  away_team_id: string;
+  home_score: number;
+  away_score: number;
+  day_number: number;
 }
 
 async function handleStandings(req: VercelRequest, res: VercelResponse, requestId: string) {
   const leagueId = req.query.id as string;
   const supabase = createServerClient();
 
-  const { data: teams, error } = await supabase
-    .from('teams')
-    .select('*')
-    .eq('league_id', leagueId)
-    .order('wins', { ascending: false });
+  // Fetch teams and game logs in parallel
+  const [teamsResult, gameLogsResult] = await Promise.all([
+    supabase
+      .from('teams')
+      .select('id, name, city, owner_id, manager_profile, league_division, division, wins, losses, runs_scored, runs_allowed, home_wins, home_losses, away_wins, away_losses')
+      .eq('league_id', leagueId)
+      .order('wins', { ascending: false }),
+    supabase
+      .from('game_logs')
+      .select('home_team_id, away_team_id, home_score, away_score, day_number')
+      .eq('league_id', leagueId)
+      .order('day_number', { ascending: false }),
+  ]);
 
-  if (error) {
-    throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
+  if (teamsResult.error) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: teamsResult.error.message };
   }
 
-  const divisionMap = new Map<string, StandingsTeamRow[]>();
-  for (const team of (teams ?? []) as StandingsTeamRow[]) {
+  // Build per-team game results for streak/L10 computation
+  const teamGames = new Map<string, { won: boolean; dayNumber: number }[]>();
+  for (const log of (gameLogsResult.data ?? []) as GameLogRow[]) {
+    const homeWon = log.home_score > log.away_score;
+
+    if (!teamGames.has(log.home_team_id)) teamGames.set(log.home_team_id, []);
+    teamGames.get(log.home_team_id)!.push({ won: homeWon, dayNumber: log.day_number });
+
+    if (!teamGames.has(log.away_team_id)) teamGames.set(log.away_team_id, []);
+    teamGames.get(log.away_team_id)!.push({ won: !homeWon, dayNumber: log.day_number });
+  }
+
+  // Import pure functions inline (Layer 1)
+  const { computeStreak, computeLastN } = await import('../../../src/lib/stats/standings');
+
+  const divisionMap = new Map<string, (StandingsTeamRow & { streak: string; last_ten_wins: number; last_ten_losses: number })[]>();
+  for (const team of (teamsResult.data ?? []) as StandingsTeamRow[]) {
+    const games = teamGames.get(team.id) ?? [];
+    const streak = computeStreak(games);
+    const lastTen = computeLastN(games, 10);
+
     const key = `${team.league_division}-${team.division}`;
     if (!divisionMap.has(key)) {
       divisionMap.set(key, []);
     }
-    divisionMap.get(key)!.push(team);
+    divisionMap.get(key)!.push({
+      ...team,
+      streak,
+      last_ten_wins: lastTen.wins,
+      last_ten_losses: lastTen.losses,
+    });
   }
 
   const standings = Array.from(divisionMap.entries()).map(([key, divTeams]) => {

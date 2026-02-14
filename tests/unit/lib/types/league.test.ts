@@ -65,6 +65,7 @@ describe('League types', () => {
         yearRangeStart: 1920,
         yearRangeEnd: 1960,
         injuriesEnabled: false,
+        negroLeaguesEnabled: true,
         status: 'drafting',
         currentDay: 0,
       };
@@ -87,6 +88,13 @@ describe('League types', () => {
         losses: 75,
         runsScored: 720,
         runsAllowed: 695,
+        homeWins: 0,
+        homeLosses: 0,
+        awayWins: 0,
+        awayLosses: 0,
+        streak: '-',
+        lastTenWins: 0,
+        lastTenLosses: 0,
       };
       expect(team.ownerId).toBe('user-456');
     });
@@ -104,6 +112,13 @@ describe('League types', () => {
         losses: 97,
         runsScored: 580,
         runsAllowed: 810,
+        homeWins: 0,
+        homeLosses: 0,
+        awayWins: 0,
+        awayLosses: 0,
+        streak: '-',
+        lastTenWins: 0,
+        lastTenLosses: 0,
       };
       expect(cpuTeam.ownerId).toBeNull();
     });
@@ -119,11 +134,15 @@ describe('League types', () => {
             id: 't1', name: 'A', city: 'NY', ownerId: 'u1', managerProfile: 'balanced',
             leagueDivision: 'AL', division: 'East', wins: 95, losses: 67,
             runsScored: 800, runsAllowed: 650,
+            homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
+            streak: '-', lastTenWins: 0, lastTenLosses: 0,
           },
           {
             id: 't2', name: 'B', city: 'BOS', ownerId: 'u2', managerProfile: 'aggressive',
             leagueDivision: 'AL', division: 'East', wins: 87, losses: 75,
             runsScored: 720, runsAllowed: 695,
+            homeWins: 0, homeLosses: 0, awayWins: 0, awayLosses: 0,
+            streak: '-', lastTenWins: 0, lastTenLosses: 0,
           },
         ],
       };
