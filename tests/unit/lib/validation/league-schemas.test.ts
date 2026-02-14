@@ -17,7 +17,7 @@ import {
 describe('createLeagueSchema', () => {
   const validInput = {
     name: 'Test League',
-    teamCount: 8,
+    teamCount: 18,
     yearRangeStart: 1950,
     yearRangeEnd: 2020,
     injuriesEnabled: false,
@@ -53,23 +53,28 @@ describe('createLeagueSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('accepts minimum team count (4)', () => {
+  it('accepts 18 teams', () => {
+    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 18 });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts 24 teams', () => {
+    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 24 });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts 30 teams', () => {
+    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 30 });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid team count (4)', () => {
     const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 4 });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts maximum team count (32)', () => {
-    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 32 });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects team count below 4', () => {
-    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 2 });
     expect(result.success).toBe(false);
   });
 
-  it('rejects team count above 32', () => {
-    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 34 });
+  it('rejects invalid team count (8)', () => {
+    const result = createLeagueSchema.safeParse({ ...validInput, teamCount: 8 });
     expect(result.success).toBe(false);
   });
 

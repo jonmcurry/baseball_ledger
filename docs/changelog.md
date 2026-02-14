@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-13 - Team Count and Division Structure Overhaul
+
+Restructured league divisions to match MLB format: 3 divisions per league
+(East, Central, West) instead of 4 (East, South, West, North). Team count
+options changed from arbitrary values (4/8/16/24/32) to MLB-realistic
+options (18/24/30), all evenly divisible by 6 (2 leagues x 3 divisions).
+
+### Division Structure
+- **Divisions**: East/South/West/North (4) replaced with East/Central/West (3)
+- **Team counts**: Options now 18, 24, 30 (was 4, 8, 16, 24, 32)
+- 18 teams: 3 per division, 24 teams: 4 per division, 30 teams: 5 per division
+
+### Files Changed
+- `src/lib/league/division-assignment.ts` - 3 divisions, allowed counts exported
+- `src/lib/league/team-generator.ts` - Min/max adjusted to 18-30
+- `src/lib/validation/league-schemas.ts` - Zod schema: refine to [18,24,30]
+- `src/features/league/LeagueConfigForm.tsx` - Dropdown options updated
+- `src/features/dashboard/TeamSetupPanel.tsx` - 3-column division grid
+- `api/leagues/index.ts` - Zod schema updated
+- `supabase/migrations/00026_update_division_and_team_count.sql` - DB constraints
+
+### Tests Updated
+- Division assignment, team generator, league schemas, API handler
+- Schedule generator tests unchanged (division-agnostic)
+- RLS test fixtures updated for new constraints
+
 ## 2026-02-13 - Vintage Baseball Almanac Restyle
 
 Complete visual redesign from "Ballpark Night" (dark navy/gold) to "Vintage

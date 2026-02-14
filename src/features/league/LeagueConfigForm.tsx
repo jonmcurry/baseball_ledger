@@ -26,16 +26,14 @@ export interface LeagueFormData {
 }
 
 const TEAM_COUNT_OPTIONS = [
-  { value: '4', label: '4 Teams' },
-  { value: '8', label: '8 Teams' },
-  { value: '16', label: '16 Teams' },
+  { value: '18', label: '18 Teams' },
   { value: '24', label: '24 Teams' },
-  { value: '32', label: '32 Teams' },
+  { value: '30', label: '30 Teams' },
 ] as const;
 
 export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormProps) {
   const [name, setName] = useState('');
-  const [teamCount, setTeamCount] = useState('8');
+  const [teamCount, setTeamCount] = useState('18');
   const [yearStart, setYearStart] = useState('1901');
   const [yearEnd, setYearEnd] = useState('2025');
   const [injuriesEnabled, setInjuriesEnabled] = useState(false);

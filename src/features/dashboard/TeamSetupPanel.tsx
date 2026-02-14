@@ -24,7 +24,7 @@ export interface TeamSetupPanelProps {
   inviteKey: string;
 }
 
-const DIVISIONS = ['East', 'South', 'West', 'North'] as const;
+const DIVISIONS = ['East', 'Central', 'West'] as const;
 
 export function TeamSetupPanel({
   teams,
@@ -121,7 +121,7 @@ export function TeamSetupPanel({
         </div>
 
         {/* Division grid */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-3 gap-4">
           {DIVISIONS.map((div) => {
             const divTeams = leagueTeams.filter((t) => t.division === div);
             if (divTeams.length === 0) return null;

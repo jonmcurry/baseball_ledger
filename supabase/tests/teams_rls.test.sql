@@ -18,7 +18,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Setup: create league + 2 teams (as postgres, bypassing RLS)
 INSERT INTO public.leagues (id, name, commissioner_id, invite_key, team_count, status)
-VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'Test League', 'a0000000-0000-0000-0000-000000000001'::uuid, 'TESTKEY1', 4, 'setup');
+VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'Test League', 'a0000000-0000-0000-0000-000000000001'::uuid, 'TESTKEY1', 18, 'setup');
 
 INSERT INTO public.teams (id, league_id, name, city, owner_id, league_division, division)
 VALUES
@@ -46,7 +46,7 @@ SELECT is(
 SET LOCAL request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-000000000001","role":"authenticated"}';
 SELECT lives_ok(
   $$INSERT INTO public.teams (league_id, name, city, owner_id, league_division, division)
-    VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'New Team', 'New City', NULL, 'AL', 'South')$$,
+    VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'New Team', 'New City', NULL, 'AL', 'Central')$$,
   'Commissioner can INSERT teams'
 );
 
@@ -54,7 +54,7 @@ SELECT lives_ok(
 SET LOCAL request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-000000000002","role":"authenticated"}';
 SELECT throws_ok(
   $$INSERT INTO public.teams (league_id, name, city, owner_id, league_division, division)
-    VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'Hacked Team', 'Hack City', NULL, 'NL', 'North')$$,
+    VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'Hacked Team', 'Hack City', NULL, 'NL', 'Central')$$,
   'new row violates row-level security policy for table "teams"',
   'Non-commissioner cannot INSERT teams'
 );

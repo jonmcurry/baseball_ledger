@@ -30,7 +30,7 @@ const BATCH_SIZE = 200;
 
 const CreateLeagueSchema = z.object({
   name: z.string().min(1).max(100),
-  teamCount: z.number().int().min(2).max(32).refine((n) => n % 2 === 0, 'Must be even'),
+  teamCount: z.number().int().refine((n) => [18, 24, 30].includes(n), 'Must be 18, 24, or 30'),
   yearRangeStart: z.number().int().min(1901).max(2025).optional().default(1901),
   yearRangeEnd: z.number().int().min(1901).max(2025).optional().default(2025),
   injuriesEnabled: z.boolean().optional().default(false),

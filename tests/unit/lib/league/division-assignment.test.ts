@@ -5,96 +5,72 @@ import {
 
 // ---------------------------------------------------------------------------
 // assignDivisions (REQ-LGE-005)
+// 3 divisions per league: East, Central, West
+// Allowed team counts: 18, 24, 30
 // ---------------------------------------------------------------------------
 describe('assignDivisions (REQ-LGE-005)', () => {
   it('returns one assignment per team', () => {
-    const result = assignDivisions(8);
-    expect(result).toHaveLength(8);
+    const result = assignDivisions(18);
+    expect(result).toHaveLength(18);
   });
 
   it('splits teams evenly into AL and NL', () => {
-    const result = assignDivisions(12);
+    const result = assignDivisions(24);
     const al = result.filter((r) => r.leagueDivision === 'AL');
     const nl = result.filter((r) => r.leagueDivision === 'NL');
-    expect(al.length).toBe(6);
-    expect(nl.length).toBe(6);
+    expect(al.length).toBe(12);
+    expect(nl.length).toBe(12);
   });
 
-  it('assigns valid divisions (East/South/West/North)', () => {
-    const validDivisions = ['East', 'South', 'West', 'North'];
-    const result = assignDivisions(16);
+  it('assigns valid divisions (East/Central/West)', () => {
+    const validDivisions = ['East', 'Central', 'West'];
+    const result = assignDivisions(18);
     for (const r of result) {
       expect(validDivisions).toContain(r.division);
     }
   });
 
   it('assigns unique team indices', () => {
-    const result = assignDivisions(20);
+    const result = assignDivisions(24);
     const indices = result.map((r) => r.teamIndex);
-    expect(new Set(indices).size).toBe(20);
+    expect(new Set(indices).size).toBe(24);
   });
 
   it('team indices are 0-based sequential', () => {
-    const result = assignDivisions(8);
+    const result = assignDivisions(18);
     const indices = result.map((r) => r.teamIndex).sort((a, b) => a - b);
-    expect(indices).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(indices).toEqual(Array.from({ length: 18 }, (_, i) => i));
   });
 
-  // Edge cases: specific team counts
-  describe('4 teams', () => {
-    const result = assignDivisions(4);
+  // Specific team counts
+  describe('18 teams', () => {
+    const result = assignDivisions(18);
 
-    it('splits 2 AL, 2 NL', () => {
+    it('splits 9 AL, 9 NL', () => {
       const al = result.filter((r) => r.leagueDivision === 'AL');
       const nl = result.filter((r) => r.leagueDivision === 'NL');
-      expect(al.length).toBe(2);
-      expect(nl.length).toBe(2);
-    });
-  });
-
-  describe('8 teams', () => {
-    const result = assignDivisions(8);
-
-    it('splits 4 AL, 4 NL', () => {
-      const al = result.filter((r) => r.leagueDivision === 'AL');
-      const nl = result.filter((r) => r.leagueDivision === 'NL');
-      expect(al.length).toBe(4);
-      expect(nl.length).toBe(4);
+      expect(al.length).toBe(9);
+      expect(nl.length).toBe(9);
     });
 
-    it('each league has one team per division', () => {
-      const al = result.filter((r) => r.leagueDivision === 'AL');
-      const alDivs = al.map((r) => r.division);
-      expect(new Set(alDivs).size).toBe(4);
-    });
-  });
-
-  describe('16 teams', () => {
-    const result = assignDivisions(16);
-
-    it('splits 8 AL, 8 NL', () => {
-      const al = result.filter((r) => r.leagueDivision === 'AL');
-      expect(al.length).toBe(8);
-    });
-
-    it('each division has exactly 2 teams per league', () => {
+    it('each division has 3 teams per league', () => {
       const al = result.filter((r) => r.leagueDivision === 'AL');
       const divCounts = new Map<string, number>();
       for (const r of al) {
         divCounts.set(r.division, (divCounts.get(r.division) ?? 0) + 1);
       }
-      for (const count of divCounts.values()) {
-        expect(count).toBe(2);
-      }
+      expect(divCounts.get('East')).toBe(3);
+      expect(divCounts.get('Central')).toBe(3);
+      expect(divCounts.get('West')).toBe(3);
     });
   });
 
-  describe('32 teams', () => {
-    const result = assignDivisions(32);
+  describe('24 teams', () => {
+    const result = assignDivisions(24);
 
-    it('splits 16 AL, 16 NL', () => {
+    it('splits 12 AL, 12 NL', () => {
       const al = result.filter((r) => r.leagueDivision === 'AL');
-      expect(al.length).toBe(16);
+      expect(al.length).toBe(12);
     });
 
     it('each division has 4 teams per league', () => {
@@ -109,41 +85,44 @@ describe('assignDivisions (REQ-LGE-005)', () => {
     });
   });
 
-  describe('12 teams (uneven division)', () => {
-    const result = assignDivisions(12);
+  describe('30 teams', () => {
+    const result = assignDivisions(30);
 
-    it('no division has more than 1 team difference from another in same league', () => {
+    it('splits 15 AL, 15 NL', () => {
+      const al = result.filter((r) => r.leagueDivision === 'AL');
+      expect(al.length).toBe(15);
+    });
+
+    it('each division has 5 teams per league', () => {
       const al = result.filter((r) => r.leagueDivision === 'AL');
       const divCounts = new Map<string, number>();
       for (const r of al) {
         divCounts.set(r.division, (divCounts.get(r.division) ?? 0) + 1);
       }
-      const counts = [...divCounts.values()];
-      const maxCount = Math.max(...counts);
-      const minCount = Math.min(...counts);
-      expect(maxCount - minCount).toBeLessThanOrEqual(1);
-    });
-  });
-
-  describe('6 teams', () => {
-    const result = assignDivisions(6);
-
-    it('splits 3 AL, 3 NL', () => {
-      const al = result.filter((r) => r.leagueDivision === 'AL');
-      expect(al.length).toBe(3);
+      for (const count of divCounts.values()) {
+        expect(count).toBe(5);
+      }
     });
   });
 
   // Validation
-  it('throws for count less than 4', () => {
-    expect(() => assignDivisions(2)).toThrow();
+  it('throws for count not in allowed set', () => {
+    expect(() => assignDivisions(4)).toThrow();
+    expect(() => assignDivisions(8)).toThrow();
+    expect(() => assignDivisions(16)).toThrow();
+    expect(() => assignDivisions(32)).toThrow();
+    expect(() => assignDivisions(12)).toThrow();
   });
 
   it('throws for odd count', () => {
     expect(() => assignDivisions(7)).toThrow();
   });
 
-  it('throws for count greater than 32', () => {
+  it('throws for count below 18', () => {
+    expect(() => assignDivisions(2)).toThrow();
+  });
+
+  it('throws for count above 30', () => {
     expect(() => assignDivisions(34)).toThrow();
   });
 });

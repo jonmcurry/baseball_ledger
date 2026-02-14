@@ -50,10 +50,10 @@ export const MASCOTS: readonly string[] = [
 ];
 
 /** Minimum team count per REQ-LGE-001. */
-const MIN_TEAMS = 4;
+const MIN_TEAMS = 18;
 
 /** Maximum team count per REQ-LGE-001. */
-const MAX_TEAMS = 32;
+const MAX_TEAMS = 30;
 
 /**
  * Shuffle an array in place using Fisher-Yates with SeededRNG.
@@ -70,7 +70,7 @@ function shuffleArray<T>(arr: T[], rng: SeededRNG): T[] {
 /**
  * Generate team names by pairing random cities with random mascots.
  *
- * @param count - Number of teams to generate (even, 4-32)
+ * @param count - Number of teams to generate (18, 24, or 30)
  * @param rng - Seeded RNG for deterministic selection
  * @returns Array of {city, mascot} pairs with no duplicates
  * @throws AppError if count is invalid

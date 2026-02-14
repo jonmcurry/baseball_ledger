@@ -2,8 +2,8 @@
  * Division Assignment Algorithm
  *
  * REQ-LGE-005: Divide teams evenly into AL and NL. Within each league,
- * distribute into 4 divisions (East, South, West, North). If team count
- * doesn't divide evenly by 8, distribute as evenly as possible.
+ * distribute into 3 divisions (East, Central, West). Allowed team counts
+ * are 18, 24, and 30 (all divisible by 6).
  *
  * Layer 1: Pure logic, no I/O, deterministic.
  */
@@ -11,11 +11,11 @@
 import { AppError } from '../errors/app-error';
 import { ERROR_CODES } from '../errors/error-codes';
 
-const DIVISIONS = ['East', 'South', 'West', 'North'] as const;
+export const DIVISIONS = ['East', 'Central', 'West'] as const;
 const LEAGUES = ['AL', 'NL'] as const;
 
-const MIN_TEAMS = 4;
-const MAX_TEAMS = 32;
+/** Allowed total team counts. Each divides evenly by 6 (2 leagues * 3 divisions). */
+export const ALLOWED_TEAM_COUNTS = [18, 24, 30] as const;
 
 export interface DivisionAssignment {
   teamIndex: number;
@@ -24,59 +24,35 @@ export interface DivisionAssignment {
 }
 
 /**
- * Distribute N items as evenly as possible across K buckets.
- * Returns array of bucket sizes, largest first.
- *
- * Example: distribute(6, 4) -> [2, 2, 1, 1]
- */
-function distributeEvenly(count: number, buckets: number): number[] {
-  const base = Math.floor(count / buckets);
-  const remainder = count % buckets;
-  const sizes: number[] = [];
-  for (let i = 0; i < buckets; i++) {
-    sizes.push(base + (i < remainder ? 1 : 0));
-  }
-  return sizes;
-}
-
-/**
  * Assign teams to divisions across AL and NL.
  *
- * @param teamCount - Total number of teams (even, 4-32)
+ * @param teamCount - Total number of teams (must be 18, 24, or 30)
  * @returns Array of division assignments, one per team
  * @throws AppError if teamCount is invalid
  */
 export function assignDivisions(teamCount: number): DivisionAssignment[] {
-  if (teamCount < MIN_TEAMS || teamCount > MAX_TEAMS) {
+  if (!ALLOWED_TEAM_COUNTS.includes(teamCount as 18 | 24 | 30)) {
     throw new AppError(
       'VALIDATION',
       ERROR_CODES.VALIDATION_FAILED,
-      `Team count must be between ${MIN_TEAMS} and ${MAX_TEAMS}, got ${teamCount}`,
-      400,
-    );
-  }
-  if (teamCount % 2 !== 0) {
-    throw new AppError(
-      'VALIDATION',
-      ERROR_CODES.VALIDATION_FAILED,
-      `Team count must be even, got ${teamCount}`,
+      `Team count must be one of ${ALLOWED_TEAM_COUNTS.join(', ')}, got ${teamCount}`,
       400,
     );
   }
 
   const perLeague = teamCount / 2;
-  const divisionSizes = distributeEvenly(perLeague, DIVISIONS.length);
+  const perDivision = perLeague / DIVISIONS.length;
 
   const assignments: DivisionAssignment[] = [];
   let teamIndex = 0;
 
   for (const league of LEAGUES) {
-    for (let d = 0; d < DIVISIONS.length; d++) {
-      for (let t = 0; t < divisionSizes[d]; t++) {
+    for (const division of DIVISIONS) {
+      for (let t = 0; t < perDivision; t++) {
         assignments.push({
           teamIndex,
           leagueDivision: league,
-          division: DIVISIONS[d],
+          division,
         });
         teamIndex++;
       }

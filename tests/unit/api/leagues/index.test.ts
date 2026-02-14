@@ -61,7 +61,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Test League', teamCount: 4 },
+      body: { name: 'Test League', teamCount: 18 },
     });
     const res = createMockResponse();
 
@@ -76,7 +76,7 @@ describe('POST /api/leagues', () => {
   it('returns 400 for missing name', async () => {
     const req = createMockRequest({
       method: 'POST',
-      body: { teamCount: 4 },
+      body: { teamCount: 18 },
     });
     const res = createMockResponse();
 
@@ -88,10 +88,10 @@ describe('POST /api/leagues', () => {
     });
   });
 
-  it('returns 400 for non-even teamCount', async () => {
+  it('returns 400 for invalid teamCount', async () => {
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Test League', teamCount: 3 },
+      body: { name: 'Test League', teamCount: 8 },
     });
     const res = createMockResponse();
 
@@ -121,7 +121,7 @@ describe('POST /api/leagues', () => {
       name: 'Test League',
       commissioner_id: 'user-123',
       invite_key: 'ABCD1234',
-      team_count: 4,
+      team_count: 18,
       year_range_start: 1901,
       year_range_end: 2025,
       injuries_enabled: false,
@@ -139,7 +139,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Test League', teamCount: 4 },
+      body: { name: 'Test League', teamCount: 18 },
     });
     const res = createMockResponse();
 
@@ -151,7 +151,7 @@ describe('POST /api/leagues', () => {
         id: 'league-1',
         name: 'Test League',
         commissionerId: 'user-123',
-        teamCount: 4,
+        teamCount: 18,
       },
       meta: expect.objectContaining({ requestId: expect.any(String) }),
     });
@@ -169,7 +169,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Test League', teamCount: 4 },
+      body: { name: 'Test League', teamCount: 18 },
     });
     const res = createMockResponse();
 
@@ -187,7 +187,7 @@ describe('POST /api/leagues', () => {
       name: 'My League',
       commissioner_id: 'user-123',
       invite_key: 'XYZ12345',
-      team_count: 8,
+      team_count: 18,
       year_range_start: 1950,
       year_range_end: 2000,
       injuries_enabled: true,
@@ -208,7 +208,7 @@ describe('POST /api/leagues', () => {
       method: 'POST',
       body: {
         name: 'My League',
-        teamCount: 8,
+        teamCount: 18,
         yearRangeStart: 1950,
         yearRangeEnd: 2000,
         injuriesEnabled: true,
@@ -223,7 +223,7 @@ describe('POST /api/leagues', () => {
       expect.objectContaining({
         name: 'My League',
         commissioner_id: 'user-123',
-        team_count: 8,
+        team_count: 18,
         year_range_start: 1950,
         year_range_end: 2000,
         injuries_enabled: true,
@@ -239,7 +239,7 @@ describe('POST /api/leagues', () => {
       name: 'Pool League',
       commissioner_id: 'user-123',
       invite_key: 'POOL1234',
-      team_count: 4,
+      team_count: 18,
       year_range_start: 1960,
       year_range_end: 1970,
       injuries_enabled: false,
@@ -259,7 +259,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Pool League', teamCount: 4, yearRangeStart: 1960, yearRangeEnd: 1970 },
+      body: { name: 'Pool League', teamCount: 18, yearRangeStart: 1960, yearRangeEnd: 1970 },
     });
     const res = createMockResponse();
 
@@ -294,7 +294,7 @@ describe('POST /api/leagues', () => {
       name: 'Ruth League',
       commissioner_id: 'user-123',
       invite_key: 'RUTH1234',
-      team_count: 4,
+      team_count: 18,
       year_range_start: 1927,
       year_range_end: 1927,
       injuries_enabled: false,
@@ -313,7 +313,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Ruth League', teamCount: 4, yearRangeStart: 1927, yearRangeEnd: 1927 },
+      body: { name: 'Ruth League', teamCount: 18, yearRangeStart: 1927, yearRangeEnd: 1927 },
     });
     const res = createMockResponse();
 
@@ -345,7 +345,7 @@ describe('POST /api/leagues', () => {
       name: 'Cache League',
       commissioner_id: 'user-123',
       invite_key: 'CACHE123',
-      team_count: 4,
+      team_count: 18,
       year_range_start: 1927,
       year_range_end: 1927,
       injuries_enabled: false,
@@ -364,7 +364,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'Cache League', teamCount: 4, yearRangeStart: 1927, yearRangeEnd: 1927 },
+      body: { name: 'Cache League', teamCount: 18, yearRangeStart: 1927, yearRangeEnd: 1927 },
     });
     const res = createMockResponse();
 
@@ -388,7 +388,7 @@ describe('POST /api/leagues', () => {
       name: 'No CSV League',
       commissioner_id: 'user-123',
       invite_key: 'NOCSV123',
-      team_count: 4,
+      team_count: 18,
       year_range_start: 1901,
       year_range_end: 2025,
       injuries_enabled: false,
@@ -402,7 +402,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'No CSV League', teamCount: 4 },
+      body: { name: 'No CSV League', teamCount: 18 },
     });
     const res = createMockResponse();
 
@@ -425,7 +425,7 @@ describe('POST /api/leagues', () => {
       name: 'CSV League',
       commissioner_id: 'user-123',
       invite_key: 'CSV12345',
-      team_count: 4,
+      team_count: 18,
       year_range_start: 1971,
       year_range_end: 1971,
       injuries_enabled: false,
@@ -439,7 +439,7 @@ describe('POST /api/leagues', () => {
 
     const req = createMockRequest({
       method: 'POST',
-      body: { name: 'CSV League', teamCount: 4, yearRangeStart: 1971, yearRangeEnd: 1971 },
+      body: { name: 'CSV League', teamCount: 18, yearRangeStart: 1971, yearRangeEnd: 1971 },
     });
     const res = createMockResponse();
 

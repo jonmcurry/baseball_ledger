@@ -13,16 +13,16 @@ import { z } from 'zod';
  *
  * Validates:
  *   - name: 3-50 characters
- *   - teamCount: even integer, 4-32
+ *   - teamCount: 18, 24, or 30
  *   - yearRangeStart: integer, 1901-2025
  *   - yearRangeEnd: integer, 1901-2025
  *   - injuriesEnabled: boolean
  */
 export const createLeagueSchema = z.object({
   name: z.string().min(3).max(50),
-  teamCount: z.number().int().min(4).max(32).refine(
-    (n) => n % 2 === 0,
-    { message: 'Team count must be even' },
+  teamCount: z.number().int().refine(
+    (n) => [18, 24, 30].includes(n),
+    { message: 'Team count must be 18, 24, or 30' },
   ),
   yearRangeStart: z.number().int().min(1901).max(2025),
   yearRangeEnd: z.number().int().min(1901).max(2025),

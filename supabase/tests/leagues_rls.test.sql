@@ -17,7 +17,7 @@ VALUES
 
 -- Setup: create league + team (as postgres, bypassing RLS)
 INSERT INTO public.leagues (id, name, commissioner_id, invite_key, team_count, status)
-VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'Test League', 'a0000000-0000-0000-0000-000000000001'::uuid, 'TESTKEY1', 4, 'setup');
+VALUES ('b0000000-0000-0000-0000-000000000001'::uuid, 'Test League', 'a0000000-0000-0000-0000-000000000001'::uuid, 'TESTKEY1', 18, 'setup');
 
 INSERT INTO public.teams (id, league_id, name, city, owner_id, league_division, division)
 VALUES ('c0000000-0000-0000-0000-000000000001'::uuid, 'b0000000-0000-0000-0000-000000000001'::uuid, 'Test Team', 'Test City', 'a0000000-0000-0000-0000-000000000002'::uuid, 'AL', 'East');
@@ -50,7 +50,7 @@ SELECT is(
 -- Test 4: Authenticated user can INSERT (create) a league (as commissioner)
 SET LOCAL request.jwt.claims = '{"sub":"a0000000-0000-0000-0000-000000000003","role":"authenticated"}';
 SELECT lives_ok(
-  $$INSERT INTO public.leagues (name, commissioner_id, invite_key, team_count) VALUES ('New League', 'a0000000-0000-0000-0000-000000000003'::uuid, 'TESTKEY2', 4)$$,
+  $$INSERT INTO public.leagues (name, commissioner_id, invite_key, team_count) VALUES ('New League', 'a0000000-0000-0000-0000-000000000003'::uuid, 'TESTKEY2', 18)$$,
   'Authenticated user can INSERT a league'
 );
 

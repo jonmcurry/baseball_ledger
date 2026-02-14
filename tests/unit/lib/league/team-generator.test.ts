@@ -46,12 +46,12 @@ describe('team-generator: constants', () => {
 // ---------------------------------------------------------------------------
 describe('generateTeamNames (REQ-LGE-004)', () => {
   it('generates the requested number of teams', () => {
-    const names = generateTeamNames(8, new SeededRNG(42));
-    expect(names).toHaveLength(8);
+    const names = generateTeamNames(18, new SeededRNG(42));
+    expect(names).toHaveLength(18);
   });
 
   it('returns objects with city and mascot properties', () => {
-    const names = generateTeamNames(4, new SeededRNG(1));
+    const names = generateTeamNames(18, new SeededRNG(1));
     for (const name of names) {
       expect(name).toHaveProperty('city');
       expect(name).toHaveProperty('mascot');
@@ -61,32 +61,33 @@ describe('generateTeamNames (REQ-LGE-004)', () => {
   });
 
   it('does not repeat cities within a single generation', () => {
-    const names = generateTeamNames(32, new SeededRNG(99));
+    const names = generateTeamNames(30, new SeededRNG(99));
     const cities = names.map((n) => n.city);
-    expect(new Set(cities).size).toBe(32);
+    expect(new Set(cities).size).toBe(30);
   });
 
   it('does not repeat mascots within a single generation', () => {
-    const names = generateTeamNames(32, new SeededRNG(99));
+    const names = generateTeamNames(30, new SeededRNG(99));
     const mascots = names.map((n) => n.mascot);
-    expect(new Set(mascots).size).toBe(32);
+    expect(new Set(mascots).size).toBe(30);
   });
 
   it('is deterministic with same seed', () => {
-    const names1 = generateTeamNames(8, new SeededRNG(42));
-    const names2 = generateTeamNames(8, new SeededRNG(42));
+    const names1 = generateTeamNames(18, new SeededRNG(42));
+    const names2 = generateTeamNames(18, new SeededRNG(42));
     expect(names1).toEqual(names2);
   });
 
   it('produces different results with different seeds', () => {
-    const names1 = generateTeamNames(8, new SeededRNG(1));
-    const names2 = generateTeamNames(8, new SeededRNG(2));
+    const names1 = generateTeamNames(18, new SeededRNG(1));
+    const names2 = generateTeamNames(18, new SeededRNG(2));
     // At least some should differ
     const allSame = names1.every((n, i) => n.city === names2[i].city);
     expect(allSame).toBe(false);
   });
 
-  it('throws for count less than 4', () => {
+  it('throws for count below 18', () => {
+    expect(() => generateTeamNames(4, new SeededRNG(1))).toThrow();
     expect(() => generateTeamNames(2, new SeededRNG(1))).toThrow();
   });
 
@@ -94,29 +95,29 @@ describe('generateTeamNames (REQ-LGE-004)', () => {
     expect(() => generateTeamNames(7, new SeededRNG(1))).toThrow();
   });
 
-  it('throws for count greater than 32', () => {
+  it('throws for count above 30', () => {
     expect(() => generateTeamNames(34, new SeededRNG(1))).toThrow();
   });
 
-  it('works at minimum (4 teams)', () => {
-    const names = generateTeamNames(4, new SeededRNG(10));
-    expect(names).toHaveLength(4);
+  it('works at minimum (18 teams)', () => {
+    const names = generateTeamNames(18, new SeededRNG(10));
+    expect(names).toHaveLength(18);
   });
 
-  it('works at maximum (32 teams)', () => {
-    const names = generateTeamNames(32, new SeededRNG(10));
-    expect(names).toHaveLength(32);
+  it('works at maximum (30 teams)', () => {
+    const names = generateTeamNames(30, new SeededRNG(10));
+    expect(names).toHaveLength(30);
   });
 
   it('cities come from the US_CITIES list', () => {
-    const names = generateTeamNames(16, new SeededRNG(5));
+    const names = generateTeamNames(24, new SeededRNG(5));
     for (const name of names) {
       expect(US_CITIES).toContain(name.city);
     }
   });
 
   it('mascots come from the MASCOTS list', () => {
-    const names = generateTeamNames(16, new SeededRNG(5));
+    const names = generateTeamNames(24, new SeededRNG(5));
     for (const name of names) {
       expect(MASCOTS).toContain(name.mascot);
     }
