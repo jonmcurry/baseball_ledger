@@ -556,28 +556,12 @@ describe('DELETE /api/leagues/:id', () => {
       count: null,
     });
 
-    // teams SELECT returns team IDs for roster cleanup
-    const teamsSelectBuilder = createMockQueryBuilder({
-      data: [{ id: 'team-1' }],
-      error: null,
-      count: null,
-    });
+    const mockRpc = vi.fn().mockResolvedValue({ data: null, error: null });
 
-    const deleteBuilder = createMockQueryBuilder({
-      data: null,
-      error: null,
-      count: null,
-    });
-
-    let callCount = 0;
-    const mockFrom = vi.fn().mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return selectBuilder;  // leagues SELECT
-      if (callCount === 2) return teamsSelectBuilder; // teams SELECT for IDs
-      return deleteBuilder; // all deletes
-    });
-
-    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(selectBuilder),
+      rpc: mockRpc,
+    } as never);
 
     const req = createMockRequest({ method: 'DELETE', query: { id: 'league-1' } });
     const res = createMockResponse();
@@ -585,11 +569,7 @@ describe('DELETE /api/leagues/:id', () => {
     await handler(req as never, res as never);
 
     expect(res._status).toBe(204);
-    // 1 leagues SELECT + 1 teams SELECT + 1 rosters (1 team) + 7 child tables + 1 teams + 1 leagues = 12
-    expect(mockFrom).toHaveBeenCalledTimes(12);
-    expect(mockFrom).toHaveBeenCalledWith('leagues');
-    expect(mockFrom).toHaveBeenCalledWith('teams');
-    expect(mockFrom).toHaveBeenCalledWith('rosters');
+    expect(mockRpc).toHaveBeenCalledWith('delete_league_cascade', { p_league_id: 'league-1' });
   });
 
   it('returns 403 when non-commissioner tries to delete', async () => {
@@ -643,20 +623,15 @@ describe('DELETE /api/leagues/:id', () => {
       count: null,
     });
 
-    const deleteBuilder = createMockQueryBuilder({
+    const mockRpc = vi.fn().mockResolvedValue({
       data: null,
       error: { message: 'Delete failed', code: 'PGRST001' },
-      count: null,
     });
 
-    let callCount = 0;
-    const mockFrom = vi.fn().mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return selectBuilder;
-      return deleteBuilder;
-    });
-
-    mockCreateServerClient.mockReturnValue({ from: mockFrom } as never);
+    mockCreateServerClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(selectBuilder),
+      rpc: mockRpc,
+    } as never);
 
     const req = createMockRequest({ method: 'DELETE', query: { id: 'league-1' } });
     const res = createMockResponse();

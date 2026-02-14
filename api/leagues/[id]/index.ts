@@ -122,46 +122,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can delete this league' };
       }
 
-      // Delete child records in FK-safe order, then the league itself.
-      // Each table is deleted explicitly to provide clear error attribution.
-      async function deleteFrom(table: string, column: string, value: string) {
-        const { error: err } = await supabase
-          .from(table as 'leagues')
-          .delete()
-          .eq(column as 'id', value);
-        if (err) {
-          console.error(`DELETE ${table} WHERE ${column}=${value}: ${err.message} (code ${err.code})`);
-          throw { category: 'DATA', code: 'DELETE_FAILED', message: `${table}: ${err.message}` };
-        }
+      // Single RPC call deletes league + all child records atomically.
+      // Replaces 40+ sequential REST calls that hit Vercel's function timeout.
+      const { error: rpcError } = await supabase.rpc('delete_league_cascade', {
+        p_league_id: leagueId,
+      });
+
+      if (rpcError) {
+        console.error(`delete_league_cascade(${leagueId}): ${rpcError.message} (code ${rpcError.code})`);
+        throw { category: 'DATA', code: 'DELETE_FAILED', message: rpcError.message };
       }
-
-      // 1. Get team IDs for roster cleanup
-      const { data: teamRows } = await supabase
-        .from('teams')
-        .select('id')
-        .eq('league_id', leagueId);
-      const teamIds = (teamRows ?? []).map((t: { id: string }) => t.id);
-
-      // 2. Delete rosters (keyed by team_id, no league_id column)
-      for (const tid of teamIds) {
-        await deleteFrom('rosters', 'team_id', tid);
-      }
-
-      // 3. Delete child tables with league_id, in FK-safe order
-      //    schedule before game_logs (schedule.game_log_id -> game_logs.id)
-      await deleteFrom('transactions', 'league_id', leagueId);
-      await deleteFrom('season_stats', 'league_id', leagueId);
-      await deleteFrom('schedule', 'league_id', leagueId);
-      await deleteFrom('game_logs', 'league_id', leagueId);
-      await deleteFrom('player_pool', 'league_id', leagueId);
-      await deleteFrom('simulation_progress', 'league_id', leagueId);
-      await deleteFrom('archives', 'league_id', leagueId);
-
-      // 4. Delete teams
-      await deleteFrom('teams', 'league_id', leagueId);
-
-      // 5. Delete the league itself
-      await deleteFrom('leagues', 'id', leagueId);
 
       noContent(res, requestId);
     }
