@@ -26,8 +26,8 @@ const SLOT_ELIGIBLE: Record<string, string[]> = {
   '2B': ['2B'],
   SS: ['SS'],
   '3B': ['3B'],
-  OF: ['LF', 'CF', 'RF'],
-  DH: ['DH', 'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'],
+  OF: ['LF', 'CF', 'RF', 'OF'],
+  DH: ['DH', 'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF', 'OF'],
 };
 
 type RosterSlot = 'starter' | 'bench' | 'sp' | 'rp';

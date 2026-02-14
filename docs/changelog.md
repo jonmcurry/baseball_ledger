@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-14 - Diamond Field Text Visibility + OF Draft Slot Fix
+
+### Diamond Field Text Visibility
+Player names on the baseball diamond were invisible (dark text on dark circles).
+Root cause: Tailwind v3 opacity modifier (`fill-ballpark/10`) does not work with
+CSS variable colors -- the `/10` is silently ignored, rendering circles at 100%
+opacity. Fixed by using inline `style` with proper `fillOpacity` for SVG circles.
+
+### OF Draft Slot Assignment
+Outfielders drafted with Lahman `'OF'` position were going straight to bench
+instead of filling the 3 OF starter slots. The `SLOT_ELIGIBLE` map in
+`RosterPreviewPanel` only accepted `['LF', 'CF', 'RF']` but not `'OF'`.
+Added `'OF'` to eligible positions for OF and DH slots.
+
+### Files Changed
+- `src/components/baseball/DiamondField.tsx` - SVG fill uses inline style with fillOpacity
+- `src/features/draft/RosterPreviewPanel.tsx` - Added 'OF' to SLOT_ELIGIBLE for OF and DH
+
 ## 2026-02-14 - Fix Simulation Engine Inflated Stats (Dice Roll Calibration)
 
 Two critical bugs fixed in the simulation engine that caused grossly inflated

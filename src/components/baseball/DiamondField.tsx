@@ -163,30 +163,40 @@ export function DiamondField({
                 className="cursor-pointer"
               >
                 <circle cx={coords.x} cy={coords.y} r={20}
-                  className={
-                    isSelected
-                      ? 'fill-ballpark/30 stroke-ballpark'
+                  className="stroke-ballpark"
+                  style={{
+                    fill: isSelected
+                      ? 'var(--accent-primary)'
                       : hasPlayer
-                        ? 'fill-ballpark/10 stroke-ballpark hover:fill-ballpark/20'
-                        : 'fill-sandstone/20 stroke-ballpark hover:fill-ballpark/20'
-                  }
+                        ? 'var(--accent-primary)'
+                        : 'var(--color-sandstone)',
+                    fillOpacity: isSelected ? 0.3 : hasPlayer ? 0.1 : 0.2,
+                  }}
                   strokeWidth={isSelected ? 2.5 : 1.5} />
                 <text x={coords.x} y={coords.y - 8} textAnchor="middle"
-                  className="fill-ballpark text-[10px] font-bold font-stat">{pos}</text>
+                  className="text-[10px] font-bold font-stat"
+                  style={{ fill: 'var(--accent-primary)' }}>{pos}</text>
                 <text x={coords.x} y={coords.y + 6} textAnchor="middle"
-                  className="fill-ink text-[8px] font-stat">
+                  className="text-[8px] font-stat"
+                  style={{ fill: 'var(--color-ink)' }}>
                   {playerName.length > 12 ? playerName.slice(0, 11) + '...' : playerName}
                 </text>
               </g>
             ) : (
               <g aria-label={`${pos}: ${playerName || 'empty'}`}>
                 <circle cx={coords.x} cy={coords.y} r={20}
-                  className={`${hasPlayer ? 'fill-ballpark/10' : 'fill-sandstone/20'} stroke-sandstone`}
+                  className="stroke-sandstone"
+                  style={{
+                    fill: hasPlayer ? 'var(--accent-primary)' : 'var(--color-sandstone)',
+                    fillOpacity: hasPlayer ? 0.1 : 0.2,
+                  }}
                   strokeWidth={1} />
                 <text x={coords.x} y={coords.y - 8} textAnchor="middle"
-                  className="fill-ballpark text-[10px] font-bold font-stat">{pos}</text>
+                  className="text-[10px] font-bold font-stat"
+                  style={{ fill: 'var(--accent-primary)' }}>{pos}</text>
                 <text x={coords.x} y={coords.y + 6} textAnchor="middle"
-                  className="fill-ink text-[8px] font-stat">
+                  className="text-[8px] font-stat"
+                  style={{ fill: 'var(--color-ink)' }}>
                   {playerName.length > 12 ? playerName.slice(0, 11) + '...' : playerName}
                 </text>
               </g>
