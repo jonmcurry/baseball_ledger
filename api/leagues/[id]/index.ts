@@ -122,67 +122,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can delete this league' };
       }
 
-      // Explicitly delete child records in FK-safe order to avoid
-      // constraint violations between sibling tables (e.g.
-      // schedule.game_log_id -> game_logs.id has no ON DELETE CASCADE).
-      const childTables = [
-        'transactions',
-        'season_stats',
-        'schedule',
-        'game_logs',
-        'player_pool',
-        'simulation_progress',
-        'archives',
-        'rosters',
-      ] as const;
+      // Delete child records in FK-safe order, then the league itself.
+      // Each table is deleted explicitly to provide clear error attribution.
+      async function deleteFrom(table: string, column: string, value: string) {
+        const { error: err } = await supabase
+          .from(table as 'leagues')
+          .delete()
+          .eq(column as 'id', value);
+        if (err) {
+          console.error(`DELETE ${table} WHERE ${column}=${value}: ${err.message} (code ${err.code})`);
+          throw { category: 'DATA', code: 'DELETE_FAILED', message: `${table}: ${err.message}` };
+        }
+      }
 
-      // Delete rosters via team_id (no direct league_id column)
+      // 1. Get team IDs for roster cleanup
       const { data: teamRows } = await supabase
         .from('teams')
         .select('id')
         .eq('league_id', leagueId);
       const teamIds = (teamRows ?? []).map((t: { id: string }) => t.id);
 
-      if (teamIds.length > 0) {
-        const { error: rosterErr } = await supabase
-          .from('rosters')
-          .delete()
-          .in('team_id', teamIds);
-        if (rosterErr) {
-          throw { category: 'DATA', code: 'DELETE_FAILED', message: `rosters: ${rosterErr.message}` };
-        }
+      // 2. Delete rosters (keyed by team_id, no league_id column)
+      for (const tid of teamIds) {
+        await deleteFrom('rosters', 'team_id', tid);
       }
 
-      // Delete tables that have a direct league_id column
-      for (const table of childTables) {
-        if (table === 'rosters') continue; // already handled above
-        const { error: childErr } = await supabase
-          .from(table)
-          .delete()
-          .eq('league_id', leagueId);
-        if (childErr) {
-          throw { category: 'DATA', code: 'DELETE_FAILED', message: `${table}: ${childErr.message}` };
-        }
-      }
+      // 3. Delete child tables with league_id, in FK-safe order
+      //    schedule before game_logs (schedule.game_log_id -> game_logs.id)
+      await deleteFrom('transactions', 'league_id', leagueId);
+      await deleteFrom('season_stats', 'league_id', leagueId);
+      await deleteFrom('schedule', 'league_id', leagueId);
+      await deleteFrom('game_logs', 'league_id', leagueId);
+      await deleteFrom('player_pool', 'league_id', leagueId);
+      await deleteFrom('simulation_progress', 'league_id', leagueId);
+      await deleteFrom('archives', 'league_id', leagueId);
 
-      // Delete teams
-      const { error: teamsErr } = await supabase
-        .from('teams')
-        .delete()
-        .eq('league_id', leagueId);
-      if (teamsErr) {
-        throw { category: 'DATA', code: 'DELETE_FAILED', message: `teams: ${teamsErr.message}` };
-      }
+      // 4. Delete teams
+      await deleteFrom('teams', 'league_id', leagueId);
 
-      // Finally delete the league itself
-      const { error: deleteError } = await supabase
-        .from('leagues')
-        .delete()
-        .eq('id', leagueId);
-
-      if (deleteError) {
-        throw { category: 'DATA', code: 'DELETE_FAILED', message: deleteError.message };
-      }
+      // 5. Delete the league itself
+      await deleteFrom('leagues', 'id', leagueId);
 
       noContent(res, requestId);
     }

@@ -585,7 +585,7 @@ describe('DELETE /api/leagues/:id', () => {
     await handler(req as never, res as never);
 
     expect(res._status).toBe(204);
-    // 1 leagues SELECT + 1 teams SELECT + 1 rosters delete + 7 child table deletes + 1 teams delete + 1 leagues delete = 12
+    // 1 leagues SELECT + 1 teams SELECT + 1 rosters (1 team) + 7 child tables + 1 teams + 1 leagues = 12
     expect(mockFrom).toHaveBeenCalledTimes(12);
     expect(mockFrom).toHaveBeenCalledWith('leagues');
     expect(mockFrom).toHaveBeenCalledWith('teams');
