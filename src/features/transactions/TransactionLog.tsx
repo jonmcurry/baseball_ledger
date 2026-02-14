@@ -20,7 +20,7 @@ const TYPE_LABELS: Record<TransactionEntry['type'], string> = {
 };
 
 const TYPE_STYLES: Record<TransactionEntry['type'], string> = {
-  add: 'bg-ballpark text-ink',
+  add: 'bg-ballpark text-old-lace',
   drop: 'bg-stitch-red text-ink',
   trade: 'bg-sandstone text-ink',
 };

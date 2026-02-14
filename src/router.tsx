@@ -74,7 +74,7 @@ function NotFoundPage() {
       <p className="mt-gutter text-lg text-ink">Page not found</p>
       <Link
         to="/"
-        className="mt-gutter-lg rounded-button bg-ballpark px-6 py-2 font-medium text-ink hover:opacity-90"
+        className="mt-gutter-lg rounded-button bg-ballpark px-6 py-2 font-medium text-old-lace hover:opacity-90"
       >
         Return Home
       </Link>

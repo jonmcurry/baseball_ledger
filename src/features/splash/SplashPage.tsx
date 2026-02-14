@@ -17,7 +17,7 @@ export function SplashPage() {
       <div className="mt-gutter-xl flex gap-gutter-lg">
         <Link
           to="/leagues/new"
-          className="rounded-button bg-ballpark px-6 py-3 font-medium text-ink shadow-card hover:opacity-90"
+          className="rounded-button bg-ballpark px-6 py-3 font-medium text-old-lace shadow-card hover:opacity-90"
         >
           Create a League
         </Link>

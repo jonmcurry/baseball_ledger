@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-02-14 - Button Text Contrast Fix
+
+All `bg-ballpark` (dark green) buttons used `text-ink` (dark brown) -- unreadable.
+Changed to `text-old-lace` (cream `#FDF8EE`) across 10 files (12 instances):
+Login, Splash, League Config, Join League, Stats tabs, Transactions, Trade,
+Add/Drop, Error Boundary, 404 page.
+
 ## 2026-02-14 - Diamond Field Text Visibility + OF Draft Slot Fix
 
 ### Diamond Field Text Visibility

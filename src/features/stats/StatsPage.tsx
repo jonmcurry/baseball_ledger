@@ -135,7 +135,7 @@ export function StatsPage() {
             onClick={() => setActiveTab('batting')}
             className={`rounded-button px-4 py-1.5 text-sm font-medium ${
               activeTab === 'batting'
-                ? 'bg-ballpark text-ink'
+                ? 'bg-ballpark text-old-lace'
                 : 'border border-sandstone text-ink hover:bg-sandstone/20'
             }`}
           >
@@ -148,7 +148,7 @@ export function StatsPage() {
             onClick={() => setActiveTab('pitching')}
             className={`rounded-button px-4 py-1.5 text-sm font-medium ${
               activeTab === 'pitching'
-                ? 'bg-ballpark text-ink'
+                ? 'bg-ballpark text-old-lace'
                 : 'border border-sandstone text-ink hover:bg-sandstone/20'
             }`}
           >
@@ -175,7 +175,7 @@ export function StatsPage() {
               onClick={() => setLeagueFilter(f)}
               className={`rounded-button px-3 py-1 text-xs font-medium ${
                 leagueFilter === f
-                  ? 'bg-ballpark text-ink'
+                  ? 'bg-ballpark text-old-lace'
                   : 'border border-sandstone text-ink hover:bg-sandstone/20'
               }`}
             >
