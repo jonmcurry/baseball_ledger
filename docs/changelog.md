@@ -1,5 +1,67 @@
 # Changelog
 
+## 2026-02-15 - Fix Out Rate and Walk Suppression (4 Root Causes)
+
+After removing IDT, batting stats improved (BA .252-.303) but pitching stats
+remained broken (ERA 5.36-9.79, BB 219-388). Root cause analysis identified
+4 issues that inflated PA count to ~48/team/game (should be ~40):
+
+**Fix 1: Archetype positions 33-34 made non-drawable.** Per reverse engineering,
+positions 33-34 are "special flag bytes" encoding player type (power, speed, etc.),
+NOT outcome slots. The card generator was overwriting these with hit values (HRs,
+doubles, singles), adding 2 bonus hits per card. Now excluded from PA draws.
+Drawable positions reduced from 26 to 24.
+
+**Fix 2: SB_OPP values mapped to GROUND_OUT.** Card values 21, 23, 36
+(SB_OPPORTUNITY, SPEED_1, SPEED_2) produced STOLEN_BASE_OPP outcomes that
+returned isNoPA=true, causing re-draws and wasting ~3 positions per card.
+Speed is handled by player attributes, not card outcomes.
+
+**Fix 3: ROE removed from out mix.** ERROR_REACH (value 40) in the out mix
+double-counted errors since game-runner.ts already has checkForError() in the
+defense module. Replaced with regular out values.
+
+**Fix 4: Walk suppression added to pitcher grade gate.** Only hits were
+suppressed by pitcher quality, leaving walks unaffected. Better pitchers
+should walk fewer batters. Added WALK_SUPPRESSION_SCALE = 0.45, same as
+HIT_SUPPRESSION_SCALE (recalibrated from 0.55 to 0.45 for 24 drawable
+positions).
+
+Calibrated suppression for 24 drawable positions (grade/15 * 0.45):
+- Grade 1 (poor):  3.0% suppression
+- Grade 8 (avg):  24.0% suppression
+- Grade 15 (ace): 45.0% suppression
+
+Expected improvements:
+- Out rate: ~56% -> ~67% (matches real MLB)
+- PAs/team/game: ~48 -> ~40 (matches real MLB)
+- ERA: ~5.36-9.79 -> closer to 3.0-4.5
+- BB/season: ~219-388 -> closer to 60-100
+
+Changes:
+- structural.ts: Added ARCHETYPE_POSITIONS [33,34], NON_DRAWABLE_POSITIONS now 11
+- structural.ts: Added getFillablePositions() returning 24 positions
+- structural.ts: DRAWABLE_COUNT = 24 (was 26)
+- value-mapper.ts: FILLABLE_COUNT = 24, removed speed slots, removed ROE from out mix
+- value-mapper.ts: fillVariablePositions() uses getFillablePositions()
+- card-value-fallback.ts: Values 21,23,36 map to GROUND_OUT (was STOLEN_BASE_OPP)
+- plate-appearance.ts: Added WALK_SUPPRESSION_SCALE = 0.45
+- plate-appearance.ts: HIT_SUPPRESSION_SCALE recalibrated 0.55 -> 0.45
+- plate-appearance.ts: resolvePlateAppearance() suppresses walks + hits
+- pitcher-card.ts: Uses getFillablePositions(), WALK_COUNT 16 -> 14
+- Updated tests: value-mapper, card-value-fallback, plate-appearance, pitcher-card
+
+Files changed:
+- `src/lib/card-generator/structural.ts`
+- `src/lib/card-generator/value-mapper.ts`
+- `src/lib/card-generator/pitcher-card.ts`
+- `src/lib/simulation/plate-appearance.ts`
+- `src/lib/simulation/card-value-fallback.ts`
+- `tests/unit/lib/card-generator/value-mapper.test.ts`
+- `tests/unit/lib/simulation/card-value-fallback.test.ts`
+- `tests/unit/lib/simulation/plate-appearance.test.ts`
+- `tests/unit/lib/card-generator/pitcher-card.test.ts`
+
 ## 2026-02-14 - Remove IDT from PA Resolution (Direct Mapping + Hit Suppression)
 
 Stats were still 2-3x off (BA .280-.386, HR 88-147, ERA 7-15) because the

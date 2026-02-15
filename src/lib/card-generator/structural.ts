@@ -18,12 +18,20 @@ export const CARD_LENGTH = 35;
 export const STRUCTURAL_POSITIONS: readonly number[] = [1, 3, 6, 11, 13, 18, 23, 25, 32];
 
 /**
- * All non-drawable positions during card draws.
- * Currently same as structural constants. Positions 33-34 contain player
- * archetype flags in real APBA data, but also encode legitimate hit-type
- * values (0=double, 1=HR, 7=single) that are drawn during gameplay.
+ * Archetype flag positions (bytes 33-34).
+ * Per reverse engineering: "These final two bytes encode special player attributes"
+ * (7,0)=standard RH, (1,0)=power, (6,0)=speed, etc.
+ * These are metadata flags, not outcome positions -- excluded from PA draws.
+ * The card generator sets them with archetype values after filling outcome slots.
  */
-export const NON_DRAWABLE_POSITIONS: readonly number[] = [...STRUCTURAL_POSITIONS];
+export const ARCHETYPE_POSITIONS: readonly number[] = [33, 34];
+
+/**
+ * All non-drawable positions during card draws.
+ * Includes 9 structural constants + 2 archetype flag positions = 11 total.
+ * Leaves 24 drawable outcome positions.
+ */
+export const NON_DRAWABLE_POSITIONS: readonly number[] = [...STRUCTURAL_POSITIONS, ...ARCHETYPE_POSITIONS];
 
 /**
  * Map from 0-indexed position to structural constant value (REQ-DATA-005 Step 2).
@@ -71,18 +79,35 @@ export function isNonDrawablePosition(position: number): boolean {
 }
 
 /**
- * Number of drawable card positions (35 total - 9 structural = 26).
+ * Number of drawable card positions (35 total - 11 non-drawable = 24).
  */
 export const DRAWABLE_COUNT = CARD_LENGTH - NON_DRAWABLE_POSITIONS.length;
 
 /**
- * Return the 26 variable (drawable) positions, sorted ascending.
- * Excludes 9 structural constants.
+ * Return the 26 non-structural variable positions, sorted ascending.
+ * Includes archetype positions 33-34 (for card generation fill).
+ * Excludes only the 9 structural constants.
  */
 export function getVariablePositions(): number[] {
   const positions: number[] = [];
   for (let i = 0; i < CARD_LENGTH; i++) {
-    if (!nonDrawableSet.has(i)) {
+    if (!structuralSet.has(i)) {
+      positions.push(i);
+    }
+  }
+  return positions;
+}
+
+const archetypeSet = new Set(ARCHETYPE_POSITIONS);
+
+/**
+ * Return the 24 fillable variable positions (excludes structural + archetype).
+ * Used by the card generator to fill outcome values before archetype overwrite.
+ */
+export function getFillablePositions(): number[] {
+  const positions: number[] = [];
+  for (let i = 0; i < CARD_LENGTH; i++) {
+    if (!structuralSet.has(i) && !archetypeSet.has(i)) {
       positions.push(i);
     }
   }

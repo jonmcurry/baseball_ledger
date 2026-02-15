@@ -121,16 +121,22 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
   });
 
   describe('applyPitcherGradeGate()', () => {
-    it('does not change non-hit card values', () => {
+    it('walks are now suppressed by pitcher grade', () => {
       const rng = new SeededRNG(42);
+      let pitcherWins = 0;
+      const samples = 1000;
 
-      // Non-hit values should pass through unchanged
-      for (let i = 0; i < 100; i++) {
-        const result = applyPitcherGradeGate(13, 15, rng); // 13 = walk
-        expect(result.originalValue).toBe(13);
-        expect(result.finalValue).toBe(13);
-        expect(result.pitcherWon).toBe(false);
+      for (let i = 0; i < samples; i++) {
+        const result = applyPitcherGradeGate(13, 15, rng); // 13 = walk, grade 15
+        if (result.pitcherWon) {
+          pitcherWins++;
+        }
       }
+
+      // Grade 15 = (15/15) * 0.45 = 45% walk suppression.
+      // With 1000 samples, expect 40-50% suppressions.
+      expect(pitcherWins).toBeGreaterThan(samples * 0.35);
+      expect(pitcherWins).toBeLessThan(samples * 0.55);
     });
 
     it('has chance to shift hit values based on pitcher grade', () => {
@@ -145,10 +151,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Grade 15 = (15/15) * 0.55 = 55% combined suppression.
-      // With 1000 samples, expect 450-650 suppressions.
-      expect(pitcherWins).toBeGreaterThan(samples * 0.40);
-      expect(pitcherWins).toBeLessThan(samples * 0.70);
+      // Grade 15 = (15/15) * 0.45 = 45% combined suppression.
+      // With 1000 samples, expect 40-50% suppressions.
+      expect(pitcherWins).toBeGreaterThan(samples * 0.35);
+      expect(pitcherWins).toBeLessThan(samples * 0.55);
     });
 
     it('low grade pitchers rarely win the matchup', () => {
@@ -163,8 +169,9 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // With grade 1/15, combined suppression = (1/15) * 0.55 = 3.7%.
-      // Expect < 8% of samples to be suppressed.
+      // With grade 1/15, combined suppression = (1/15) * 0.45 = 3%.
+      // Expect 1-7% of samples to be suppressed.
+      expect(pitcherWins).toBeGreaterThanOrEqual(samples * 0.01);
       expect(pitcherWins).toBeLessThan(samples * 0.08);
     });
 
@@ -258,14 +265,14 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
       }
 
       // With direct mapping, most draws produce singles (value 7 -> SINGLE_CLEAN).
-      // Grade 8 suppression: (8/15) * 0.55 = 29.3% of hits become ground outs.
-      // So ~70% singles, ~29% ground outs.
-      expect(singles).toBeGreaterThan(samples * 0.50);
-      expect(groundOuts).toBeGreaterThan(samples * 0.15);
-      expect(groundOuts).toBeLessThan(samples * 0.45);
+      // Grade 8 suppression: (8/15) * 0.45 = 24% of hits become ground outs.
+      // So ~76% singles, ~24% ground outs.
+      expect(singles).toBeGreaterThan(samples * 0.55);
+      expect(groundOuts).toBeGreaterThan(samples * 0.10);
+      expect(groundOuts).toBeLessThan(samples * 0.40);
     });
 
-    it('grade 15 suppresses approximately 55% of hits', () => {
+    it('grade 15 suppresses approximately 45% of hits', () => {
       const rng = new SeededRNG(42);
       let pitcherWins = 0;
       const samples = 5000;
@@ -277,13 +284,13 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Combined suppression = (15/15) * 0.55 = 55%, expect 50-60% range
+      // Combined suppression = (15/15) * 0.45 = 45%, expect 40-50% range
       const rate = pitcherWins / samples;
-      expect(rate).toBeGreaterThanOrEqual(0.50);
-      expect(rate).toBeLessThanOrEqual(0.60);
+      expect(rate).toBeGreaterThanOrEqual(0.40);
+      expect(rate).toBeLessThanOrEqual(0.50);
     });
 
-    it('grade 8 suppresses approximately 29% of hits', () => {
+    it('grade 8 suppresses approximately 24% of hits', () => {
       const rng = new SeededRNG(42);
       let pitcherWins = 0;
       const samples = 5000;
@@ -295,13 +302,13 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Combined suppression = (8/15) * 0.55 = 29.3%, expect 25-35% range
+      // Combined suppression = (8/15) * 0.45 = 24%, expect 20-30% range
       const rate = pitcherWins / samples;
-      expect(rate).toBeGreaterThanOrEqual(0.25);
-      expect(rate).toBeLessThanOrEqual(0.35);
+      expect(rate).toBeGreaterThanOrEqual(0.20);
+      expect(rate).toBeLessThanOrEqual(0.30);
     });
 
-    it('grade 1 suppresses approximately 3.7% of hits', () => {
+    it('grade 1 suppresses approximately 3% of hits', () => {
       const rng = new SeededRNG(42);
       let pitcherWins = 0;
       const samples = 5000;
@@ -313,7 +320,7 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Combined suppression = (1/15) * 0.55 = 3.7%, expect 1-7% range
+      // Combined suppression = (1/15) * 0.45 = 3%, expect 1-7% range
       const rate = pitcherWins / samples;
       expect(rate).toBeGreaterThanOrEqual(0.01);
       expect(rate).toBeLessThanOrEqual(0.07);

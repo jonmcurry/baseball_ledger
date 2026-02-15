@@ -71,8 +71,10 @@ describe('generatePitcherBattingCard (REQ-DATA-005 Step 6)', () => {
       CARD_VALUES.SINGLE_HIGH, CARD_VALUES.SINGLE_MID, CARD_VALUES.SINGLE_LOW,
       CARD_VALUES.DOUBLE, CARD_VALUES.TRIPLE_1, CARD_VALUES.TRIPLE_2,
     ];
+    // Check fillable positions only (skip structural + archetype 33-34)
     for (let i = 0; i < CARD_LENGTH; i++) {
       if (STRUCTURAL_POSITIONS.includes(i)) continue;
+      if (i === 33 || i === 34) continue; // Archetype flag bytes, not outcome positions
       expect(hitValues).not.toContain(card[i]);
     }
   });

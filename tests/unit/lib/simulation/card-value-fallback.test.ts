@@ -50,10 +50,10 @@ describe('REQ-SIM-004a: Direct Card Value Fallback Mapping', () => {
       expect(CARD_VALUE_TO_OUTCOME.get(14)).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
     });
 
-    it('maps card values 21, 23, 36 to STOLEN_BASE_OPP', () => {
-      expect(CARD_VALUE_TO_OUTCOME.get(21)).toBe(OutcomeCategory.STOLEN_BASE_OPP);
-      expect(CARD_VALUE_TO_OUTCOME.get(23)).toBe(OutcomeCategory.STOLEN_BASE_OPP);
-      expect(CARD_VALUE_TO_OUTCOME.get(36)).toBe(OutcomeCategory.STOLEN_BASE_OPP);
+    it('maps card values 21, 23, 36 to GROUND_OUT', () => {
+      expect(CARD_VALUE_TO_OUTCOME.get(21)).toBe(OutcomeCategory.GROUND_OUT);
+      expect(CARD_VALUE_TO_OUTCOME.get(23)).toBe(OutcomeCategory.GROUND_OUT);
+      expect(CARD_VALUE_TO_OUTCOME.get(36)).toBe(OutcomeCategory.GROUND_OUT);
     });
 
     it('maps card value 22 to FLY_OUT', () => {
@@ -156,14 +156,14 @@ describe('REQ-SIM-004a: Direct Card Value Fallback Mapping', () => {
       [11, OutcomeCategory.TRIPLE],
       [13, OutcomeCategory.WALK],
       [14, OutcomeCategory.STRIKEOUT_SWINGING],
-      [21, OutcomeCategory.STOLEN_BASE_OPP],
+      [21, OutcomeCategory.GROUND_OUT],
       [22, OutcomeCategory.FLY_OUT],
-      [23, OutcomeCategory.STOLEN_BASE_OPP],
+      [23, OutcomeCategory.GROUND_OUT],
       [24, OutcomeCategory.LINE_OUT],
       [26, OutcomeCategory.GROUND_OUT],
       [30, OutcomeCategory.GROUND_OUT_ADVANCE],
       [31, OutcomeCategory.FLY_OUT],
-      [36, OutcomeCategory.STOLEN_BASE_OPP],
+      [36, OutcomeCategory.GROUND_OUT],
       [37, OutcomeCategory.HOME_RUN_VARIANT],
       [40, OutcomeCategory.REACHED_ON_ERROR],
       [41, OutcomeCategory.HOME_RUN_VARIANT],

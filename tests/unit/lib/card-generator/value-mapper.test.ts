@@ -27,33 +27,33 @@ function makeRates(overrides: Partial<PlayerRates> = {}): PlayerRates {
 }
 
 describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
-  it('allocates all 26 variable positions', () => {
+  it('allocates all 24 variable positions', () => {
     const rates = makeRates();
     const alloc = computeSlotAllocation(rates);
     const total = alloc.walks + alloc.strikeouts + alloc.homeRuns +
       alloc.singles + alloc.doubles + alloc.triples + alloc.speed + alloc.outs;
-    expect(total).toBe(26);
+    expect(total).toBe(24);
   });
 
   it('maps walk slots with scale factor', () => {
-    // walkRate 0.10 * 1.0 * 26 = 2.6 -> round to 3
+    // walkRate 0.10 * 1.0 * 24 = 2.4 -> round to 2
     const rates = makeRates({ walkRate: 0.10 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.walks).toBe(3);
+    expect(alloc.walks).toBe(2);
   });
 
   it('maps strikeout slots with scale factor', () => {
-    // strikeoutRate 0.20 * 1.0 * 26 = 5.2 -> round to 5
+    // strikeoutRate 0.20 * 1.0 * 24 = 4.8 -> round to 5
     const rates = makeRates({ strikeoutRate: 0.20 });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.strikeouts).toBe(5);
   });
 
   it('maps home run slots at 1:1 rate', () => {
-    // homeRunRate 0.06 * 1.0 * 26 = 1.56 -> round to 2
+    // homeRunRate 0.06 * 1.0 * 24 = 1.44 -> round to 1
     const rates = makeRates({ homeRunRate: 0.06 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBe(2);
+    expect(alloc.homeRuns).toBe(1);
   });
 
   it('allocates at least 1 walk slot when walkRate > 0', () => {
@@ -68,22 +68,22 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     expect(alloc.strikeouts).toBeGreaterThanOrEqual(1);
   });
 
-  it('allocates 0 speed slots for sbRate = 0', () => {
+  it('allocates 0 speed slots (always 0)', () => {
     const rates = makeRates({ sbRate: 0 });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.speed).toBe(0);
   });
 
-  it('allocates 2 speed slots for moderate sbRate', () => {
+  it('speed is always 0 regardless of sbRate', () => {
     const rates = makeRates({ sbRate: 0.60 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.speed).toBe(2);
+    expect(alloc.speed).toBe(0);
   });
 
-  it('allocates 3 speed slots for high sbRate', () => {
+  it('speed is always 0 even for high sbRate', () => {
     const rates = makeRates({ sbRate: 0.80 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.speed).toBe(3);
+    expect(alloc.speed).toBe(0);
   });
 
   it('always has at least 1 out slot', () => {
@@ -94,16 +94,16 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.outs).toBeGreaterThanOrEqual(0);
-    // Total must be 26
+    // Total must be 24
     const total = alloc.walks + alloc.strikeouts + alloc.homeRuns +
       alloc.singles + alloc.doubles + alloc.triples + alloc.speed + alloc.outs;
-    expect(total).toBe(26);
+    expect(total).toBe(24);
   });
 
   it('handles zero PA gracefully', () => {
     const rates = makeRates({ PA: 0, walkRate: 0, strikeoutRate: 0, homeRunRate: 0, singleRate: 0, doubleRate: 0, tripleRate: 0, sbRate: 0 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.outs).toBe(26); // All positions become outs
+    expect(alloc.outs).toBe(24); // All positions become outs
   });
 });
 
@@ -135,7 +135,7 @@ describe('splitSinglesTiers', () => {
 });
 
 describe('fillVariablePositions', () => {
-  it('fills all 35 positions (9 structural + 26 variable)', () => {
+  it('fills all 35 positions (9 structural + 24 variable + 2 archetype)', () => {
     const card = new Array(CARD_LENGTH).fill(0);
     applyStructuralConstants(card);
 

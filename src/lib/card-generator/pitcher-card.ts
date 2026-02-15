@@ -1,6 +1,6 @@
 import type { CardValue, PitcherAttributes } from '../types';
 import type { PitchingStats } from '../types';
-import { getVariablePositions, CARD_LENGTH } from './structural';
+import { getFillablePositions, CARD_LENGTH } from './structural';
 import { applyStructuralConstants } from './structural';
 import { CARD_VALUES } from './value-mapper';
 import { computePitcherGrade } from './pitcher-grade';
@@ -17,27 +17,27 @@ export function generatePitcherBattingCard(): CardValue[] {
   const card = new Array(CARD_LENGTH).fill(0);
   applyStructuralConstants(card);
 
-  const variablePositions = getVariablePositions();
-  const WALK_COUNT = 16;      // middle of 14-18 range
+  const fillablePositions = getFillablePositions();
+  const WALK_COUNT = 14;      // lower end of 14-18 range (24 fillable positions)
   const STRIKEOUT_COUNT = 4;  // middle of 3-5 range
 
   let posIdx = 0;
 
   // Fill walks (value 13)
-  for (let i = 0; i < WALK_COUNT && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.WALK;
+  for (let i = 0; i < WALK_COUNT && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.WALK;
   }
 
   // Fill strikeouts (value 14)
-  for (let i = 0; i < STRIKEOUT_COUNT && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
+  for (let i = 0; i < STRIKEOUT_COUNT && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
   }
 
   // Fill remaining with out types (rotating through out values)
   const outValues = [CARD_VALUES.OUT_GROUND, CARD_VALUES.OUT_CONTACT, CARD_VALUES.OUT_NONWALK, CARD_VALUES.OUT_FLY];
   let outIdx = 0;
-  while (posIdx < variablePositions.length) {
-    card[variablePositions[posIdx++]] = outValues[outIdx % outValues.length];
+  while (posIdx < fillablePositions.length) {
+    card[fillablePositions[posIdx++]] = outValues[outIdx % outValues.length];
     outIdx++;
   }
 

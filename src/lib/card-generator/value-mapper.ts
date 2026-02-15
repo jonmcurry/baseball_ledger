@@ -1,6 +1,6 @@
 import type { CardValue } from '../types';
 import type { PlayerRates } from './rate-calculator';
-import { getVariablePositions } from './structural';
+import { getFillablePositions } from './structural';
 
 /**
  * APBA card value constants -- each value maps to an outcome category
@@ -74,23 +74,24 @@ export interface SlotAllocation {
 }
 
 /**
- * Compute how many of the 26 variable card positions to allocate
+ * Compute how many of the 24 fillable card positions to allocate
  * to each outcome type, based on the player's per-PA rates.
- * (35 total - 9 structural = 26 variable positions)
+ * (35 total - 9 structural - 2 archetype = 24 fillable positions)
+ *
+ * Archetype positions 33-34 contribute additional outcomes (HR, double,
+ * single, etc.) depending on player type. The caller subtracts archetype
+ * contributions from this allocation before filling the card.
  */
 export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
-  const VARIABLE_COUNT = 26;
+  const FILLABLE_COUNT = 24;
 
-  // Raw (unrounded) slot counts based on rate * scale * variable positions
-  const rawWalks = rates.walkRate * SCALE_FACTORS.walk * VARIABLE_COUNT;
-  const rawStrikeouts = rates.strikeoutRate * SCALE_FACTORS.strikeout * VARIABLE_COUNT;
-  const rawHomeRuns = rates.homeRunRate * SCALE_FACTORS.homeRun * VARIABLE_COUNT;
-  const rawSingles = rates.singleRate * SCALE_FACTORS.single * VARIABLE_COUNT;
-  const rawDoubles = rates.doubleRate * SCALE_FACTORS.double * VARIABLE_COUNT;
-  const rawTriples = rates.tripleRate * SCALE_FACTORS.triple * VARIABLE_COUNT;
-
-  // Speed slots: 0-3 based on steal rate and volume
-  const rawSpeed = rates.sbRate >= 0.75 ? 3 : rates.sbRate >= 0.50 ? 2 : rates.sbRate > 0 ? 1 : 0;
+  // Raw (unrounded) slot counts based on rate * scale * fillable positions
+  const rawWalks = rates.walkRate * SCALE_FACTORS.walk * FILLABLE_COUNT;
+  const rawStrikeouts = rates.strikeoutRate * SCALE_FACTORS.strikeout * FILLABLE_COUNT;
+  const rawHomeRuns = rates.homeRunRate * SCALE_FACTORS.homeRun * FILLABLE_COUNT;
+  const rawSingles = rates.singleRate * SCALE_FACTORS.single * FILLABLE_COUNT;
+  const rawDoubles = rates.doubleRate * SCALE_FACTORS.double * FILLABLE_COUNT;
+  const rawTriples = rates.tripleRate * SCALE_FACTORS.triple * FILLABLE_COUNT;
 
   // Round all positive outcome slots
   let walks = Math.round(rawWalks);
@@ -99,7 +100,7 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   let singles = Math.round(rawSingles);
   let doubles = Math.round(rawDoubles);
   let triples = Math.round(rawTriples);
-  const speed = rawSpeed;
+  const speed = 0; // Speed handled by player attributes, not card slots
 
   // Ensure at least 1 of major outcomes for qualifying batters
   if (rates.PA > 0) {
@@ -108,14 +109,11 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   }
 
   // Calculate total allocated
-  let total = walks + strikeouts + homeRuns + singles + doubles + triples + speed;
+  let total = walks + strikeouts + homeRuns + singles + doubles + triples;
 
   // If we exceed budget, reduce one-at-a-time from the largest categories.
-  // This preserves small allocations (HR, doubles) that the proportional
-  // floor approach would kill to 0.
-  const budget = VARIABLE_COUNT - 1; // Reserve at least 1 out slot
+  const budget = FILLABLE_COUNT - 1; // Reserve at least 1 out slot
   while (total > budget) {
-    // Find the category with the most slots and reduce it by 1
     const vals = [
       { name: 'walks', count: walks },
       { name: 'strikeouts', count: strikeouts },
@@ -136,7 +134,7 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   }
 
   // Out slots absorb the remainder -- always at least 1 out slot
-  const outs = Math.max(1, VARIABLE_COUNT - total);
+  const outs = Math.max(1, FILLABLE_COUNT - total);
 
   return { walks, strikeouts, homeRuns, singles, doubles, triples, speed, outs };
 }
@@ -173,9 +171,11 @@ export function splitSinglesTiers(totalSingles: number, babip: number): [number,
 }
 
 /**
- * Fill the 26 variable positions of a 35-element card array
+ * Fill the 24 fillable variable positions of a 35-element card array
  * with outcome values based on the slot allocation (REQ-DATA-005 Step 3).
  *
+ * Fills only the 24 non-structural, non-archetype positions.
+ * Archetype positions 33-34 are set separately by the generator.
  * The card array must already have structural constants applied.
  * Mutates and returns the card.
  */
@@ -184,75 +184,66 @@ export function fillVariablePositions(
   allocation: SlotAllocation,
   babip: number,
 ): CardValue[] {
-  const variablePositions = getVariablePositions();
+  const fillablePositions = getFillablePositions();
   let posIdx = 0;
 
   // Fill walks (value 13)
-  for (let i = 0; i < allocation.walks && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.WALK;
+  for (let i = 0; i < allocation.walks && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.WALK;
   }
 
   // Fill strikeouts (value 14)
-  for (let i = 0; i < allocation.strikeouts && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
+  for (let i = 0; i < allocation.strikeouts && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
   }
 
   // Fill home runs (value 1, overflow to 5/37/41)
   const hrValues = [CARD_VALUES.HOME_RUN, CARD_VALUES.HOME_RUN_ALT1, CARD_VALUES.HOME_RUN_ALT2, CARD_VALUES.HOME_RUN_ALT3];
-  for (let i = 0; i < allocation.homeRuns && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = hrValues[Math.min(i, hrValues.length - 1)];
+  for (let i = 0; i < allocation.homeRuns && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = hrValues[Math.min(i, hrValues.length - 1)];
   }
 
   // Fill singles split by quality
   const [high, mid, low] = splitSinglesTiers(allocation.singles, babip);
-  for (let i = 0; i < high && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.SINGLE_HIGH;
+  for (let i = 0; i < high && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.SINGLE_HIGH;
   }
-  for (let i = 0; i < mid && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.SINGLE_MID;
+  for (let i = 0; i < mid && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.SINGLE_MID;
   }
-  for (let i = 0; i < low && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.SINGLE_LOW;
+  for (let i = 0; i < low && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.SINGLE_LOW;
   }
 
   // Fill doubles (value 0)
-  for (let i = 0; i < allocation.doubles && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = CARD_VALUES.DOUBLE;
+  for (let i = 0; i < allocation.doubles && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = CARD_VALUES.DOUBLE;
   }
 
   // Fill triples (value 10/11)
   const tripleValues = [CARD_VALUES.TRIPLE_1, CARD_VALUES.TRIPLE_2];
-  for (let i = 0; i < allocation.triples && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = tripleValues[Math.min(i, tripleValues.length - 1)];
+  for (let i = 0; i < allocation.triples && posIdx < fillablePositions.length; i++) {
+    card[fillablePositions[posIdx++]] = tripleValues[Math.min(i, tripleValues.length - 1)];
   }
 
-  // Fill speed slots (values 21, 23, 36)
-  const speedValues = [CARD_VALUES.SB_OPPORTUNITY, CARD_VALUES.SPEED_1, CARD_VALUES.SPEED_2];
-  for (let i = 0; i < allocation.speed && posIdx < variablePositions.length; i++) {
-    card[variablePositions[posIdx++]] = speedValues[Math.min(i, speedValues.length - 1)];
-  }
-
-  // Fill remaining with a mix of out values and "other" values.
-  // Real APBA cards use diverse values for non-positive positions:
-  // ~60% pure outs (26, 30, 31) that bypass IDT entirely
-  // ~30% position-specific "other" values (33, 34) that bypass IDT
-  // ~10% special values (40 = reached on error)
-  // This matches the value distribution observed in real PLAYERS.DAT cards.
+  // Fill remaining with out values.
+  // All out values produce outs via direct mapping. No ROE in mix --
+  // errors are handled by the defense module's checkForError() in the game runner.
   const outMixValues = [
-    CARD_VALUES.OUT_GROUND,    // 30 - bypasses IDT
-    CARD_VALUES.OUT_CONTACT,   // 26 - bypasses IDT
-    CARD_VALUES.POWER_GATE,    // 33 - bypasses IDT (real card position 15)
-    CARD_VALUES.OUT_NONWALK,   // 31 - bypasses IDT
-    CARD_VALUES.SPECIAL_FLAG,  // 34 - bypasses IDT (real card position 27)
-    CARD_VALUES.OUT_GROUND,    // 30 - repeat pure out
-    CARD_VALUES.OUT_CONTACT,   // 26 - repeat pure out
-    CARD_VALUES.ERROR_REACH,   // 40 - reached on error (not AB, not hit)
-    CARD_VALUES.OUT_NONWALK,   // 31 - repeat pure out
-    CARD_VALUES.OUT_FLY,       // 24 - partially IDT-active
+    CARD_VALUES.OUT_GROUND,    // 30 - ground out advance
+    CARD_VALUES.OUT_CONTACT,   // 26 - ground out
+    CARD_VALUES.POWER_GATE,    // 33 - ground out (default mapping)
+    CARD_VALUES.OUT_NONWALK,   // 31 - fly out
+    CARD_VALUES.SPECIAL_FLAG,  // 34 - ground out (default mapping)
+    CARD_VALUES.OUT_GROUND,    // 30 - repeat
+    CARD_VALUES.OUT_CONTACT,   // 26 - repeat
+    CARD_VALUES.OUT_FLY,       // 24 - line out
+    CARD_VALUES.OUT_NONWALK,   // 31 - fly out
+    CARD_VALUES.OUT_GROUND,    // 30 - repeat
   ];
   let outIdx = 0;
-  while (posIdx < variablePositions.length) {
-    card[variablePositions[posIdx++]] = outMixValues[outIdx % outMixValues.length];
+  while (posIdx < fillablePositions.length) {
+    card[fillablePositions[posIdx++]] = outMixValues[outIdx % outMixValues.length];
     outIdx++;
   }
 
