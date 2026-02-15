@@ -34,32 +34,21 @@ export const CARD_VALUES = {
 } as const;
 
 /**
- * Scale factors for mapping rates to card position counts.
- * Higher scale = more card positions allocated for that outcome.
- */
-/**
- * Scale factors for mapping rates to card position counts.
- * With IDT.OBJ as primary resolution (BBW faithful), the table scrambles
- * outcomes from mid-range card values (5-24). Scale factors are kept close
- * to 1.0 to match real APBA card distributions observed in PLAYERS.DAT.
+ * Average pitcher hit suppression for card generation compensation.
  *
- * Real APBA card analysis (Don Buford .290 BA):
- *   singles: 6/26 (23%) vs rate 0.173 * 26 = 4.5 -> scale ~1.33
- *   walks:   3/26 (12%) vs rate 0.122 * 26 = 3.2 -> scale ~0.95
- *   Ks:      5/26 (19%) vs rate 0.175 * 26 = 4.6 -> scale ~1.10
- *   HR:      1/26 (4%)  vs rate 0.037 * 26 = 1.0 -> scale ~1.0
+ * Lahman stats already reflect facing average pitchers. Without compensation,
+ * the grade 8 (average) suppression double-counts the pitcher effect,
+ * producing BA ~33 points below historical. The card must have MORE hits
+ * than the raw rate so that average-grade suppression brings it back to
+ * the historical level.
+ *
+ * Formula: (AVG_GRADE / MAX_GRADE) * HIT_SUPPRESSION_SCALE = (8/15) * 0.45
+ * Must stay in sync with HIT_SUPPRESSION_SCALE in plate-appearance.ts.
  */
-const SCALE_FACTORS = {
-  walk: 1.0,
-  strikeout: 1.0,
-  homeRun: 1.0,
-  single: 1.3,
-  double: 1.0,
-  triple: 1.0,
-} as const;
+const AVG_HIT_SUPPRESSION = 0.24;
 
 /**
- * Outcome slot allocation: how many of the 26 variable positions
+ * Outcome slot allocation: how many of the 24 fillable positions
  * should hold each outcome value, based on player rates.
  */
 export interface SlotAllocation {
@@ -69,8 +58,56 @@ export interface SlotAllocation {
   singles: number;    // total singles across quality tiers
   doubles: number;
   triples: number;
-  speed: number;      // SB opportunity slots
+  speed: number;      // SB opportunity slots (always 0)
   outs: number;       // remaining positions filled with out values
+}
+
+/**
+ * Distribute a total count among categories proportionally using the
+ * largest remainder method (Hamilton's method). Ensures:
+ * 1. The sum of allocated counts exactly equals totalCount
+ * 2. Each category gets at least its floor (proportional share rounded down)
+ * 3. Remaining positions go to categories with the largest fractional parts
+ *
+ * @param rawValues - Unrounded proportional values (must sum to ~totalCount)
+ * @param totalCount - Target total that the result must sum to
+ * @returns Array of integers summing to totalCount
+ */
+export function distributeByLargestRemainder(
+  rawValues: number[],
+  totalCount: number,
+): number[] {
+  const floors = rawValues.map(v => Math.max(0, Math.floor(v)));
+  let floorSum = floors.reduce((a, b) => a + b, 0);
+
+  // Clamp if floors already exceed total (shouldn't happen, but safety)
+  if (floorSum >= totalCount) {
+    // Scale floors down proportionally
+    const scale = totalCount / Math.max(1, floorSum);
+    const scaled = floors.map(f => Math.floor(f * scale));
+    let diff = totalCount - scaled.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < scaled.length && diff > 0; i++) {
+      scaled[i]++;
+      diff--;
+    }
+    return scaled;
+  }
+
+  let remaining = totalCount - floorSum;
+
+  // Build remainder array with original indices
+  const remainders = rawValues.map((v, i) => ({
+    index: i,
+    remainder: v - floors[i],
+  }));
+  remainders.sort((a, b) => b.remainder - a.remainder);
+
+  // Assign remaining slots to largest remainders
+  for (let i = 0; i < remaining && i < remainders.length; i++) {
+    floors[remainders[i].index]++;
+  }
+
+  return floors;
 }
 
 /**
@@ -78,29 +115,37 @@ export interface SlotAllocation {
  * to each outcome type, based on the player's per-PA rates.
  * (35 total - 9 structural - 2 archetype = 24 fillable positions)
  *
- * Archetype positions 33-34 contribute additional outcomes (HR, double,
- * single, etc.) depending on player type. The caller subtracts archetype
- * contributions from this allocation before filling the card.
+ * Hit compensation: The total number of hit positions is computed by
+ * dividing the raw hit rate by (1 - AVG_HIT_SUPPRESSION) to account
+ * for the average pitcher grade suppression. This ensures that vs a
+ * grade 8 (average) pitcher, the simulation produces batting averages
+ * matching the player's historical stats.
+ *
+ * Walks and strikeouts are allocated at their raw rates (no compensation)
+ * because walk suppression is a separate pitcher-control effect and
+ * strikeouts are never suppressed.
  */
 export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   const FILLABLE_COUNT = 24;
-
-  // Raw (unrounded) slot counts based on rate * scale * fillable positions
-  const rawWalks = rates.walkRate * SCALE_FACTORS.walk * FILLABLE_COUNT;
-  const rawStrikeouts = rates.strikeoutRate * SCALE_FACTORS.strikeout * FILLABLE_COUNT;
-  const rawHomeRuns = rates.homeRunRate * SCALE_FACTORS.homeRun * FILLABLE_COUNT;
-  const rawSingles = rates.singleRate * SCALE_FACTORS.single * FILLABLE_COUNT;
-  const rawDoubles = rates.doubleRate * SCALE_FACTORS.double * FILLABLE_COUNT;
-  const rawTriples = rates.tripleRate * SCALE_FACTORS.triple * FILLABLE_COUNT;
-
-  // Round all positive outcome slots
-  let walks = Math.round(rawWalks);
-  let strikeouts = Math.round(rawStrikeouts);
-  let homeRuns = Math.round(rawHomeRuns);
-  let singles = Math.round(rawSingles);
-  let doubles = Math.round(rawDoubles);
-  let triples = Math.round(rawTriples);
   const speed = 0; // Speed handled by player attributes, not card slots
+
+  // Total per-PA hit rate from individual hit categories
+  const totalHitRate = rates.singleRate + rates.doubleRate
+    + rates.tripleRate + rates.homeRunRate;
+
+  // Compensate total hit positions for average pitcher suppression.
+  // Card needs MORE hits than historical rate because average pitcher
+  // (grade 8) will suppress ~24% of hits: (8/15) * 0.45.
+  const compensatedHitRate = totalHitRate > 0
+    ? totalHitRate / (1 - AVG_HIT_SUPPRESSION)
+    : 0;
+  let totalHitPositions = Math.round(compensatedHitRate * FILLABLE_COUNT);
+
+  // Walks: no compensation (walk suppression models pitcher control separately)
+  let walks = Math.round(rates.walkRate * FILLABLE_COUNT);
+
+  // Strikeouts: not suppressed, allocate directly
+  let strikeouts = Math.round(rates.strikeoutRate * FILLABLE_COUNT);
 
   // Ensure at least 1 of major outcomes for qualifying batters
   if (rates.PA > 0) {
@@ -108,32 +153,44 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
     if (strikeouts === 0 && rates.strikeoutRate > 0) strikeouts = 1;
   }
 
-  // Calculate total allocated
-  let total = walks + strikeouts + homeRuns + singles + doubles + triples;
+  // Budget: leave at least 1 out slot
+  const budget = FILLABLE_COUNT - 1;
+  let allocated = walks + strikeouts + totalHitPositions;
 
-  // If we exceed budget, reduce one-at-a-time from the largest categories.
-  const budget = FILLABLE_COUNT - 1; // Reserve at least 1 out slot
-  while (total > budget) {
-    const vals = [
-      { name: 'walks', count: walks },
-      { name: 'strikeouts', count: strikeouts },
-      { name: 'singles', count: singles },
-      { name: 'homeRuns', count: homeRuns },
-      { name: 'doubles', count: doubles },
-      { name: 'triples', count: triples },
+  // If over budget, reduce hits first (they'll be partially suppressed anyway)
+  while (allocated > budget && totalHitPositions > 0) {
+    totalHitPositions--;
+    allocated--;
+  }
+  // If still over, reduce from largest non-hit category
+  while (allocated > budget) {
+    if (strikeouts >= walks) strikeouts--;
+    else walks--;
+    allocated--;
+  }
+
+  // Distribute hit positions among categories proportionally (largest remainder)
+  let homeRuns = 0;
+  let singles = 0;
+  let doubles = 0;
+  let triples = 0;
+
+  if (totalHitRate > 0 && totalHitPositions > 0) {
+    const rawValues = [
+      (rates.homeRunRate / totalHitRate) * totalHitPositions,
+      (rates.singleRate / totalHitRate) * totalHitPositions,
+      (rates.doubleRate / totalHitRate) * totalHitPositions,
+      (rates.tripleRate / totalHitRate) * totalHitPositions,
     ];
-    vals.sort((a, b) => b.count - a.count);
-    const largest = vals[0].name;
-    if (largest === 'walks') walks--;
-    else if (largest === 'strikeouts') strikeouts--;
-    else if (largest === 'singles') singles--;
-    else if (largest === 'homeRuns') homeRuns--;
-    else if (largest === 'doubles') doubles--;
-    else if (largest === 'triples') triples--;
-    total--;
+    const distributed = distributeByLargestRemainder(rawValues, totalHitPositions);
+    homeRuns = distributed[0];
+    singles = distributed[1];
+    doubles = distributed[2];
+    triples = distributed[3];
   }
 
   // Out slots absorb the remainder -- always at least 1 out slot
+  const total = walks + strikeouts + homeRuns + singles + doubles + triples;
   const outs = Math.max(1, FILLABLE_COUNT - total);
 
   return { walks, strikeouts, homeRuns, singles, doubles, triples, speed, outs };

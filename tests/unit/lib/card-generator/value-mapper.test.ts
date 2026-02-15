@@ -49,11 +49,12 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     expect(alloc.strikeouts).toBe(5);
   });
 
-  it('maps home run slots at 1:1 rate', () => {
-    // homeRunRate 0.06 * 1.0 * 24 = 1.44 -> round to 1
+  it('allocates HRs via hit compensation + largest remainder', () => {
+    // homeRunRate 0.06 with totalHitRate 0.295, compensated 0.388
+    // 9 total hit positions, HR proportion: 0.06/0.295 * 9 = 1.83 -> 2 (largest remainder)
     const rates = makeRates({ homeRunRate: 0.06 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBe(1);
+    expect(alloc.homeRuns).toBe(2);
   });
 
   it('allocates at least 1 walk slot when walkRate > 0', () => {

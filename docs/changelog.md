@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-02-15 - Hit Compensation in Card Generation (Batting Underperformance Fix)
+
+Batting averages were ~33 points below historical because Lahman stats already
+reflect facing average pitchers. When those rates were used directly for card
+generation AND then grade 8 (average) suppression was applied, the pitcher
+effect was double-counted.
+
+**Fix: Hit-compensated slot allocation with largest-remainder distribution.**
+Total hit positions are computed by dividing the raw hit rate by
+(1 - AVG_HIT_SUPPRESSION) where AVG_HIT_SUPPRESSION = 0.24 ((8/15) * 0.45).
+This gives the card MORE hits than the historical rate so that average-grade
+suppression brings it back to match historical stats.
+
+The hit positions are then distributed among categories (HR, 1B, 2B, 3B) using
+the largest-remainder method (Hamilton's method), which ensures:
+- Total hit count is exactly correct (no rounding loss across categories)
+- Each category gets its proportional share with minimal distortion
+
+Example: .270 hitter (totalHitRate = 0.250)
+- Old: 7 hit positions -> BA .237 vs grade 8 (33 points low)
+- New: 8 hit positions -> BA .270 vs grade 8 (exact match)
+
+Walk and strikeout allocation unchanged (no hit compensation applied).
+HIT_SUPPRESSION_SCALE and WALK_SUPPRESSION_SCALE unchanged at 0.45.
+
+Changes:
+- value-mapper.ts: Replace SCALE_FACTORS with AVG_HIT_SUPPRESSION compensation
+- value-mapper.ts: Add distributeByLargestRemainder() helper
+- value-mapper.ts: computeSlotAllocation() uses compensated total hits
+- value-mapper.test.ts: Update HR allocation expectation (1 -> 2)
+
+Files changed:
+- `src/lib/card-generator/value-mapper.ts`
+- `tests/unit/lib/card-generator/value-mapper.test.ts`
+
 ## 2026-02-15 - Fix Out Rate and Walk Suppression (4 Root Causes)
 
 After removing IDT, batting stats improved (BA .252-.303) but pitching stats
