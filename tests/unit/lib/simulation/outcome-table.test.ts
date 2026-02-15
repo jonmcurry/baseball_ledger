@@ -21,8 +21,8 @@ import { OutcomeCategory, OutcomeTableEntry } from '@lib/types/game';
 
 describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
   describe('OUTCOME_TABLE constant', () => {
-    it('contains 35 rows from IDT.OBJ', () => {
-      expect(OUTCOME_TABLE).toHaveLength(35);
+    it('contains 36 rows from IDT.OBJ', () => {
+      expect(OUTCOME_TABLE).toHaveLength(36);
     });
 
     it('every row has valid frequencyWeight (1-5)', () => {
@@ -59,27 +59,27 @@ describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
     });
 
     it('has last row matching IDT.OBJ specification', () => {
-      expect(OUTCOME_TABLE[34]).toEqual({
-        frequencyWeight: 5,
-        thresholdLow: 14,
-        thresholdHigh: 14,
-        outcomeIndex: 35,
+      expect(OUTCOME_TABLE[35]).toEqual({
+        frequencyWeight: 1,
+        thresholdLow: 5,
+        thresholdHigh: 10,
+        outcomeIndex: 15,
       });
     });
   });
 
   describe('getTotalWeight()', () => {
     it('sums all frequency weights in the table', () => {
-      // Sum: 1+4+2+3+1+2+3+1+2+4+1+3+1+2+1+3+1+1+5+1+2+1+1+4+1+3+2+3+1+4+1+1+2+1+5 = 74
+      // Sum: 1+4+2+3+1+2+3+1+2+4+1+3+1+2+1+3+1+1+5+1+2+1+1+4+1+3+2+3+1+4+1+1+2+1+5+1 = 75
       const total = getTotalWeight();
-      expect(total).toBe(74);
+      expect(total).toBe(75);
     });
   });
 
   describe('buildCumulativeWeights()', () => {
     it('returns an array of cumulative weights', () => {
       const cumulative = buildCumulativeWeights();
-      expect(cumulative).toHaveLength(35);
+      expect(cumulative).toHaveLength(36);
 
       // First entry is just the first weight
       expect(cumulative[0]).toBe(1);
@@ -88,7 +88,7 @@ describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
       expect(cumulative[1]).toBe(5); // 1 + 4
 
       // Last entry equals total weight
-      expect(cumulative[34]).toBe(74);
+      expect(cumulative[35]).toBe(75);
     });
 
     it('cumulative weights are always increasing or equal', () => {
@@ -100,12 +100,12 @@ describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
   });
 
   describe('selectWeightedRow()', () => {
-    it('returns a row index between 0 and 34', () => {
+    it('returns a row index between 0 and 35', () => {
       const rng = new SeededRNG(42);
       for (let i = 0; i < 100; i++) {
         const rowIndex = selectWeightedRow(rng);
         expect(rowIndex).toBeGreaterThanOrEqual(0);
-        expect(rowIndex).toBeLessThanOrEqual(34);
+        expect(rowIndex).toBeLessThanOrEqual(35);
       }
     });
 
@@ -213,7 +213,7 @@ describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
       const result = lookupOutcome(7, rng);
 
       expect(result.rowIndex).toBeGreaterThanOrEqual(0);
-      expect(result.rowIndex).toBeLessThanOrEqual(34);
+      expect(result.rowIndex).toBeLessThanOrEqual(35);
     });
 
     it('produces deterministic results with same seed and card value', () => {

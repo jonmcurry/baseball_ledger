@@ -30,16 +30,16 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
   // Create a test card with known values at non-structural positions
   function createTestCard(): CardValue[] {
     const card: CardValue[] = new Array(35).fill(7); // Default to 7 (SINGLE_CLEAN)
-    // Apply structural constants at positions 0, 2, 5, 10, 12, 17, 22, 24, 31
-    card[0] = 30;
-    card[2] = 28;
-    card[5] = 27;
-    card[10] = 26;
-    card[12] = 31;
-    card[17] = 29;
-    card[22] = 25;
-    card[24] = 32;
-    card[31] = 35;
+    // Apply structural constants at positions 1, 3, 6, 11, 13, 18, 23, 25, 32
+    card[1] = 30;
+    card[3] = 28;
+    card[6] = 27;
+    card[11] = 26;
+    card[13] = 31;
+    card[18] = 29;
+    card[23] = 25;
+    card[25] = 32;
+    card[32] = 35;
     return card;
   }
 
@@ -115,8 +115,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
 
     it('handles structural positions (returns value but should not normally be called)', () => {
       const card = createTestCard();
-      // Position 0 is structural with value 30
-      expect(readCardValue(card, 0)).toBe(30);
+      // Position 1 is structural with value 30
+      expect(readCardValue(card, 1)).toBe(30);
     });
   });
 

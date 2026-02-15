@@ -22,11 +22,15 @@ export const CARD_VALUES = {
   SB_OPPORTUNITY: 21, // r=+0.731
   SPEED_1: 23,        // r=+0.738
   SPEED_2: 36,        // r=+0.469
-  // Out values
-  OUT_GROUND: 30,     // r=-0.484
-  OUT_CONTACT: 26,    // r=-0.498
-  OUT_NONWALK: 31,    // r=-0.621
-  OUT_FLY: 24,        // r=variable
+  // Out values (bypass IDT, always outs via direct mapping)
+  OUT_GROUND: 30,     // r=-0.484, bypasses IDT (value > 25)
+  OUT_CONTACT: 26,    // r=-0.498, bypasses IDT (value > 25)
+  OUT_NONWALK: 31,    // r=-0.621, bypasses IDT (value > 25)
+  OUT_FLY: 24,        // r=variable, partially IDT-active
+  // Mixed "other" values observed on real APBA cards (position-specific)
+  POWER_GATE: 33,     // 75% of position 15 in real cards, bypasses IDT -> GROUND_OUT
+  SPECIAL_FLAG: 34,   // 70% of position 27 in real cards, bypasses IDT -> GROUND_OUT
+  ERROR_REACH: 40,    // Reached on error outcome, bypasses IDT
 } as const;
 
 /**
@@ -34,17 +38,22 @@ export const CARD_VALUES = {
  * Higher scale = more card positions allocated for that outcome.
  */
 /**
- * Scale factors compensate for IDT.OBJ table scrambling.
- * The outcome table converts ~40-60% of singles/walks to other outcomes,
- * so the card needs MORE positive-outcome positions to achieve target rates.
- * Values 0 (double), 1/37/41 (HR) bypass the table (below thresholdLow 5
- * or above all thresholdHigh values), so they keep scale 1.0.
+ * Scale factors for mapping rates to card position counts.
+ * With IDT.OBJ as primary resolution (BBW faithful), the table scrambles
+ * outcomes from mid-range card values (5-24). Scale factors are kept close
+ * to 1.0 to match real APBA card distributions observed in PLAYERS.DAT.
+ *
+ * Real APBA card analysis (Don Buford .290 BA):
+ *   singles: 6/26 (23%) vs rate 0.173 * 26 = 4.5 -> scale ~1.33
+ *   walks:   3/26 (12%) vs rate 0.122 * 26 = 3.2 -> scale ~0.95
+ *   Ks:      5/26 (19%) vs rate 0.175 * 26 = 4.6 -> scale ~1.10
+ *   HR:      1/26 (4%)  vs rate 0.037 * 26 = 1.0 -> scale ~1.0
  */
 const SCALE_FACTORS = {
-  walk: 2.0,
-  strikeout: 1.5,
+  walk: 1.0,
+  strikeout: 1.0,
   homeRun: 1.0,
-  single: 2.0,
+  single: 1.3,
   double: 1.0,
   triple: 1.0,
 } as const;
@@ -67,6 +76,7 @@ export interface SlotAllocation {
 /**
  * Compute how many of the 26 variable card positions to allocate
  * to each outcome type, based on the player's per-PA rates.
+ * (35 total - 9 structural = 26 variable positions)
  */
 export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   const VARIABLE_COUNT = 26;
@@ -222,11 +232,27 @@ export function fillVariablePositions(
     card[variablePositions[posIdx++]] = speedValues[Math.min(i, speedValues.length - 1)];
   }
 
-  // Fill remaining with out values (rotating through out types)
-  const outValues = [CARD_VALUES.OUT_GROUND, CARD_VALUES.OUT_CONTACT, CARD_VALUES.OUT_NONWALK, CARD_VALUES.OUT_FLY];
+  // Fill remaining with a mix of out values and "other" values.
+  // Real APBA cards use diverse values for non-positive positions:
+  // ~60% pure outs (26, 30, 31) that bypass IDT entirely
+  // ~30% position-specific "other" values (33, 34) that bypass IDT
+  // ~10% special values (40 = reached on error)
+  // This matches the value distribution observed in real PLAYERS.DAT cards.
+  const outMixValues = [
+    CARD_VALUES.OUT_GROUND,    // 30 - bypasses IDT
+    CARD_VALUES.OUT_CONTACT,   // 26 - bypasses IDT
+    CARD_VALUES.POWER_GATE,    // 33 - bypasses IDT (real card position 15)
+    CARD_VALUES.OUT_NONWALK,   // 31 - bypasses IDT
+    CARD_VALUES.SPECIAL_FLAG,  // 34 - bypasses IDT (real card position 27)
+    CARD_VALUES.OUT_GROUND,    // 30 - repeat pure out
+    CARD_VALUES.OUT_CONTACT,   // 26 - repeat pure out
+    CARD_VALUES.ERROR_REACH,   // 40 - reached on error (not AB, not hit)
+    CARD_VALUES.OUT_NONWALK,   // 31 - repeat pure out
+    CARD_VALUES.OUT_FLY,       // 24 - partially IDT-active
+  ];
   let outIdx = 0;
   while (posIdx < variablePositions.length) {
-    card[variablePositions[posIdx++]] = outValues[outIdx % outValues.length];
+    card[variablePositions[posIdx++]] = outMixValues[outIdx % outMixValues.length];
     outIdx++;
   }
 

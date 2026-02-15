@@ -19,7 +19,7 @@ import type { CardValue } from '@lib/types/player';
 
 describe('REQ-SIM-004b: Platoon Adjustment', () => {
   // Structural positions (0-indexed) from card-generator/structural.ts
-  const STRUCTURAL_POSITIONS = [0, 2, 5, 10, 12, 17, 22, 24, 31];
+  const STRUCTURAL_POSITIONS = [1, 3, 6, 11, 13, 18, 23, 25, 32];
   const STRUCTURAL_VALUES = [30, 28, 27, 26, 31, 29, 25, 32, 35];
 
   // Helper to create a test card with specific values
@@ -41,12 +41,12 @@ describe('REQ-SIM-004b: Platoon Adjustment', () => {
   function createCardWithOutValues(): CardValue[] {
     const card = createTestCard(7); // Base hit value
     // Add some out values at non-structural positions
-    // Structural positions are: 0, 2, 5, 10, 12, 17, 22, 24, 31
-    // So use non-structural positions: 1, 3, 4, 6, 7, 8, etc.
-    card[1] = 24;  // LINE_OUT at position 1 (non-structural)
-    card[3] = 26;  // GROUND_OUT at position 3 (non-structural)
+    // Structural positions are: 1, 3, 6, 11, 13, 18, 23, 25, 32
+    // So use non-structural positions: 0, 2, 4, 5, 7, 8, etc.
+    card[0] = 24;  // LINE_OUT at position 0 (non-structural)
+    card[2] = 26;  // GROUND_OUT at position 2 (non-structural)
     card[4] = 30;  // GROUND_OUT_ADVANCE at position 4 (non-structural)
-    card[6] = 31;  // FLY_OUT at position 6 (non-structural)
+    card[5] = 31;  // FLY_OUT at position 5 (non-structural)
     card[7] = 14;  // STRIKEOUT at position 7 (non-structural)
     card[8] = 14;  // STRIKEOUT at position 8 (non-structural)
     return card;
@@ -204,7 +204,7 @@ describe('REQ-SIM-004b: Platoon Adjustment', () => {
         const original = createCardWithOutValues();
         const adjusted = applyPlatoonAdjustment(original, 'L', 'R');
 
-        // Structural positions (0-indexed): 0, 2, 5, 10, 12, 17, 22, 24, 31
+        // Structural positions (0-indexed): 1, 3, 6, 11, 13, 18, 23, 25, 32
         for (const pos of STRUCTURAL_POSITIONS) {
           expect(adjusted[pos]).toBe(original[pos]);
         }

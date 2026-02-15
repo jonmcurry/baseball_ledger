@@ -18,7 +18,7 @@ import { OutcomeCategory } from '../types/game';
 const MAX_ATTEMPTS = 3;
 
 /**
- * The 35-row outcome table ported from APBA IDT.OBJ.
+ * The 36-row outcome table ported from APBA IDT.OBJ (144 bytes = 36 x 4).
  * Each row defines a frequency-weighted outcome mapping.
  *
  * frequencyWeight: 1-5, determines how often this row is selected
@@ -61,6 +61,7 @@ export const OUTCOME_TABLE: OutcomeTableEntry[] = [
   { frequencyWeight: 2, thresholdLow: 6, thresholdHigh: 12, outcomeIndex: 26 },
   { frequencyWeight: 1, thresholdLow: 5, thresholdHigh: 11, outcomeIndex: 19 },
   { frequencyWeight: 5, thresholdLow: 14, thresholdHigh: 14, outcomeIndex: 35 },
+  { frequencyWeight: 1, thresholdLow: 5, thresholdHigh: 10, outcomeIndex: 15 },
 ];
 
 /**

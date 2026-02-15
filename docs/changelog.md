@@ -1,34 +1,46 @@
 # Changelog
 
-## 2026-02-14 - Enable IDT.OBJ Outcome Table (APBA BBW Faithful Simulation)
+## 2026-02-14 - Correct PA Resolution Model (Grade Gates IDT)
 
-The simulation engine produced grossly inflated stats (BA .330-.423, HR 92-122,
-ERA 12-16) because it bypassed the IDT.OBJ outcome table entirely, using direct
-1:1 card-value-to-outcome mapping instead. In APBA BBW, every plate appearance
-goes through the IDT table first (REQ-SIM-004), which acts as a probabilistic
-outcome scrambler that naturally suppresses hit rates.
+Two critical bugs fixed in the simulation engine:
+
+**Bug 1: Structural positions off-by-one.** The 9 structural constant positions
+were incorrectly listed as [0,2,5,10,12,17,22,24,31] (SRD 1-indexed minus 1)
+but the reverse engineering data was already 0-indexed: [1,3,6,11,13,18,23,25,32].
+This caused the simulation to skip variable positions (singles, Ks, walks) and
+draw from structural positions (out values 25-35), producing wildly incorrect
+stats for real APBA cards.
+
+**Bug 2: Incorrect PA resolution model.** Correlation analysis proves card values
+directly encode outcomes (value 13 has r=.978 with walks, value 14 has r=.959
+with strikeouts). The IDT.OBJ table is NOT the primary resolution path -- it is
+the pitcher's defense mechanism. Correct BBW-faithful model:
+  card draw -> grade check -> batter wins? direct mapping : IDT table scrambling
+
+The pitcher grade check (R in [1,15], pitcher wins if R <= grade + 2) gates
+WHETHER the IDT table is consulted. Values outside IDT range (0-4, 26+) always
+use direct mapping regardless.
 
 Changes:
-- Enabled IDT.OBJ as primary PA resolution path in `plate-appearance.ts`.
-  `lookupOutcome()` (already implemented in `outcome-table.ts`) is now called
-  first; direct mapping via `getDirectOutcome()` serves as fallback after 3
-  failed table matches.
-- Increased card generator SCALE_FACTORS in `value-mapper.ts` to compensate for
-  IDT scrambling: singles 2.0x, walks 2.0x, strikeouts 1.5x. HR/doubles/triples
-  keep 1.0x because their card values (0, 1, 37, 41) bypass the table.
-- Fixed overflow bug in `computeSlotAllocation`: replaced proportional floor()
-  (which killed small allocations like HR to 0) with greedy largest-first
-  reduction that preserves all categories.
-- Reduced HIT_SUPPRESSION_SCALE from 0.20 to 0.10 since IDT provides natural
-  suppression.
-- Fixed realism tests to skip non-PA outcomes (STOLEN_BASE_OPP, WILD_PITCH, etc.)
-  and added IDT variety test proving 8+ outcome types from 600 PAs.
+- Fixed STRUCTURAL_POSITIONS from [0,2,5,...] to [1,3,6,...] in structural.ts
+- Rewrote resolvePlateAppearance() with grade-gates-IDT model
+- Added GRADE_CHECK_OFFSET=2 for baseline pitcher influence
+- Added IDT_RANGE_LOW/HIGH constants and isIDTActive() function
+- Reverted scale factors to 1.0x (no longer needed with correct model)
+- Updated all test expectations for corrected structural positions and PA model
+- Fixed outcome-table tests for 36-row table (was 35)
 
-- `src/lib/simulation/plate-appearance.ts` - IDT primary, direct fallback
-- `src/lib/card-generator/value-mapper.ts` - Scale factors + overflow fix
-- `tests/unit/lib/simulation/realism-check.test.ts` - Non-PA handling, variety test
-- `tests/unit/lib/simulation/plate-appearance.test.ts` - Updated for IDT behavior
-- `tests/unit/lib/card-generator/value-mapper.test.ts` - Updated for scale factors
+Files changed:
+- `src/lib/card-generator/structural.ts` - Fixed positions, added helpers
+- `src/lib/simulation/plate-appearance.ts` - Complete PA model rewrite
+- `tests/unit/lib/card-generator/structural.test.ts` - Corrected positions
+- `tests/unit/lib/card-generator/generator.test.ts` - Corrected positions
+- `tests/unit/lib/card-generator/pitcher-card.test.ts` - Corrected positions
+- `tests/unit/lib/card-generator/value-mapper.test.ts` - Scale factors + positions
+- `tests/unit/lib/simulation/outcome-table.test.ts` - 36 rows, weight 75
+- `tests/unit/lib/simulation/plate-appearance.test.ts` - New model tests
+- `tests/unit/lib/simulation/platoon.test.ts` - Corrected positions
+- `tests/unit/lib/simulation/realism-check.test.ts` - Updated assertions
 
 ## 2026-02-14 - Fix CPU Draft Roster Composition (SP Cap)
 

@@ -35,18 +35,18 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     expect(total).toBe(26);
   });
 
-  it('maps walk slots with IDT scale factor', () => {
-    // walkRate 0.10 * 2.0 * 26 = 5.2 -> round to 5
+  it('maps walk slots with scale factor', () => {
+    // walkRate 0.10 * 1.0 * 26 = 2.6 -> round to 3
     const rates = makeRates({ walkRate: 0.10 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.walks).toBe(5);
+    expect(alloc.walks).toBe(3);
   });
 
-  it('maps strikeout slots with IDT scale factor', () => {
-    // strikeoutRate 0.20 * 1.5 * 26 = 7.8 -> round to 8
+  it('maps strikeout slots with scale factor', () => {
+    // strikeoutRate 0.20 * 1.0 * 26 = 5.2 -> round to 5
     const rates = makeRates({ strikeoutRate: 0.20 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.strikeouts).toBe(8);
+    expect(alloc.strikeouts).toBe(5);
   });
 
   it('maps home run slots at 1:1 rate', () => {
@@ -159,15 +159,15 @@ describe('fillVariablePositions', () => {
     fillVariablePositions(card, alloc, 0.300);
 
     // Structural positions should be unchanged
-    expect(card[0]).toBe(30);
-    expect(card[2]).toBe(28);
-    expect(card[5]).toBe(27);
-    expect(card[10]).toBe(26);
-    expect(card[12]).toBe(31);
-    expect(card[17]).toBe(29);
-    expect(card[22]).toBe(25);
-    expect(card[24]).toBe(32);
-    expect(card[31]).toBe(35);
+    expect(card[1]).toBe(30);
+    expect(card[3]).toBe(28);
+    expect(card[6]).toBe(27);
+    expect(card[11]).toBe(26);
+    expect(card[13]).toBe(31);
+    expect(card[18]).toBe(29);
+    expect(card[23]).toBe(25);
+    expect(card[25]).toBe(32);
+    expect(card[32]).toBe(35);
   });
 
   it('contains walk values (13) in variable positions', () => {

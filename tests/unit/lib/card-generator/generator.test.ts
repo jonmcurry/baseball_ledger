@@ -66,15 +66,15 @@ describe('generateCard (REQ-DATA-005)', () => {
   it('preserves structural constants in every card', () => {
     for (const entry of pool.slice(0, 10)) {
       const card = generateCard(entry, leagueAverages, allPitcherERAs);
-      expect(card.card[0]).toBe(30);
-      expect(card.card[2]).toBe(28);
-      expect(card.card[5]).toBe(27);
-      expect(card.card[10]).toBe(26);
-      expect(card.card[12]).toBe(31);
-      expect(card.card[17]).toBe(29);
-      expect(card.card[22]).toBe(25);
-      expect(card.card[24]).toBe(32);
-      expect(card.card[31]).toBe(35);
+      expect(card.card[1]).toBe(30);
+      expect(card.card[3]).toBe(28);
+      expect(card.card[6]).toBe(27);
+      expect(card.card[11]).toBe(26);
+      expect(card.card[13]).toBe(31);
+      expect(card.card[18]).toBe(29);
+      expect(card.card[23]).toBe(25);
+      expect(card.card[25]).toBe(32);
+      expect(card.card[32]).toBe(35);
     }
   });
 
@@ -294,15 +294,15 @@ describe('generateAllCards', () => {
   it('all cards have valid structural constants', () => {
     const cards = generateAllCards(pool, leagueAverages);
     for (const card of cards) {
-      expect(card.card[0]).toBe(30);
-      expect(card.card[2]).toBe(28);
-      expect(card.card[5]).toBe(27);
-      expect(card.card[10]).toBe(26);
-      expect(card.card[12]).toBe(31);
-      expect(card.card[17]).toBe(29);
-      expect(card.card[22]).toBe(25);
-      expect(card.card[24]).toBe(32);
-      expect(card.card[31]).toBe(35);
+      expect(card.card[1]).toBe(30);
+      expect(card.card[3]).toBe(28);
+      expect(card.card[6]).toBe(27);
+      expect(card.card[11]).toBe(26);
+      expect(card.card[13]).toBe(31);
+      expect(card.card[18]).toBe(29);
+      expect(card.card[23]).toBe(25);
+      expect(card.card[25]).toBe(32);
+      expect(card.card[32]).toBe(35);
     }
   });
 

@@ -26,15 +26,15 @@ describe('generatePitcherBattingCard (REQ-DATA-005 Step 6)', () => {
 
   it('preserves structural constants', () => {
     const card = generatePitcherBattingCard();
-    expect(card[0]).toBe(30);
-    expect(card[2]).toBe(28);
-    expect(card[5]).toBe(27);
-    expect(card[10]).toBe(26);
-    expect(card[12]).toBe(31);
-    expect(card[17]).toBe(29);
-    expect(card[22]).toBe(25);
-    expect(card[24]).toBe(32);
-    expect(card[31]).toBe(35);
+    expect(card[1]).toBe(30);
+    expect(card[3]).toBe(28);
+    expect(card[6]).toBe(27);
+    expect(card[11]).toBe(26);
+    expect(card[13]).toBe(31);
+    expect(card[18]).toBe(29);
+    expect(card[23]).toBe(25);
+    expect(card[25]).toBe(32);
+    expect(card[32]).toBe(35);
   });
 
   it('floods variable positions with walks (14-18 of 26)', () => {

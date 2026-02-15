@@ -269,3 +269,162 @@ describe('Realism Check: Batting Average Simulation', () => {
     expect(outcomeTypes.size).toBeGreaterThanOrEqual(8);
   });
 });
+
+/**
+ * Real APBA Card Validation Tests
+ *
+ * Uses actual player cards from PLAYERS.DAT (1971 season) to validate
+ * the IDT.OBJ outcome table produces realistic statistics.
+ * This is the definitive test: if real APBA cards produce realistic
+ * stats through our system, the simulation is faithful to BBW.
+ */
+describe('Real APBA Card Validation', () => {
+  /**
+   * Don Buford - 1971 Baltimore Orioles
+   * Real stats: .290 BA, 19 HR, 62 BB, 89 SO in 449 AB / ~510 PA
+   * Card from PLAYERS.DAT (35 bytes):
+   */
+  const BUFORD_CARD: CardValue[] = [
+    14,30,11,28,30,7,27,13,8,29,9,26,6,31,14,33,28,14,29,8,14,13,9,25,16,32,8,13,40,22,31,14,35,1,0
+  ];
+
+  /**
+   * Frank Robinson - 1971 Baltimore Orioles
+   * Real stats: .281 BA, 28 HR, 62 BB, 72 SO
+   */
+  const FRANK_ROBINSON_CARD: CardValue[] = [
+    14,30,8,28,13,7,27,13,8,24,9,26,5,31,42,14,24,14,29,7,14,24,9,25,20,32,8,34,24,13,30,37,35,1,0
+  ];
+
+  /**
+   * Mark Belanger - 1971 Baltimore Orioles
+   * Real stats: .266 BA, 0 HR, 48 BB, 73 SO (no power, good defense)
+   */
+  const BELANGER_CARD: CardValue[] = [
+    14,30,8,28,30,7,27,13,8,32,9,26,7,31,39,14,24,14,29,8,14,13,9,25,20,32,8,34,23,26,31,22,35,0,2
+  ];
+
+  /**
+   * Mike Cuellar - Pitcher (L 14) batting
+   * Real stats: .103 BA - pitchers can barely hit
+   * Card flooded with value 13 (walk outcome)
+   */
+  const CUELLAR_CARD: CardValue[] = [
+    13,30,23,13,13,9,27,13,36,13,13,26,8,31,13,13,24,13,29,9,14,13,13,25,13,32,21,34,13,13,13,13,35,0,1
+  ];
+
+  function simulateCard(card: CardValue[], pitcherGrade: number, seeds: number, drawsPerSeed: number) {
+    let totalHits = 0;
+    let totalABs = 0;
+    let totalWalks = 0;
+    let totalKs = 0;
+    let totalHRs = 0;
+    let totalNonPA = 0;
+    let totalDraws = 0;
+
+    for (let s = 0; s < seeds; s++) {
+      const rng = new SeededRNG(s * 7919 + 42); // Different prime for each seed
+      for (let i = 0; i < drawsPerSeed; i++) {
+        totalDraws++;
+        const result = resolvePlateAppearance(card, pitcherGrade, rng);
+
+        if (NO_PA_OUTCOMES.has(result.outcome)) {
+          totalNonPA++;
+          continue;
+        }
+
+        if (WALK_OUTCOMES.has(result.outcome)) {
+          totalWalks++;
+          continue;
+        }
+
+        totalABs++;
+        if (HIT_OUTCOMES.has(result.outcome)) {
+          totalHits++;
+          if (result.outcome === OutcomeCategory.HOME_RUN ||
+              result.outcome === OutcomeCategory.HOME_RUN_VARIANT) {
+            totalHRs++;
+          }
+        }
+        if (STRIKEOUT_OUTCOMES.has(result.outcome)) {
+          totalKs++;
+        }
+      }
+    }
+
+    const realPAs = totalDraws - totalNonPA;
+    return {
+      ba: totalABs > 0 ? totalHits / totalABs : 0,
+      hrRate: realPAs > 0 ? totalHRs / realPAs : 0,
+      walkRate: realPAs > 0 ? totalWalks / realPAs : 0,
+      kRate: realPAs > 0 ? totalKs / realPAs : 0,
+      totalHits,
+      totalABs,
+      totalWalks,
+      totalKs,
+      totalHRs,
+      totalNonPA,
+      totalDraws,
+      realPAs,
+    };
+  }
+
+  it('Don Buford (.290 BA) card produces realistic batting average', () => {
+    const stats = simulateCard(BUFORD_CARD, 8, 20, 500);
+
+    // Buford hit .290 in real life; with IDT scrambling, expect [.200, .380]
+    expect(stats.ba).toBeGreaterThanOrEqual(0.200);
+    expect(stats.ba).toBeLessThanOrEqual(0.380);
+  });
+
+  it('Frank Robinson (.281 BA, 28 HR) card produces more HRs than Belanger (0 HR)', () => {
+    const robinsonStats = simulateCard(FRANK_ROBINSON_CARD, 8, 20, 500);
+    const belangerStats = simulateCard(BELANGER_CARD, 8, 20, 500);
+
+    // Robinson (28 HR) should produce more HRs than Belanger (0 HR)
+    expect(robinsonStats.totalHRs).toBeGreaterThan(belangerStats.totalHRs);
+  });
+
+  it('pitcher card (Cuellar .103 BA) walks much more than position player', () => {
+    const cuellarStats = simulateCard(CUELLAR_CARD, 8, 20, 500);
+    const bufordStats = simulateCard(BUFORD_CARD, 8, 20, 500);
+
+    // Pitcher card is flooded with value 13 (walk). When batter wins the grade
+    // check, these produce walks via direct mapping. When pitcher wins, IDT
+    // scrambles them to various outcomes (including some hits). The walk rate
+    // is the primary differentiator for pitcher cards.
+    expect(cuellarStats.walkRate).toBeGreaterThan(bufordStats.walkRate);
+    // Cuellar should have very high walk rate (15+ walk positions on card)
+    expect(cuellarStats.walkRate).toBeGreaterThan(0.20);
+  });
+
+  it('Belanger (0 HR) card produces very few home runs', () => {
+    const stats = simulateCard(BELANGER_CARD, 8, 20, 500);
+
+    // Belanger had 0 HR in real life. His card has no HR-correlated values.
+    // Through IDT, a few HRs might still appear, but the rate should be low.
+    expect(stats.hrRate).toBeLessThan(0.05); // Less than 5% HR rate
+  });
+
+  it('real cards produce distinct outcome categories (IDT table working)', () => {
+    const rng = new SeededRNG(42);
+    const draws = 600;
+    const outcomeTypes = new Set<OutcomeCategory>();
+
+    for (let i = 0; i < draws; i++) {
+      const result = resolvePlateAppearance(BUFORD_CARD, 8, rng);
+      outcomeTypes.add(result.outcome);
+    }
+
+    // Real APBA card through IDT should produce many distinct outcome types
+    expect(outcomeTypes.size).toBeGreaterThanOrEqual(8);
+  });
+
+  it('higher pitcher grade suppresses more hits on real card', () => {
+    const aceStats = simulateCard(BUFORD_CARD, 14, 30, 500);
+    const journeymanStats = simulateCard(BUFORD_CARD, 3, 30, 500);
+
+    // Grade 14 ace should suppress more hits than grade 3 journeyman
+    expect(aceStats.ba).toBeLessThan(journeymanStats.ba);
+  });
+});
