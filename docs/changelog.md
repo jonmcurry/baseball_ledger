@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-02-15 - WINBB.EXE Binary Analysis (Phase 1a Complete)
+
+Programmatic binary analysis of WINBB.EXE (1.12 MB, 16-bit NE, Borland C++)
+to determine the exact simulation architecture of BBW 3.0.
+
+Key findings:
+- IDT.OBJ IS the sole outcome resolver (no play result boards in BBW)
+- B3EHMSG.TBL is pure commentary data (47KB of message offset mappings)
+- Grade adjustment functions found: BJStartGradeAdj, BJReliefGradeAdj
+- Platoon and Type (batting characteristic) are separate ratings
+- Pitcher symbols encoded in position string text (Y/Z/W/X flags)
+- Complete PA flow: InitPlateAppearance -> Decisions -> BeginPlay -> EndOfPlay
+
+Remaining unknowns requiring Ghidra disassembly:
+1. Grade adjustment formulas (BJStartGradeAdj/BJReliefGradeAdj)
+2. Pitcher symbol override effects (K/X/Y/W/Z/G/H/L/M)
+3. Platoon + Type interaction with grade
+4. Byte pattern at 0x0F4D8F (possible IDT config table)
+
+Files added:
+- `docs/winbb-analysis-findings.md` - Comprehensive analysis results
+- `docs/ghidra-guide.md` - Step-by-step Ghidra disassembly guide
+- `docs/winbb-disassembly-plan.md` - Overall disassembly plan
+
 ## 2026-02-15 - Real APBA BBW IDT Table Re-enablement
 
 Replaced the flat hit/walk suppression model with the real APBA BBW IDT

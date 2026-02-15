@@ -1,126 +1,144 @@
 # System Requirements Document (SRD)  
-**Project:** Web-Based APBA Baseball Simulator (Mimic APBA Baseball for Windows v3.0)  
+**Project:** Reverse Engineering APBA Baseball for Windows v3.0 Installation Files  
 **Version:** 1.0  
-**Date:** February 2025  
-**Author:** Grok (based on user-provided info and public reverse-engineering knowledge)  
-**Goal:** Create a faithful web-based clone of the APBA Baseball for Windows v3.0 simulation engine, focusing on Master Game-style batter vs. pitcher resolution using 36-sided dice rolls, player cards, play result boards, pitcher grades/symbols, platoon adjustments, and runner advances.
+**Date:** 2025  
+**Objective:** Extract and understand the data formats and logic used in APBA Baseball for Windows v3.0 to recreate the core simulation engine in a modern web-based application (JavaScript/TypeScript).
 
-## 1. Project Overview
+## 1. Project Goal
 
-### 1.1 Purpose
-Replicate the core plate appearance (PA) resolution logic of APBA Baseball for Windows v3.0 (likely based on late-1990s/early-2000s Master Game rules).  
-The simulation must be deterministic given the same inputs (dice roll, cards, situation) but use RNG for dice in replays.  
-Target: Accurate aggregated stats over large samples (season replays) matching real/historical player performance.
+Create a precise digital replica of the APBA Baseball for Windows v3.0 simulation mechanics by reverse-engineering the original installation files from the CD.  
+The end goal is to extract:
 
-### 1.2 Scope
-- In-scope:  
-  - Dice roll (36 equally likely outcomes)  
-  - Batter card lookup (36 play-result numbers, optional second column)  
-  - Play result board lookup (by base/out situation, N, effective pitcher grade, fielding column)  
-  - Pitcher modifiers (grade adjustment via platoon/pull, symbols like K/X/Y/W/Z/G/H/L/M)  
-  - Basic outcome resolution (hit/out/walk/K/error/HBP) + runner advances  
-  - In-game stats tracking (AB, H, 2B/3B/HR, BB, K, etc.)  
+- Player card data structures (batter & pitcher attributes, including the 36 play-result numbers)
+- Play result board lookup tables (the core outcome charts)
+- Any supporting game logic tables (platoon adjustments, symbol effects, runner advance rules, etc.)
 
-- Out-of-scope (for v1):  
-  - Full UI / team management / league play  
-  - Detailed fielding ratings per player  
-  - Sacrifice bunts, hit-and-run, stealing logic  
-  - Park factors, weather, injuries  
+This will allow faithful recreation of plate appearance resolution without relying on approximations or external card generators.
 
-### 1.3 Key Constraints
-- Must match v3.0 behavior exactly where possible (extract data from user's install files).  
-- Web-based → JavaScript/TypeScript (Node or browser).  
-- No access to proprietary APBA source code → rely on file extraction + public reverse-engineering.
+## 2. Known Characteristics of APBA Baseball for Windows v3.0
 
-## 2. Core Simulation Algorithm
+- Released in the late 1990s / early 2000s
+- 16-bit or early 32-bit Windows application (runs on Windows 3.1/95/98/ME/2000/XP compatibility mode)
+- Core simulation is a direct port of the APBA Master Game board game rules
+- Uses **36 equally likely outcomes** (simulated dice roll: 11–66)
+- Each batter has **36 play-result numbers** (0–41 range, many cards have primary + secondary column)
+- Pitchers have **letter or numeric grade** + **symbols** (K, X, Y, W, Z, G, H, L, M, etc.)
+- Play result boards vary by **base/out situation** (≈8–10 situations)
+- Outcomes modified by **effective pitcher grade**, **fielding column**, **pitcher symbols**, **platoon/pull adjustments**
 
-### 2.1 Plate Appearance Flow
-1. Generate dice roll: integer 0–35 (or 11–66 format: red die 1–6 × white die 1–6).  
-2. Lookup batter card:  
-   - n = batterCard.primary[roll]  
-   - If n === 0 (or marker) and has second column: re-roll and use batterCard.secondary[roll]  
-3. Determine effective pitcher grade:  
-   - Base = pitcher.grade (A=best → D=worst or numeric)  
-   - Adjust via batter BC (SA/PL/PR/PB) + platoon numbers + handedness  
-4. Get current situation key: one of ~8–10 base/out states (e.g., "000-0", "100-1", "111-2")  
-5. Lookup play result board:  
-   - Input: situation, n (1–41), effective_grade, fielding_column (1/2/3 based on defense)  
-   - Output: event (e.g., "1B LF", "K", "FO CF", "GO 4-3 DP", "W", "E-5"), advance rules, hit valuation  
-6. Apply pitcher symbols overrides (Master Game):  
-   - K/X/Y → force strikeout on eligible results  
-   - W → force walk  
-   - Z → nullify walk  
-   - G/H/L/M → convert HR ↔ 2B  
-7. Resolve runner advances (fixed + possible extra roll for OF arms)  
-8. Update game state (bases, outs, runs, player stats)
+## 3. Expected File Types in the Installation
 
-### 2.2 Data Structures (Suggested)
-```ts
-interface BatterCard {
-  primary: number[];          // 36 entries, values 0–41
-  secondary?: number[];       // optional re-roll column
-  bc: 'SA' | 'PL' | 'PR' | 'PB';
-  platoon: { vsL: number; vsR: number };
-  speed: 'F' | 'S' | 'A' | etc.;
-  hand: 'L' | 'R' | 'S';
-}
+Typical files found on APBA Baseball for Windows CDs/installations:
 
-interface Pitcher {
-  grade: number | string;     // e.g. 1–30 numeric or A–D
-  symbols: Set<string>;       // 'K','X','Y','W','Z','G','H','L','M', etc.
-  hand: 'L' | 'R';
-  fatigue?: number;
-}
+- **Executables**  
+  - BASEBALL.EXE, BBALL.EXE, APBA.EXE, GAME.EXE, SIM.EXE (main program — most likely contains play result boards)
 
-type Situation = string;       // e.g. "000-0outs", "123-2outs"
-type PlayResult = {
-  event: string;
-  location?: string;
-  advances: string;           // e.g. "runners advance 2 bases", "forced at home"
-  isOut: boolean;
-  isK: boolean;
-  isBB: boolean;
-  // etc.
-};
-2.3 Lookup Boards
+- **Data files**  
+  - *.DAT (player cards, teams, seasons, parks)  
+  - *.ROS (roster files)  
+  - *.FRN (franchise/organization files)  
+  - *.C (commissioner files)  
+  - *.BKP (backup files)  
+  - *.MDB (older versions sometimes used Microsoft Access databases)
 
-8+ situations × ~41 rows × 4–5 columns (grades A/B/C/D + fielding cols)
-Extract from user's v3.0 install (likely hard-coded in BASEBALL.EXE or .DAT resource)
-Public hints: search .EXE for strings "SINGLE", "DOUBLE", "HOME RUN", "STRIKEOUT", "GROUND OUT 6-3"
+- **Resource / configuration**  
+  - *.DLL (possible resource overlays or data modules)  
+  - *.INI or *.CFG (settings)
 
-3. Data Extraction Plan (From User's v3.0 Install)
-3.1 Files to Locate
+## 4. Reverse Engineering Targets
 
-Main executable: BASEBALL.EXE / BBALL.EXE / APBA.EXE → contains play result boards (search hex/strings)
-Roster/season files: .DAT, .ROS, .FRN, .C, .MDB, .BKP → player cards (36 nums per batter)
-Any resource .DLL or data folder under DATA/SEASONS/TEAMS
+### 4.1 Priority 1 – Play Result Boards
+- Goal: Reconstruct the lookup tables that map:
+  - Situation (bases + outs)
+  - Play result number (N: 1–41)
+  - Effective pitcher grade
+  - Fielding column (1/2/3)
+  → Outcome (hit type/location, out type, walk, strikeout, error, etc.) + runner advance rules
 
-3.2 Extraction Steps
+- Expected location: Hard-coded inside the main .EXE or in a separate large .DAT file  
+- Search techniques:
+  - String search for outcome phrases:  
+    "SINGLE", "DOUBLE", "TRIPLE", "HOME RUN", "STRIKEOUT", "WALK", "GROUND OUT", "FLY OUT", "LINE OUT", "ERROR", "FOUL OUT", "POP OUT", "INFIELD FLY", "DP", "TP"
+  - Look for repeated blocks with numbers 1–41 near these strings
+  - Look for grade identifiers (A,B,C,D or 1–30)
 
-Hex editor / strings tool on .EXE → find outcome text blocks → map N → result per grade/situation
-Open roster .DAT/.MDB with hex viewer or Access → parse player records (likely fixed-length or delimited)
-Batter: name, 36 bytes/ints, BC byte, platoon bytes, speed byte
-Pitcher: name, grade byte, symbol bitflags
+### 4.2 Priority 2 – Player Card Data Format
+- Each batter record likely contains:
+  - Name / ID / team / position / hand / speed
+  - 36 primary play-result numbers (1 byte or 2 bytes each)
+  - Optional secondary column (36 numbers, often flagged by 0 or special value)
+  - Batting Characteristic (SA, PL, PR, PB)
+  - Platoon adjustments (two numbers: vs LHP, vs RHP)
+  - Speed rating (F/S or numeric)
 
-If .MDB found → use MDB viewer to export tables
+- Each pitcher record likely contains:
+  - Name / ID / team / hand
+  - Grade (byte: A=1, B=2, C=3, D=4 or numeric)
+  - Symbols (bitfield or list of flags: K, X, Y, W, Z, G, H, L, M, etc.)
 
-4. Non-Functional Requirements
+- Expected format:
+  - Fixed-length records (common in 90s/2000s sports sims)
+  - Or delimited / header-based structure
 
-Performance: Handle 10,000+ simulated PAs/second (JS should be fine)
-Accuracy: Aggregated stats within ~1–2% of real after full season
-Reproducibility: Seedable RNG for dice rolls
-Extensibility: Easy to add Basic Game boards, newer symbols, custom seasons
+### 4.3 Priority 3 – Supporting Tables
+- Platoon adjustment matrix
+- Symbol effect rules (which results can be overridden to K, W, etc.)
+- Runner advance tables (extra base chances by arm strength)
+- Error chance formulas
+- Fatigue / stamina rules
 
-5. Next Steps / Open Questions
+## 5. Recommended Reverse Engineering Workflow
 
-User to provide: directory listing + key file names from v3.0 install
-Identify exact file format for player cards (offset, length per player)
-Transcribe/sample 1–2 play result board sections from .EXE strings
-Decide: browser-only sim vs. Node backend
+1. **Inventory the CD/installation**
+   - List all files and directories
+   - Note file sizes (large files are likely data or executables)
 
-6. References
+2. **Extract readable strings**
+   - Use `strings` (Linux/Mac) or Strings.exe (Windows Sysinternals) on .EXE and large .DAT files
+   - Look for clusters of baseball terms, especially outcome phrases
 
-APBA Master Game Instructions (public PDF from apbagames.com/downloads)
-Fan forums: Delphi APBA Between the Lines, APBA Blog, Reddit r/APBABaseball
-Card generators: compuducksports.com/cardcomp (for validation)
-YouTube tutorials: APBA Baseball for Windows gameplay / card viewing
+3. **Identify the main executable**
+   - Open the largest .EXE in a hex editor (HxD, 010 Editor, etc.)
+   - Search for outcome strings → note offsets
+   - Look for repeated numeric patterns (01 02 03 ... 41)
+
+4. **Locate player data files**
+   - Open .DAT / .ROS / .MDB files
+   - Look for player names (ASCII) + nearby binary data
+   - Estimate record size by looking for repeating patterns every N bytes
+
+5. **Document findings**
+   - Create tables showing:
+     - Offset / location
+     - Format (byte, word, string)
+     - Sample values
+     - Inferred meaning
+
+6. **Build parsers**
+   - Write Python / Node.js scripts to:
+     - Dump all player cards from roster files
+     - Extract and pretty-print play result boards
+     - Validate by comparing known players to real APBA cards
+
+## 6. Tools Recommended
+
+- Hex editors: HxD, 010 Editor, ImHex
+- Strings extraction: Sysinternals Strings, binwalk, `strings` command
+- Disassemblers (advanced): Ghidra, IDA Free
+- Database viewers: MDB Viewer, Microsoft Access (for .MDB files)
+- Programming: Python (struct, binascii), Node.js (Buffer), TypeScript
+
+## 7. Deliverables Expected from Implementation
+
+- Python/Node script to parse roster .DAT files → output JSON of all players/cards
+- Structured representation of play result boards (JSON, TS objects, or markdown tables)
+- Sample lookup function that takes (situation, N, grade, symbols) → returns outcome string
+- Documentation of discovered file formats (record layouts, field offsets, types)
+
+## 8. Success Criteria
+
+- Can extract and read the 36 play-result numbers for any player in a sample season file
+- Can reconstruct at least one full play result board section (e.g., bases empty, 0 outs)
+- Can simulate a plate appearance using extracted data and match known APBA behavior
+
+End of SRD
