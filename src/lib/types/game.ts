@@ -102,6 +102,8 @@ export interface PitchingLine {
   SO: number;
   HR: number;
   BF: number;
+  CG: number;
+  SHO: number;
   decision: 'W' | 'L' | 'SV' | 'HLD' | 'BS' | null;
 }
 

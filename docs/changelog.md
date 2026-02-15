@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-02-15 - Fix Run Scoring and CG/SHO Tracking
+
+Fixed two bugs causing incorrect individual stats:
+
+1. **Runner R credit** (game-runner.ts): Runners who crossed home plate on hits,
+   walks, or bunts were not getting R (runs scored) credited to their individual
+   batting lines. Only the batter's R was tracked. Added `creditRunnerRuns()`
+   helper that compares base state before/after each resolution to identify which
+   runners scored. Applied in all 3 run-scoring paths: standard PA, IBB, and bunt.
+   Validated with test: individual R totals now match team scores across 30 games.
+
+2. **CG/SHO tracking** (game.ts, game-runner.ts, game-result.ts, accumulator.ts):
+   PitchingLine was missing CG and SHO fields entirely. Added fields, marked CG=1
+   for starters who are the only pitcher used by their team, SHO=1 when CG and R=0.
+   Updated accumulator to increment from game lines instead of copying zeroes.
+
 ## 2026-02-15 - Fix Simulation Stat Inflation (6 Bugs)
 
 Fixed 6 interacting bugs that caused wildly inflated stats (walks 150-300/player,

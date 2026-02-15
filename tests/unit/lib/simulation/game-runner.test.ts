@@ -552,5 +552,58 @@ describe('game-runner', () => {
       expect(result1.innings).toBe(result2.innings);
       expect(result1.playByPlay.length).toBe(result2.playByPlay.length);
     });
+
+    it('individual R totals match team scores across multiple games', () => {
+      const homePlayerIds = new Set(
+        makeDefaultConfig().homeLineup.map((s) => s.playerId),
+      );
+
+      for (let seed = 1; seed <= 30; seed++) {
+        const result = runGame(makeDefaultConfig(seed));
+
+        let homeR = 0;
+        let awayR = 0;
+        for (const line of result.playerBattingLines) {
+          if (homePlayerIds.has(line.playerId)) {
+            homeR += line.R;
+          } else {
+            awayR += line.R;
+          }
+        }
+
+        expect(homeR).toBe(result.homeScore);
+        expect(awayR).toBe(result.awayScore);
+      }
+    });
+
+    it('CG/SHO fields are present on pitching lines', () => {
+      const result = runGame(makeDefaultConfig());
+      for (const line of result.playerPitchingLines) {
+        expect(line.CG).toBeDefined();
+        expect(line.SHO).toBeDefined();
+      }
+    });
+
+    it('CG is marked for starters who pitch the entire game', () => {
+      let cgFound = false;
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = runGame(makeDefaultConfig(seed));
+        for (const line of result.playerPitchingLines) {
+          if (line.CG === 1) {
+            cgFound = true;
+            // CG pitcher must have pitched at least 9 IP
+            expect(line.IP).toBeGreaterThanOrEqual(9);
+          }
+          // SHO implies CG
+          if (line.SHO === 1) {
+            expect(line.CG).toBe(1);
+            expect(line.R).toBe(0);
+          }
+        }
+        if (cgFound) break;
+      }
+      // In 100 games, at least one CG should occur
+      expect(cgFound).toBe(true);
+    });
   });
 });

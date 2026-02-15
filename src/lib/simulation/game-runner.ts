@@ -36,6 +36,7 @@ import {
 } from './engine';
 import { resolvePlateAppearance } from './plate-appearance';
 import { resolveOutcome } from './outcome-resolver';
+import type { OutcomeResolution } from './outcome-resolver';
 import { computeEffectiveGrade, computeGameGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
 import type { PitcherGameState, GradeContext } from './pitching';
 import {
@@ -211,6 +212,55 @@ function initPitcherState(): PitcherGameState {
     isNoHitter: true,
     runDeficit: 0,
   };
+}
+
+/**
+ * Credit runs scored (R) to individual runners who crossed home plate.
+ *
+ * The OutcomeResolution provides aggregate runsScored but not which specific
+ * runners scored. We compare base state before and after to identify runners
+ * who disappeared from the bases. Runners disappear in priority order:
+ * 3B first, then 2B, then 1B (matching advanceAllRunners in outcome-resolver).
+ *
+ * The batter's R is handled separately (batterDestination === 'scored'),
+ * so we subtract that from the count of runs to attribute to runners.
+ */
+function creditRunnerRuns(
+  tracker: GameTracker,
+  basesBefore: BaseState,
+  resolution: OutcomeResolution,
+): void {
+  if (resolution.runsScored <= 0) return;
+
+  // How many runs came from baserunners (not the batter)?
+  let runnerRuns = resolution.runsScored;
+  if (resolution.batterDestination === 'scored') {
+    runnerRuns--;
+  }
+  if (runnerRuns <= 0) return;
+
+  // Collect runners before the play in scoring priority order (3B, 2B, 1B)
+  const runnersBefore: string[] = [];
+  if (basesBefore.third !== null) runnersBefore.push(basesBefore.third);
+  if (basesBefore.second !== null) runnersBefore.push(basesBefore.second);
+  if (basesBefore.first !== null) runnersBefore.push(basesBefore.first);
+
+  // Runners still on base after the play
+  const runnersAfter = new Set<string>();
+  if (resolution.basesAfter.first !== null) runnersAfter.add(resolution.basesAfter.first);
+  if (resolution.basesAfter.second !== null) runnersAfter.add(resolution.basesAfter.second);
+  if (resolution.basesAfter.third !== null) runnersAfter.add(resolution.basesAfter.third);
+
+  // Runners who disappeared from bases scored (in priority order)
+  let credited = 0;
+  for (const runnerId of runnersBefore) {
+    if (credited >= runnerRuns) break;
+    if (!runnersAfter.has(runnerId)) {
+      const runnerLine = getOrCreateBattingLine(tracker, runnerId);
+      runnerLine.R++;
+      credited++;
+    }
+  }
 }
 
 function getOrCreateBattingLine(
@@ -473,6 +523,7 @@ export function runGame(config: RunGameConfig): GameResult {
         pitchingLine.BB++;
         pitchingLine.BF++;
 
+        const ibbBasesBefore = { ...state.bases };
         const ibbResolution = resolveOutcome(OutcomeCategory.WALK_INTENTIONAL, state.bases, state.outs, batterSlot.playerId);
         state = {
           ...state,
@@ -490,6 +541,8 @@ export function runGame(config: RunGameConfig): GameResult {
           pitchingLine.ER += ibbResolution.runsScored - unearned;
           currentPitcherState.earnedRuns += ibbResolution.runsScored - unearned;
           currentPitcherState.isShutout = false;
+          // Credit R to runners who scored on the IBB
+          creditRunnerRuns(tracker, ibbBasesBefore, ibbResolution);
         }
 
         tracker.consecutiveHitsWalks++;
@@ -524,6 +577,7 @@ export function runGame(config: RunGameConfig): GameResult {
         }
 
         // Resolve the bunt outcome against base state
+        const buntBasesBefore = { ...state.bases };
         const buntResolution = resolveOutcome(buntResult.outcome, state.bases, state.outs, batterSlot.playerId);
 
         if (isHitOutcome(buntResult.outcome)) {
@@ -548,6 +602,8 @@ export function runGame(config: RunGameConfig): GameResult {
           pitchingLine.ER += buntResolution.runsScored - unearned;
           currentPitcherState.earnedRuns += buntResolution.runsScored - unearned;
           currentPitcherState.isShutout = false;
+          // Credit R to runners who scored on the bunt
+          creditRunnerRuns(tracker, buntBasesBefore, buntResolution);
         }
 
         state = {
@@ -640,6 +696,7 @@ export function runGame(config: RunGameConfig): GameResult {
       }
 
       // Resolve outcome against base/out state
+      const basesBefore = { ...state.bases };
       const resolution = resolveOutcome(outcome, state.bases, state.outs, batterSlot.playerId);
 
       // Update batting line
@@ -680,6 +737,9 @@ export function runGame(config: RunGameConfig): GameResult {
         if (resolution.batterDestination === 'scored') {
           battingLine.R++;
         }
+
+        // Credit R to baserunners who crossed home plate
+        creditRunnerRuns(tracker, basesBefore, resolution);
       }
 
       // Runners who scored
@@ -854,6 +914,24 @@ export function runGame(config: RunGameConfig): GameResult {
   const pitchingLinesArray = Array.from(tracker.pitchingLines.values());
   const withDecisions = assignPitcherDecisions(pitchingLinesArray, state.homeScore, state.awayScore);
 
+  // Mark CG/SHO: a starter who was the only pitcher used by their team
+  const homePitcherCount = state.homeTeam.pitchersUsed.length;
+  const awayPitcherCount = state.awayTeam.pitchersUsed.length;
+  for (const line of withDecisions) {
+    if (line.isStarter) {
+      const isOnlyPitcher = line.teamSide === 'home'
+        ? homePitcherCount === 1
+        : awayPitcherCount === 1;
+      if (isOnlyPitcher) {
+        line.CG = 1;
+        // SHO: CG + zero runs allowed
+        if (line.R === 0) {
+          line.SHO = 1;
+        }
+      }
+    }
+  }
+
   const winnerLine = withDecisions.find((l) => l.decision === 'W');
   const loserLine = withDecisions.find((l) => l.decision === 'L');
   const saveLine = withDecisions.find((l) => l.decision === 'SV');
@@ -886,6 +964,8 @@ export function runGame(config: RunGameConfig): GameResult {
     SO: l.SO,
     HR: l.HR,
     BF: l.BF,
+    CG: l.CG,
+    SHO: l.SHO,
     decision: l.decision,
   }));
 
