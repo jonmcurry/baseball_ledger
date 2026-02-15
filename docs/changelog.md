@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-15 - Redesign Standings Page with League Grouping
+
+Redesigned the Standings page to group divisions by league. AL divisions now
+appear together under an "American League" header, NL under "National League".
+
+- StandingsTable groups divisions by leagueDivision ('AL' | 'NL')
+- League headers with decorative double-rule lines and diamond ornaments
+- Division sub-headers with accent bar and trailing rule
+- Table headers with gradient background and refined column styling
+- Alternating row backgrounds for readability
+- Streak column: colored W/L badges (green for wins, red for losses)
+- Run differential column: green for positive, red for negative
+- User team name highlighted in accent color
+- StandingsPage header updated to gazette-style typography
+
+## 2026-02-15 - Vintage Baseball Almanac Restyle & Header Redesign
+
+Restyled entire frontend from dark "Ballpark Night" theme to vintage baseball
+almanac aesthetic. Redesigned header banner removing baseball stitching SVGs,
+replacing with gazette-style masthead with double-rule lines and diamond
+ornaments. Removed "APBA Baseball Simulation" copyright references.
+
 ## 2026-02-15 - Implement Ghidra Findings into Simulation Engine
 
 Applied all Ghidra decompilation findings to the simulation engine, replacing
