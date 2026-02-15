@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option D: Tobacco Road - Baseball Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface-base: #2C1A0E;
+    --surface-raised: #3A2416;
+    --surface-overlay: #4A3020;
+    --surface-highlight: #5A3C28;
+    --text-primary: #F0E4D0;
+    --text-secondary: #C4AA8C;
+    --text-tertiary: #8A7462;
+    --accent-primary: #8B1A2B;
+    --accent-hover: #A82238;
+    --accent-muted: rgba(139,26,43,0.15);
+    --semantic-success: #5C9B4A;
+    --semantic-danger: #C44040;
+    --gold: #C8A55A;
+    --gold-bright: #E4C06A;
+    --border-default: #6B5040;
+    --border-subtle: #524030;
+    --tobacco-tan: #C4A878;
+    --font-display: 'Archivo Black', 'Impact', sans-serif;
+    --font-body: 'Source Sans 3', system-ui, sans-serif;
+    --font-stat: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--surface-base);
+    color: var(--text-primary);
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  }
+
+  .design-label {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--accent-primary); color: #F0E4D0;
+    text-align: center; padding: 8px; font-family: var(--font-display);
+    font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+
+  /* ---- Header ---- */
+  .header {
+    margin-top: 36px;
+    background: linear-gradient(180deg, #1A0E06 0%, var(--surface-base) 50%, var(--surface-raised) 100%);
+    border-bottom: 4px solid var(--accent-primary);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 80%, rgba(200,165,90,0.06) 0%, transparent 60%);
+  }
+  .header-user {
+    position: relative; z-index: 1;
+    display: flex; justify-content: flex-end; padding: 12px 24px 0;
+    font-size: 12px; color: var(--text-tertiary);
+    gap: 12px; align-items: center;
+  }
+  .header-user button {
+    font-family: var(--font-body); font-weight: 600;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    border: 1px solid var(--border-default); background: none;
+    color: var(--text-secondary); padding: 4px 14px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .header-user button:hover {
+    border-color: var(--gold); color: var(--gold);
+  }
+  .masthead {
+    position: relative; z-index: 1;
+    padding: 12px 24px 24px; text-align: center;
+  }
+  .masthead-frame {
+    display: inline-block; padding: 12px 40px;
+    border: 2px solid var(--gold);
+    position: relative;
+  }
+  .masthead-frame::before, .masthead-frame::after {
+    content: ''; position: absolute;
+    width: 8px; height: 8px;
+    border: 1px solid var(--gold); transform: rotate(45deg);
+  }
+  .masthead-frame::before { top: -5px; left: 50%; margin-left: -4px; background: var(--surface-base); }
+  .masthead-frame::after { bottom: -5px; left: 50%; margin-left: -4px; background: var(--surface-base); }
+  .title {
+    font-family: var(--font-display); font-size: 40px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--gold-bright);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 20px rgba(200,165,90,0.15);
+  }
+  .title-sub {
+    font-family: var(--font-stat); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.35em;
+    color: var(--text-tertiary); margin-top: 6px;
+  }
+  .league-name {
+    font-family: var(--font-body); font-size: 14px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--accent-primary); margin-top: 14px;
+  }
+
+  /* ---- Nav ---- */
+  .nav {
+    display: flex; justify-content: center; gap: 0;
+    background: var(--surface-overlay);
+    border-top: 1px solid var(--border-default);
+  }
+  .nav a {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-secondary); text-decoration: none;
+    padding: 10px 18px; transition: all 0.2s;
+    border-right: 1px solid var(--border-subtle);
+  }
+  .nav a:first-child { border-left: 1px solid var(--border-subtle); }
+  .nav a:hover { color: var(--gold); background: rgba(200,165,90,0.06); }
+  .nav a.active { color: var(--gold-bright); background: var(--accent-primary); }
+
+  /* ---- Content ---- */
+  .content { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+  .page-title {
+    font-family: var(--font-display); font-size: 26px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--gold);
+    text-shadow: 0 0 15px rgba(200,165,90,0.15);
+  }
+  .page-title-line {
+    height: 3px; width: 48px; margin-top: 6px;
+    background: var(--accent-primary);
+  }
+
+  /* ---- League Header ---- */
+  .league-header { margin: 28px 0 16px; }
+  .league-header-ornament {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; padding: 10px 0;
+  }
+  .league-header-ornament .rule {
+    height: 1px; width: 50px; background: var(--gold); opacity: 0.4;
+  }
+  .league-header-ornament .rule-thick {
+    height: 2px; width: 30px; background: var(--accent-primary);
+  }
+  .league-header-ornament .diamond {
+    width: 7px; height: 7px; background: var(--accent-primary);
+    transform: rotate(45deg);
+  }
+  .league-header-title {
+    text-align: center;
+    font-family: var(--font-display); font-size: 16px;
+    text-transform: uppercase; letter-spacing: 0.25em;
+    color: var(--gold);
+  }
+
+  /* ---- Division ---- */
+  .division { margin-bottom: 24px; }
+  .division-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  }
+  .division-badge {
+    background: var(--accent-primary); color: var(--gold-bright);
+    font-family: var(--font-stat); font-size: 9px; font-weight: 600;
+    padding: 2px 8px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .division-name {
+    font-family: var(--font-body); font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-primary);
+  }
+  .division-rule { flex: 1; height: 1px; background: var(--border-default); }
+
+  /* ---- Table ---- */
+  .standings-table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--font-stat); font-size: 13px;
+    border: 1px solid var(--border-default);
+    border-radius: 2px; overflow: hidden;
+  }
+  .standings-table thead tr {
+    background: linear-gradient(180deg, var(--surface-overlay), var(--surface-highlight));
+    border-bottom: 2px solid var(--gold);
+  }
+  .standings-table th {
+    padding: 8px; text-align: right;
+    font-family: var(--font-body); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--gold);
+  }
+  .standings-table th:first-child { text-align: left; padding-left: 12px; }
+  .standings-table td {
+    padding: 6px 8px; text-align: right;
+    border-bottom: 1px solid var(--border-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .standings-table td:first-child {
+    text-align: left; padding-left: 12px;
+    font-family: var(--font-body); font-weight: 600;
+  }
+  .standings-table tr:nth-child(even) { background: var(--surface-raised); }
+  .standings-table tr:hover { background: rgba(200,165,90,0.06); cursor: pointer; }
+  .standings-table tr.user-team { background: rgba(139,26,43,0.12); }
+  .standings-table tr.user-team td:first-child { color: var(--gold-bright); }
+  .diff-pos { color: var(--semantic-success); }
+  .diff-neg { color: var(--semantic-danger); }
+  .streak-w {
+    display: inline-block; background: rgba(92,155,74,0.15);
+    color: var(--semantic-success); padding: 1px 5px;
+    font-size: 10px; font-weight: 600;
+  }
+  .streak-l {
+    display: inline-block; background: rgba(196,64,64,0.15);
+    color: var(--semantic-danger); padding: 1px 5px;
+    font-size: 10px; font-weight: 600;
+  }
+
+  /* ---- Scoreboard ---- */
+  .scoreboard { margin-top: 36px; }
+  .scoreboard-header {
+    background: var(--accent-primary);
+    padding: 6px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .scoreboard-header span:first-child {
+    font-family: var(--font-display); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--gold-bright);
+  }
+  .scoreboard-header span:last-child {
+    font-family: var(--font-stat); font-size: 10px; color: rgba(240,228,208,0.5);
+  }
+  .scoreboard-strip {
+    display: flex; gap: 12px; padding: 16px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border-default); border-top: none;
+    overflow-x: auto;
+  }
+  .game-card {
+    flex-shrink: 0; width: 200px;
+    background: linear-gradient(160deg, var(--surface-overlay), var(--surface-highlight));
+    border: 1px solid var(--border-default);
+    border-radius: 4px; overflow: hidden;
+    cursor: pointer; transition: transform 0.2s;
+  }
+  .game-card:hover { transform: scale(1.03); border-color: var(--gold); }
+  .game-card-body { padding: 10px 12px 8px; }
+  .game-card-row { display: flex; align-items: center; gap: 6px; }
+  .team-name {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .team-name.winner { color: var(--text-primary); }
+  .team-name.loser { color: var(--text-tertiary); }
+  .w-badge {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--gold); color: var(--surface-base);
+    font-size: 7px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .score { margin-left: auto; font-family: var(--font-stat); font-size: 22px; }
+  .score.winner { color: var(--gold-bright); text-shadow: 0 0 10px rgba(200,165,90,0.3); }
+  .score.loser { color: var(--text-tertiary); }
+  .game-card-divider { height: 1px; margin: 4px 0; background: var(--border-subtle); }
+  .game-card-footer {
+    padding: 3px 12px; border-top: 1px solid var(--border-subtle);
+    background: rgba(0,0,0,0.2);
+    font-family: var(--font-stat); font-size: 8px;
+    text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-tertiary);
+  }
+
+  /* ---- Palette ---- */
+  .palette { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--border-default); }
+  .palette h3 {
+    font-family: var(--font-display); font-size: 18px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--gold); margin-bottom: 16px;
+  }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+  .swatch {
+    width: 80px; height: 60px; border-radius: 2px;
+    border: 1px solid var(--border-default);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 4px 6px; font-family: var(--font-stat); font-size: 9px;
+  }
+  .type-samples { margin-top: 20px; }
+  .type-samples p { margin-bottom: 8px; }
+
+  .footer {
+    text-align: center; padding: 12px;
+    border-top: 1px solid var(--border-default);
+    font-size: 11px; color: var(--text-tertiary); margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<div class="design-label">Option D: Tobacco Road -- Rich Browns + Burgundy + Gold</div>
+
+<header class="header">
+  <div class="header-user">
+    <span>Manager Williams</span>
+    <button>Log Out</button>
+  </div>
+  <div class="masthead">
+    <div class="masthead-frame">
+      <div class="title">Baseball Ledger</div>
+      <div class="title-sub">Tabletop Baseball Simulation</div>
+    </div>
+    <div class="league-name">Pacific Coast League</div>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="#" class="active">Season</a>
+  <a href="#">Draft Board</a>
+  <a href="#">Roster</a>
+  <a href="#">Stats</a>
+  <a href="#">Standings</a>
+  <a href="#">Playoffs</a>
+  <a href="#">Archive</a>
+</nav>
+
+<div class="content">
+  <div class="page-title">Standings</div>
+  <div class="page-title-line"></div>
+
+  <div class="league-header">
+    <div class="league-header-ornament">
+      <div class="rule"></div>
+      <div class="rule-thick"></div>
+      <div class="diamond"></div>
+      <div class="rule-thick"></div>
+      <div class="rule"></div>
+    </div>
+    <div class="league-header-title">American League</div>
+    <div class="league-header-ornament">
+      <div class="rule"></div>
+      <div class="rule-thick"></div>
+      <div class="diamond"></div>
+      <div class="rule-thick"></div>
+      <div class="rule"></div>
+    </div>
+  </div>
+
+  <div class="division">
+    <div class="division-header">
+      <div class="division-badge">EAST</div>
+      <div class="division-name">AL East</div>
+      <div class="division-rule"></div>
+    </div>
+    <table class="standings-table">
+      <thead><tr><th>Team</th><th>W</th><th>L</th><th>PCT</th><th>GB</th><th>HOME</th><th>AWAY</th><th>RS</th><th>RA</th><th>DIFF</th><th>STRK</th><th>L10</th></tr></thead>
+      <tbody>
+        <tr class="user-team"><td>Blazers</td><td>84</td><td>58</td><td>.592</td><td>-</td><td>41-31</td><td>43-27</td><td>1620</td><td>1356</td><td class="diff-pos">+264</td><td><span class="streak-w">W1</span></td><td>8-2</td></tr>
+        <tr><td>Broncos</td><td>74</td><td>81</td><td>.477</td><td>16.5</td><td>37-35</td><td>37-46</td><td>1384</td><td>1492</td><td class="diff-neg">-108</td><td><span class="streak-l">L3</span></td><td>3-7</td></tr>
+        <tr><td>Timberwolves</td><td>74</td><td>79</td><td>.484</td><td>15.5</td><td>30-39</td><td>44-40</td><td>1405</td><td>1400</td><td class="diff-pos">+5</td><td><span class="streak-w">W1</span></td><td>3-7</td></tr>
+        <tr><td>Stallions</td><td>71</td><td>79</td><td>.473</td><td>17.0</td><td>45-43</td><td>26-36</td><td>1330</td><td>1422</td><td class="diff-neg">-92</td><td><span class="streak-w">W1</span></td><td>5-5</td></tr>
+        <tr><td>Hornets</td><td>69</td><td>83</td><td>.454</td><td>20.0</td><td>31-46</td><td>38-37</td><td>1388</td><td>1495</td><td class="diff-neg">-107</td><td><span class="streak-l">L1</span></td><td>4-6</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="scoreboard">
+    <div class="scoreboard-header">
+      <span>Scoreboard</span>
+      <span>4 games</span>
+    </div>
+    <div class="scoreboard-strip">
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name winner">Blazers</span><span class="w-badge">W</span><span class="score winner">7</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name loser">Hornets</span><span class="score loser">3</span></div></div><div class="game-card-footer">Final</div></div>
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name loser">Eagles</span><span class="score loser">2</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name winner">Falcons</span><span class="w-badge">W</span><span class="score winner">5</span></div></div><div class="game-card-footer">Final</div></div>
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name winner">Bison</span><span class="w-badge">W</span><span class="score winner">4</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name loser">Sharks</span><span class="score loser">1</span></div></div><div class="game-card-footer">Final</div></div>
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name loser">Monarchs</span><span class="score loser">3</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name winner">Stingrays</span><span class="w-badge">W</span><span class="score winner">6</span></div></div><div class="game-card-footer">Final</div></div>
+    </div>
+  </div>
+
+  <div class="palette">
+    <h3>Color Palette</h3>
+    <div class="swatches">
+      <div class="swatch" style="background:#2C1A0E"><span style="color:#F0E4D0">Tobacco</span><span style="color:#F0E4D0">#2C1A0E</span></div>
+      <div class="swatch" style="background:#3A2416"><span style="color:#F0E4D0">Raised</span><span style="color:#F0E4D0">#3A2416</span></div>
+      <div class="swatch" style="background:#5A3C28"><span style="color:#F0E4D0">Highlight</span><span style="color:#F0E4D0">#5A3C28</span></div>
+      <div class="swatch" style="background:#8B1A2B"><span style="color:#F0E4D0">Burgundy</span><span style="color:#F0E4D0">#8B1A2B</span></div>
+      <div class="swatch" style="background:#C8A55A"><span style="color:#2C1A0E">Gold</span><span style="color:#2C1A0E">#C8A55A</span></div>
+      <div class="swatch" style="background:#E4C06A"><span style="color:#2C1A0E">Bright Gold</span><span style="color:#2C1A0E">#E4C06A</span></div>
+      <div class="swatch" style="background:#F0E4D0"><span style="color:#2C1A0E">Cream</span><span style="color:#2C1A0E">#F0E4D0</span></div>
+      <div class="swatch" style="background:#5C9B4A"><span style="color:#F0E4D0">Win</span><span style="color:#F0E4D0">#5C9B4A</span></div>
+      <div class="swatch" style="background:#C44040"><span style="color:#F0E4D0">Loss</span><span style="color:#F0E4D0">#C44040</span></div>
+    </div>
+    <h3>Typography</h3>
+    <div class="type-samples">
+      <p style="font-family:var(--font-display);font-size:30px;text-transform:uppercase;color:var(--gold-bright)">Archivo Black -- Bold Card Headlines</p>
+      <p style="font-family:var(--font-body);font-size:16px;color:var(--text-primary)">Source Sans 3 -- Body text for warm readability</p>
+      <p style="font-family:var(--font-stat);font-size:14px;color:var(--text-secondary)">IBM Plex Mono -- Stats: .324 AVG, 42 HR, 118 RBI</p>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">Copyright 2026 - Ledger Baseball</footer>
+
+</body>
+</html>

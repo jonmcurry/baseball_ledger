@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option B: The Evening Edition - Baseball Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --surface-base: #F0EDE4;
+    --surface-raised: #FAF8F3;
+    --surface-overlay: #E8E4DA;
+    --surface-highlight: #DDD8CC;
+    --text-primary: #1A1A1A;
+    --text-secondary: #4A4A4A;
+    --text-tertiary: #8A8A8A;
+    --accent-primary: #C41E1E;
+    --accent-hover: #D63030;
+    --border-default: #B0A898;
+    --border-subtle: #D0C8BC;
+    --ink-black: #0D0D0D;
+    --newsprint-gray: #6B6B6B;
+    --font-display: 'Playfair Display', 'Georgia', serif;
+    --font-body: 'Source Sans 3', system-ui, sans-serif;
+    --font-stat: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--surface-base);
+    color: var(--text-primary);
+    background-image: url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  .design-label {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--ink-black); color: #FAF8F3;
+    text-align: center; padding: 8px; font-family: var(--font-display);
+    font-size: 13px; letter-spacing: 0.15em; text-transform: uppercase;
+  }
+
+  /* ---- Header ---- */
+  .header {
+    margin-top: 36px;
+    border-bottom: 3px double var(--ink-black);
+  }
+  .header-top-rule {
+    height: 4px; background: var(--ink-black);
+  }
+  .header-user {
+    display: flex; justify-content: flex-end; padding: 8px 24px;
+    font-size: 12px; color: var(--newsprint-gray);
+    gap: 12px; align-items: center;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .header-user button {
+    font-family: var(--font-body); font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    border: 1px solid var(--newsprint-gray); background: none;
+    color: var(--newsprint-gray); padding: 3px 12px; cursor: pointer;
+  }
+  .masthead {
+    padding: 20px 24px 16px; text-align: center;
+    background: var(--surface-raised);
+  }
+  .masthead-date {
+    font-family: var(--font-body); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--newsprint-gray); margin-bottom: 8px;
+  }
+  .title {
+    font-family: var(--font-display); font-size: 56px; font-weight: 900;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--ink-black); line-height: 1;
+  }
+  .title-sub {
+    font-family: var(--font-display); font-size: 14px; font-style: italic;
+    color: var(--newsprint-gray); margin-top: 4px; letter-spacing: 0.1em;
+  }
+  .masthead-rule {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 12px; padding: 0 60px;
+  }
+  .masthead-rule .line { flex: 1; height: 1px; background: var(--ink-black); }
+  .masthead-rule .dot {
+    width: 6px; height: 6px; background: var(--accent-primary);
+    border-radius: 50%;
+  }
+  .league-name {
+    font-family: var(--font-body); font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.25em;
+    color: var(--accent-primary); margin-top: 10px;
+  }
+
+  /* ---- Nav ---- */
+  .nav {
+    display: flex; justify-content: center; gap: 0;
+    background: var(--ink-black);
+  }
+  .nav a {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: #B0A898; text-decoration: none;
+    padding: 8px 18px; transition: all 0.2s;
+    border-right: 1px solid #333;
+  }
+  .nav a:first-child { border-left: 1px solid #333; }
+  .nav a:hover, .nav a.active { color: #FAF8F3; background: var(--accent-primary); }
+
+  /* ---- Content ---- */
+  .content { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+  .page-title {
+    font-family: var(--font-display); font-size: 32px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-black); border-bottom: 3px solid var(--ink-black);
+    padding-bottom: 4px; display: inline-block;
+  }
+
+  /* ---- League Header ---- */
+  .league-header { margin: 28px 0 16px; }
+  .league-header-top { height: 2px; background: var(--ink-black); }
+  .league-header-title {
+    display: flex; align-items: center; justify-content: center;
+    gap: 16px; padding: 8px 0;
+    font-family: var(--font-display); font-size: 18px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.2em;
+    color: var(--ink-black);
+  }
+  .league-header-title .rule { flex: 1; height: 1px; background: var(--ink-black); max-width: 80px; }
+  .league-header-title .dot { width: 5px; height: 5px; background: var(--accent-primary); border-radius: 50%; }
+  .league-header-bot { height: 2px; background: var(--ink-black); }
+
+  /* ---- Division ---- */
+  .division { margin-bottom: 24px; }
+  .division-header {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 6px; padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-default);
+  }
+  .division-name {
+    font-family: var(--font-display); font-size: 16px; font-weight: 700;
+    font-style: italic; color: var(--ink-black);
+  }
+  .division-count {
+    font-family: var(--font-stat); font-size: 10px;
+    color: var(--newsprint-gray);
+  }
+
+  /* ---- Table ---- */
+  .standings-table {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--font-stat); font-size: 13px;
+  }
+  .standings-table thead tr {
+    border-bottom: 2px solid var(--ink-black);
+  }
+  .standings-table th {
+    padding: 4px 8px; text-align: right;
+    font-family: var(--font-body); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-black);
+  }
+  .standings-table th:first-child { text-align: left; }
+  .standings-table td {
+    padding: 5px 8px; text-align: right;
+    border-bottom: 1px solid var(--border-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .standings-table td:first-child {
+    text-align: left; font-family: var(--font-body);
+    font-weight: 600;
+  }
+  .standings-table tr:hover { background: rgba(0,0,0,0.03); cursor: pointer; }
+  .standings-table tr.user-team { background: rgba(196,30,30,0.06); }
+  .standings-table tr.user-team td:first-child { color: var(--accent-primary); }
+  .diff-pos { color: #2A7D3F; }
+  .diff-neg { color: var(--accent-primary); }
+  .streak-w {
+    display: inline-block; background: rgba(42,125,63,0.1);
+    color: #2A7D3F; padding: 1px 5px; font-size: 10px; font-weight: 600;
+  }
+  .streak-l {
+    display: inline-block; background: rgba(196,30,30,0.1);
+    color: var(--accent-primary); padding: 1px 5px; font-size: 10px; font-weight: 600;
+  }
+
+  /* ---- Scoreboard ---- */
+  .scoreboard { margin-top: 36px; }
+  .scoreboard-header {
+    background: var(--ink-black); color: #FAF8F3;
+    padding: 6px 16px;
+    font-family: var(--font-display); font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.15em;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .scoreboard-header span:last-child {
+    font-family: var(--font-stat); font-size: 10px;
+    color: #B0A898; letter-spacing: 0;
+  }
+  .scoreboard-strip {
+    display: flex; gap: 0;
+    border: 1px solid var(--ink-black); border-top: none;
+  }
+  .game-card {
+    flex: 1; border-right: 1px solid var(--border-default);
+    background: var(--surface-raised); cursor: pointer;
+    transition: background 0.2s;
+  }
+  .game-card:last-child { border-right: none; }
+  .game-card:hover { background: var(--surface-highlight); }
+  .game-card-body { padding: 10px 12px 6px; }
+  .game-card-row { display: flex; align-items: center; gap: 4px; }
+  .team-name {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .team-name.winner { color: var(--ink-black); }
+  .team-name.loser { color: var(--newsprint-gray); }
+  .w-badge {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent-primary); color: white;
+    font-size: 7px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .score {
+    margin-left: auto; font-family: var(--font-stat);
+    font-size: 22px; font-weight: 600;
+  }
+  .score.winner { color: var(--ink-black); }
+  .score.loser { color: var(--newsprint-gray); }
+  .game-card-divider { height: 1px; margin: 4px 0; background: var(--border-subtle); }
+  .game-card-footer {
+    padding: 4px 12px; border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-stat); font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--newsprint-gray);
+  }
+
+  /* ---- Palette ---- */
+  .palette { margin-top: 48px; padding-top: 28px; border-top: 2px solid var(--ink-black); }
+  .palette h3 {
+    font-family: var(--font-display); font-size: 20px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-black); margin-bottom: 16px;
+  }
+  .swatches { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+  .swatch {
+    width: 80px; height: 60px; border-radius: 2px;
+    border: 1px solid var(--border-default);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 4px 6px; font-family: var(--font-stat); font-size: 9px;
+  }
+  .type-samples { margin-top: 20px; }
+  .type-samples p { margin-bottom: 8px; }
+
+  .footer {
+    text-align: center; padding: 12px;
+    border-top: 2px solid var(--ink-black);
+    font-size: 11px; color: var(--newsprint-gray); margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<div class="design-label">Option B: The Evening Edition -- Newsprint + Red Spot Color</div>
+
+<header class="header">
+  <div class="header-top-rule"></div>
+  <div class="header-user">
+    <span>Tuesday, September 14, 2026</span>
+    <span style="flex:1"></span>
+    <span>Manager Williams</span>
+    <button>Log Out</button>
+  </div>
+  <div class="masthead">
+    <div class="masthead-date">Tabletop Baseball Simulation</div>
+    <div class="title">Baseball Ledger</div>
+    <div class="masthead-rule">
+      <div class="line"></div><div class="dot"></div><div class="line"></div>
+    </div>
+    <div class="league-name">Pacific Coast League</div>
+  </div>
+</header>
+
+<nav class="nav">
+  <a href="#" class="active">Season</a>
+  <a href="#">Draft Board</a>
+  <a href="#">Roster</a>
+  <a href="#">Stats</a>
+  <a href="#">Standings</a>
+  <a href="#">Playoffs</a>
+  <a href="#">Archive</a>
+</nav>
+
+<div class="content">
+  <div class="page-title">Standings</div>
+
+  <div class="league-header">
+    <div class="league-header-top"></div>
+    <div class="league-header-title">
+      <div class="rule"></div>
+      <div class="dot"></div>
+      American League
+      <div class="dot"></div>
+      <div class="rule"></div>
+    </div>
+    <div class="league-header-bot"></div>
+  </div>
+
+  <div class="division">
+    <div class="division-header">
+      <div class="division-name">AL East</div>
+      <div class="division-count">5 teams</div>
+    </div>
+    <table class="standings-table">
+      <thead><tr><th>Team</th><th>W</th><th>L</th><th>PCT</th><th>GB</th><th>HOME</th><th>AWAY</th><th>RS</th><th>RA</th><th>DIFF</th><th>STRK</th><th>L10</th></tr></thead>
+      <tbody>
+        <tr class="user-team"><td>Blazers</td><td>84</td><td>58</td><td>.592</td><td>-</td><td>41-31</td><td>43-27</td><td>1620</td><td>1356</td><td class="diff-pos">+264</td><td><span class="streak-w">W1</span></td><td>8-2</td></tr>
+        <tr><td>Broncos</td><td>74</td><td>81</td><td>.477</td><td>16.5</td><td>37-35</td><td>37-46</td><td>1384</td><td>1492</td><td class="diff-neg">-108</td><td><span class="streak-l">L3</span></td><td>3-7</td></tr>
+        <tr><td>Timberwolves</td><td>74</td><td>79</td><td>.484</td><td>15.5</td><td>30-39</td><td>44-40</td><td>1405</td><td>1400</td><td class="diff-pos">+5</td><td><span class="streak-w">W1</span></td><td>3-7</td></tr>
+        <tr><td>Stallions</td><td>71</td><td>79</td><td>.473</td><td>17.0</td><td>45-43</td><td>26-36</td><td>1330</td><td>1422</td><td class="diff-neg">-92</td><td><span class="streak-w">W1</span></td><td>5-5</td></tr>
+        <tr><td>Hornets</td><td>69</td><td>83</td><td>.454</td><td>20.0</td><td>31-46</td><td>38-37</td><td>1388</td><td>1495</td><td class="diff-neg">-107</td><td><span class="streak-l">L1</span></td><td>4-6</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="scoreboard">
+    <div class="scoreboard-header">
+      <span>Scoreboard</span>
+      <span>4 games -- September 14</span>
+    </div>
+    <div class="scoreboard-strip">
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name winner">Blazers</span><span class="w-badge">W</span><span class="score winner">7</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name loser">Hornets</span><span class="score loser">3</span></div></div><div class="game-card-footer">Final</div></div>
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name loser">Eagles</span><span class="score loser">2</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name winner">Falcons</span><span class="w-badge">W</span><span class="score winner">5</span></div></div><div class="game-card-footer">Final</div></div>
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name winner">Bison</span><span class="w-badge">W</span><span class="score winner">4</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name loser">Sharks</span><span class="score loser">1</span></div></div><div class="game-card-footer">Final</div></div>
+      <div class="game-card"><div class="game-card-body"><div class="game-card-row"><span class="team-name loser">Monarchs</span><span class="score loser">3</span></div><div class="game-card-divider"></div><div class="game-card-row"><span class="team-name winner">Stingrays</span><span class="w-badge">W</span><span class="score winner">6</span></div></div><div class="game-card-footer">Final</div></div>
+    </div>
+  </div>
+
+  <div class="palette">
+    <h3>Color Palette</h3>
+    <div class="swatches">
+      <div class="swatch" style="background:#F0EDE4"><span style="color:#1A1A1A">Newsprint</span><span style="color:#1A1A1A">#F0EDE4</span></div>
+      <div class="swatch" style="background:#FAF8F3"><span style="color:#1A1A1A">Paper</span><span style="color:#1A1A1A">#FAF8F3</span></div>
+      <div class="swatch" style="background:#0D0D0D"><span style="color:#FAF8F3">Ink Black</span><span style="color:#FAF8F3">#0D0D0D</span></div>
+      <div class="swatch" style="background:#C41E1E"><span style="color:#FAF8F3">Spot Red</span><span style="color:#FAF8F3">#C41E1E</span></div>
+      <div class="swatch" style="background:#6B6B6B"><span style="color:#FAF8F3">Gray Ink</span><span style="color:#FAF8F3">#6B6B6B</span></div>
+      <div class="swatch" style="background:#B0A898"><span style="color:#1A1A1A">Border</span><span style="color:#1A1A1A">#B0A898</span></div>
+      <div class="swatch" style="background:#2A7D3F"><span style="color:#FAF8F3">Win Green</span><span style="color:#FAF8F3">#2A7D3F</span></div>
+    </div>
+    <h3>Typography</h3>
+    <div class="type-samples">
+      <p style="font-family:var(--font-display);font-size:36px;font-weight:900;text-transform:uppercase;color:var(--ink-black)">Playfair Display -- Headlines</p>
+      <p style="font-family:var(--font-body);font-size:16px;color:var(--text-primary)">Source Sans 3 -- Body text, clean and editorial</p>
+      <p style="font-family:var(--font-stat);font-size:14px;color:var(--text-secondary)">IBM Plex Mono -- Stats: .324 AVG, 42 HR, 118 RBI</p>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">Copyright 2026 - Ledger Baseball</footer>
+
+</body>
+</html>
