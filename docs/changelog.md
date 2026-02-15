@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-15 - Fix Simulation Stat Inflation (6 Bugs)
+
+Fixed 6 interacting bugs that caused wildly inflated stats (walks 150-300/player,
+HRs 60-100, ERA 8-12, 0 CG/SHO). Root cause: IDT-as-proxy for pitcher check was
+producing walks/hits when the pitcher was supposed to "win" the grade check.
+
+1. **Pitcher check -> direct outs** (plate-appearance.ts): When pitcher wins
+   grade check for card values {7, 8, 11}, outcome is now converted directly
+   to GROUND_OUT (values 7/8) or FLY_OUT (value 11). Previously used IDT table
+   as proxy which produced ~21% walks and ~26% hits instead of outs.
+
+2. **Per-type card generation compensation** (value-mapper.ts): Replaced uniform
+   AVG_HIT_SUPPRESSION=0.10 with per-type compensation. Only card values {7, 8, 11}
+   are suppressed by pitcher grade, so only singles (values 7/8) and triples
+   (value 11) get inflation. HRs, doubles, walks, Ks use raw rates with no
+   inflation. Eliminates HR/double over-allocation.
+
+3. **Wired 5-layer computeGameGrade()** (game-runner.ts): PA resolution now uses
+   the full 5-layer grade (fatigue, relief -2, fresh +5, platoon, random variance)
+   instead of fatigue-only computeEffectiveGrade(). Activates relief penalty,
+   fresh bonus, platoon matchups, and random variance for realistic pitcher
+   performance variation.
+
 ## 2026-02-15 - Redesign Standings Page with League Grouping
 
 Redesigned the Standings page to group divisions by league. AL divisions now

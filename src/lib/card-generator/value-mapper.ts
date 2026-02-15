@@ -34,20 +34,31 @@ export const CARD_VALUES = {
 } as const;
 
 /**
- * Average pitcher hit suppression for card generation compensation.
- *
- * Lahman stats already reflect facing average pitchers. Without compensation,
- * the grade 8 (average) suppression double-counts the pitcher effect,
- * producing BA ~33 points below historical. The card must have MORE hits
- * than the raw rate so that average-grade suppression brings it back to
- * the historical level.
- *
- * With the IDT model, only IDT-active card values (5-25) can be remapped
- * when the pitcher wins the grade check. HRs (value 1) and doubles (value 0)
- * bypass IDT entirely. Empirically measured: ~10% suppression at grade 8
- * (singles suppressed through IDT, HRs/doubles never suppressed).
+ * Average pitcher grade used for suppression compensation.
+ * At grade 8 (league average), pitcher wins grade check with prob 8/15.
  */
-const AVG_HIT_SUPPRESSION = 0.10;
+const AVG_PITCHER_GRADE = 8;
+
+/**
+ * Probability that an average pitcher wins the grade check.
+ * Only card values in {7, 8, 11} are suppressed (converted to outs)
+ * when the pitcher wins. Values like 0 (double), 1 (HR), 9 (single),
+ * 10 (triple), 13 (walk), 14 (K) are never suppressed.
+ */
+const AVG_SUPPRESSION_PROB = AVG_PITCHER_GRADE / 15;
+
+/**
+ * Fraction of single positions using suppressable values (7, 8).
+ * Remaining fraction uses non-suppressable value 9.
+ * Matches the default splitSinglesTiers distribution (~75% high+mid).
+ */
+const SUPPRESSABLE_SINGLE_FRACTION = 0.75;
+
+/**
+ * Fraction of triple positions using suppressable value (11).
+ * Remaining fraction uses non-suppressable value 10.
+ */
+const SUPPRESSABLE_TRIPLE_FRACTION = 0.50;
 
 /**
  * Outcome slot allocation: how many of the 24 fillable positions
@@ -117,36 +128,26 @@ export function distributeByLargestRemainder(
  * to each outcome type, based on the player's per-PA rates.
  * (35 total - 9 structural - 2 archetype = 24 fillable positions)
  *
- * Hit compensation: The total number of hit positions is computed by
- * dividing the raw hit rate by (1 - AVG_HIT_SUPPRESSION) to account
- * for the average pitcher grade suppression. This ensures that vs a
- * grade 8 (average) pitcher, the simulation produces batting averages
- * matching the player's historical stats.
+ * Per-type hit compensation: Only card values {7, 8, 11} are suppressed
+ * by the pitcher grade check (converted to outs when pitcher wins).
+ * Values 0 (double), 1 (HR), 9 (single), 10 (triple) are NEVER suppressed.
+ *
+ * For suppressable types (singles on 7/8, triples on 11), the card needs
+ * more positions than the raw rate so that after average-grade suppression
+ * (8/15 probability), the effective rate matches the player's historical
+ * stats. Non-suppressable types use raw rates with no inflation.
  *
  * Walks and strikeouts are allocated at their raw rates (no compensation)
- * because walk suppression is a separate pitcher-control effect and
- * strikeouts are never suppressed.
+ * because walks are never grade-gated and strikeouts are never suppressed.
  */
 export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
   const FILLABLE_COUNT = 24;
   const speed = 0; // Speed handled by player attributes, not card slots
 
-  // Total per-PA hit rate from individual hit categories
-  const totalHitRate = rates.singleRate + rates.doubleRate
-    + rates.tripleRate + rates.homeRunRate;
-
-  // Compensate total hit positions for average pitcher suppression.
-  // Card needs MORE hits than historical rate because average pitcher
-  // (grade 8) will suppress ~24% of hits: (8/15) * 0.45.
-  const compensatedHitRate = totalHitRate > 0
-    ? totalHitRate / (1 - AVG_HIT_SUPPRESSION)
-    : 0;
-  let totalHitPositions = Math.round(compensatedHitRate * FILLABLE_COUNT);
-
-  // Walks: no compensation (walk suppression models pitcher control separately)
+  // Walks: no compensation (never grade-gated)
   let walks = Math.round(rates.walkRate * FILLABLE_COUNT);
 
-  // Strikeouts: not suppressed, allocate directly
+  // Strikeouts: no compensation (never suppressed)
   let strikeouts = Math.round(rates.strikeoutRate * FILLABLE_COUNT);
 
   // Ensure at least 1 of major outcomes for qualifying batters
@@ -155,36 +156,54 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
     if (strikeouts === 0 && rates.strikeoutRate > 0) strikeouts = 1;
   }
 
-  // Budget: leave at least 1 out slot
-  const budget = FILLABLE_COUNT - 1;
-  let allocated = walks + strikeouts + totalHitPositions;
+  // Per-type hit compensation.
+  // Only card values {7, 8, 11} are suppressed by pitcher grade check.
+  // Effective rate per card position accounts for the suppression mix:
+  //   effectiveRate = suppressableFrac * (1 - suppProb) + nonSuppressableFrac
+  // Card positions needed = (targetRate * 24) / effectiveRate
 
-  // If over budget, reduce hits first (they'll be partially suppressed anyway)
-  while (allocated > budget && totalHitPositions > 0) {
-    totalHitPositions--;
-    allocated--;
-  }
-  // If still over, reduce from largest non-hit category
-  while (allocated > budget) {
-    if (strikeouts >= walks) strikeouts--;
-    else walks--;
-    allocated--;
-  }
+  const singleEffRate = SUPPRESSABLE_SINGLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
+    + (1 - SUPPRESSABLE_SINGLE_FRACTION);
+  const tripleEffRate = SUPPRESSABLE_TRIPLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
+    + (1 - SUPPRESSABLE_TRIPLE_FRACTION);
 
-  // Distribute hit positions among categories proportionally (largest remainder)
+  // HRs (value 1) and doubles (value 0): never suppressed, raw rate
+  const rawHRs = rates.homeRunRate * FILLABLE_COUNT;
+  const rawDoubles = rates.doubleRate * FILLABLE_COUNT;
+  // Singles (values 7/8/9): compensate for 75% suppressable fraction
+  const rawSingles = rates.singleRate > 0
+    ? (rates.singleRate * FILLABLE_COUNT) / singleEffRate
+    : 0;
+  // Triples (values 10/11): compensate for 50% suppressable fraction
+  const rawTriples = rates.tripleRate > 0
+    ? (rates.tripleRate * FILLABLE_COUNT) / tripleEffRate
+    : 0;
+
+  // Total hit positions needed on card
+  const rawHitTotal = rawHRs + rawSingles + rawDoubles + rawTriples;
+  let hitPositions = Math.round(rawHitTotal);
+
+  // Budget: leave at least 1 out slot after walks + Ks
+  let budget = FILLABLE_COUNT - walks - strikeouts - 1;
+  if (budget < 0) {
+    // Extreme case: walks + Ks fill the card; reduce from largest
+    while (walks + strikeouts > FILLABLE_COUNT - 1) {
+      if (strikeouts >= walks) strikeouts--;
+      else walks--;
+    }
+    budget = FILLABLE_COUNT - walks - strikeouts - 1;
+  }
+  hitPositions = Math.min(hitPositions, Math.max(0, budget));
+
+  // Distribute hit positions among types proportionally (largest remainder)
   let homeRuns = 0;
   let singles = 0;
   let doubles = 0;
   let triples = 0;
 
-  if (totalHitRate > 0 && totalHitPositions > 0) {
-    const rawValues = [
-      (rates.homeRunRate / totalHitRate) * totalHitPositions,
-      (rates.singleRate / totalHitRate) * totalHitPositions,
-      (rates.doubleRate / totalHitRate) * totalHitPositions,
-      (rates.tripleRate / totalHitRate) * totalHitPositions,
-    ];
-    const distributed = distributeByLargestRemainder(rawValues, totalHitPositions);
+  if (rawHitTotal > 0 && hitPositions > 0) {
+    const rawValues = [rawHRs, rawSingles, rawDoubles, rawTriples];
+    const distributed = distributeByLargestRemainder(rawValues, hitPositions);
     homeRuns = distributed[0];
     singles = distributed[1];
     doubles = distributed[2];

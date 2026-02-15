@@ -36,8 +36,8 @@ import {
 } from './engine';
 import { resolvePlateAppearance } from './plate-appearance';
 import { resolveOutcome } from './outcome-resolver';
-import { computeEffectiveGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
-import type { PitcherGameState } from './pitching';
+import { computeEffectiveGrade, computeGameGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
+import type { PitcherGameState, GradeContext } from './pitching';
 import {
   evaluateStealDecision,
   evaluateBuntDecision,
@@ -600,7 +600,24 @@ export function runGame(config: RunGameConfig): GameResult {
       }
 
       // -- Standard plate appearance --
-      const effectiveGrade = computeEffectiveGrade(currentPitcher, currentPitcherState.inningsPitched);
+      // 5-layer grade: fatigue, relief penalty, fresh bonus, platoon, random variance
+      const startingPitcherForSide = isTopHalf ? config.homeStartingPitcher : config.awayStartingPitcher;
+      const isReliefSituation = currentPitcher.playerId !== startingPitcherForSide.playerId;
+      let pitcherType = 0; // starter
+      if (isReliefSituation) {
+        pitcherType = currentPitcher.pitching?.role === 'CL' ? 7 : 1;
+      }
+      const gradeContext: GradeContext = {
+        inningsPitched: currentPitcherState.inningsPitched,
+        isReliefSituation,
+        pitcherType,
+        isFresh: isReliefSituation && currentPitcherState.inningsPitched === 0,
+        fatigueAdj: 0,
+        batterHand: batterCard.battingHand,
+        pitcherHand: currentPitcher.throwingHand,
+        platoonValue: 2,
+      };
+      const effectiveGrade = computeGameGrade(currentPitcher, gradeContext, rng);
       const paResult = resolvePlateAppearance(batterCard.card, effectiveGrade, rng);
       let outcome = paResult.outcome;
 
