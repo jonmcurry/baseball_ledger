@@ -65,8 +65,8 @@ export function StandingsTable({
   const alDivisions = standings.filter((d) => d.leagueDivision === 'AL');
 
   const leagueGroups = [
-    { label: 'National League', abbr: 'NL', divisions: nlDivisions },
     { label: 'American League', abbr: 'AL', divisions: alDivisions },
+    { label: 'National League', abbr: 'NL', divisions: nlDivisions },
   ].filter((g) => g.divisions.length > 0);
 
   return (
