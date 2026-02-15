@@ -1,8 +1,8 @@
 /**
  * Header
  *
- * Rich banner header with "Baseball Ledger" app title, league name,
- * decorative baseball stitching SVGs, and navigation strip.
+ * Gazette-style masthead header with "Baseball Ledger" app title,
+ * league name, decorative rule lines, diamond ornaments, and navigation strip.
  * Playoff variant styling when status is "playoffs".
  * Collapsed hamburger menu on narrow viewports (REQ-COMP-010).
  *
@@ -40,26 +40,16 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'League Config', route: '/config', commissionerOnly: true },
 ];
 
-/** Baseball seam curve -- one half of the classic stitching pattern. */
-function StitchSvg({ mirror }: { mirror?: boolean }) {
+/** Diamond ornament -- small decorative separator in the gazette style. */
+function DiamondOrnament({ className = '' }: { className?: string }) {
   return (
     <svg
-      className={`h-16 w-12 md:h-20 md:w-16 text-[var(--accent-primary)] opacity-15 ${mirror ? 'scale-x-[-1]' : ''}`}
-      viewBox="0 0 48 80"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
+      className={`h-3 w-3 ${className}`}
+      viewBox="0 0 12 12"
+      fill="currentColor"
       aria-hidden="true"
     >
-      {/* Main seam curve */}
-      <path d="M24 4 C36 20, 12 36, 36 52 C12 68, 36 76, 24 76" />
-      {/* Stitch marks */}
-      <path d="M18 12 L30 16" strokeWidth="1" />
-      <path d="M30 24 L18 28" strokeWidth="1" />
-      <path d="M18 36 L30 40" strokeWidth="1" />
-      <path d="M30 48 L18 52" strokeWidth="1" />
-      <path d="M18 60 L30 64" strokeWidth="1" />
-      <path d="M30 70 L18 74" strokeWidth="1" />
+      <rect x="6" y="0" width="6" height="6" transform="rotate(45 6 6)" />
     </svg>
   );
 }
@@ -148,35 +138,62 @@ export function Header({
           </div>
         </div>
 
-        {/* Centered banner content with flanking stitching */}
-        <div className="relative z-10 flex items-center justify-center gap-4 px-gutter pb-5 pt-1 md:gap-8 md:pb-6">
-          {/* Left stitch */}
-          <div className="max-sm:hidden">
-            <StitchSvg />
+        {/* Gazette-style masthead */}
+        <div className="relative z-10 px-gutter pb-5 pt-1 md:pb-6">
+          {/* Top decorative double rule */}
+          <div className="mx-auto max-w-xl" aria-hidden="true">
+            <div className="h-px bg-[var(--border-default)]" />
+            <div className="mt-[2px] h-[2px] bg-[var(--accent-primary)] opacity-60" />
           </div>
 
-          {/* Title block */}
-          <div className="flex flex-col items-center text-center">
+          {/* Title row with diamond ornaments */}
+          <div className="mt-4 flex items-center justify-center gap-3 md:gap-5">
+            {/* Left ornament cluster */}
+            <div className="flex items-center gap-1.5 max-sm:hidden" aria-hidden="true">
+              <div className="h-px w-8 bg-[var(--border-default)] md:w-14" />
+              <DiamondOrnament className="text-[var(--accent-primary)] opacity-50" />
+              <div className="h-px w-4 bg-[var(--border-default)] md:w-8" />
+              <DiamondOrnament className="text-[var(--accent-primary)] opacity-30 h-2 w-2" />
+            </div>
+
             <h1
-              className={`font-display text-2xl tracking-[0.2em] uppercase md:text-3xl lg:text-4xl ${
+              className={`font-display text-2xl tracking-[0.25em] uppercase md:text-3xl lg:text-4xl ${
                 isPlayoff ? 'text-[var(--accent-hover)]' : 'text-[var(--accent-primary)]'
               }`}
+              style={{
+                textShadow: '1px 1px 0 rgba(255,255,255,0.6), -0.5px -0.5px 0 rgba(0,0,0,0.08)',
+              }}
             >
               Baseball Ledger
             </h1>
 
-            {/* Gold separator */}
-            <div className="my-2 h-px w-24 bg-[var(--accent-primary)] opacity-40 md:w-32" aria-hidden="true" />
+            {/* Right ornament cluster */}
+            <div className="flex items-center gap-1.5 max-sm:hidden" aria-hidden="true">
+              <DiamondOrnament className="text-[var(--accent-primary)] opacity-30 h-2 w-2" />
+              <div className="h-px w-4 bg-[var(--border-default)] md:w-8" />
+              <DiamondOrnament className="text-[var(--accent-primary)] opacity-50" />
+              <div className="h-px w-8 bg-[var(--border-default)] md:w-14" />
+            </div>
+          </div>
 
-            {/* League name */}
-            <span className="font-display text-base uppercase tracking-wider text-[var(--text-primary)] md:text-lg">
+          {/* Subtitle rule + league name */}
+          <div className="mt-2 flex flex-col items-center">
+            {/* Thin accent rule */}
+            <div className="flex items-center gap-2" aria-hidden="true">
+              <div className="h-px w-6 bg-[var(--accent-primary)] opacity-30 md:w-10" />
+              <DiamondOrnament className="text-[var(--accent-primary)] opacity-25 h-1.5 w-1.5" />
+              <div className="h-px w-6 bg-[var(--accent-primary)] opacity-30 md:w-10" />
+            </div>
+
+            <span className="mt-2 font-stat text-xs uppercase tracking-[0.3em] text-[var(--text-secondary)] md:text-sm">
               {leagueName}
             </span>
           </div>
 
-          {/* Right stitch (mirrored) */}
-          <div className="max-sm:hidden">
-            <StitchSvg mirror />
+          {/* Bottom decorative double rule */}
+          <div className="mx-auto mt-4 max-w-xl" aria-hidden="true">
+            <div className="h-[2px] bg-[var(--accent-primary)] opacity-60" />
+            <div className="mt-[2px] h-px bg-[var(--border-default)]" />
           </div>
         </div>
       </div>
