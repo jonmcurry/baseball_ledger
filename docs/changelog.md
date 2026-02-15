@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-02-15 - Deep Binary Analysis: Grade Adjustment + Symbol Code Located
+
+Extended programmatic binary analysis to locate specific code addresses for all
+4 remaining unknowns. Key discoveries:
+
+- BJStartGradeAdj strings are in a Borland C++ property persistence table
+  (FF FF 00 00 separators). Code iterates the table by string comparison, which
+  is why Ghidra shows 0 direct cross-references to individual strings.
+- MA_BB.INI has 67 code references (mostly in segment 4) -- best entry point
+- FOUND pitcher symbol processing code at seg12:0x86B0 -- checks card values
+  13 (walk), 14 (K), 15 and remaps outcomes based on pitcher flag at offset 0x312
+- Grade clamping pattern (CMP 1 + CMP 15) found at seg11:0x24D7
+- IDT loading code at seg20:0x2104
+- Type field referenced at seg27:0x3856, Platoon at seg35:0x1F81
+
+Updated ghidra-guide.md with precise segment:offset addresses for all targets.
+
 ## 2026-02-15 - WINBB.EXE Binary Analysis (Phase 1a Complete)
 
 Programmatic binary analysis of WINBB.EXE (1.12 MB, 16-bit NE, Borland C++)
