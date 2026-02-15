@@ -13,6 +13,7 @@
  */
 
 import type { PlayerCard } from '../types/player';
+import type { SeededRNG } from '../rng/seeded-rng';
 
 /** Grade degradation per inning beyond stamina for starters */
 const STARTER_GRADE_DECAY = 2;
@@ -92,6 +93,137 @@ export function computeEffectiveGrade(
   const degraded = baseGrade - (decay * inningsBeyond);
 
   return Math.max(MIN_GRADE, degraded);
+}
+
+// ---------------------------------------------------------------------------
+// 5-Layer Grade Adjustment (Ghidra FUN_1058_5be1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Relief pitcher penalty (Layer 2).
+ * Non-closer relief pitchers get -2 grade when entering in relief.
+ * Confirmed by Ghidra: `pitcherData.grade = clamp(pitcherData.grade - 2, 1)`
+ */
+export const RELIEF_PENALTY = 2;
+
+/**
+ * Fresh pitcher bonus (Layer 3).
+ * A fresh pitcher (not fatigued, first appearance) gets +5 grade.
+ * Confirmed by Ghidra: `pitcherData.grade = clamp(pitcherData.grade + 5, 20)`
+ */
+export const FRESH_BONUS = 5;
+
+/**
+ * Maximum grade after fresh bonus (Layer 3 cap).
+ * Fresh bonus cannot push grade above 20.
+ */
+export const FRESH_GRADE_MAX = 20;
+
+/**
+ * Maximum grade after platoon adjustment (Layer 4 cap).
+ * Platoon adjustment cannot push grade above 30.
+ */
+export const PLATOON_GRADE_MAX = 30;
+
+/**
+ * Random variance adjustment table (Layer 5).
+ * 40 entries indexed by random(40). Values are small signed integers
+ * that add noise to the effective grade.
+ *
+ * Confirmed by Ghidra: `tableAdj = DATA[randomIdx + 0x3802]`
+ * Exact table values approximated from expected distribution:
+ * - Mostly 0s (no change)
+ * - Some small positive/negative adjustments
+ * - Net effect centered around 0
+ */
+export const RANDOM_VARIANCE_TABLE: readonly number[] = [
+  -2, -1, -1, -1, -1, 0, 0, 0, 0, 0,
+   0,  0,  0,  0,  0, 0, 0, 0, 0, 0,
+   0,  0,  0,  0,  0, 0, 0, 0, 0, 0,
+   0,  0,  0,  0,  0, 1, 1, 1, 1,  2,
+];
+
+/**
+ * Context for computing the full game-time grade adjustment.
+ * Provides all state needed for the 5-layer calculation.
+ */
+export interface GradeContext {
+  /** Innings pitched in current game (for fatigue calculation) */
+  inningsPitched: number;
+  /** True if pitcher entered in a relief situation */
+  isReliefSituation: boolean;
+  /** Pitcher type flag (7 = closer, other = non-closer) */
+  pitcherType: number;
+  /** True if pitcher is fresh (first game appearance, not fatigued) */
+  isFresh: boolean;
+  /** Fatigue adjustment flag from game state */
+  fatigueAdj: number;
+  /** Batter's batting hand ('L', 'R', or 'S') */
+  batterHand: 'L' | 'R' | 'S';
+  /** Pitcher's throwing hand ('L' or 'R') */
+  pitcherHand: 'L' | 'R';
+  /** Platoon grade adjustment value from batter data */
+  platoonValue: number;
+}
+
+/**
+ * Compute the full 5-layer game-time grade for PA resolution.
+ *
+ * Confirmed by Ghidra decompilation of FUN_1058_5be1 (Grade Setup):
+ *
+ * Layer 1: Fatigue -- grade degrades beyond stamina innings
+ * Layer 2: Relief Penalty -- non-closer relievers get -2
+ * Layer 3: Fresh Bonus -- fresh pitchers get +5 (capped at 20)
+ * Layer 4: Platoon -- same-hand matchup: grade += platoonValue (capped at 30)
+ * Layer 5: Random Variance -- random(40) indexes into adjustment table
+ *
+ * @param pitcher - The pitcher's PlayerCard
+ * @param context - Game context for all 5 layers
+ * @param rng - Seeded RNG for random variance (Layer 5)
+ * @returns The final effective grade (clamped to minimum 1)
+ */
+export function computeGameGrade(
+  pitcher: PlayerCard,
+  context: GradeContext,
+  rng: SeededRNG,
+): number {
+  const pitching = pitcher.pitching;
+  if (!pitching) return MIN_GRADE;
+
+  // Layer 1: Fatigue (reuse existing logic)
+  let grade = computeEffectiveGrade(pitcher, context.inningsPitched);
+
+  // Layer 2: Relief Penalty
+  // Non-closer relievers get -2 when in a relief situation
+  if (context.isReliefSituation && context.pitcherType !== 7) {
+    grade = Math.max(MIN_GRADE, grade - RELIEF_PENALTY);
+  }
+
+  // Layer 3: Fresh Pitcher Bonus
+  // Fresh pitcher gets +5, capped at FRESH_GRADE_MAX (20)
+  if (context.isFresh) {
+    if (context.pitcherType !== 0 || context.fatigueAdj !== 0) {
+      grade = Math.min(grade + FRESH_BONUS, FRESH_GRADE_MAX);
+    }
+  }
+
+  // Layer 4: Platoon Matchup
+  // Same-hand: pitcher grade increases by platoonValue (capped at 30)
+  // Ghidra: `if pitcherInfo.throwHand == batterData.batHand`
+  const isSameHand =
+    context.batterHand !== 'S' && context.batterHand === context.pitcherHand;
+
+  if (isSameHand && context.platoonValue > 0) {
+    grade = Math.min(grade + context.platoonValue, PLATOON_GRADE_MAX);
+  }
+
+  // Layer 5: Random Variance
+  // random(40) indexes into the variance table
+  const varianceIdx = rng.nextIntExclusive(0, RANDOM_VARIANCE_TABLE.length);
+  const varianceAdj = RANDOM_VARIANCE_TABLE[varianceIdx];
+  grade = Math.max(MIN_GRADE, grade + varianceAdj);
+
+  return grade;
 }
 
 /**

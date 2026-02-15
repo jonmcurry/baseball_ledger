@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-15 - Implement Ghidra Findings into Simulation Engine
+
+Applied all Ghidra decompilation findings to the simulation engine, replacing
+approximations with confirmed BBW behavior.
+
+Changes by phase:
+
+1. **IDT active range corrected to [15, 23]** (was [5, 25]). Added dual-path
+   grade gating: card values {7, 8, 11} use pitcher card check (Path A),
+   values [15, 23] use IDT table lookup (Path B). Non-gated values resolve
+   directly. This matches FUN_1058_5f49's two separate code paths.
+
+2. **5-layer grade adjustment** implemented in `computeGameGrade()` per
+   FUN_1058_5be1: fatigue decay (Layer 1), relief penalty -2 (Layer 2),
+   fresh pitcher bonus +5 capped at 20 (Layer 3), platoon same-hand grade
+   boost capped at 30 (Layer 4), random variance table[40] (Layer 5).
+
+3. **Grade-based platoon** added via `computePlatoonGradeAdjustment()`.
+   Same-hand matchup increases pitcher grade (pitcher advantage), replacing
+   the old card-modification approach. Old functions preserved for backward
+   compatibility.
+
+4. **Archetype bitfield constants** added: SPEED=0x01, POWER=0x02,
+   CONTACT=0x04, DEFENSE=0x08. Added `computeArchetypeFlags()` to convert
+   byte33/byte34 pairs to bitfield. Maps confirmed archetype combinations.
+
+5. **Umpire decision module** created (`umpire-decision.ts`) per
+   FUN_1058_7726. Post-resolution 3% chance to override STRIKEOUT_LOOKING
+   to WALK or GROUND_OUT to SINGLE_CLEAN on close calls.
+
+Files modified: plate-appearance.ts, pitching.ts, platoon.ts,
+archetype-modifier.ts. File created: umpire-decision.ts.
+Tests: 487 simulation tests pass, TypeScript compiles clean.
+
 ## 2026-02-15 - Ghidra Headless Decompilation: Full Simulation Engine Decoded
 
 Ran Ghidra 12.0.3 headless decompilation against WINBB.EXE (NE format, 16-bit Protected

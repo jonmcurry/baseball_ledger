@@ -3,6 +3,11 @@ import {
   isPowerArchetype,
   isSpeedArchetype,
   isContactSpeedArchetype,
+  computeArchetypeFlags,
+  ARCHETYPE_SPEED,
+  ARCHETYPE_POWER,
+  ARCHETYPE_CONTACT,
+  ARCHETYPE_DEFENSE,
 } from '@lib/simulation/archetype-modifier';
 import { OutcomeCategory } from '@lib/types';
 import type { PlayerArchetype } from '@lib/types';
@@ -296,6 +301,84 @@ describe('applyArchetypeModifier: Non-modifying archetypes', () => {
     const result = applyArchetypeModifier(OutcomeCategory.STRIKEOUT_SWINGING, UTILITY, rng);
     expect(result.outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
     expect(result.modified).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Archetype Bitfield Flags (Ghidra confirmed, offset 0x44)
+// ---------------------------------------------------------------------------
+describe('Archetype bitfield constants (Ghidra confirmed)', () => {
+  it('ARCHETYPE_SPEED is 0x01', () => {
+    expect(ARCHETYPE_SPEED).toBe(0x01);
+  });
+
+  it('ARCHETYPE_POWER is 0x02', () => {
+    expect(ARCHETYPE_POWER).toBe(0x02);
+  });
+
+  it('ARCHETYPE_CONTACT is 0x04', () => {
+    expect(ARCHETYPE_CONTACT).toBe(0x04);
+  });
+
+  it('ARCHETYPE_DEFENSE is 0x08', () => {
+    expect(ARCHETYPE_DEFENSE).toBe(0x08);
+  });
+});
+
+describe('computeArchetypeFlags() (Ghidra byte33/byte34 -> bitfield)', () => {
+  it('(6,0) speed -> ARCHETYPE_SPEED', () => {
+    expect(computeArchetypeFlags(SPEED)).toBe(ARCHETYPE_SPEED);
+  });
+
+  it('(1,0) power RH -> ARCHETYPE_POWER', () => {
+    expect(computeArchetypeFlags(POWER_RH)).toBe(ARCHETYPE_POWER);
+  });
+
+  it('(1,1) power LH -> ARCHETYPE_POWER', () => {
+    expect(computeArchetypeFlags(POWER_LH)).toBe(ARCHETYPE_POWER);
+  });
+
+  it('(0,2) contact+speed -> ARCHETYPE_CONTACT | ARCHETYPE_SPEED', () => {
+    expect(computeArchetypeFlags(CONTACT_SPEED)).toBe(ARCHETYPE_CONTACT | ARCHETYPE_SPEED);
+  });
+
+  it('(8,0) elite defense -> ARCHETYPE_DEFENSE', () => {
+    expect(computeArchetypeFlags(ELITE_DEFENSE)).toBe(ARCHETYPE_DEFENSE);
+  });
+
+  it('(7,0) standard RH -> 0x00 (no flags)', () => {
+    expect(computeArchetypeFlags(STANDARD_RH)).toBe(0x00);
+  });
+
+  it('(0,1) standard LH -> 0x00 (no flags)', () => {
+    expect(computeArchetypeFlags(STANDARD_LH)).toBe(0x00);
+  });
+
+  it('(0,6) pitcher -> 0x00 (no flags)', () => {
+    expect(computeArchetypeFlags(PITCHER)).toBe(0x00);
+  });
+
+  it('(5,0) utility -> 0x00 (no flags)', () => {
+    expect(computeArchetypeFlags(UTILITY)).toBe(0x00);
+  });
+
+  it('supports bitwise checks matching Ghidra symbol outcomes', () => {
+    // Symbol 43 (+): (speed|power) &0x03 != 0 -> hit
+    const speedFlags = computeArchetypeFlags(SPEED);
+    const powerFlags = computeArchetypeFlags(POWER_RH);
+    const stdFlags = computeArchetypeFlags(STANDARD_RH);
+
+    expect(speedFlags & 0x03).not.toBe(0);  // speed -> hit on symbol 43
+    expect(powerFlags & 0x03).not.toBe(0);  // power -> hit on symbol 43
+    expect(stdFlags & 0x03).toBe(0);         // standard -> no hit on symbol 43
+
+    // Symbol 46 (.): (contact|defense) &0x0C != 0 -> out
+    const contactFlags = computeArchetypeFlags(CONTACT_SPEED);
+    const defenseFlags = computeArchetypeFlags(ELITE_DEFENSE);
+
+    expect(contactFlags & 0x0C).not.toBe(0); // contact -> out on symbol 46
+    expect(defenseFlags & 0x0C).not.toBe(0); // defense -> out on symbol 46
+    expect(speedFlags & 0x0C).toBe(0);        // speed -> no out on symbol 46
   });
 });
 

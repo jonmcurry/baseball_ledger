@@ -16,6 +16,8 @@ import {
   IDT_ACTIVE_LOW,
   IDT_ACTIVE_HIGH,
   isIDTActive,
+  PITCHER_CHECK_VALUES,
+  isPitcherCheckValue,
 } from '@lib/simulation/plate-appearance';
 import { OutcomeCategory } from '@lib/types/game';
 import { STRUCTURAL_POSITIONS } from '@lib/card-generator/structural';
@@ -38,37 +40,72 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     return card;
   }
 
-  describe('IDT_ACTIVE_LOW and IDT_ACTIVE_HIGH constants', () => {
-    it('IDT_ACTIVE_LOW is 5 (minimum thresholdLow in IDT table)', () => {
-      expect(IDT_ACTIVE_LOW).toBe(5);
+  describe('IDT_ACTIVE_LOW and IDT_ACTIVE_HIGH constants (Ghidra confirmed)', () => {
+    it('IDT_ACTIVE_LOW is 15 (confirmed by Ghidra: 0x0F)', () => {
+      expect(IDT_ACTIVE_LOW).toBe(15);
     });
 
-    it('IDT_ACTIVE_HIGH is 25 (maximum thresholdHigh in IDT table)', () => {
-      expect(IDT_ACTIVE_HIGH).toBe(25);
+    it('IDT_ACTIVE_HIGH is 23 (confirmed by Ghidra: 0x17)', () => {
+      expect(IDT_ACTIVE_HIGH).toBe(23);
     });
   });
 
-  describe('isIDTActive()', () => {
-    it('returns true for values in IDT range [5, 25]', () => {
-      expect(isIDTActive(5)).toBe(true);
-      expect(isIDTActive(7)).toBe(true);   // single
-      expect(isIDTActive(13)).toBe(true);  // walk
-      expect(isIDTActive(14)).toBe(true);  // strikeout
-      expect(isIDTActive(25)).toBe(true);
+  describe('isIDTActive() -- Ghidra confirmed range [15, 23]', () => {
+    it('returns true for values in IDT range [15, 23]', () => {
+      expect(isIDTActive(15)).toBe(true);
+      expect(isIDTActive(17)).toBe(true);  // double outcome
+      expect(isIDTActive(19)).toBe(true);  // home run outcome
+      expect(isIDTActive(21)).toBe(true);  // ground out outcome
+      expect(isIDTActive(23)).toBe(true);  // pop out outcome
     });
 
-    it('returns false for values below IDT range (0-4)', () => {
-      expect(isIDTActive(0)).toBe(false);  // double
-      expect(isIDTActive(1)).toBe(false);  // home run
-      expect(isIDTActive(4)).toBe(false);
+    it('returns false for values below IDT range (0-14)', () => {
+      expect(isIDTActive(0)).toBe(false);   // double (card value)
+      expect(isIDTActive(1)).toBe(false);   // home run (card value)
+      expect(isIDTActive(7)).toBe(false);   // single (card value)
+      expect(isIDTActive(13)).toBe(false);  // walk (card value)
+      expect(isIDTActive(14)).toBe(false);  // strikeout (card value)
     });
 
-    it('returns false for values above IDT range (26+)', () => {
-      expect(isIDTActive(26)).toBe(false); // ground out
-      expect(isIDTActive(30)).toBe(false); // ground out advance
-      expect(isIDTActive(37)).toBe(false); // HR variant
-      expect(isIDTActive(40)).toBe(false); // reached on error
-      expect(isIDTActive(41)).toBe(false); // HR variant
+    it('returns false for values above IDT range (24+)', () => {
+      expect(isIDTActive(24)).toBe(false);  // line out
+      expect(isIDTActive(26)).toBe(false);  // ground out
+      expect(isIDTActive(30)).toBe(false);  // ground out advance
+      expect(isIDTActive(37)).toBe(false);  // HR variant
+      expect(isIDTActive(40)).toBe(false);  // reached on error
+    });
+  });
+
+  describe('PITCHER_CHECK_VALUES (Ghidra confirmed: card values 7, 8, 11)', () => {
+    it('contains exactly {7, 8, 11}', () => {
+      expect(PITCHER_CHECK_VALUES.has(7)).toBe(true);
+      expect(PITCHER_CHECK_VALUES.has(8)).toBe(true);
+      expect(PITCHER_CHECK_VALUES.has(11)).toBe(true);
+      expect(PITCHER_CHECK_VALUES.size).toBe(3);
+    });
+
+    it('does not contain walk (13), K (14), HR (1), or double (0)', () => {
+      expect(PITCHER_CHECK_VALUES.has(0)).toBe(false);
+      expect(PITCHER_CHECK_VALUES.has(1)).toBe(false);
+      expect(PITCHER_CHECK_VALUES.has(13)).toBe(false);
+      expect(PITCHER_CHECK_VALUES.has(14)).toBe(false);
+    });
+  });
+
+  describe('isPitcherCheckValue()', () => {
+    it('returns true for pitcher-checked values {7, 8, 11}', () => {
+      expect(isPitcherCheckValue(7)).toBe(true);
+      expect(isPitcherCheckValue(8)).toBe(true);
+      expect(isPitcherCheckValue(11)).toBe(true);
+    });
+
+    it('returns false for non-pitcher-checked values', () => {
+      expect(isPitcherCheckValue(0)).toBe(false);
+      expect(isPitcherCheckValue(1)).toBe(false);
+      expect(isPitcherCheckValue(9)).toBe(false);
+      expect(isPitcherCheckValue(13)).toBe(false);
+      expect(isPitcherCheckValue(14)).toBe(false);
+      expect(isPitcherCheckValue(21)).toBe(false);
     });
   });
 
@@ -169,10 +206,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('pitcher wins uses IDT for IDT-active values (diverse outcomes)', () => {
-      // Card filled with value 7 (SINGLE_CLEAN, IDT-active).
+      // Card filled with value 21 (GROUND_OUT outcome index, IDT-active in [15,23]).
       // Grade 15 always wins the grade check (R2 <= 15 is always true).
-      // IDT should remap value 7 to various outcomes, not just SINGLE_CLEAN.
-      const card = createTestCard(7);
+      // IDT should remap value 21 to various outcomes, not just GROUND_OUT.
+      const card = createTestCard(21);
       const rng = new SeededRNG(42);
       const outcomeSet = new Set<OutcomeCategory>();
       let idtUsedCount = 0;
@@ -186,36 +223,33 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
         }
       }
 
-      // IDT should produce diverse outcomes (not just SINGLE_CLEAN)
+      // IDT should produce diverse outcomes (not just GROUND_OUT)
       expect(outcomeSet.size).toBeGreaterThanOrEqual(3);
-      // IDT should be used for most results (grade 15 always wins, 7 is IDT-active)
+      // IDT should be used for most results (grade 15 always wins, 21 is IDT-active)
       expect(idtUsedCount).toBeGreaterThan(samples * 0.30);
     });
 
-    it('batter wins uses direct mapping (grade 1, mostly SINGLE_CLEAN)', () => {
-      // Card filled with value 7. Grade 1: pitcher wins only 1/15 = 6.7% of time.
-      // Batter wins ~93% -> direct mapping -> value 7 = SINGLE_CLEAN.
-      const card = createTestCard(7);
+    it('batter wins uses direct mapping (grade 1, mostly GROUND_OUT)', () => {
+      // Card filled with value 21 (IDT-active). Grade 1: pitcher wins only 1/15 of time.
+      // Batter wins ~93% -> direct mapping -> value 21 = GROUND_OUT.
+      const card = createTestCard(21);
       const rng = new SeededRNG(42);
-      let singles = 0;
+      let groundOuts = 0;
       const samples = 500;
 
       for (let i = 0; i < samples; i++) {
         const result = resolvePlateAppearance(card, 1, rng);
-        if (
-          result.outcome === OutcomeCategory.SINGLE_CLEAN ||
-          result.outcome === OutcomeCategory.SINGLE_ADVANCE
-        ) {
-          singles++;
+        if (result.outcome === OutcomeCategory.GROUND_OUT) {
+          groundOuts++;
         }
       }
 
-      // With grade 1, batter wins ~93% of time -> direct mapping -> mostly singles
-      expect(singles).toBeGreaterThan(samples * 0.70);
+      // With grade 1, batter wins ~93% of time -> direct mapping -> mostly ground outs
+      expect(groundOuts).toBeGreaterThan(samples * 0.70);
     });
 
     it('non-IDT values bypass IDT even when pitcher wins (value 1 = HR)', () => {
-      // Card filled with value 1 (HOME_RUN, NOT IDT-active: 1 < 5).
+      // Card filled with value 1 (HOME_RUN, NOT IDT-active: 1 < 15).
       // Even grade 15 cannot suppress HRs through IDT.
       const card = createTestCard(1);
       const rng = new SeededRNG(42);
@@ -235,26 +269,68 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(homeRuns).toBe(samples);
     });
 
-    it('non-IDT values bypass IDT even when pitcher wins (value 0 = double)', () => {
-      // Card filled with value 0 (DOUBLE, NOT IDT-active: 0 < 5).
-      const card = createTestCard(0);
+    it('pitcher check values (7, 8) are suppressed when pitcher wins grade check', () => {
+      // Card filled with value 7 (SINGLE_CLEAN, pitcher-check value).
+      // Grade 15 always wins. Pitcher card check remaps some singles to other outcomes.
+      const card = createTestCard(7);
       const rng = new SeededRNG(42);
-      let doubles = 0;
+      let remapped = 0;
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (!result.usedFallback) {
+          remapped++;
+        }
+      }
+
+      // Grade 15 always wins, value 7 is pitcher-checked, should see remapping
+      expect(remapped).toBeGreaterThan(samples * 0.30);
+    });
+
+    it('pitcher check values use direct mapping when batter wins (grade 1)', () => {
+      // Card filled with value 7. Grade 1: pitcher wins only 1/15 of time.
+      // Batter wins ~93% -> direct mapping -> SINGLE_CLEAN.
+      const card = createTestCard(7);
+      const rng = new SeededRNG(42);
+      let singles = 0;
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 1, rng);
+        if (
+          result.outcome === OutcomeCategory.SINGLE_CLEAN ||
+          result.outcome === OutcomeCategory.SINGLE_ADVANCE
+        ) {
+          singles++;
+        }
+      }
+
+      // Batter wins ~93%: mostly direct-mapped singles
+      expect(singles).toBeGreaterThan(samples * 0.70);
+    });
+
+    it('non-IDT values bypass IDT even when pitcher wins (value 13 = walk)', () => {
+      // Card filled with value 13 (WALK, NOT IDT-active per Ghidra: 13 < 15).
+      // Walks are NEVER remapped by IDT -- they always produce WALK.
+      const card = createTestCard(13);
+      const rng = new SeededRNG(42);
+      let walks = 0;
       const samples = 200;
 
       for (let i = 0; i < samples; i++) {
         const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.DOUBLE) {
-          doubles++;
+        if (result.outcome === OutcomeCategory.WALK) {
+          walks++;
         }
         expect(result.usedFallback).toBe(true);
       }
 
-      expect(doubles).toBe(samples);
+      expect(walks).toBe(samples);
     });
 
     it('non-IDT out values always produce outs regardless of grade', () => {
-      // Card filled with value 26 (GROUND_OUT, NOT IDT-active: 26 > 25).
+      // Card filled with value 26 (GROUND_OUT, NOT IDT-active: 26 > 23).
       const card = createTestCard(26);
       const rng = new SeededRNG(42);
       let groundOuts = 0;
@@ -272,8 +348,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('higher pitcher grade produces more IDT outcomes', () => {
-      // IDT-active card (value 7). Compare grade 15 vs grade 1 IDT usage.
-      const card = createTestCard(7);
+      // IDT-active card (value 21, in [15,23]). Compare grade 15 vs grade 1.
+      const card = createTestCard(21);
       const samples = 500;
 
       const rngHigh = new SeededRNG(42);
@@ -294,41 +370,33 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(idtHighGrade).toBeGreaterThan(idtLowGrade);
     });
 
-    it('higher pitcher grade produces more outs on IDT-active card', () => {
-      const card = createTestCard(7); // singles, IDT-active
+    it('higher pitcher grade produces more non-direct-mapping outcomes', () => {
+      // Card filled with value 21 (GROUND_OUT, IDT-active in [15,23]).
+      // High grade pitcher triggers IDT more often, remapping GROUND_OUT to other types.
+      const card = createTestCard(21);
       const samples = 500;
 
       const rngHigh = new SeededRNG(42);
-      let outsHighGrade = 0;
+      let nonGroundOutHigh = 0;
       for (let i = 0; i < samples; i++) {
         const result = resolvePlateAppearance(card, 15, rngHigh);
-        if (
-          result.outcome >= OutcomeCategory.GROUND_OUT &&
-          result.outcome <= OutcomeCategory.STRIKEOUT_SWINGING
-        ) {
-          outsHighGrade++;
-        }
+        if (result.outcome !== OutcomeCategory.GROUND_OUT) nonGroundOutHigh++;
       }
 
       const rngLow = new SeededRNG(42);
-      let outsLowGrade = 0;
+      let nonGroundOutLow = 0;
       for (let i = 0; i < samples; i++) {
         const result = resolvePlateAppearance(card, 1, rngLow);
-        if (
-          result.outcome >= OutcomeCategory.GROUND_OUT &&
-          result.outcome <= OutcomeCategory.STRIKEOUT_SWINGING
-        ) {
-          outsLowGrade++;
-        }
+        if (result.outcome !== OutcomeCategory.GROUND_OUT) nonGroundOutLow++;
       }
 
-      // High grade pitcher should produce more outs through IDT
-      expect(outsHighGrade).toBeGreaterThan(outsLowGrade);
+      // High grade remaps more outcomes away from default GROUND_OUT via IDT
+      expect(nonGroundOutHigh).toBeGreaterThan(nonGroundOutLow);
     });
 
     it('outcomeTableRow is set when IDT is used', () => {
-      // Grade 15 + IDT-active value should produce some IDT results
-      const card = createTestCard(7);
+      // Grade 15 + IDT-active value (21) should produce some IDT results
+      const card = createTestCard(21);
       const rng = new SeededRNG(42);
       let hasTableRow = false;
 
@@ -357,7 +425,7 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('grade check R2 roll is recorded in pitcherGradeEffect', () => {
-      const card = createTestCard(7);
+      const card = createTestCard(21);
       const rng = new SeededRNG(42);
 
       const result = resolvePlateAppearance(card, 10, rng);

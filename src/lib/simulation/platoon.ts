@@ -2,14 +2,23 @@
  * Platoon Adjustment Module
  *
  * REQ-SIM-004b: Platoon adjustment (from APBA's L/R handling).
- * Applied BEFORE the card lookup by temporarily modifying the card.
  *
- * Rules:
- * - Opposite-hand matchup (LHB vs RHP, RHB vs LHP):
- *   Replace 1 out-value position (24/26/30/31) with a hit value (8)
- *   Replace 1 strikeout position (14) with a contact value (9)
- * - Same-hand matchup: No modification
- * - Switch hitter: Always gets opposite-hand advantage
+ * Ghidra decompilation of FUN_1058_5be1 (Grade Setup) reveals that the real
+ * APBA BBW implements platoon as a GRADE MODIFICATION, not a card modification:
+ *
+ *   if pitcherInfo.throwHand == batterData.batHand:
+ *     pitcherData.grade = clamp(pitcherData.grade + batterData.platoonAdj, 30)
+ *
+ * Same-hand matchup: pitcher's grade INCREASES (pitcher advantage).
+ * Opposite-hand matchup: no adjustment (batter at normal effectiveness).
+ * Switch hitter: never same-hand, so no adjustment.
+ *
+ * The grade-based function `computePlatoonGradeAdjustment()` implements
+ * the real BBW approach and is integrated into `computeGameGrade()` in
+ * pitching.ts as Layer 4.
+ *
+ * The old card-modification approach (`applyPlatoonAdjustment()`) is
+ * preserved for backward compatibility but is not the real BBW method.
  *
  * This is a Layer 1 module: pure logic with no I/O, runs in any JS runtime.
  */
@@ -113,4 +122,42 @@ export function applyPlatoonAdjustment(
   }
 
   return adjusted;
+}
+
+// ---------------------------------------------------------------------------
+// Grade-Based Platoon (Real BBW approach per Ghidra FUN_1058_5be1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute the platoon grade adjustment for a matchup.
+ *
+ * Per Ghidra decompilation of FUN_1058_5be1 (Layer 4):
+ *   if pitcherInfo.throwHand == batterData.batHand:
+ *     grade += platoonValue
+ *
+ * Same-hand matchup: pitcher gets grade bonus (pitcher advantage).
+ * Opposite-hand or switch hitter: no adjustment.
+ *
+ * @param batterHand - Batter's batting hand ('L', 'R', or 'S')
+ * @param pitcherHand - Pitcher's throwing hand ('L' or 'R')
+ * @param platoonValue - The platoon adjustment value from batter data
+ * @returns Grade adjustment to add (0 if no adjustment applies)
+ */
+export function computePlatoonGradeAdjustment(
+  batterHand: BattingHand,
+  pitcherHand: ThrowingHand,
+  platoonValue: number,
+): number {
+  // Switch hitters never trigger same-hand platoon
+  if (batterHand === 'S') {
+    return 0;
+  }
+
+  // Same-hand matchup: pitcher gets grade bonus
+  if (batterHand === pitcherHand) {
+    return platoonValue;
+  }
+
+  // Opposite-hand: no adjustment
+  return 0;
 }

@@ -10,6 +10,7 @@
 import {
   applyPlatoonAdjustment,
   hasPlatoonAdvantage,
+  computePlatoonGradeAdjustment,
   OUT_VALUES,
   HIT_VALUE,
   STRIKEOUT_VALUE,
@@ -216,6 +217,37 @@ describe('REQ-SIM-004b: Platoon Adjustment', () => {
 
         expect(adjusted).toHaveLength(35);
       });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Grade-Based Platoon (Ghidra FUN_1058_5be1 Layer 4)
+  // -------------------------------------------------------------------------
+  describe('computePlatoonGradeAdjustment() (Ghidra confirmed)', () => {
+    it('returns platoonValue for same-hand matchup (RHB vs RHP)', () => {
+      expect(computePlatoonGradeAdjustment('R', 'R', 3)).toBe(3);
+    });
+
+    it('returns platoonValue for same-hand matchup (LHB vs LHP)', () => {
+      expect(computePlatoonGradeAdjustment('L', 'L', 5)).toBe(5);
+    });
+
+    it('returns 0 for opposite-hand matchup (LHB vs RHP)', () => {
+      expect(computePlatoonGradeAdjustment('L', 'R', 3)).toBe(0);
+    });
+
+    it('returns 0 for opposite-hand matchup (RHB vs LHP)', () => {
+      expect(computePlatoonGradeAdjustment('R', 'L', 5)).toBe(0);
+    });
+
+    it('returns 0 for switch hitter vs any pitcher', () => {
+      expect(computePlatoonGradeAdjustment('S', 'R', 3)).toBe(0);
+      expect(computePlatoonGradeAdjustment('S', 'L', 5)).toBe(0);
+    });
+
+    it('returns 0 when platoonValue is 0 regardless of matchup', () => {
+      expect(computePlatoonGradeAdjustment('R', 'R', 0)).toBe(0);
+      expect(computePlatoonGradeAdjustment('L', 'L', 0)).toBe(0);
     });
   });
 });
