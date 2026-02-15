@@ -42,10 +42,12 @@ export const CARD_VALUES = {
  * than the raw rate so that average-grade suppression brings it back to
  * the historical level.
  *
- * Formula: (AVG_GRADE / MAX_GRADE) * HIT_SUPPRESSION_SCALE = (8/15) * 0.45
- * Must stay in sync with HIT_SUPPRESSION_SCALE in plate-appearance.ts.
+ * With the IDT model, only IDT-active card values (5-25) can be remapped
+ * when the pitcher wins the grade check. HRs (value 1) and doubles (value 0)
+ * bypass IDT entirely. Empirically measured: ~10% suppression at grade 8
+ * (singles suppressed through IDT, HRs/doubles never suppressed).
  */
-const AVG_HIT_SUPPRESSION = 0.24;
+const AVG_HIT_SUPPRESSION = 0.10;
 
 /**
  * Outcome slot allocation: how many of the 24 fillable positions

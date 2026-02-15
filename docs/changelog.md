@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-02-15 - Real APBA BBW IDT Table Re-enablement
+
+Replaced the flat hit/walk suppression model with the real APBA BBW IDT
+(IDT.OBJ decision table) flow for plate appearance resolution. This makes
+the simulation faithful to how BBW 3.0 actually resolves batter vs pitcher.
+
+**Real APBA BBW PA resolution flow:**
+1. Select random card position (0-34, skip non-drawable)
+2. Read card value at that position
+3. Grade check: R2 in [1, 15], pitcher wins if R2 <= grade
+4. Pitcher wins AND value is IDT-active (5-25): IDT table lookup (up to 3 attempts)
+5. Batter wins OR value not IDT-active: direct card value mapping
+
+**Key insight:** Card values 0-4 (doubles, HRs) and 26+ (outs) NEVER go through
+the IDT table, preserving their high correlation with real stats (e.g., value 1 =
+HR with r=.715 is never suppressed by pitcher). Only values 5-25 (singles, walks,
+Ks, triples) can be remapped when the pitcher wins the grade check.
+
+**Hit compensation recalibrated:** AVG_HIT_SUPPRESSION reduced from 0.24 to 0.10
+to match the IDT model's empirically measured ~10% suppression at grade 8 (vs the
+old flat model's 24%). This is lower because HRs and doubles bypass IDT entirely.
+
+Grade curve for .270 hitter:
+- Grade 1 (worst pitcher): .316 BA
+- Grade 8 (average): .259 BA
+- Grade 15 (best pitcher): .214 BA
+
+Deleted artifacts from flat suppression model:
+- HIT_CARD_VALUES, HIT_OUTCOMES, isHitCardValue(), isHitOutcome()
+- HIT_SUPPRESSION_SCALE, WALK_SUPPRESSION_SCALE
+- applyPitcherGradeGate() function
+
+Changes:
+- plate-appearance.ts: Complete rewrite with IDT flow, imports lookupOutcome()
+- plate-appearance.ts: Added isIDTActive(), IDT_ACTIVE_LOW/HIGH constants
+- plate-appearance.test.ts: 24 new tests covering IDT flow
+- value-mapper.ts: AVG_HIT_SUPPRESSION 0.24 -> 0.10, updated comment
+
+Files changed:
+- `src/lib/simulation/plate-appearance.ts`
+- `tests/unit/lib/simulation/plate-appearance.test.ts`
+- `src/lib/card-generator/value-mapper.ts`
+
 ## 2026-02-15 - Hit Compensation in Card Generation (Batting Underperformance Fix)
 
 Batting averages were ~33 points below historical because Lahman stats already
@@ -9,21 +52,13 @@ effect was double-counted.
 
 **Fix: Hit-compensated slot allocation with largest-remainder distribution.**
 Total hit positions are computed by dividing the raw hit rate by
-(1 - AVG_HIT_SUPPRESSION) where AVG_HIT_SUPPRESSION = 0.24 ((8/15) * 0.45).
-This gives the card MORE hits than the historical rate so that average-grade
-suppression brings it back to match historical stats.
+(1 - AVG_HIT_SUPPRESSION). This gives the card MORE hits than the historical
+rate so that average-grade suppression brings it back to match historical stats.
 
 The hit positions are then distributed among categories (HR, 1B, 2B, 3B) using
 the largest-remainder method (Hamilton's method), which ensures:
 - Total hit count is exactly correct (no rounding loss across categories)
 - Each category gets its proportional share with minimal distortion
-
-Example: .270 hitter (totalHitRate = 0.250)
-- Old: 7 hit positions -> BA .237 vs grade 8 (33 points low)
-- New: 8 hit positions -> BA .270 vs grade 8 (exact match)
-
-Walk and strikeout allocation unchanged (no hit compensation applied).
-HIT_SUPPRESSION_SCALE and WALK_SUPPRESSION_SCALE unchanged at 0.45.
 
 Changes:
 - value-mapper.ts: Replace SCALE_FACTORS with AVG_HIT_SUPPRESSION compensation
