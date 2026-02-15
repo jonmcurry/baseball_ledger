@@ -145,10 +145,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Grade 15 = (15/15) * 0.10 = 10% combined suppression.
-      // With 1000 samples, expect 60-150 suppressions.
-      expect(pitcherWins).toBeGreaterThan(samples * 0.05);
-      expect(pitcherWins).toBeLessThan(samples * 0.16);
+      // Grade 15 = (15/15) * 0.55 = 55% combined suppression.
+      // With 1000 samples, expect 450-650 suppressions.
+      expect(pitcherWins).toBeGreaterThan(samples * 0.40);
+      expect(pitcherWins).toBeLessThan(samples * 0.70);
     });
 
     it('low grade pitchers rarely win the matchup', () => {
@@ -163,9 +163,9 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // With grade 1/15, pitcher should win rarely
-      // R2 must be <= 1, which is 1/15 chance, then shift happens 1/15 of those times
-      expect(pitcherWins).toBeLessThan(samples * 0.2);
+      // With grade 1/15, combined suppression = (1/15) * 0.55 = 3.7%.
+      // Expect < 8% of samples to be suppressed.
+      expect(pitcherWins).toBeLessThan(samples * 0.08);
     });
 
     it('returns deterministic results with same seed', () => {
@@ -234,43 +234,38 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
       expect(results1).toEqual(results2);
     });
 
-    it('produces outcomes through IDT table with direct fallback', () => {
-      // Card filled with value 7 -- IDT table scrambles to many outcome types.
-      // Value 7 matches many table rows (~49% of total weight), so most PAs
-      // go through the table. Only ~14% fall through all 3 attempts to direct mapping.
+    it('produces outcomes through direct mapping with pitcher suppression', () => {
+      // Card filled with value 7 (SINGLE_CLEAN) at all non-structural positions.
+      // Direct mapping: value 7 always maps to SINGLE_CLEAN.
+      // Pitcher grade suppression converts some singles to GROUND_OUT.
       const card = createTestCard();
       const rng = new SeededRNG(42);
       let singles = 0;
-      let fallbackCount = 0;
+      let groundOuts = 0;
       const samples = 500;
-      const outcomes = new Set<OutcomeCategory>();
 
       for (let i = 0; i < samples; i++) {
         const result = resolvePlateAppearance(card, 8, rng);
-        outcomes.add(result.outcome);
         if (
           result.outcome === OutcomeCategory.SINGLE_CLEAN ||
           result.outcome === OutcomeCategory.SINGLE_ADVANCE
         ) {
           singles++;
         }
-        if (result.usedFallback) {
-          fallbackCount++;
+        if (result.outcome === OutcomeCategory.GROUND_OUT) {
+          groundOuts++;
         }
       }
 
-      // With IDT table, value 7 produces a variety of outcomes -- not just singles.
-      // Singles should be a minority since the table scrambles most to other outcomes.
-      expect(singles).toBeLessThan(samples * 0.5);
-      // But some singles should still appear (from table matches + fallback)
-      expect(singles).toBeGreaterThan(0);
-      // IDT should produce many distinct outcome types
-      expect(outcomes.size).toBeGreaterThanOrEqual(5);
-      // Some PAs should fall through to direct mapping
-      expect(fallbackCount).toBeGreaterThan(0);
+      // With direct mapping, most draws produce singles (value 7 -> SINGLE_CLEAN).
+      // Grade 8 suppression: (8/15) * 0.55 = 29.3% of hits become ground outs.
+      // So ~70% singles, ~29% ground outs.
+      expect(singles).toBeGreaterThan(samples * 0.50);
+      expect(groundOuts).toBeGreaterThan(samples * 0.15);
+      expect(groundOuts).toBeLessThan(samples * 0.45);
     });
 
-    it('grade 15 suppresses approximately 10% of hits', () => {
+    it('grade 15 suppresses approximately 55% of hits', () => {
       const rng = new SeededRNG(42);
       let pitcherWins = 0;
       const samples = 5000;
@@ -282,13 +277,13 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Combined suppression = (15/15) * 0.10 = 10%, expect 7-14% range
+      // Combined suppression = (15/15) * 0.55 = 55%, expect 50-60% range
       const rate = pitcherWins / samples;
-      expect(rate).toBeGreaterThanOrEqual(0.07);
-      expect(rate).toBeLessThanOrEqual(0.14);
+      expect(rate).toBeGreaterThanOrEqual(0.50);
+      expect(rate).toBeLessThanOrEqual(0.60);
     });
 
-    it('grade 8 suppresses approximately 5% of hits', () => {
+    it('grade 8 suppresses approximately 29% of hits', () => {
       const rng = new SeededRNG(42);
       let pitcherWins = 0;
       const samples = 5000;
@@ -300,13 +295,13 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Combined suppression = (8/15) * 0.10 = 5.3%, expect 3-8% range
+      // Combined suppression = (8/15) * 0.55 = 29.3%, expect 25-35% range
       const rate = pitcherWins / samples;
-      expect(rate).toBeGreaterThanOrEqual(0.03);
-      expect(rate).toBeLessThanOrEqual(0.08);
+      expect(rate).toBeGreaterThanOrEqual(0.25);
+      expect(rate).toBeLessThanOrEqual(0.35);
     });
 
-    it('grade 1 suppresses approximately 0.7% of hits', () => {
+    it('grade 1 suppresses approximately 3.7% of hits', () => {
       const rng = new SeededRNG(42);
       let pitcherWins = 0;
       const samples = 5000;
@@ -318,10 +313,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution', () => {
         }
       }
 
-      // Combined suppression = (1/15) * 0.10 = 0.7%, expect 0-3% range
+      // Combined suppression = (1/15) * 0.55 = 3.7%, expect 1-7% range
       const rate = pitcherWins / samples;
-      expect(rate).toBeGreaterThanOrEqual(0);
-      expect(rate).toBeLessThanOrEqual(0.03);
+      expect(rate).toBeGreaterThanOrEqual(0.01);
+      expect(rate).toBeLessThanOrEqual(0.07);
     });
 
     it('higher pitcher grade produces more outs', () => {

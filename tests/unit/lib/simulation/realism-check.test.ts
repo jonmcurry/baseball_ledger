@@ -100,7 +100,7 @@ describe('Realism Check: Batting Average Simulation', () => {
     const ba = atBats > 0 ? hits / atBats : 0;
 
     // Batting average should be realistic: .220 to .320
-    // IDT table scrambles outcomes; scale factors compensate
+    // Direct mapping + pitcher grade suppression keeps BA in range
     expect(ba).toBeGreaterThanOrEqual(0.220);
     expect(ba).toBeLessThanOrEqual(0.320);
   });
@@ -124,8 +124,8 @@ describe('Realism Check: Batting Average Simulation', () => {
     }
 
     const walkRate = realPAs > 0 ? walks / realPAs : 0;
-    // Wider range: IDT table scrambles walk positions to other outcomes
-    // but also scrambles OTHER positions to walks
+    // With direct mapping, walk rate is deterministic from card positions.
+    // Walk positions on card / total drawable positions gives the walk rate.
     expect(walkRate).toBeGreaterThanOrEqual(0.03);
     expect(walkRate).toBeLessThanOrEqual(0.20);
   });
@@ -149,8 +149,8 @@ describe('Realism Check: Batting Average Simulation', () => {
     }
 
     const kRate = realPAs > 0 ? strikeouts / realPAs : 0;
-    // Wider range: IDT table scrambles strikeout positions to other outcomes
-    // but also scrambles OTHER positions to strikeouts
+    // With direct mapping, K rate is deterministic from card positions.
+    // K positions on card / total drawable positions gives the K rate.
     expect(kRate).toBeGreaterThanOrEqual(0.05);
     expect(kRate).toBeLessThanOrEqual(0.30);
   });
@@ -202,7 +202,7 @@ describe('Realism Check: Batting Average Simulation', () => {
 
     const ba = atBats > 0 ? hits / atBats : 0;
 
-    // With IDT table + pitcher grade suppression, even elite hitters stay below .400
+    // With pitcher grade suppression, even elite hitters stay below .400
     expect(ba).toBeLessThan(0.400);
     // But they should still hit well
     expect(ba).toBeGreaterThan(0.200);
@@ -213,9 +213,7 @@ describe('Realism Check: Batting Average Simulation', () => {
     const draws = 500;
     const seeds = 20;
 
-    // Aggregate across many seeds to overcome IDT table variance.
-    // The IDT table's random row selection consumes different RNG state
-    // per pitcher grade, so a single seed comparison is unreliable.
+    // Aggregate across many seeds to overcome random variance.
     let totalHitsVsAce = 0;
     let totalAbsVsAce = 0;
     let totalHitsVsJourneyMan = 0;
@@ -251,7 +249,7 @@ describe('Realism Check: Batting Average Simulation', () => {
     expect(baVsAce).toBeLessThan(baVsJourneyMan);
   });
 
-  it('IDT table produces variety of outcome types', () => {
+  it('direct mapping produces outcome types matching card composition', () => {
     const card = build270HitterCard();
     const pitcherGrade = 8;
     const rng = new SeededRNG(42);
@@ -263,10 +261,11 @@ describe('Realism Check: Batting Average Simulation', () => {
       outcomeTypes.add(result.outcome);
     }
 
-    // IDT table should scramble card values into many different outcomes.
-    // With direct mapping only, a card full of singles/walks/Ks would produce
-    // at most 3-4 outcome types. IDT should produce at least 8 distinct types.
-    expect(outcomeTypes.size).toBeGreaterThanOrEqual(8);
+    // Direct mapping produces outcome types that match the card's composition.
+    // A .270 hitter card has singles, walks, Ks, outs, speed, etc.
+    // Plus GROUND_OUT from pitcher grade suppression.
+    // Expect at least 5 distinct outcome types.
+    expect(outcomeTypes.size).toBeGreaterThanOrEqual(5);
   });
 });
 
@@ -274,7 +273,7 @@ describe('Realism Check: Batting Average Simulation', () => {
  * Real APBA Card Validation Tests
  *
  * Uses actual player cards from PLAYERS.DAT (1971 season) to validate
- * the IDT.OBJ outcome table produces realistic statistics.
+ * direct mapping + pitcher grade suppression produces realistic statistics.
  * This is the definitive test: if real APBA cards produce realistic
  * stats through our system, the simulation is faithful to BBW.
  */
@@ -372,7 +371,7 @@ describe('Real APBA Card Validation', () => {
   it('Don Buford (.290 BA) card produces realistic batting average', () => {
     const stats = simulateCard(BUFORD_CARD, 8, 20, 500);
 
-    // Buford hit .290 in real life; with IDT scrambling, expect [.200, .380]
+    // Buford hit .290 in real life; with grade 8 suppression, expect [.200, .380]
     expect(stats.ba).toBeGreaterThanOrEqual(0.200);
     expect(stats.ba).toBeLessThanOrEqual(0.380);
   });
@@ -389,9 +388,8 @@ describe('Real APBA Card Validation', () => {
     const cuellarStats = simulateCard(CUELLAR_CARD, 8, 20, 500);
     const bufordStats = simulateCard(BUFORD_CARD, 8, 20, 500);
 
-    // Pitcher card is flooded with value 13 (walk). When batter wins the grade
-    // check, these produce walks via direct mapping. When pitcher wins, IDT
-    // scrambles them to various outcomes (including some hits). The walk rate
+    // Pitcher card is flooded with value 13 (walk). With direct mapping,
+    // these always produce walks (never scrambled by IDT). The walk rate
     // is the primary differentiator for pitcher cards.
     expect(cuellarStats.walkRate).toBeGreaterThan(bufordStats.walkRate);
     // Cuellar should have very high walk rate (15+ walk positions on card)
@@ -401,12 +399,12 @@ describe('Real APBA Card Validation', () => {
   it('Belanger (0 HR) card produces very few home runs', () => {
     const stats = simulateCard(BELANGER_CARD, 8, 20, 500);
 
-    // Belanger had 0 HR in real life. His card has no HR-correlated values.
-    // Through IDT, a few HRs might still appear, but the rate should be low.
+    // Belanger had 0 HR in real life. His card byte34=2 (not HR) and byte33=0 (double).
+    // No HR card values, so HR rate should be near zero with direct mapping.
     expect(stats.hrRate).toBeLessThan(0.05); // Less than 5% HR rate
   });
 
-  it('real cards produce distinct outcome categories (IDT table working)', () => {
+  it('real cards produce outcome types matching card composition', () => {
     const rng = new SeededRNG(42);
     const draws = 600;
     const outcomeTypes = new Set<OutcomeCategory>();
@@ -416,8 +414,9 @@ describe('Real APBA Card Validation', () => {
       outcomeTypes.add(result.outcome);
     }
 
-    // Real APBA card through IDT should produce many distinct outcome types
-    expect(outcomeTypes.size).toBeGreaterThanOrEqual(8);
+    // Buford's card has diverse values (singles, walks, Ks, HR, double,
+    // triple, outs, ROE, etc.) so direct mapping produces many types.
+    expect(outcomeTypes.size).toBeGreaterThanOrEqual(5);
   });
 
   it('higher pitcher grade suppresses more hits on real card', () => {

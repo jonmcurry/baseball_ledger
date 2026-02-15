@@ -4,21 +4,20 @@
  * REQ-SIM-004: Card lookup with pitcher grade gate.
  * This is the core plate appearance resolution that combines:
  * - Card position selection (random from 0-34, skipping structural)
- * - Pitcher grade check (determines resolution path)
- * - Direct card value mapping (when batter wins, or value outside IDT range)
- * - IDT.OBJ outcome table scrambling (when pitcher wins AND value in IDT range)
+ * - Direct card value to outcome mapping (card value IS the outcome)
+ * - Pitcher grade suppression (only affects HIT outcomes)
  *
- * BBW resolution order:
- *   card draw -> grade check -> batter wins? direct mapping : IDT table
+ * APBA BBW resolution order (proven by correlation analysis):
+ *   card draw -> direct mapping -> pitcher grade suppresses hits only
  *
- * The pitcher grade gates WHETHER the IDT table is consulted. Card values
- * (0-42) directly encode outcomes (value 13 = walk, 14 = K, 7 = single, etc.)
- * with r=.978/.959/.680 correlations in real APBA data. The IDT table scrambles
- * outcomes only when the pitcher wins the grade check, acting as a defense
- * mechanism that converts batter-favorable values into mixed results.
+ * Card values (0-42) directly encode outcomes. Correlation analysis of
+ * real APBA data proves: value 13 = walk (r=.978), value 14 = K (r=.959),
+ * value 7 = single (r=.680). These near-perfect correlations prove card
+ * values are NEVER scrambled through the IDT table during PA resolution.
  *
- * Values outside IDT range (0-4, 26+) always use direct mapping regardless
- * of the grade check, since no IDT row can match them.
+ * The pitcher grade gate ONLY affects hit outcomes (singles, doubles,
+ * triples, HRs). Walks, strikeouts, outs, and all other outcomes pass
+ * through unchanged regardless of pitcher quality.
  *
  * This is a Layer 1 module: pure logic with no I/O, runs in any JS runtime.
  */
@@ -28,7 +27,6 @@ import type { CardValue } from '../types/player';
 import { OutcomeCategory } from '../types/game';
 import { NON_DRAWABLE_POSITIONS, CARD_LENGTH } from '../card-generator/structural';
 import { getDirectOutcome } from './card-value-fallback';
-import { lookupOutcome } from './outcome-table';
 
 /**
  * Hit-type card values from SRD REQ-SIM-004 step 4d.
@@ -130,37 +128,18 @@ export interface GradeGateResult {
 }
 
 /**
- * IDT-active card value range. Values in [IDT_RANGE_LOW, IDT_RANGE_HIGH]
- * can match IDT table rows (all rows have thresholdLow >= 5, thresholdHigh <= 25).
- * Values outside this range always use direct mapping.
- */
-export const IDT_RANGE_LOW = 5;
-export const IDT_RANGE_HIGH = 25;
-
-/**
- * Grade check offset. In APBA, the pitcher has a baseline defensive influence
- * beyond the raw grade number. This offset is added to the grade when
- * determining if the pitcher wins the grade check. It represents the
- * inherent pitcher advantage in the batting/pitching matchup.
+ * Hit suppression scale for pitcher grade gate.
+ * Combined suppression probability = (grade/15) * HIT_SUPPRESSION_SCALE.
  *
- * The grade check formula: R in [1, 15], pitcher wins if R <= (grade + offset).
- * With offset=2:
- *   Grade 1 (poor):  3/15 = 20.0% pitcher influence
- *   Grade 8 (avg):  10/15 = 66.7% pitcher influence
- *   Grade 15 (ace): 15/15 = 100% pitcher influence (capped)
+ * Only HIT outcomes (singles, doubles, triples, HRs) are subject to
+ * suppression. Walks, strikeouts, and outs are never affected.
  *
- * This produces realistic BA ranges:
- *   vs grade 1:  ~.360 BA (bad pitcher, batter dominates)
- *   vs grade 8:  ~.290 BA (balanced)
- *   vs grade 15: ~.240 BA (ace suppresses hits)
+ * Calibrated against Buford's real APBA card (.290 BA target vs grade 8):
+ *   Grade 1 (poor):  (1/15) * 0.55 = 3.7% hit suppression
+ *   Grade 8 (avg):   (8/15) * 0.55 = 29.3% hit suppression
+ *   Grade 15 (ace): (15/15) * 0.55 = 55.0% hit suppression
  */
-export const GRADE_CHECK_OFFSET = 2;
-
-/**
- * Hit suppression scale for legacy applyPitcherGradeGate() function.
- * Combined suppression = (grade/15) * HIT_SUPPRESSION_SCALE.
- */
-export const HIT_SUPPRESSION_SCALE = 0.10;
+export const HIT_SUPPRESSION_SCALE = 0.55;
 
 /**
  * Apply the pitcher grade gate to a card value (legacy API, kept for tests).
@@ -218,13 +197,6 @@ export function applyPitcherGradeGate(
 }
 
 /**
- * Check if a card value is in the IDT-active range (can match IDT table rows).
- */
-export function isIDTActive(cardValue: number): boolean {
-  return cardValue >= IDT_RANGE_LOW && cardValue <= IDT_RANGE_HIGH;
-}
-
-/**
  * Result of a complete plate appearance resolution.
  */
 export interface PlateAppearanceResult {
@@ -239,19 +211,16 @@ export interface PlateAppearanceResult {
 /**
  * Resolve a complete plate appearance.
  *
- * BBW faithful resolution (per REQ-SIM-004 + correlation analysis):
+ * APBA BBW faithful resolution (per correlation analysis):
  * 1. Select a random card position (skipping structural constants)
  * 2. Read the card value
- * 3. Pitcher grade check: R in [1,15], pitcher wins if R <= grade
- * 4a. If batter wins OR value outside IDT range: direct card value mapping
- * 4b. If pitcher wins AND value in IDT range (5-25): IDT table scrambling
- *     (if IDT misses 3x, fall back to direct mapping)
+ * 3. Direct mapping: card value IS the outcome (always)
+ * 4. Pitcher grade suppression: ONLY hit outcomes can be converted to outs
  *
- * This model is validated by correlation analysis: value 13 has r=.978 with
- * walks, value 14 has r=.959 with strikeouts. These near-perfect correlations
- * prove card values directly encode outcomes (not scrambled through IDT).
- * The IDT table serves as the pitcher's defense mechanism, scrambling
- * batter-favorable outcomes only when the pitcher wins the grade check.
+ * Correlation analysis proves this model:
+ *   value 13 -> walk (r=.978), value 14 -> K (r=.959)
+ * These near-perfect correlations are impossible if values were scrambled
+ * through the IDT table. Card values directly encode outcomes.
  *
  * @param card - The batter's 35-element card array
  * @param pitcherGrade - Pitcher's current effective grade (1-15)
@@ -263,50 +232,33 @@ export function resolvePlateAppearance(
   pitcherGrade: number,
   rng: SeededRNG
 ): PlateAppearanceResult {
-  // Step 1: Select card position
+  // Step 1: Select card position (skips structural constants)
   const cardPosition = selectCardPosition(rng);
 
   // Step 2: Read card value
   const rawCardValue = readCardValue(card, cardPosition);
 
-  // Step 3: Pitcher grade check
-  // R in [1, 15]; pitcher wins if R <= (grade + offset), capped at 15
-  const gradeRoll = rng.nextInt(1, 15);
-  const effectiveGrade = Math.min(pitcherGrade + GRADE_CHECK_OFFSET, 15);
-  const pitcherWins = gradeRoll <= effectiveGrade;
+  // Step 3: Direct mapping -- card value IS the outcome
+  let outcome = getDirectOutcome(rawCardValue);
 
-  let outcome: OutcomeCategory;
-  let outcomeTableRow: number | undefined;
-  let usedFallback: boolean;
+  // Step 4: Pitcher grade suppression -- ONLY affects hit outcomes
+  // Walks (13), Ks (14), outs, and all other values pass through unchanged.
+  // Combined suppression = (grade/15) * HIT_SUPPRESSION_SCALE
+  let pitcherWon = false;
+  let gradeRoll = 0;
 
-  // Step 4: Resolve outcome based on grade check result
-  if (pitcherWins && isIDTActive(rawCardValue)) {
-    // Pitcher wins AND value is in IDT range (5-25):
-    // IDT table scrambles the outcome. This is the pitcher's defense --
-    // it converts batter-favorable card values into a mix of outcomes.
-    const tableResult = lookupOutcome(rawCardValue, rng);
-
-    if (tableResult.success && tableResult.outcome !== undefined) {
-      outcome = tableResult.outcome;
-      outcomeTableRow = tableResult.rowIndex;
-      usedFallback = false;
-    } else {
-      // IDT miss after 3 attempts: fall back to direct mapping
-      outcome = getDirectOutcome(rawCardValue);
-      usedFallback = true;
+  if (isHitOutcome(outcome)) {
+    gradeRoll = rng.nextInt(1, 15);
+    if (gradeRoll <= pitcherGrade && rng.chance(HIT_SUPPRESSION_SCALE)) {
+      outcome = OutcomeCategory.GROUND_OUT;
+      pitcherWon = true;
     }
-  } else {
-    // Batter wins OR value outside IDT range (0-4, 26+):
-    // Direct card value mapping. The card value IS the outcome.
-    outcome = getDirectOutcome(rawCardValue);
-    usedFallback = true;
   }
 
-  // Build GradeGateResult for test compatibility
   const gradeEffect: GradeGateResult = {
     originalValue: rawCardValue,
-    finalValue: rawCardValue,
-    pitcherWon: pitcherWins && isIDTActive(rawCardValue),
+    finalValue: pitcherWon ? 26 : rawCardValue, // 26 = GROUND_OUT
+    pitcherWon,
     r2Roll: gradeRoll,
   };
 
@@ -314,8 +266,7 @@ export function resolvePlateAppearance(
     cardPosition,
     cardValue: rawCardValue,
     outcome,
-    usedFallback,
+    usedFallback: true, // Always direct mapping now
     pitcherGradeEffect: gradeEffect,
-    outcomeTableRow,
   };
 }

@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-02-14 - Remove IDT from PA Resolution (Direct Mapping + Hit Suppression)
+
+Stats were still 2-3x off (BA .280-.386, HR 88-147, ERA 7-15) because the
+grade-gates-IDT model scrambled walk (value 13) and strikeout (value 14) card
+positions through the IDT table (values 5-25 are "IDT-active"). This destroyed
+the near-perfect correlations: r=.978 for walks and r=.959 for Ks. IDT also
+produced phantom HRs from non-HR positions (~6.7% of matched rows).
+
+**Fix: Direct mapping + hit-only suppression.** Card values ALWAYS map directly
+to outcomes (value 13 = walk, value 14 = K, value 7 = single, etc.). The pitcher
+grade gate ONLY suppresses HIT outcomes (singles, doubles, triples, HRs) by
+converting them to GROUND_OUT. Walks, Ks, outs, and all other outcomes are
+NEVER affected by pitcher quality.
+
+Calibrated HIT_SUPPRESSION_SCALE = 0.55:
+- Grade 1 (poor):  3.7% of hits suppressed -> BA ~.394 for Buford card
+- Grade 8 (avg):  29.3% of hits suppressed -> BA ~.282 for Buford card
+- Grade 14 (ace): 51.3% of hits suppressed -> BA ~.194 for Buford card
+
+Validated against real APBA cards from PLAYERS.DAT:
+- Buford (.290 BA): .282 vs G8 -- walks preserved at 11.7%, Ks at 19.2%
+- Belanger (.266 BA): .276 vs G8 -- 0 HRs (no phantom HRs from IDT)
+- Robinson (.281 BA): .357 vs G8 -- card has 11 hit positions (3 HRs)
+- Cuellar (pitcher): 65% walk rate -- walk-flooded card produces walks, not IDT chaos
+
+Changes:
+- Removed IDT table from PA resolution in plate-appearance.ts
+- Removed IDT_RANGE_LOW/HIGH, GRADE_CHECK_OFFSET, isIDTActive()
+- Removed lookupOutcome() import (IDT code stays in outcome-table.ts, unused)
+- Set HIT_SUPPRESSION_SCALE = 0.55 (was 0.10)
+- resolvePlateAppearance() now: direct mapping -> hit-only suppression
+- Updated plate-appearance.test.ts suppression expectations
+- Updated realism-check.test.ts to remove IDT-specific tests
+
+Files changed:
+- `src/lib/simulation/plate-appearance.ts` - Remove IDT, direct mapping model
+- `tests/unit/lib/simulation/plate-appearance.test.ts` - New suppression rates
+- `tests/unit/lib/simulation/realism-check.test.ts` - Remove IDT tests
+
 ## 2026-02-14 - Correct PA Resolution Model (Grade Gates IDT)
 
 Two critical bugs fixed in the simulation engine:
