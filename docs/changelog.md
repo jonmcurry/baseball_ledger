@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-15 - Card Generation Calibration + Full-Game Validation
+
+Added automated full-game calibration tests that validate the simulation
+produces realistic stats without requiring manual season runs. Fixed two
+calibration issues found during validation:
+
+1. **AVG_PITCHER_GRADE 8->9** (value-mapper.ts): Card suppression
+   compensation was calibrated for base grade 8, but in-game the 5-layer
+   grade system adds ~1 point average from platoon adjustment (Layer 4).
+   Increasing to 9 puts more singles on cards, producing correct BA of
+   .270 instead of .197 after all grade layers are applied.
+
+2. **IBB thresholds reduced** (manager-profiles.ts): Intentional walk
+   thresholds were 0.25-0.60, causing ~2.5 extra IBBs per team per game.
+   Reduced to 0.05-0.15 to match real MLB IBB rates (~0.2 per team per
+   game). BB/team/game dropped from 5.88 to 4.29.
+
+3. **Full-game calibration test suite** (full-game-calibration.test.ts):
+   14 new tests validating card composition, per-game stats (PA, R, BA,
+   BB, SO, HR), individual R totals matching team scores, and CG/SHO
+   rates across 50 simulated games. Runs in <100ms.
+
 ## 2026-02-15 - Fix Run Scoring and CG/SHO Tracking
 
 Fixed two bugs causing incorrect individual stats:

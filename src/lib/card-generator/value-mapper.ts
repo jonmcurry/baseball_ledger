@@ -34,10 +34,16 @@ export const CARD_VALUES = {
 } as const;
 
 /**
- * Average pitcher grade used for suppression compensation.
- * At grade 8 (league average), pitcher wins grade check with prob 8/15.
+ * Average EFFECTIVE pitcher grade used for suppression compensation.
+ *
+ * The base league-average grade is ~8, but the 5-layer grade system adds
+ * a platoon adjustment of +2 for same-hand matchups (Layer 4). With ~55%
+ * of PAs being same-hand (RH pitcher vs RH batter), the average platoon
+ * boost is ~1.1. We use 9 as the average effective grade to account for
+ * this in-game adjustment, so card compensation produces correct stat
+ * lines after all 5 grade layers are applied.
  */
-const AVG_PITCHER_GRADE = 8;
+const AVG_PITCHER_GRADE = 9;
 
 /**
  * Probability that an average pitcher wins the grade check.
