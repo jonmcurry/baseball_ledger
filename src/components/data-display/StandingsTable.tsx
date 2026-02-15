@@ -60,9 +60,13 @@ export function StandingsTable({
 }: StandingsTableProps) {
   if (standings.length === 0) return null;
 
-  // Group divisions by league
-  const nlDivisions = standings.filter((d) => d.leagueDivision === 'NL');
-  const alDivisions = standings.filter((d) => d.leagueDivision === 'AL');
+  // Group divisions by league, sorted East -> Central -> West
+  const divisionOrder: Record<string, number> = { East: 0, Central: 1, West: 2 };
+  const sortDivisions = (divs: DivisionStandings[]) =>
+    [...divs].sort((a, b) => (divisionOrder[a.division] ?? 9) - (divisionOrder[b.division] ?? 9));
+
+  const alDivisions = sortDivisions(standings.filter((d) => d.leagueDivision === 'AL'));
+  const nlDivisions = sortDivisions(standings.filter((d) => d.leagueDivision === 'NL'));
 
   const leagueGroups = [
     { label: 'American League', abbr: 'AL', divisions: alDivisions },

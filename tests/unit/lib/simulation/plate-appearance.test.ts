@@ -269,23 +269,81 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(homeRuns).toBe(samples);
     });
 
-    it('pitcher check values (7, 8) are suppressed when pitcher wins grade check', () => {
+    it('pitcher check value 7 produces GROUND_OUT when pitcher wins', () => {
       // Card filled with value 7 (SINGLE_CLEAN, pitcher-check value).
-      // Grade 15 always wins. Pitcher card check remaps some singles to other outcomes.
+      // Grade 15 always wins. Pitcher wins = out for singles.
       const card = createTestCard(7);
       const rng = new SeededRNG(42);
-      let remapped = 0;
+      let groundOuts = 0;
       const samples = 500;
 
       for (let i = 0; i < samples; i++) {
         const result = resolvePlateAppearance(card, 15, rng);
-        if (!result.usedFallback) {
-          remapped++;
+        if (result.outcome === OutcomeCategory.GROUND_OUT) {
+          groundOuts++;
         }
       }
 
-      // Grade 15 always wins, value 7 is pitcher-checked, should see remapping
-      expect(remapped).toBeGreaterThan(samples * 0.30);
+      // Grade 15 always wins -> all value-7 draws produce GROUND_OUT
+      expect(groundOuts).toBe(samples);
+    });
+
+    it('pitcher check value 8 produces GROUND_OUT when pitcher wins', () => {
+      const card = createTestCard(8);
+      const rng = new SeededRNG(42);
+      let groundOuts = 0;
+      const samples = 200;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
+      }
+
+      expect(groundOuts).toBe(samples);
+    });
+
+    it('pitcher check value 11 produces FLY_OUT when pitcher wins', () => {
+      const card = createTestCard(11);
+      const rng = new SeededRNG(42);
+      let flyOuts = 0;
+      const samples = 200;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (result.outcome === OutcomeCategory.FLY_OUT) flyOuts++;
+      }
+
+      expect(flyOuts).toBe(samples);
+    });
+
+    it('value 9 (SINGLE_LOW) is never suppressed even with grade 15', () => {
+      const card = createTestCard(9);
+      const rng = new SeededRNG(42);
+      let singles = 0;
+      const samples = 200;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (result.outcome === OutcomeCategory.SINGLE_ADVANCE) singles++;
+        expect(result.usedFallback).toBe(true);
+      }
+
+      expect(singles).toBe(samples);
+    });
+
+    it('value 10 (TRIPLE_1) is never suppressed even with grade 15', () => {
+      const card = createTestCard(10);
+      const rng = new SeededRNG(42);
+      let triples = 0;
+      const samples = 200;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (result.outcome === OutcomeCategory.TRIPLE) triples++;
+        expect(result.usedFallback).toBe(true);
+      }
+
+      expect(triples).toBe(samples);
     });
 
     it('pitcher check values use direct mapping when batter wins (grade 1)', () => {

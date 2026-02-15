@@ -187,6 +187,11 @@ export function resolvePlateAppearance(
 
   if (pitcherWins && isIDTActive(rawCardValue)) {
     // Path B: PITCHER WINS + card value in [15, 23] -> IDT table lookup
+    // NOTE: This path is currently inactive because no generated cards place
+    // values 15-23 in drawable positions. The card generator uses values:
+    //   0, 1, 5, 7, 8, 9, 10, 11, 13, 14, 24, 26, 30, 31, 33, 34, 37, 41
+    // Preserved for future compatibility if real APBA card distributions
+    // are reverse-engineered or values 15-23 are added to the generator.
     const lookup = lookupOutcome(rawCardValue, rng);
 
     if (lookup.success && lookup.outcome !== undefined) {
@@ -199,17 +204,18 @@ export function resolvePlateAppearance(
     }
   } else if (pitcherWins && isPitcherCheckValue(rawCardValue)) {
     // Path A: PITCHER WINS + card value in {7, 8, 11} -> pitcher card check
-    // In real BBW, this reads from the pitcher's card. We use IDT as proxy.
-    const lookup = lookupOutcome(rawCardValue, rng);
-
-    if (lookup.success && lookup.outcome !== undefined) {
-      outcome = lookup.outcome;
-      usedFallback = false;
-      outcomeTableRow = lookup.rowIndex;
+    // In real BBW, this reads the pitcher's card at the same position.
+    // Standard pitcher cards have ~85% out-type values, so the NET EFFECT
+    // of "pitcher wins" is conversion to an out.
+    // Values 7,8 (singles) -> GROUND_OUT
+    // Value 11 (triple) -> FLY_OUT
+    if (rawCardValue === 11) {
+      outcome = OutcomeCategory.FLY_OUT;
     } else {
-      outcome = getDirectOutcome(rawCardValue);
-      usedFallback = true;
+      outcome = OutcomeCategory.GROUND_OUT;
     }
+    usedFallback = false;
+    outcomeTableRow = undefined;
   } else {
     // Step 5: BATTER WINS (R2 > grade) OR card value not grade-gated
     // Direct mapping: card value IS the outcome
