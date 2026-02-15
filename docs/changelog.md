@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-15 - Ghidra Headless Decompilation: Full Simulation Engine Decoded
+
+Ran Ghidra 12.0.3 headless decompilation against WINBB.EXE (NE format, 16-bit Protected
+Mode). Auto-analysis found 4,583 functions; 13 targeted simulation functions decompiled
+to C pseudocode.
+
+Critical discoveries:
+- **Grade adjustment formula decoded (FUN_1058_5be1)**: 5 stacked adjustments --
+  fatigue (grade +/- delta from start), relief penalty (-2), fresh pitcher bonus (+5),
+  platoon matchup (same-hand = +table value), and random variance (table[random(40)])
+- **IDT active range is [15, 23]** (not [5, 25] as estimated) with bitmap gating
+  at DATA[0x382A] controlling which rows are active per card value
+- **PA resolution (FUN_1058_5f49)**: full flow decoded -- card draw, grade check,
+  IDT lookup with weighted random, archetype flag checks at offset 0x44, umpire
+  decision post-check that can override outcomes
+- **Card value resolution (FUN_10a0_3c17)**: 34-case switch mapping card positions
+  to fielding plays, archetype symbols (+,-,.,/ = power/speed/contact checks)
+- **Game object field map**: 40+ fields mapped from ES:[DI+offset] references
+
+Full findings in docs/ghidra-decompilation-findings.md
+Raw decompiled C pseudocode saved in BBW/ghidra_decompiled.txt
+
 ## 2026-02-15 - Deep Binary Analysis: Grade Adjustment + Symbol Code Located
 
 Extended programmatic binary analysis to locate specific code addresses for all
