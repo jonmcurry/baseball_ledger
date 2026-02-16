@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-02-15 - Pennant Race Theme Implementation
+
+Implemented the "Pennant Race" UI theme -- bold red/white/blue Americana aesthetic
+replacing the previous "Vintage Almanac" green/parchment look.
+
+### Design System
+- **Color palette**: Patriot blue (#1B3A6B) primary accent, stitch red (#BF2B2B)
+  secondary accent, clean off-white (#FAFAF5) surfaces, near-black (#1C1C1C) text
+- **Dual accent system**: Added `--accent-secondary` CSS variable for the red accent,
+  enabling blue+red Pennant Race styling throughout the app
+- **Typography**: Teko tall condensed sans-serif for headlines (replacing Roboto Slab),
+  Nunito Sans rounded body text (replacing DM Sans), IBM Plex Mono retained for stats
+- **Postseason variant**: Championship red + gold (replacing pennant red on green)
+
+### Component Updates
+- **Header**: Patriot blue banner with red stripe borders (top/bottom), cream text
+  title with red text-shadow, star ornaments replacing diamond ornaments, cream nav
+  strip with red bottom border
+- **StandingsTable**: Blue league header banners with red star ornaments replacing
+  gazette-style double rules and diamond ornaments; red division flag bars; blue
+  table headers with cream text; user team highlighted in red
+- **StandingsPage**: Blue page title with red accent underline
+- **Stat tables**: Blue header background with cream text and red bottom border
+- **Ticker**: Cream background with red border stripes
+- **Position badges**: Updated to blue (infield) and adjusted palette
+
+### Font Files
+- Added self-hosted WOFF2: teko-latin.woff2, nunito-sans-latin.woff2
+- Updated Google Fonts imports in fonts.css and index.html
+
 ## 2026-02-11 - BBW Fidelity Refactor: Card Gen + Simulation Engine
 
 Comprehensive refactor to close 13 identified gaps between our implementation

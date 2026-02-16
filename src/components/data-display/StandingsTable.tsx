@@ -1,8 +1,9 @@
 /**
  * StandingsTable
  *
- * Division standings grouped by league (AL / NL) with vintage gazette styling.
- * Double-rule borders, diamond ornaments, streak coloring, run diff coloring.
+ * Division standings grouped by league (AL / NL) with Pennant Race styling.
+ * Blue league banners with star ornaments, red division flag bars,
+ * streak coloring, run diff coloring.
  * Uses computeWinPct and computeGamesBehind from Layer 1.
  *
  * Layer 6: Presentational component. Imports from Layer 0/1 only.
@@ -15,20 +16,6 @@ export interface StandingsTableProps {
   standings: readonly DivisionStandings[];
   userTeamId: string;
   onTeamClick: (teamId: string) => void;
-}
-
-/** Small rotated square used as a decorative gazette-style separator. */
-function DiamondOrnament({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      className={`h-2.5 w-2.5 ${className}`}
-      viewBox="0 0 12 12"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <rect x="6" y="0" width="6" height="6" transform="rotate(45 6 6)" />
-    </svg>
-  );
 }
 
 /** Streak badge with W/L coloring. */
@@ -77,41 +64,25 @@ export function StandingsTable({
     <div className="space-y-10">
       {leagueGroups.map((league) => (
         <div key={league.abbr}>
-          {/* League header with decorative double rules */}
+          {/* League header banner -- blue with white text and red stars */}
           <div className="mb-6">
-            <div aria-hidden="true">
-              <div className="h-px bg-[var(--border-default)]" />
-              <div className="mt-[2px] h-[2px] bg-[var(--accent-primary)] opacity-50" />
-            </div>
-
-            <div className="flex items-center justify-center gap-3 py-3">
-              <div className="flex items-center gap-1.5" aria-hidden="true">
-                <div className="h-px w-6 bg-[var(--border-default)] md:w-14" />
-                <DiamondOrnament className="text-[var(--accent-primary)] opacity-40" />
-                <div className="h-px w-3 bg-[var(--border-default)] md:w-6" />
-                <DiamondOrnament className="text-[var(--accent-primary)] opacity-25 h-1.5 w-1.5" />
-              </div>
-
+            <div
+              className="flex items-center rounded-sm px-4 py-1.5"
+              style={{ background: 'var(--accent-primary)' }}
+            >
               <h3
-                className="font-display text-base tracking-[0.3em] uppercase text-[var(--accent-primary)] md:text-lg"
-                style={{
-                  textShadow: '1px 1px 0 rgba(255,255,255,0.6), -0.5px -0.5px 0 rgba(0,0,0,0.06)',
-                }}
+                className="font-display text-lg tracking-[0.15em] uppercase md:text-xl"
+                style={{ color: 'var(--cream-white)' }}
               >
                 {league.label}
               </h3>
-
-              <div className="flex items-center gap-1.5" aria-hidden="true">
-                <DiamondOrnament className="text-[var(--accent-primary)] opacity-25 h-1.5 w-1.5" />
-                <div className="h-px w-3 bg-[var(--border-default)] md:w-6" />
-                <DiamondOrnament className="text-[var(--accent-primary)] opacity-40" />
-                <div className="h-px w-6 bg-[var(--border-default)] md:w-14" />
-              </div>
-            </div>
-
-            <div aria-hidden="true">
-              <div className="h-[2px] bg-[var(--accent-primary)] opacity-50" />
-              <div className="mt-[2px] h-px bg-[var(--border-default)]" />
+              <span
+                className="ml-auto text-[10px] tracking-[4px]"
+                style={{ color: 'var(--accent-secondary)' }}
+                aria-hidden="true"
+              >
+                &#9733; &#9733; &#9733;
+              </span>
             </div>
           </div>
 
@@ -121,13 +92,14 @@ export function StandingsTable({
               const leader = div.teams[0];
               return (
                 <section key={`${div.leagueDivision}-${div.division}`}>
-                  {/* Division sub-header with accent bar */}
+                  {/* Division sub-header with red flag bar */}
                   <div className="mb-3 flex items-center gap-2">
                     <div
-                      className="h-5 w-1 rounded-sm bg-[var(--accent-primary)] opacity-60"
+                      className="h-5 w-1 rounded-sm"
+                      style={{ background: 'var(--accent-secondary)' }}
                       aria-hidden="true"
                     />
-                    <h4 className="font-headline text-base font-bold tracking-wide text-ballpark">
+                    <h4 className="font-headline text-base font-bold tracking-wide text-[var(--accent-primary)]">
                       {div.leagueDivision} {div.division}
                     </h4>
                     <div
@@ -140,16 +112,16 @@ export function StandingsTable({
                   <div
                     className="overflow-x-auto rounded"
                     style={{
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.1)',
+                      boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+                      border: '1px solid var(--border-default)',
                     }}
                   >
                     <table className="w-full font-stat text-sm" role="table">
                       <thead>
                         <tr
-                          className="text-[var(--text-secondary)]"
                           style={{
-                            background: 'linear-gradient(180deg, var(--surface-overlay) 0%, var(--surface-highlight) 100%)',
-                            borderBottom: '2px solid var(--border-default)',
+                            background: 'var(--accent-primary)',
+                            color: 'var(--cream-white)',
                           }}
                         >
                           <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider">Team</th>
@@ -191,7 +163,7 @@ export function StandingsTable({
                               }`}
                             >
                               <td className="px-3 py-1.5 text-left">
-                                <span className={`font-medium ${isUser ? 'text-[var(--accent-primary)]' : ''}`}>
+                                <span className={`font-medium ${isUser ? 'text-[var(--accent-secondary)]' : ''}`}>
                                   {team.name}
                                 </span>
                               </td>

@@ -4,64 +4,66 @@
 
 /**
  * Baseball Ledger Design System
- * "Vintage Almanac" -- Classic Baseball Record Book Aesthetic
+ * "Pennant Race" -- Bold Red/White/Blue Americana
  *
- * Warm parchment backgrounds evoking leather-bound almanacs, dark ink
- * text like printed record books, deep ballpark green accents, and
- * stitch red for emphasis. Slab-serif headlines recall newspaper
- * sports pages from the golden age.
+ * Clean off-white surfaces, patriot blue headers, stitch red accent
+ * stripes. Teko tall condensed headlines recall scoreboard lettering.
+ * Nunito Sans rounded body text for friendly readability.
  */
 
 @layer base {
   :root {
     /* ===================================================================
-       COLOR PALETTE - "Vintage Almanac"
+       COLOR PALETTE - "Pennant Race"
        =================================================================== */
 
-    /* Surfaces -- warm cream/parchment (aged almanac pages) */
-    --surface-base: #F5ECD7;
-    --surface-raised: #FDF8EE;
-    --surface-overlay: #EDE3CC;
-    --surface-highlight: #E4D9BF;
+    /* Surfaces -- clean off-white (crisp program pages) */
+    --surface-base: #FAFAF5;
+    --surface-raised: #FFFFFF;
+    --surface-overlay: #F0EDE5;
+    --surface-highlight: #E5E0D5;
 
-    /* Text -- dark ink (printed almanac text) */
-    --text-primary: #2C1810;
-    --text-secondary: #5C4A3A;
-    --text-tertiary: #8B7D6B;
+    /* Text -- neutral dark (sharp print) */
+    --text-primary: #1C1C1C;
+    --text-secondary: #4A4A4A;
+    --text-tertiary: #888888;
 
-    /* Accent -- classic ballpark green (deep outfield green) */
-    --accent-primary: #1B4D3E;
-    --accent-hover: #24634F;
-    --accent-muted: rgba(27, 77, 62, 0.12);
+    /* Accent -- patriot blue (primary) + stitch red (secondary) */
+    --accent-primary: #1B3A6B;
+    --accent-hover: #2B5090;
+    --accent-muted: rgba(27, 58, 107, 0.08);
+    --accent-secondary: #BF2B2B;
+    --accent-secondary-dark: #8B1A1A;
+    --cream-white: #FFF8EE;
 
     /* Semantic */
-    --semantic-success: #2D6B3F;
-    --semantic-danger: #B22222;
+    --semantic-success: #2D7A3A;
+    --semantic-danger: #BF2B2B;
     --semantic-warning: #C49115;
     --semantic-info: #2B5797;
 
     /* Borders */
-    --border-default: #D2B48C;
-    --border-subtle: #E0D2B8;
-    --border-accent: #1B4D3E;
+    --border-default: #D0C8B8;
+    --border-subtle: #E0D8CC;
+    --border-accent: #1B3A6B;
 
     /* ===================================================================
        LEGACY TOKEN ALIASES
        Map old CSS variable names to new values so existing var() refs work
        =================================================================== */
-    --color-scoreboard: #EDE3CC;
-    --color-scoreboard-green: #1B4D3E;
-    --color-scoreboard-light: #FDF8EE;
-    --color-scoreboard-dark: #E4D9BF;
-    --color-scoreboard-text: #2C1810;
-    --color-scoreboard-glow: rgba(27, 77, 62, 0.1);
+    --color-scoreboard: #F0EDE5;
+    --color-scoreboard-green: #1B3A6B;
+    --color-scoreboard-light: #FFFFFF;
+    --color-scoreboard-dark: #E5E0D5;
+    --color-scoreboard-text: #1C1C1C;
+    --color-scoreboard-glow: rgba(27, 58, 107, 0.1);
 
-    --color-cream: #FDF8EE;
-    --color-cream-dark: #EDE3CC;
-    --color-parchment: #E4D9BF;
+    --color-cream: #FFF8EE;
+    --color-cream-dark: #F0EDE5;
+    --color-parchment: #E5E0D5;
 
-    --color-stitch: #B22222;
-    --color-stitch-light: #D43F3F;
+    --color-stitch: #BF2B2B;
+    --color-stitch-light: #D94444;
     --color-leather: #8B6F47;
     --color-leather-dark: #6B5535;
 
@@ -69,25 +71,25 @@
     --color-gold-light: #D9A52A;
     --color-gold-dark: #A67A0C;
 
-    --color-ink: #2C1810;
-    --color-ink-light: #3D2A1C;
-    --color-wood: #8B7D6B;
-    --color-wood-light: #A09282;
-    --color-muted: #5C4A3A;
-    --color-muted-light: #7A6B5C;
+    --color-ink: #1C1C1C;
+    --color-ink-light: #333333;
+    --color-wood: #888888;
+    --color-wood-light: #A0A0A0;
+    --color-muted: #4A4A4A;
+    --color-muted-light: #6A6A6A;
 
-    --color-grass: #2D6B3F;
+    --color-grass: #2D7A3A;
     --color-dirt: #A67B5B;
-    --color-chalk: #FDF8EE;
+    --color-chalk: #FFF8EE;
 
     /* ===================================================================
        TYPOGRAPHY
        =================================================================== */
-    --font-display: 'Roboto Slab', 'Georgia', serif;
-    --font-headline: 'Roboto Slab', 'Georgia', serif;
+    --font-display: 'Teko', 'Impact', sans-serif;
+    --font-headline: 'Teko', 'Impact', sans-serif;
     --font-scoreboard: 'IBM Plex Mono', 'Consolas', monospace;
     --font-stat: 'IBM Plex Mono', 'Consolas', monospace;
-    --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+    --font-body: 'Nunito Sans', system-ui, sans-serif;
 
     /* ===================================================================
        SPACING & LAYOUT
@@ -103,51 +105,53 @@
     --radius-card: 0.75rem;
 
     /* ===================================================================
-       SHADOWS & EFFECTS (softer for light backgrounds)
+       SHADOWS & EFFECTS (subtle for light backgrounds)
        =================================================================== */
     --shadow-card:
-      0 1px 3px rgba(0, 0, 0, 0.08),
-      0 4px 12px rgba(0, 0, 0, 0.05);
+      0 1px 3px rgba(0, 0, 0, 0.06),
+      0 4px 12px rgba(0, 0, 0, 0.04);
 
     --shadow-elevated:
-      0 4px 8px rgba(0, 0, 0, 0.1),
-      0 12px 24px rgba(0, 0, 0, 0.08);
+      0 4px 8px rgba(0, 0, 0, 0.08),
+      0 12px 24px rgba(0, 0, 0, 0.06);
 
     --shadow-scoreboard:
-      0 1px 3px rgba(0, 0, 0, 0.08),
-      0 4px 12px rgba(0, 0, 0, 0.05);
+      0 1px 3px rgba(0, 0, 0, 0.06),
+      0 4px 12px rgba(0, 0, 0, 0.04);
 
-    --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 
     /* ===================================================================
        BORDERS
        =================================================================== */
     --border-card: 1px solid var(--border-default);
     --border-scoreboard: 1px solid var(--border-default);
-    --border-stitch: 1px solid var(--semantic-danger);
+    --border-stitch: 1px solid var(--accent-secondary);
 
     /* Textures -- subtle paper grain */
-    --pattern-paper: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    --pattern-paper: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
     --pattern-stitch: none;
     --pattern-wood: none;
   }
 
   /* ===================================================================
-     POSTSEASON THEME (Pennant Red Accent)
+     POSTSEASON THEME (Championship Red + Gold)
      =================================================================== */
   [data-theme="postseason"] {
-    --accent-primary: #B22222;
-    --accent-hover: #CC3333;
-    --accent-muted: rgba(178, 34, 34, 0.12);
-    --border-accent: #B22222;
+    --accent-primary: #8B1A1A;
+    --accent-hover: #A52020;
+    --accent-muted: rgba(139, 26, 26, 0.10);
+    --accent-secondary: #D4A843;
+    --accent-secondary-dark: #B08930;
+    --border-accent: #8B1A1A;
 
-    --color-gold: #C49115;
-    --color-gold-light: #D9A52A;
-    --color-gold-dark: #A67A0C;
-    --color-scoreboard: #B22222;
-    --color-scoreboard-green: #8B1A1A;
-    --color-scoreboard-light: #CC3333;
-    --color-scoreboard-dark: #7A1515;
+    --color-gold: #D4A843;
+    --color-gold-light: #E4BC5A;
+    --color-gold-dark: #B08930;
+    --color-scoreboard: #8B1A1A;
+    --color-scoreboard-green: #6B1414;
+    --color-scoreboard-light: #A52020;
+    --color-scoreboard-dark: #5C1010;
   }
 
   /* ===================================================================
@@ -169,7 +173,7 @@
 
   ::selection {
     background-color: var(--accent-primary);
-    color: var(--surface-raised);
+    color: var(--cream-white);
   }
 
   :focus-visible {
@@ -184,12 +188,12 @@
 
 @layer components {
 
-  /* ----- CARD -- warm paper card with sandstone border ----- */
+  /* ----- CARD -- clean white card with border ----- */
   .vintage-card {
     background: var(--surface-raised);
     border: var(--border-card);
     border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card), inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+    box-shadow: var(--shadow-card);
     padding: var(--gutter-lg);
     position: relative;
   }
@@ -209,7 +213,7 @@
     display: none;
   }
 
-  /* ----- SCOREBOARD PANEL -- slightly darker card variant ----- */
+  /* ----- SCOREBOARD PANEL ----- */
   .scoreboard-panel {
     background: var(--surface-raised);
     border: 1px solid var(--border-default);
@@ -234,13 +238,13 @@
     text-align: center;
   }
 
-  /* ----- PENNANT HEADER -- bold slab-serif with accent underline ----- */
+  /* ----- PENNANT HEADER -- bold condensed with accent underline ----- */
   .pennant-header {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-primary);
+    letter-spacing: 0.06em;
+    color: var(--accent-primary);
     position: relative;
     display: inline-block;
   }
@@ -252,14 +256,14 @@
     left: 0;
     width: 48px;
     height: 3px;
-    background: var(--accent-primary);
+    background: var(--accent-secondary);
     border-radius: 2px;
   }
 
   /* ----- BUTTONS ----- */
   .btn-vintage {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     padding: 0.625rem 1.5rem;
@@ -270,7 +274,7 @@
 
   .btn-vintage-primary {
     background: var(--accent-primary);
-    color: #FDF8EE;
+    color: var(--cream-white);
     border: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
   }
@@ -325,16 +329,16 @@
   }
 
   .stat-table thead th {
-    background: var(--surface-overlay);
-    color: var(--accent-primary);
+    background: var(--accent-primary);
+    color: var(--cream-white);
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 500;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.06em;
     padding: 0.625rem 0.75rem;
     text-align: left;
-    border-bottom: 2px solid var(--accent-primary);
+    border-bottom: 2px solid var(--accent-secondary);
   }
 
   .stat-table thead th:first-child {
@@ -361,9 +365,9 @@
 
   /* ----- TICKER ----- */
   .ticker-strip {
-    background: var(--surface-raised);
-    border-top: 2px solid var(--accent-primary);
-    border-bottom: 2px solid var(--accent-primary);
+    background: var(--cream-white);
+    border-top: 2px solid var(--accent-secondary);
+    border-bottom: 2px solid var(--accent-secondary);
     overflow: hidden;
     position: relative;
   }
@@ -387,14 +391,14 @@
   }
 
   .ticker-separator {
-    color: var(--accent-primary);
+    color: var(--accent-secondary);
     font-size: 1.25rem;
   }
 
-  /* ----- POSITION BADGES (adjusted for light backgrounds) ----- */
+  /* ----- POSITION BADGES ----- */
   .position-badge {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 600;
     font-size: 0.75rem;
     padding: 0.125rem 0.5rem;
     border-radius: var(--radius-sm);
@@ -403,27 +407,27 @@
   }
 
   .position-badge-pitcher {
-    background: rgba(178, 34, 34, 0.12);
-    color: #B22222;
+    background: rgba(191, 43, 43, 0.10);
+    color: #BF2B2B;
   }
 
   .position-badge-catcher {
-    background: rgba(196, 145, 21, 0.12);
+    background: rgba(196, 145, 21, 0.10);
     color: #A67A0C;
   }
 
   .position-badge-infield {
-    background: rgba(43, 87, 151, 0.12);
-    color: #2B5797;
+    background: rgba(27, 58, 107, 0.10);
+    color: #1B3A6B;
   }
 
   .position-badge-outfield {
-    background: rgba(45, 107, 63, 0.12);
-    color: #2D6B3F;
+    background: rgba(45, 122, 58, 0.10);
+    color: #2D7A3A;
   }
 
   .position-badge-dh {
-    background: rgba(196, 145, 21, 0.12);
+    background: rgba(196, 145, 21, 0.10);
     color: #A67A0C;
   }
 
@@ -547,7 +551,7 @@
   .font-body { font-family: var(--font-body); }
 
   .text-scoreboard { color: var(--surface-base); }
-  .text-stitch { color: var(--semantic-danger); }
+  .text-stitch { color: var(--accent-secondary); }
   .text-gold { color: var(--accent-primary); }
   .text-leather { color: var(--border-default); }
   .text-cream { color: var(--text-primary); }
@@ -564,7 +568,7 @@
   .border-scoreboard { border-color: var(--surface-base); }
   .border-leather { border-color: var(--border-default); }
   .border-gold { border-color: var(--accent-primary); }
-  .border-stitch { border-color: var(--semantic-danger); }
+  .border-stitch { border-color: var(--accent-secondary); }
 
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-elevated { box-shadow: var(--shadow-elevated); }

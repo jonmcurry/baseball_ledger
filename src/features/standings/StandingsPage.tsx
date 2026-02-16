@@ -30,7 +30,7 @@ export function StandingsPage() {
         >
           Standings
         </h2>
-        <div className="mt-1 h-px w-16 bg-[var(--accent-primary)] opacity-40" aria-hidden="true" />
+        <div className="mt-1 h-[3px] w-12 bg-[var(--accent-secondary)]" aria-hidden="true" />
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}

@@ -1,9 +1,9 @@
 /**
  * Header
  *
- * Gazette-style masthead header with "Baseball Ledger" app title,
- * league name, decorative rule lines, diamond ornaments, and navigation strip.
- * Playoff variant styling when status is "playoffs".
+ * Pennant Race banner header with patriot blue background, red stripe
+ * borders, star ornaments, and "Baseball Ledger" title. Navigation strip
+ * on cream background with red active indicator.
  * Collapsed hamburger menu on narrow viewports (REQ-COMP-010).
  *
  * Layer 6: Presentational component. No store or hook imports.
@@ -40,20 +40,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'League Config', route: '/config', commissionerOnly: true },
 ];
 
-/** Diamond ornament -- small decorative separator in the gazette style. */
-function DiamondOrnament({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      className={`h-3 w-3 ${className}`}
-      viewBox="0 0 12 12"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <rect x="6" y="0" width="6" height="6" transform="rotate(45 6 6)" />
-    </svg>
-  );
-}
-
 export function Header({
   leagueName,
   leagueStatus,
@@ -77,38 +63,42 @@ export function Header({
   return (
     <header
       role="banner"
-      className={`border-b relative z-20 transition-colors duration-300 ${isPlayoff
-          ? 'border-[var(--accent-primary)]'
-          : 'border-[var(--border-default)]'
+      className={`relative z-20 transition-colors duration-300 ${isPlayoff
+          ? 'border-b border-[var(--accent-primary)]'
+          : 'border-b border-[var(--border-default)]'
         }`}
     >
-      {/* Banner area with gradient background */}
+      {/* Patriot blue banner with red stripe borders */}
       <div
         className="relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(180deg, var(--surface-overlay) 0%, var(--surface-base) 40%, var(--surface-raised) 100%)',
-        }}
+        style={{ background: 'var(--accent-primary)' }}
       >
-        {/* Subtle radial gold glow */}
+        {/* Top red stripe */}
         <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background: 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(27,77,62,0.06) 0%, transparent 70%)',
-          }}
+          className="h-1.5"
+          style={{ background: 'var(--accent-secondary)' }}
           aria-hidden="true"
         />
 
         {/* User info -- positioned top-right */}
         <div className="relative z-10 flex justify-end px-gutter pt-3">
           <div className="flex items-center gap-gutter">
-            <span className="font-body text-sm max-md:hidden text-[var(--text-secondary)]">
+            <span
+              className="font-body text-sm max-md:hidden"
+              style={{ color: 'rgba(255,248,238,0.5)' }}
+            >
               {userName}
             </span>
             <button
               type="button"
               onClick={onLogout}
               aria-label="Log out"
-              className="font-display uppercase text-xs tracking-wider border px-4 py-1.5 rounded-sm transition-all active:translate-y-px max-md:hidden border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)]"
+              className="font-display uppercase text-xs tracking-wider px-4 py-1.5 rounded-sm transition-all active:translate-y-px max-md:hidden"
+              style={{
+                border: '1px solid rgba(255,248,238,0.3)',
+                color: 'rgba(255,248,238,0.6)',
+                background: 'none',
+              }}
             >
               Log Out
             </button>
@@ -118,7 +108,8 @@ export function Header({
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="hidden max-md:block p-1 text-[var(--text-secondary)]"
+              className="hidden max-md:block p-1"
+              style={{ color: 'var(--cream-white)' }}
             >
               <svg
                 width="24"
@@ -138,89 +129,78 @@ export function Header({
           </div>
         </div>
 
-        {/* Gazette-style masthead */}
-        <div className="relative z-10 px-gutter pb-5 pt-1 md:pb-6">
-          {/* Top decorative double rule */}
-          <div className="mx-auto max-w-xl" aria-hidden="true">
-            <div className="h-px bg-[var(--border-default)]" />
-            <div className="mt-[2px] h-[2px] bg-[var(--accent-primary)] opacity-60" />
-          </div>
-
-          {/* Title row with diamond ornaments */}
-          <div className="mt-4 flex items-center justify-center gap-3 md:gap-5">
-            {/* Left ornament cluster */}
-            <div className="flex items-center gap-1.5 max-sm:hidden" aria-hidden="true">
-              <div className="h-px w-8 bg-[var(--border-default)] md:w-14" />
-              <DiamondOrnament className="text-[var(--accent-primary)] opacity-50" />
-              <div className="h-px w-4 bg-[var(--border-default)] md:w-8" />
-              <DiamondOrnament className="text-[var(--accent-primary)] opacity-30 h-2 w-2" />
-            </div>
-
+        {/* Pennant-style masthead */}
+        <div className="relative z-10 px-gutter pb-6 pt-1 md:pb-7">
+          <div className="text-center">
             <h1
-              className={`font-display text-2xl tracking-[0.25em] uppercase md:text-3xl lg:text-4xl ${
-                isPlayoff ? 'text-[var(--accent-hover)]' : 'text-[var(--accent-primary)]'
-              }`}
+              className="font-display text-4xl tracking-[0.08em] uppercase leading-none md:text-5xl lg:text-6xl"
               style={{
-                textShadow: '1px 1px 0 rgba(255,255,255,0.6), -0.5px -0.5px 0 rgba(0,0,0,0.08)',
+                color: 'var(--cream-white)',
+                textShadow: '3px 3px 0 var(--accent-secondary-dark), 0 0 30px rgba(191,43,43,0.2)',
               }}
             >
               Baseball Ledger
             </h1>
 
-            {/* Right ornament cluster */}
-            <div className="flex items-center gap-1.5 max-sm:hidden" aria-hidden="true">
-              <DiamondOrnament className="text-[var(--accent-primary)] opacity-30 h-2 w-2" />
-              <div className="h-px w-4 bg-[var(--border-default)] md:w-8" />
-              <DiamondOrnament className="text-[var(--accent-primary)] opacity-50" />
-              <div className="h-px w-8 bg-[var(--border-default)] md:w-14" />
-            </div>
-          </div>
-
-          {/* Subtitle rule + league name */}
-          <div className="mt-2 flex flex-col items-center">
-            {/* Thin accent rule */}
-            <div className="flex items-center gap-2" aria-hidden="true">
-              <div className="h-px w-6 bg-[var(--accent-primary)] opacity-30 md:w-10" />
-              <DiamondOrnament className="text-[var(--accent-primary)] opacity-25 h-1.5 w-1.5" />
-              <div className="h-px w-6 bg-[var(--accent-primary)] opacity-30 md:w-10" />
+            {/* Star ornament row */}
+            <div className="flex items-center justify-center gap-3 mt-2" aria-hidden="true">
+              <div className="h-0.5 w-10 md:w-16" style={{ background: 'var(--accent-secondary)' }} />
+              <span
+                className="text-xs tracking-[4px]"
+                style={{ color: 'var(--accent-secondary)' }}
+              >
+                &#9733; &#9733; &#9733;
+              </span>
+              <div className="h-0.5 w-10 md:w-16" style={{ background: 'var(--accent-secondary)' }} />
             </div>
 
-            <span className="mt-2 font-stat text-xs uppercase tracking-[0.3em] text-[var(--text-secondary)] md:text-sm">
+            {/* League name */}
+            <span
+              className="mt-2 inline-block font-body text-xs font-bold uppercase tracking-[0.2em] md:text-sm"
+              style={{ color: 'rgba(255,248,238,0.6)' }}
+            >
               {leagueName}
             </span>
           </div>
-
-          {/* Bottom decorative double rule */}
-          <div className="mx-auto mt-4 max-w-xl" aria-hidden="true">
-            <div className="h-[2px] bg-[var(--accent-primary)] opacity-60" />
-            <div className="mt-[2px] h-px bg-[var(--border-default)]" />
-          </div>
         </div>
+
+        {/* Bottom red stripe */}
+        <div
+          className="h-1.5"
+          style={{ background: 'var(--accent-secondary)' }}
+          aria-hidden="true"
+        />
       </div>
 
-      {/* Navigation strip */}
+      {/* Navigation strip -- cream background, red bottom border */}
       <nav
-        className={`bg-surface-overlay/80 backdrop-blur-sm transition-all duration-300 overflow-hidden ${mobileMenuOpen
-            ? 'max-h-96 border-t border-[var(--border-subtle)]'
+        className={`transition-all duration-300 overflow-hidden ${mobileMenuOpen
+            ? 'max-h-96'
             : 'max-h-0 md:max-h-12 md:overflow-visible'
           }`}
         role="navigation"
+        style={{
+          background: 'var(--cream-white)',
+          borderBottom: '2px solid var(--accent-secondary)',
+        }}
       >
-        <div className="px-gutter flex max-md:flex-col md:items-center md:justify-center md:gap-6 py-2">
+        <div className="px-gutter flex max-md:flex-col md:items-center md:justify-center md:gap-0 py-0">
           {visibleNavItems.map((item) => (
             <button
               key={item.route}
               type="button"
               onClick={() => handleNavigate(item.route)}
-              className="font-display text-sm uppercase tracking-wide py-2 md:py-1 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors relative group text-left"
+              className="font-display text-sm uppercase tracking-wide py-2.5 md:py-2 md:px-5 transition-colors text-left text-[var(--text-secondary)] hover:text-[var(--accent-secondary)]"
             >
               {item.label}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[var(--accent-primary)] transition-all group-hover:w-full" />
             </button>
           ))}
 
           {/* Mobile-only: user info and logout */}
-          <div className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:border-[var(--border-subtle)] max-md:pt-3 max-md:mt-2">
+          <div
+            className="hidden max-md:flex max-md:items-center max-md:justify-between max-md:border-t max-md:pt-3 max-md:mt-2"
+            style={{ borderColor: 'var(--border-subtle)' }}
+          >
             <span className="font-body text-sm text-[var(--text-secondary)]">{userName}</span>
             <button
               type="button"

@@ -17,6 +17,7 @@ const config: Config = {
           DEFAULT: 'var(--accent-primary)',
           hover: 'var(--accent-hover)',
           muted: 'var(--accent-muted)',
+          secondary: 'var(--accent-secondary)',
         },
         semantic: {
           success: 'var(--semantic-success)',
