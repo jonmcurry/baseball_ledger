@@ -48,33 +48,75 @@ describe('computeERAPercentile', () => {
   });
 });
 
-describe('percentileToGrade (REQ-DATA-005a)', () => {
-  it('maps top 3% to grade 15 (Ace)', () => {
-    expect(percentileToGrade(0)).toBe(15);
-    expect(percentileToGrade(0.01)).toBe(15);
-    expect(percentileToGrade(0.029)).toBe(15);
+describe('percentileToGrade (REQ-DATA-005a) - 22 tier scale', () => {
+  it('maps top 0.5% to grade 22 (Historic ace)', () => {
+    expect(percentileToGrade(0)).toBe(22);
+    expect(percentileToGrade(0.002)).toBe(22);
+    expect(percentileToGrade(0.004)).toBe(22);
   });
 
-  it('maps top 7% to grade 14 (Elite)', () => {
-    expect(percentileToGrade(0.03)).toBe(14);
-    expect(percentileToGrade(0.05)).toBe(14);
-    expect(percentileToGrade(0.069)).toBe(14);
+  it('maps top 1.0% to grade 21 (Dominant)', () => {
+    expect(percentileToGrade(0.005)).toBe(21);
+    expect(percentileToGrade(0.007)).toBe(21);
+    expect(percentileToGrade(0.009)).toBe(21);
   });
 
-  it('maps top 12% to grade 13 (#1 starter)', () => {
-    expect(percentileToGrade(0.07)).toBe(13);
+  it('maps top 1.5% to grade 20 (Elite+)', () => {
+    expect(percentileToGrade(0.010)).toBe(20);
+    expect(percentileToGrade(0.012)).toBe(20);
+    expect(percentileToGrade(0.014)).toBe(20);
+  });
+
+  it('maps top 2.0% to grade 19 (Elite)', () => {
+    expect(percentileToGrade(0.015)).toBe(19);
+    expect(percentileToGrade(0.017)).toBe(19);
+    expect(percentileToGrade(0.019)).toBe(19);
+  });
+
+  it('maps top 2.5% to grade 18 (Near-elite)', () => {
+    expect(percentileToGrade(0.020)).toBe(18);
+    expect(percentileToGrade(0.022)).toBe(18);
+    expect(percentileToGrade(0.024)).toBe(18);
+  });
+
+  it('maps top 3.0% to grade 17 (Ace+)', () => {
+    expect(percentileToGrade(0.025)).toBe(17);
+    expect(percentileToGrade(0.027)).toBe(17);
+    expect(percentileToGrade(0.029)).toBe(17);
+  });
+
+  it('maps top 4.0% to grade 16 (Ace)', () => {
+    expect(percentileToGrade(0.030)).toBe(16);
+    expect(percentileToGrade(0.035)).toBe(16);
+    expect(percentileToGrade(0.039)).toBe(16);
+  });
+
+  it('maps top 7% to grade 15 (Strong ace)', () => {
+    expect(percentileToGrade(0.040)).toBe(15);
+    expect(percentileToGrade(0.05)).toBe(15);
+    expect(percentileToGrade(0.069)).toBe(15);
+  });
+
+  it('maps top 10% to grade 14 (Elite starter)', () => {
+    expect(percentileToGrade(0.07)).toBe(14);
+    expect(percentileToGrade(0.08)).toBe(14);
+    expect(percentileToGrade(0.099)).toBe(14);
+  });
+
+  it('maps top 15% to grade 13 (#1 starter)', () => {
     expect(percentileToGrade(0.10)).toBe(13);
-    expect(percentileToGrade(0.119)).toBe(13);
+    expect(percentileToGrade(0.12)).toBe(13);
+    expect(percentileToGrade(0.149)).toBe(13);
   });
 
-  it('maps top 20% to grade 12 (Strong starter)', () => {
-    expect(percentileToGrade(0.12)).toBe(12);
+  it('maps top 22% to grade 12 (Strong starter)', () => {
     expect(percentileToGrade(0.15)).toBe(12);
-    expect(percentileToGrade(0.199)).toBe(12);
+    expect(percentileToGrade(0.18)).toBe(12);
+    expect(percentileToGrade(0.219)).toBe(12);
   });
 
   it('maps top 30% to grade 11 (Above average)', () => {
-    expect(percentileToGrade(0.20)).toBe(11);
+    expect(percentileToGrade(0.22)).toBe(11);
     expect(percentileToGrade(0.25)).toBe(11);
     expect(percentileToGrade(0.299)).toBe(11);
   });
@@ -132,10 +174,10 @@ describe('percentileToGrade (REQ-DATA-005a)', () => {
 });
 
 describe('computePitcherGrade', () => {
-  it('assigns grade 15 to best pitcher', () => {
+  it('assigns grade 22 to best pitcher', () => {
     // 50 pitchers, this one has the best ERA (1.50)
     const allERAs = Array.from({ length: 50 }, (_, i) => 1.50 + i * 0.1);
-    expect(computePitcherGrade(1.50, allERAs)).toBe(15);
+    expect(computePitcherGrade(1.50, allERAs)).toBe(22);
   });
 
   it('assigns grade 9 to single pitcher (edge case)', () => {
@@ -159,12 +201,12 @@ describe('computePitcherGrade', () => {
     expect(grade).toBeLessThanOrEqual(4);
   });
 
-  it('grade is always between 1 and 15', () => {
+  it('grade is always between 1 and 22', () => {
     const allERAs = Array.from({ length: 100 }, (_, i) => 2.0 + i * 0.1);
     for (const era of allERAs) {
       const grade = computePitcherGrade(era, allERAs);
       expect(grade).toBeGreaterThanOrEqual(1);
-      expect(grade).toBeLessThanOrEqual(15);
+      expect(grade).toBeLessThanOrEqual(22);
     }
   });
 
@@ -172,6 +214,6 @@ describe('computePitcherGrade', () => {
     // Simulate a pool of ~15 qualified pitchers from 1971
     const allERAs = [1.82, 2.05, 2.28, 2.75, 2.89, 3.10, 3.25, 3.40, 3.55, 3.70, 3.85, 4.00, 4.25, 4.50, 5.00];
     const grade = computePitcherGrade(1.82, allERAs);
-    expect(grade).toBeGreaterThanOrEqual(13); // Top 3 of 15 -> top 0% -> grade 15
+    expect(grade).toBeGreaterThanOrEqual(13); // Top 3 of 15 -> top 0% -> grade 22
   });
 });

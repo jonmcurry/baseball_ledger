@@ -1,6 +1,7 @@
 import type { CardValue } from '../types';
 import type { PlayerRates } from './rate-calculator';
 import { getOutcomePositions, OUTCOME_POSITION_COUNT } from './structural';
+import { CALIBRATED_SLOPES, CALIBRATED_INTERCEPTS } from './calibration-coefficients';
 
 /**
  * APBA card value constants -- each value maps to an outcome category
@@ -34,61 +35,16 @@ export const CARD_VALUES = {
 } as const;
 
 /**
- * Average EFFECTIVE pitcher grade used for suppression compensation.
+ * Shorthand aliases for calibrated regression coefficients.
+ * These replace the old ad-hoc constants (CARD_K_FACTOR, CARD_DOUBLES_FACTOR,
+ * AVG_SUPPRESSION_PROB, etc.) with values derived from BBW binary card analysis.
  *
- * The base league-average grade is ~8, but the 5-layer grade system adds
- * a platoon adjustment of +2 for same-hand matchups (Layer 4). With ~55%
- * of PAs being same-hand (RH pitcher vs RH batter), the average platoon
- * boost is ~1.1. We use 9 as the average effective grade to account for
- * this in-game adjustment, so card compensation produces correct stat
- * lines after all 5 grade layers are applied.
+ * The regression naturally absorbs suppression compensation: it was fit against
+ * real BBW card counts, which already reflect the interplay between card values
+ * and the simulation's pitcher grade gate.
  */
-const AVG_PITCHER_GRADE = 9;
-
-/**
- * Probability that an average pitcher wins the grade check.
- * Only card values in {7, 8, 11} are suppressed (converted to outs)
- * when the pitcher wins. Values like 0 (double), 1 (HR), 9 (single),
- * 10 (triple), 13 (walk), 14 (K) are never suppressed.
- */
-const AVG_SUPPRESSION_PROB = AVG_PITCHER_GRADE / 15;
-
-/**
- * Fraction of single positions using suppressable values (7, 8).
- * Remaining fraction uses non-suppressable value 9.
- * Matches the default splitSinglesTiers distribution (~75% high+mid).
- */
-const SUPPRESSABLE_SINGLE_FRACTION = 0.75;
-
-/**
- * Fraction of triple positions using suppressable value (11).
- * Remaining fraction uses non-suppressable value 10.
- */
-const SUPPRESSABLE_TRIPLE_FRACTION = 0.50;
-
-/**
- * BBW card K scaling factor.
- *
- * Cross-validation (1971 season, 450 matched players) shows:
- *   BBW mean K positions on card: 2.28
- *   Formula mean K positions on card: 3.48
- *   Ratio: 2.28 / 3.48 = 0.655
- *
- * BBW puts fewer Ks directly on cards because the pitcher grade gate
- * generates additional Ks during simulation. The card K count represents
- * only the batter-inherent K tendency; the pitcher adds more Ks dynamically.
- */
-const CARD_K_FACTOR = 0.65;
-
-/**
- * BBW card doubles scaling factor.
- *
- * Cross-validation (1971 season, 450 matched players) shows:
- *   BBW mean doubles on card: 1.19
- *   Formula mean doubles on card: 1.50
- *   Ratio: 1.19 / 1.50 = 0.79
- */
-const CARD_DOUBLES_FACTOR = 0.79;
+const SLOPES = CALIBRATED_SLOPES;
+const INTERCEPTS = CALIBRATED_INTERCEPTS;
 
 /**
  * Outcome slot allocation: how many of the 20 outcome positions
@@ -164,40 +120,43 @@ export function distributeByLargestRemainder(
  * Compute how many of the 20 outcome positions to allocate to each
  * outcome type, based on the player's per-PA rates.
  *
+ * Uses regression-calibrated coefficients derived from BBW binary card analysis
+ * (3 seasons, 535 matched batters). Each outcome count is predicted by:
+ *   count = SLOPE * lahman_rate + INTERCEPT
+ *
+ * The regression naturally captures BBW's suppression compensation because it
+ * was fit against real BBW card counts that already reflect the interplay
+ * between card values and the pitcher grade gate.
+ *
  * Total card: 35 positions
  *   - 9 structural constants (fixed values)
  *   - 2 archetype flags (bytes 33-34)
  *   - 1 power rating (position 24, set separately)
  *   - 3 gate positions (pos 0, 15, 20, pre-set)
  *   = 20 outcome positions for sequential fill
- *
- * The TOTAL drawable positions is 24 (35 - 9 structural - 2 archetype).
- * Gate pre-sets contribute outcomes that are counted in the rate budget:
- *   - Position 0: 1 walk (value 13) or 1 K (value 14)
- *   - Position 15: 1 out (value 33, power gate)
- *   - Position 20: 1 K (value 14)
- * These pre-set values are subtracted from the allocation so the total
- * card composition across all 24 drawable positions matches target rates.
- *
- * Per-type hit compensation: Only card values {7, 8, 11} are suppressed
- * by the pitcher grade check. Non-suppressable types use raw rates.
  */
 export function computeSlotAllocation(
   rates: PlayerRates,
   gateWalkCount: number = 0,
   gateKCount: number = 0,
 ): SlotAllocation {
-  // Total drawable positions (24) sets the rate basis.
-  // Gate positions pre-set some outcomes; we allocate the remaining 20.
-  const TOTAL_DRAWABLE = 24;
   const FILL_COUNT = OUTCOME_POSITION_COUNT; // 20
   const speed = 0; // Speed slots handled post-allocation in fillVariablePositions
 
-  // Total walks/Ks needed across all 24 drawable positions.
-  // K count is scaled by CARD_K_FACTOR because BBW puts fewer Ks on cards,
-  // relying on the pitcher grade gate to generate additional Ks during play.
-  let totalWalks = Math.round(rates.walkRate * TOTAL_DRAWABLE);
-  let totalKs = Math.round(rates.strikeoutRate * TOTAL_DRAWABLE * CARD_K_FACTOR);
+  // Zero-PA players (no stats) get all-out cards
+  if (rates.PA === 0) {
+    return { walks: 0, strikeouts: 0, homeRuns: 0, singles: 0, doubles: 0, triples: 0, speed: 0, outs: FILL_COUNT };
+  }
+
+  // Regression-based total counts across all drawable positions.
+  // The regression intercepts provide baseline counts even at zero rate,
+  // matching BBW's behavior where every batter gets some walks/Ks on their card.
+  let totalWalks = Math.round(
+    Math.max(0, SLOPES.walk * rates.walkRate + INTERCEPTS.walk),
+  );
+  let totalKs = Math.round(
+    Math.max(0, SLOPES.strikeout * rates.strikeoutRate + INTERCEPTS.strikeout),
+  );
 
   // Ensure at least 1 of major outcomes for qualifying batters
   if (rates.PA > 0) {
@@ -209,24 +168,11 @@ export function computeSlotAllocation(
   let walks = Math.max(0, totalWalks - gateWalkCount);
   let strikeouts = Math.max(0, totalKs - gateKCount);
 
-  // Per-type hit compensation
-  const singleEffRate = SUPPRESSABLE_SINGLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
-    + (1 - SUPPRESSABLE_SINGLE_FRACTION);
-  const tripleEffRate = SUPPRESSABLE_TRIPLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
-    + (1 - SUPPRESSABLE_TRIPLE_FRACTION);
-
-  // Hit rates computed against TOTAL_DRAWABLE (24) for correct proportions.
-  // Doubles are scaled by CARD_DOUBLES_FACTOR per cross-validation.
-  // Singles use existing singleEffRate compensation (no additional boost --
-  // the K factor reduction frees card positions that naturally flow to hits).
-  const rawHRs = rates.homeRunRate * TOTAL_DRAWABLE;
-  const rawDoubles = rates.doubleRate * TOTAL_DRAWABLE * CARD_DOUBLES_FACTOR;
-  const rawSingles = rates.singleRate > 0
-    ? (rates.singleRate * TOTAL_DRAWABLE) / singleEffRate
-    : 0;
-  const rawTriples = rates.tripleRate > 0
-    ? (rates.tripleRate * TOTAL_DRAWABLE) / tripleEffRate
-    : 0;
+  // Hit counts from regression (already incorporates suppression compensation)
+  const rawHRs = Math.max(0, SLOPES.homeRun * rates.homeRunRate + INTERCEPTS.homeRun);
+  const rawSingles = Math.max(0, SLOPES.single * rates.singleRate + INTERCEPTS.single);
+  const rawDoubles = Math.max(0, SLOPES.double * rates.doubleRate + INTERCEPTS.double);
+  const rawTriples = Math.max(0, SLOPES.triple * rates.tripleRate + INTERCEPTS.triple);
 
   const rawHitTotal = rawHRs + rawSingles + rawDoubles + rawTriples;
   let hitPositions = Math.round(rawHitTotal);

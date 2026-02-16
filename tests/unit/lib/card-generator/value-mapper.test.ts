@@ -37,45 +37,43 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     expect(total).toBe(20);
   });
 
-  it('maps walk slots with scale factor', () => {
-    // walkRate 0.10 * 1.0 * 24 = 2.4 -> round to 2
+  it('maps walk slots via calibrated regression', () => {
+    // Regression: round(9.92 * 0.10 + 1.75) = round(2.74) = 3 total walks
+    // No gate pre-set subtraction when called without gate counts
     const rates = makeRates({ walkRate: 0.10 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.walks).toBe(2);
+    expect(alloc.walks).toBe(3);
   });
 
-  it('maps strikeout slots with BBW K factor', () => {
-    // strikeoutRate 0.20 * 24 * 0.65 (CARD_K_FACTOR) = 3.12 -> round to 3
-    // BBW puts fewer Ks on cards; pitcher grade generates additional Ks
+  it('maps strikeout slots via calibrated regression', () => {
+    // Regression: round(3.59 * 0.20 + 2.62) = round(3.34) = 3 total Ks
+    // With no gate subtraction, all 3 are fill Ks
     const rates = makeRates({ strikeoutRate: 0.20 });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.strikeouts).toBe(3);
   });
 
-  it('allocates HRs via per-type compensation + largest remainder', () => {
-    // homeRunRate 0.06: raw = 0.06 * 24 = 1.44 (no compensation, never suppressed)
+  it('allocates HRs via calibrated regression', () => {
+    // Regression: 36.92 * 0.06 + 0.575 = 2.79 -> 3 HR positions (rounded in largest remainder)
     const rates = makeRates({ homeRunRate: 0.06 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBeGreaterThanOrEqual(1);
-    expect(alloc.homeRuns).toBeLessThanOrEqual(2);
+    expect(alloc.homeRuns).toBeGreaterThanOrEqual(2);
+    expect(alloc.homeRuns).toBeLessThanOrEqual(4);
   });
 
-  it('does not inflate HRs for average power (never suppressed by pitcher grade)', () => {
-    // homeRunRate 0.04: raw = 0.04 * 24 = 0.96 -> 1 HR position
-    // HRs (value 1) are never in {7,8,11}, so no compensation needed
+  it('allocates HRs for average power via regression', () => {
+    // Regression: 36.92 * 0.04 + 0.575 = 2.05 -> 2 HR positions
     const rates = makeRates({ homeRunRate: 0.04 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBe(1);
+    expect(alloc.homeRuns).toBe(2);
   });
 
-  it('compensates singles for pitcher grade suppression', () => {
-    // singleRate 0.18 with 75% on suppressable values (7/8)
-    // Effective rate per position = 0.75*(1-8/15) + 0.25 = 0.60
-    // Raw positions: (0.18 * 24) / 0.60 = 7.2 -> expect ~6-8 singles
+  it('allocates singles via calibrated regression', () => {
+    // Regression: 27.15 * 0.18 + 2.01 = 6.90 -> ~7 singles (in largest remainder)
     const rates = makeRates({ singleRate: 0.18 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.singles).toBeGreaterThanOrEqual(6);
-    expect(alloc.singles).toBeLessThanOrEqual(8);
+    expect(alloc.singles).toBeGreaterThanOrEqual(5);
+    expect(alloc.singles).toBeLessThanOrEqual(9);
   });
 
   it('allocates at least 1 walk slot when walkRate > 0', () => {
@@ -325,12 +323,12 @@ describe('full card pipeline (gates + power + fill)', () => {
 
   it('card[24] equals power rating for ISO 0.170', () => {
     const card = buildFullCard({ iso: 0.170 });
-    expect(card[POWER_POSITION]).toBe(18); // Above average (0.150-0.189)
+    expect(card[POWER_POSITION]).toBe(20); // Above average (0.150-0.189)
   });
 
   it('card[24] equals power rating for ISO 0.050', () => {
     const card = buildFullCard({ iso: 0.050 });
-    expect(card[POWER_POSITION]).toBe(15); // Minimal power (0.050-0.079)
+    expect(card[POWER_POSITION]).toBe(18); // Minimal power (0.050-0.079)
   });
 
   it('card[24] equals power rating for ISO 0.280+', () => {

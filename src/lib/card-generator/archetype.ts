@@ -1,5 +1,6 @@
 import type { PlayerArchetype, Position } from '../types';
 import type { BattingStats } from '../types';
+import { CALIBRATED_ARCHETYPE } from './calibration-coefficients';
 
 /**
  * Premium defensive positions where elite defense archetype applies.
@@ -13,14 +14,17 @@ const PREMIUM_DEFENSE_POSITIONS: ReadonlySet<Position> = new Set([
  *
  * Hierarchical decision tree (first match wins):
  * 1. Pitcher (as batter) -> (0, 6)
- * 2. Power hitter (HR >= 25 or ISO >= 0.230) + LH/switch -> (1, 1)
- * 3. Power hitter (HR >= 25 or ISO >= 0.230) -> (1, 0)
+ * 2. Power hitter (HR >= 18 or ISO >= 0.170) + LH/switch -> (1, 1)
+ * 3. Power hitter (HR >= 18 or ISO >= 0.170) -> (1, 0)
  * 4. Speed specialist (SB >= 20 or sbRate >= 0.75) -> (6, 0)
  * 5. Contact + speed (BA >= 0.280 and SB >= 10) -> (0, 2)
  * 6. Elite defense (fielding top 10% at premium position) -> (8, 0)
  * 7. Utility/pinch hit (multi-position, BA < 0.250) -> (5, 0)
- * 8. Standard LH/switch -> (0, 1)
- * 9. Standard RH -> (7, 0)
+ * 8. Standard (all non-special batters) -> (0, 1)
+ *
+ * Note: BBW analysis shows (0,1) is the most common archetype (385/760 players),
+ * used as the default for all non-special batters regardless of batting hand.
+ * Thresholds calibrated from BBW distribution (best F1 = 0.805 for power).
  */
 export function determineArchetype(
   stats: BattingStats,
@@ -39,8 +43,8 @@ export function determineArchetype(
   const iso = stats.SLG - stats.BA;
   const isLeftOrSwitch = battingHand === 'L' || battingHand === 'S';
 
-  // 2-3. Power hitter
-  if (stats.HR >= 25 || iso >= 0.230) {
+  // 2-3. Power hitter (calibrated thresholds from BBW analysis)
+  if (stats.HR >= CALIBRATED_ARCHETYPE.powerHRThreshold || iso >= CALIBRATED_ARCHETYPE.powerISOThreshold) {
     if (isLeftOrSwitch) {
       return { byte33: 1, byte34: 1 }; // Power + platoon
     }
@@ -67,11 +71,8 @@ export function determineArchetype(
     return { byte33: 5, byte34: 0 };
   }
 
-  // 8-9. Default based on hand
-  if (isLeftOrSwitch) {
-    return { byte33: 0, byte34: 1 };
-  }
-  return { byte33: 7, byte34: 0 };
+  // 8. Default: (0, 1) for all non-special batters (BBW most common archetype)
+  return { byte33: 0, byte34: 1 };
 }
 
 /**

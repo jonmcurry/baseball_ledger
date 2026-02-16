@@ -10,31 +10,32 @@ export interface PowerTier {
 }
 
 /**
- * APBA 8-tier power scale mapped from ISO (REQ-DATA-005 Step 4).
+ * BBW-calibrated power scale mapped from ISO (REQ-DATA-005 Step 4).
  *
  * All card values MUST be IDT-active [15-21] so they go through the pitcher
- * grade gate when position 24 is drawn. Value 13 (walk) was previously used
- * for no-power but that bypassed the grade gate entirely, adding uncompensated
- * walks for every weak hitter. Real BBW cards (e.g. Belanger, 0 HR) use
- * IDT-active values at position 24.
+ * grade gate when position 24 is drawn.
  *
- * ISO Range     | Card[24] | Tier
- * < 0.050       | 15       | No power (pitchers, slap hitters)
- * 0.050 - 0.079 | 15       | Minimal power
- * 0.080 - 0.109 | 16       | Below average
- * 0.110 - 0.149 | 17       | Average power
- * 0.150 - 0.189 | 18       | Above average
- * 0.190 - 0.229 | 19       | Good power
- * 0.230 - 0.279 | 20       | Very good (20+ HR pace)
- * >= 0.280      | 21       | Excellent power
+ * Calibrated from BBW binary card analysis (535 batters across 3 seasons).
+ * BBW power ratings cluster around 18-20 for most batters, with the modal
+ * value determined by ISO bucket:
+ *
+ * ISO Range     | Card[24] | BBW Mode | Description
+ * < 0.050       | 18       | 18       | No power (slap hitters)
+ * 0.050 - 0.079 | 18       | 18       | Minimal power
+ * 0.080 - 0.109 | 18       | 18       | Below average
+ * 0.110 - 0.149 | 19       | 20       | Average power
+ * 0.150 - 0.189 | 20       | 20       | Above average
+ * 0.190 - 0.229 | 20       | 20       | Good power
+ * 0.230 - 0.279 | 20       | 20       | Very good (20+ HR pace)
+ * >= 0.280      | 21       | n/a      | Excellent power
  */
 export const POWER_TIERS: readonly PowerTier[] = [
-  { maxISO: 0.050, cardValue: 15, label: 'No power' },
-  { maxISO: 0.080, cardValue: 15, label: 'Minimal power' },
-  { maxISO: 0.110, cardValue: 16, label: 'Below average' },
-  { maxISO: 0.150, cardValue: 17, label: 'Average power' },
-  { maxISO: 0.190, cardValue: 18, label: 'Above average' },
-  { maxISO: 0.230, cardValue: 19, label: 'Good power' },
+  { maxISO: 0.050, cardValue: 18, label: 'No power' },
+  { maxISO: 0.080, cardValue: 18, label: 'Minimal power' },
+  { maxISO: 0.110, cardValue: 18, label: 'Below average' },
+  { maxISO: 0.150, cardValue: 19, label: 'Average power' },
+  { maxISO: 0.190, cardValue: 20, label: 'Above average' },
+  { maxISO: 0.230, cardValue: 20, label: 'Good power' },
   { maxISO: 0.280, cardValue: 20, label: 'Very good' },
   { maxISO: Infinity, cardValue: 21, label: 'Excellent power' },
 ];

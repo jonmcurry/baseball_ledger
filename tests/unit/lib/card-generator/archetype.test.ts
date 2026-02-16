@@ -17,14 +17,14 @@ describe('determineArchetype (REQ-DATA-005 Step 5)', () => {
     expect(result).toEqual({ byte33: 0, byte34: 6 });
   });
 
-  it('returns (1, 0) for RH power hitter (HR >= 25)', () => {
-    const stats = makeBattingStats({ HR: 30, BA: 0.270, SLG: 0.500 });
+  it('returns (1, 0) for RH power hitter (HR >= 18)', () => {
+    const stats = makeBattingStats({ HR: 20, BA: 0.270, SLG: 0.420 }); // ISO = 0.150 < 0.170, HR = 20 >= 18
     const result = determineArchetype(stats, 'R', false, 'LF', 0, false, 1);
     expect(result).toEqual({ byte33: 1, byte34: 0 });
   });
 
-  it('returns (1, 0) for RH power hitter (ISO >= 0.230)', () => {
-    const stats = makeBattingStats({ HR: 20, BA: 0.250, SLG: 0.490 }); // ISO = 0.240
+  it('returns (1, 0) for RH power hitter (ISO >= 0.170)', () => {
+    const stats = makeBattingStats({ HR: 15, BA: 0.250, SLG: 0.430 }); // ISO = 0.180 >= 0.170, HR = 15 < 18
     const result = determineArchetype(stats, 'R', false, '1B', 0, false, 1);
     expect(result).toEqual({ byte33: 1, byte34: 0 });
   });
@@ -68,8 +68,8 @@ describe('determineArchetype (REQ-DATA-005 Step 5)', () => {
   it('does not assign elite defense for non-premium position', () => {
     const stats = makeBattingStats({ BA: 0.230, SLG: 0.310, HR: 3 });
     const result = determineArchetype(stats, 'R', false, 'LF', 0, true, 2);
-    // LF is not premium, so falls through to default
-    expect(result).toEqual({ byte33: 7, byte34: 0 });
+    // LF is not premium, so falls through to default (0, 1)
+    expect(result).toEqual({ byte33: 0, byte34: 1 });
   });
 
   it('returns (5, 0) for utility player (multi-position, low BA)', () => {
@@ -90,10 +90,10 @@ describe('determineArchetype (REQ-DATA-005 Step 5)', () => {
     expect(result).toEqual({ byte33: 0, byte34: 1 });
   });
 
-  it('returns (7, 0) for standard RH batter', () => {
+  it('returns (0, 1) for standard RH batter (BBW default for all non-special)', () => {
     const stats = makeBattingStats({ BA: 0.260, SLG: 0.380, HR: 12, SB: 4 });
     const result = determineArchetype(stats, 'R', false, '3B', 0.5, false, 2);
-    expect(result).toEqual({ byte33: 7, byte34: 0 });
+    expect(result).toEqual({ byte33: 0, byte34: 1 });
   });
 
   it('power takes priority over speed', () => {

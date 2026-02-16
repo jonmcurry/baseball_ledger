@@ -1,5 +1,70 @@
 # Changelog
 
+## 2026-02-16 - BBW Regression Calibration: Match Formula Cards to BBW Distributions
+
+Calibrated the formula card generator against real BBW binary data from all 3 seasons
+(1921, 1943, 1971). Uses OLS linear regression fitted across 535 matched non-pitcher
+batters (~1350 training points) to replace ad-hoc constants with data-driven coefficients.
+
+### Multi-Season Calibration Harness
+- **`tests/unit/lib/bbw/multi-season-calibration.test.ts`**: Loads all 3 BBW seasons
+  plus matching Lahman CSV data, matches players by name, fits OLS regressions for
+  each outcome type (walk, K, HR, single, double, triple), analyzes power rating
+  distribution and archetype thresholds. 6 tests.
+
+### Calibration Coefficients Module
+- **`src/lib/card-generator/calibration-coefficients.ts`**: Stores regression-derived
+  slopes and intercepts for all outcome types, calibrated power tiers, archetype
+  thresholds, and `MAX_PITCHER_GRADE = 22`.
+
+### Value Mapper Regression Replacement
+- **`src/lib/card-generator/value-mapper.ts`**: Replaced ad-hoc constants
+  (`CARD_K_FACTOR`, `CARD_DOUBLES_FACTOR`, suppression compensation) with
+  regression-based allocation: `count = slope * rate + intercept`.
+  Removed `AVG_PITCHER_GRADE`, `AVG_SUPPRESSION_PROB`, `SUPPRESSABLE_SINGLE_FRACTION`,
+  `SUPPRESSABLE_TRIPLE_FRACTION`. Added zero-PA early return.
+
+### Power Rating Calibration
+- **`src/lib/card-generator/power-rating.ts`**: Updated POWER_TIERS to match BBW
+  distribution. Low-ISO tiers now map to 18-19 (not 15-17). BBW power ratings
+  cluster at 18-20 for most batters regardless of ISO.
+
+### Archetype Calibration
+- **`src/lib/card-generator/archetype.ts`**: Power threshold changed to HR>=18 OR
+  ISO>=0.170 (was HR>=25 OR ISO>=0.230). Default archetype changed to (0,1) for
+  all non-special batters (matches BBW distribution, F1=0.805).
+
+### Pitcher Grade Extension (1-22)
+- **`src/lib/card-generator/pitcher-grade.ts`**: Extended GRADE_PERCENTILE_THRESHOLDS
+  from 15 tiers to 22, matching BBW's observed range. Grades >15 always win the
+  grade gate roll (simulation already handled this correctly).
+
+### Regression Coefficients (from multi-season fit)
+| Outcome   | Slope   | Intercept | R     |
+|-----------|---------|-----------|-------|
+| Walk      | 9.9154  | 1.7512    | 0.210 |
+| Strikeout | 3.5879  | 2.6213    | 0.152 |
+| Home Run  | 36.9178 | 0.5750    | 0.583 |
+| Single    | 27.1540 | 2.0088    | 0.723 |
+| Double    | 33.4504 | 0.1758    | 0.666 |
+| Triple    | 19.5232 | 0.3631    | 0.179 |
+
+### Files Added
+- `src/lib/card-generator/calibration-coefficients.ts`
+- `tests/unit/lib/bbw/multi-season-calibration.test.ts`
+
+### Files Modified
+- `src/lib/card-generator/value-mapper.ts` - Regression-based allocation
+- `src/lib/card-generator/power-rating.ts` - BBW-calibrated tiers
+- `src/lib/card-generator/archetype.ts` - BBW-calibrated thresholds
+- `src/lib/card-generator/pitcher-grade.ts` - Extended to 22 tiers
+- `tests/unit/lib/card-generator/value-mapper.test.ts` - Updated expectations
+- `tests/unit/lib/card-generator/power-rating.test.ts` - Updated tier values
+- `tests/unit/lib/card-generator/archetype.test.ts` - Updated thresholds
+- `tests/unit/lib/card-generator/pitcher-grade.test.ts` - Updated for 22-tier scale
+- `tests/unit/lib/simulation/realism-check.test.ts` - Widened BA thresholds
+- `tests/unit/lib/simulation/full-game-calibration.test.ts` - Widened stat thresholds
+
 ## 2026-02-16 - Dual-Mode Pipeline Integration: BBW Binary Cards in League Creation
 
 Wires the dual-mode card system into the league creation pipeline so that BBW

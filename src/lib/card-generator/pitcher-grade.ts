@@ -1,14 +1,24 @@
+import { MAX_PITCHER_GRADE } from './calibration-coefficients';
+
 /**
  * Pitcher grade percentile thresholds (REQ-DATA-005a).
  *
- * Grade 15 = best (top 3%), Grade 1 = worst (bottom 1%).
+ * 1-22 grade scale matching BBW's observed distribution.
+ * Grade 22 = best (top 0.5%), Grade 1 = worst (bottom 1%).
  * Lower ERA = better pitcher = higher grade.
  *
  * ERA Percentile | Grade | Description
- * Top 3%         | 15    | Ace
- * Top 7%         | 14    | Elite starter
- * Top 12%        | 13    | #1 starter
- * Top 20%        | 12    | Strong starter
+ * Top 0.5%       | 22    | Historic ace
+ * Top 1.0%       | 21    | Dominant
+ * Top 1.5%       | 20    | Elite+
+ * Top 2.0%       | 19    | Elite
+ * Top 2.5%       | 18    | Near-elite
+ * Top 3.0%       | 17    | Ace+
+ * Top 4.0%       | 16    | Ace
+ * Top 7%         | 15    | Strong ace
+ * Top 10%        | 14    | Elite starter
+ * Top 15%        | 13    | #1 starter
+ * Top 22%        | 12    | Strong starter
  * Top 30%        | 11    | Above average
  * Top 40%        | 10    | Solid starter
  * Top 50%        | 9     | Average starter
@@ -22,10 +32,17 @@
  * Bottom 1%      | 1     | Worst qualifier
  */
 const GRADE_PERCENTILE_THRESHOLDS: readonly { maxPercentile: number; grade: number }[] = [
-  { maxPercentile: 0.03, grade: 15 },
-  { maxPercentile: 0.07, grade: 14 },
-  { maxPercentile: 0.12, grade: 13 },
-  { maxPercentile: 0.20, grade: 12 },
+  { maxPercentile: 0.005, grade: MAX_PITCHER_GRADE },  // 22
+  { maxPercentile: 0.010, grade: 21 },
+  { maxPercentile: 0.015, grade: 20 },
+  { maxPercentile: 0.020, grade: 19 },
+  { maxPercentile: 0.025, grade: 18 },
+  { maxPercentile: 0.030, grade: 17 },
+  { maxPercentile: 0.040, grade: 16 },
+  { maxPercentile: 0.07, grade: 15 },
+  { maxPercentile: 0.10, grade: 14 },
+  { maxPercentile: 0.15, grade: 13 },
+  { maxPercentile: 0.22, grade: 12 },
   { maxPercentile: 0.30, grade: 11 },
   { maxPercentile: 0.40, grade: 10 },
   { maxPercentile: 0.50, grade: 9 },
@@ -63,8 +80,8 @@ export function computeERAPercentile(pitcherERA: number, allERAs: number[]): num
 }
 
 /**
- * Map an ERA percentile to the 1-15 grade scale (REQ-DATA-005a).
- * Grade 15 = best, Grade 1 = worst.
+ * Map an ERA percentile to the 1-22 grade scale (REQ-DATA-005a).
+ * Grade 22 = best, Grade 1 = worst.
  */
 export function percentileToGrade(percentile: number): number {
   for (const threshold of GRADE_PERCENTILE_THRESHOLDS) {
@@ -80,7 +97,7 @@ export function percentileToGrade(percentile: number): number {
  *
  * @param pitcherERA - The pitcher's ERA
  * @param allERAs - Array of all qualifying pitcher ERAs
- * @returns Grade 1-15 (15 = best)
+ * @returns Grade 1-22 (22 = best)
  */
 export function computePitcherGrade(pitcherERA: number, allERAs: number[]): number {
   const percentile = computeERAPercentile(pitcherERA, allERAs);
