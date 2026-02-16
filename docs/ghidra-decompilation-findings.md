@@ -408,7 +408,7 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
 |----------|---------|
 | FUN_1110_039d | Borland runtime: game state accessor/dispatcher (polymorphic) |
 | FUN_1110_1e5f | Set random seed / generate random(N) |
-| FUN_1110_196c | Get bit mask for bitmap operations |
+| FUN_1110_196c | Borland Pascal SET bitmask: `1 << (index & 7)` (DECOMPILED) |
 | FUN_1108_12d8 | clamp(value, bound) - clamp to minimum |
 | FUN_1108_12a8 | clamp(value, max) - clamp to maximum |
 | FUN_10a0_3932 | Get player game data (fielding card/stats) |

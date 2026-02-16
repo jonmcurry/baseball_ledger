@@ -60,8 +60,8 @@ export const BBW_IDT_WEIGHTS: readonly number[] = [
  * (FUN_1058_5f49, line 155): `(*(byte *)(iVar12 * 2 + iVar9 + 0x382a) & bVar3) == 0`
  * When the AND result is 0, the row is ACTIVE. When non-zero, GATED (inactive).
  *
- * bVar3 comes from FUN_1110_196c(), an undecompiled stack-machine function
- * that returns a bit mask derived from the card value. Best-guess mapping:
+ * bVar3 comes from FUN_1110_196c(), a Borland Pascal SET bitmask function
+ * (confirmed by Ghidra decompilation). It computes:
  * `1 << ((cardValue - 15) & 7)`, giving each card value a unique bit (0-7).
  *
  * Index 0 = row 15, index 1 = row 16, ..., index 8 = row 23.
@@ -169,12 +169,16 @@ export function extractIdtBitmap(dataSegment: DataView): number[] {
 /**
  * Compute the IDT bitmap mask for a given card value.
  *
- * In BBW, FUN_1110_196c() returns a single-byte bit mask. Without the
- * function's decompilation, we use the linear mapping:
- *   mask = 1 << ((cardValue - 15) & 7)
+ * Confirmed by Ghidra decompilation of FUN_1110_196c (Code35, offset 0x196c):
+ * This is a standard Borland Pascal SET element bitmask function. It receives
+ * a zero-based index (cardValue - 15) and computes:
+ *   byte_offset = index >> 3  (unused by caller -- always reads byte 0)
+ *   bit_position = index & 7
+ *   mask = 1 << bit_position
  *
- * This gives each card value (15-22) a unique bit position (0-7).
- * Card value 23 wraps to bit 0 (same as card value 15).
+ * The caller's bitmap lookup at DATA[row*2 + 0x382A] always reads byte 0,
+ * so only the bit_position matters. This gives each card value (15-22) a
+ * unique bit position (0-7). Card value 23 wraps to bit 0 (same as 15).
  *
  * @param cardValue - The card value that triggered the IDT path (15-23)
  * @returns Single-byte bit mask

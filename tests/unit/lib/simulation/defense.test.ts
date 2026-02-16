@@ -12,35 +12,51 @@ import { SeededRNG } from '@lib/rng/seeded-rng';
 // ---------------------------------------------------------------------------
 describe('getResponsiblePosition (REQ-SIM-008)', () => {
   it('returns infield position for GROUND_OUT', () => {
-    const pos = getResponsiblePosition(OutcomeCategory.GROUND_OUT);
+    const rng = new SeededRNG(1);
+    const pos = getResponsiblePosition(OutcomeCategory.GROUND_OUT, rng);
     expect(['SS', '2B', '3B', '1B']).toContain(pos);
   });
 
   it('returns infield position for GROUND_OUT_ADVANCE', () => {
-    const pos = getResponsiblePosition(OutcomeCategory.GROUND_OUT_ADVANCE);
+    const rng = new SeededRNG(2);
+    const pos = getResponsiblePosition(OutcomeCategory.GROUND_OUT_ADVANCE, rng);
     expect(['SS', '2B', '3B', '1B']).toContain(pos);
   });
 
   it('returns outfield position for FLY_OUT', () => {
-    const pos = getResponsiblePosition(OutcomeCategory.FLY_OUT);
+    const rng = new SeededRNG(3);
+    const pos = getResponsiblePosition(OutcomeCategory.FLY_OUT, rng);
     expect(['LF', 'CF', 'RF']).toContain(pos);
   });
 
   it('returns infield position for LINE_OUT', () => {
-    const pos = getResponsiblePosition(OutcomeCategory.LINE_OUT);
+    const rng = new SeededRNG(4);
+    const pos = getResponsiblePosition(OutcomeCategory.LINE_OUT, rng);
     expect(['SS', '2B', '3B', '1B', 'SP']).toContain(pos);
   });
 
   it('returns catcher/infield position for POP_OUT', () => {
-    const pos = getResponsiblePosition(OutcomeCategory.POP_OUT);
+    const rng = new SeededRNG(5);
+    const pos = getResponsiblePosition(OutcomeCategory.POP_OUT, rng);
     expect(['C', '1B', 'SS', '2B', '3B']).toContain(pos);
   });
 
   it('returns null for non-batted-ball outcomes', () => {
-    expect(getResponsiblePosition(OutcomeCategory.STRIKEOUT_SWINGING)).toBeNull();
-    expect(getResponsiblePosition(OutcomeCategory.WALK)).toBeNull();
-    expect(getResponsiblePosition(OutcomeCategory.HOME_RUN)).toBeNull();
-    expect(getResponsiblePosition(OutcomeCategory.SINGLE_CLEAN)).toBeNull();
+    const rng = new SeededRNG(6);
+    expect(getResponsiblePosition(OutcomeCategory.STRIKEOUT_SWINGING, rng)).toBeNull();
+    expect(getResponsiblePosition(OutcomeCategory.WALK, rng)).toBeNull();
+    expect(getResponsiblePosition(OutcomeCategory.HOME_RUN, rng)).toBeNull();
+    expect(getResponsiblePosition(OutcomeCategory.SINGLE_CLEAN, rng)).toBeNull();
+  });
+
+  it('is deterministic with same seed', () => {
+    const results1: (string | null)[] = [];
+    const results2: (string | null)[] = [];
+    for (let i = 0; i < 20; i++) {
+      results1.push(getResponsiblePosition(OutcomeCategory.GROUND_OUT, new SeededRNG(100 + i)));
+      results2.push(getResponsiblePosition(OutcomeCategory.GROUND_OUT, new SeededRNG(100 + i)));
+    }
+    expect(results1).toEqual(results2);
   });
 });
 

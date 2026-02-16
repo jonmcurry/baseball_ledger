@@ -14,7 +14,8 @@
  *
  * IDT BITMAP GATING (extracted from WINBB.EXE):
  * BBW_IDT_BITMAP at DATA[row*2 + 0x382A] gates rows per card value.
- * The mask function FUN_1110_196c is approximated as 1 << ((cardValue-15) & 7).
+ * The mask function FUN_1110_196c (confirmed by Ghidra decompilation) is a
+ * Borland Pascal SET bitmask: 1 << ((cardValue-15) & 7).
  * When (bitmap & mask) == 0, the row is ACTIVE; otherwise GATED.
  *
  * The IDT path is now ACTIVE because card[24] (power rating) holds values 15-21

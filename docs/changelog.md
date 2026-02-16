@@ -1,10 +1,33 @@
 # Changelog
 
+## 2026-02-16 - FUN_1110_196c Confirmed, Defense Determinism Fix
+
+Decompiled FUN_1110_196c via Ghidra headless and confirmed it is a standard Borland
+Pascal SET bitmask function: `1 << ((cardValue - 15) & 7)`. Our implementation is
+EXACT, not an approximation. Also fixed critical determinism bug in defense.ts where
+`getResponsiblePosition()` used `Math.random()` instead of seeded RNG.
+
+### Key Changes
+
+**FUN_1110_196c CONFIRMED** -- Ghidra headless decompilation (Code35, offset 0x196c)
+reveals a Borland Pascal SET element bitmask computation. The function receives a
+zero-based index, computes `byte_offset = index >> 3` and `mask = 1 << (index & 7)`.
+The caller ignores byte_offset (always reads byte 0). Our `computeIdtBitmask()` is
+confirmed exact.
+
+**defense.ts determinism fix** -- `getResponsiblePosition()` now accepts `SeededRNG`
+parameter and uses `rng.pick()` instead of `Math.random()`. This restores simulation
+reproducibility for fielding position assignment.
+
+**Code comments updated** -- Removed "approximated" and "best-guess" language from
+exe-extractor.ts and outcome-table.ts. Updated ghidra-decompilation-findings.md to
+mark FUN_1110_196c as DECOMPILED.
+
 ## 2026-02-16 - IDT Bitmap Gating Extracted from WINBB.EXE
 
 Extracted the IDT bitmap table from WINBB.EXE DATA[row*2 + 0x382A] for rows 15-23.
 This bitmap gates which IDT rows are active per card value during IDT resolution.
-The bitmap mask function (FUN_1110_196c) is approximated as `1 << ((cardValue-15) & 7)`.
+The bitmap mask function (FUN_1110_196c) confirmed as `1 << ((cardValue-15) & 7)`.
 
 ### Key Changes
 

@@ -41,33 +41,29 @@ export interface ErrorCheckResult {
 /**
  * Determine which fielding position is responsible for a batted ball.
  *
- * Returns a random position from the appropriate pool based on
- * outcome type, or null for non-batted-ball outcomes.
+ * Returns a deterministic random position from the appropriate pool
+ * based on outcome type, or null for non-batted-ball outcomes.
+ *
+ * @param outcome - The PA outcome category
+ * @param rng - Seeded random number generator for determinism
  */
 export function getResponsiblePosition(
   outcome: OutcomeCategory,
+  rng: SeededRNG,
 ): string | null {
   switch (outcome) {
     case OutcomeCategory.GROUND_OUT:
     case OutcomeCategory.GROUND_OUT_ADVANCE:
-      return GROUND_BALL_POSITIONS[
-        Math.floor(Math.random() * GROUND_BALL_POSITIONS.length)
-      ];
+      return rng.pick(GROUND_BALL_POSITIONS);
 
     case OutcomeCategory.FLY_OUT:
-      return FLY_BALL_POSITIONS[
-        Math.floor(Math.random() * FLY_BALL_POSITIONS.length)
-      ];
+      return rng.pick(FLY_BALL_POSITIONS);
 
     case OutcomeCategory.LINE_OUT:
-      return LINE_DRIVE_POSITIONS[
-        Math.floor(Math.random() * LINE_DRIVE_POSITIONS.length)
-      ];
+      return rng.pick(LINE_DRIVE_POSITIONS);
 
     case OutcomeCategory.POP_OUT:
-      return POP_UP_POSITIONS[
-        Math.floor(Math.random() * POP_UP_POSITIONS.length)
-      ];
+      return rng.pick(POP_UP_POSITIONS);
 
     default:
       return null;
