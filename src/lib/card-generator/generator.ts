@@ -193,6 +193,27 @@ export function generateCard(
   const eligiblePositions = determineEligiblePositions(entry, primaryPosition);
   const fieldingPct = computeFieldingPct(entry);
 
+  // Step 5 (early): Compute archetype before card fill so we can pass
+  // archetype bytes to the allocation model for hit contribution accounting.
+  const battingStats = entry.battingStats;
+  const sbRate = battingStats && (battingStats.SB + battingStats.CS > 0)
+    ? battingStats.SB / (battingStats.SB + battingStats.CS) : 0;
+  const eliteDefense = isEliteFielder(fieldingPct, primaryPosition);
+
+  const archetype = determineArchetype(
+    battingStats ?? {
+      G: 0, AB: 0, R: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0,
+      SB: 0, CS: 0, BB: 0, SO: 0, IBB: 0, HBP: 0, SH: 0, SF: 0, GIDP: 0,
+      BA: 0, OBP: 0, SLG: 0, OPS: 0,
+    },
+    entry.battingHand,
+    isPitcher,
+    primaryPosition,
+    sbRate,
+    eliteDefense,
+    eligiblePositions.length,
+  );
+
   let card: number[];
   let powerRating: number;
 
@@ -214,7 +235,11 @@ export function generateCard(
     );
 
     // Step 3: Fill outcome positions (20 positions, excluding gates/power)
-    const allocation = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    // Pass archetype bytes so allocation can subtract their hit contributions
+    const allocation = computeSlotAllocation(
+      rates, gateWalkCount, gateKCount,
+      archetype.byte33, archetype.byte34,
+    );
     const babip = computeBABIP(entry);
     const playerSpeed = computeSpeed(entry);
     fillVariablePositions(card, allocation, babip, playerSpeed);
@@ -229,27 +254,7 @@ export function generateCard(
     powerRating = 13;
   }
 
-  // Step 5: Archetype
-  const battingStats = entry.battingStats;
-  const sbRate = battingStats && (battingStats.SB + battingStats.CS > 0)
-    ? battingStats.SB / (battingStats.SB + battingStats.CS) : 0;
-  const eliteDefense = isEliteFielder(fieldingPct, primaryPosition);
-
-  const archetype = determineArchetype(
-    battingStats ?? {
-      G: 0, AB: 0, R: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0,
-      SB: 0, CS: 0, BB: 0, SO: 0, IBB: 0, HBP: 0, SH: 0, SF: 0, GIDP: 0,
-      BA: 0, OBP: 0, SLG: 0, OPS: 0,
-    },
-    entry.battingHand,
-    isPitcher,
-    primaryPosition,
-    sbRate,
-    eliteDefense,
-    eligiblePositions.length,
-  );
-
-  // Set archetype and power in card
+  // Set archetype bytes on card (positions 33-34, after fill)
   card[33] = archetype.byte33;
   card[34] = archetype.byte34;
 

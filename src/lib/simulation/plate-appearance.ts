@@ -34,7 +34,9 @@ import { getDirectOutcome } from './card-value-fallback';
 import { lookupOutcome } from './outcome-table';
 
 /**
- * Non-drawable positions (structural constants + flag bytes) as a Set for O(1) lookup.
+ * Non-drawable positions (structural constants only) as a Set for O(1) lookup.
+ * Archetype positions 33-34 ARE drawable per Ghidra decompilation -- their byte
+ * values double as outcome values (e.g., value 1 = HOME_RUN, value 0 = DOUBLE).
  */
 const NON_DRAWABLE_SET = new Set(NON_DRAWABLE_POSITIONS);
 

@@ -206,16 +206,16 @@ describe('getOutcomePositions (20 outcome fill positions)', () => {
 });
 
 describe('card position math', () => {
-  it('35 total - 9 structural - 2 archetype = 24 drawable', () => {
-    expect(DRAWABLE_COUNT).toBe(24);
+  it('35 total - 9 structural = 26 drawable (archetype is drawable per Ghidra)', () => {
+    expect(DRAWABLE_COUNT).toBe(26);
   });
 
   it('35 total - 9 structural - 2 archetype - 1 power - 3 gates = 20 outcome', () => {
     expect(OUTCOME_POSITION_COUNT).toBe(20);
   });
 
-  it('non-drawable set has 11 positions (9 structural + 2 archetype)', () => {
-    expect(NON_DRAWABLE_POSITIONS).toHaveLength(11);
+  it('non-drawable set has 9 positions (structural only, archetype is drawable)', () => {
+    expect(NON_DRAWABLE_POSITIONS).toHaveLength(9);
   });
 
   it('no position appears in multiple categories', () => {

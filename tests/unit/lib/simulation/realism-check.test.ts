@@ -34,16 +34,20 @@ function build270HitterCard(): CardValue[] {
     gdpRate: 0.02,
   };
 
+  // Standard RH archetype: byte33=7 (SINGLE_CLEAN), byte34=0 (DOUBLE)
+  const archB33 = 7;
+  const archB34 = 0;
+
   const card: CardValue[] = new Array(CARD_LENGTH).fill(0);
   applyStructuralConstants(card);
   const { gateWalkCount, gateKCount } = applyGateValues(
     card, rates.walkRate, rates.strikeoutRate, rates.iso,
   );
-  const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+  const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount, archB33, archB34);
   fillVariablePositions(card, alloc, 0.295);
   card[POWER_POSITION] = computePowerRating(rates.iso);
-  card[33] = 7; // archetype byte
-  card[34] = 0;
+  card[33] = archB33;
+  card[34] = archB34;
   return card;
 }
 
@@ -106,10 +110,10 @@ describe('Realism Check: Batting Average Simulation', () => {
 
     const ba = atBats > 0 ? hits / atBats : 0;
 
-    // Batting average should be realistic: .220 to .380
-    // With BBW-calibrated regression (higher hit intercepts), BA runs higher
-    expect(ba).toBeGreaterThanOrEqual(0.220);
-    expect(ba).toBeLessThanOrEqual(0.380);
+    // Batting average should be realistic: .180 to .320
+    // With proportional allocation (no intercept inflation), BA is realistic
+    expect(ba).toBeGreaterThanOrEqual(0.180);
+    expect(ba).toBeLessThanOrEqual(0.320);
   });
 
   it('produces walk rate in [.03, .20] for a .09 walk-rate hitter', () => {
@@ -180,16 +184,18 @@ describe('Realism Check: Batting Average Simulation', () => {
       gdpRate: 0.01,
     };
 
+    const archB33 = 7;
+    const archB34 = 0;
     const card: CardValue[] = new Array(CARD_LENGTH).fill(0);
     applyStructuralConstants(card);
     const { gateWalkCount, gateKCount } = applyGateValues(
       card, rates.walkRate, rates.strikeoutRate, rates.iso,
     );
-    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount, archB33, archB34);
     fillVariablePositions(card, alloc, 0.340);
     card[POWER_POSITION] = computePowerRating(rates.iso);
-    card[33] = 7;
-    card[34] = 0;
+    card[33] = archB33;
+    card[34] = archB34;
 
     const pitcherGrade = 8;
     const rng = new SeededRNG(42);
@@ -215,9 +221,8 @@ describe('Realism Check: Batting Average Simulation', () => {
 
     const ba = atBats > 0 ? hits / atBats : 0;
 
-    // With pitcher grade suppression, even elite hitters stay below .460
-    // BBW-calibrated regression raises hit intercepts, inflating BA slightly
-    expect(ba).toBeLessThan(0.460);
+    // With pitcher grade suppression, even elite hitters stay below .400
+    expect(ba).toBeLessThan(0.400);
     // But they should still hit well
     expect(ba).toBeGreaterThan(0.200);
   });

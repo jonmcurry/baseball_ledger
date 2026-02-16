@@ -1,7 +1,11 @@
 import type { CardValue } from '../types';
 import type { PlayerRates } from './rate-calculator';
-import { getOutcomePositions, OUTCOME_POSITION_COUNT } from './structural';
-import { CALIBRATED_SLOPES, CALIBRATED_INTERCEPTS } from './calibration-coefficients';
+import { getOutcomePositions, OUTCOME_POSITION_COUNT, SIMULATION_DRAWABLE_COUNT } from './structural';
+import {
+  AVG_PITCHER_GRADE,
+  SUPPRESSION_FRACTIONS,
+  getArchetypeHitContributions,
+} from './calibration-coefficients';
 
 /**
  * APBA card value constants -- each value maps to an outcome category
@@ -35,27 +39,35 @@ export const CARD_VALUES = {
 } as const;
 
 /**
- * Shorthand aliases for calibrated regression coefficients.
- * These replace the old ad-hoc constants (CARD_K_FACTOR, CARD_DOUBLES_FACTOR,
- * AVG_SUPPRESSION_PROB, etc.) with values derived from BBW binary card analysis.
+ * Compute suppression compensation factor for grade-gated outcomes.
  *
- * The regression naturally absorbs suppression compensation: it was fit against
- * real BBW card counts, which already reflect the interplay between card values
- * and the simulation's pitcher grade gate.
+ * When a fraction of card values for an outcome type are grade-gated,
+ * those values produce outs when the pitcher wins the grade check
+ * (probability = grade/15). To maintain the correct outcome rate,
+ * the card count is inflated by: 1 / (1 - suppFraction * grade/15).
+ *
+ * Example: singles have suppFraction = 2/3 (values 7,8 gated, 9 not).
+ * With grade 8: factor = 1 / (1 - 2/3 * 8/15) = 1 / 0.644 = 1.553
  */
-const SLOPES = CALIBRATED_SLOPES;
-const INTERCEPTS = CALIBRATED_INTERCEPTS;
+function suppressionCompensation(rawCount: number, suppFraction: number, grade: number): number {
+  const factor = 1 / (1 - suppFraction * grade / 15);
+  return rawCount * factor;
+}
 
 /**
  * Outcome slot allocation: how many of the 20 outcome positions
  * should hold each outcome value, based on player rates.
  *
- * Excludes 15 pre-set positions:
- *   9 structural, 2 archetype, 1 power (pos 24), 3 gates (pos 0/15/20)
+ * Total card: 35 positions
+ *   - 9 structural constants -> OUT values
+ *   - 2 archetype (pos 33-34) -> drawable, pre-set with archetype values
+ *   - 1 power rating (pos 24) -> drawable, pre-set with IDT-active value
+ *   - 3 gates (pos 0, 15, 20) -> drawable, pre-set with walk/K/out
+ *   = 20 outcome fill positions (sequential allocation target)
  *
- * Gate position pre-sets contribute 1 walk OR 1 K (position 0),
- * 1 K (position 20), and 1 out (position 15). These are accounted for
- * in the allocation so total card composition is correct.
+ * Proportional model: total_count = round(rate * 26) across all 26 drawable
+ * positions, then subtract pre-set contributions (gates + archetype) to get
+ * the fill count for the 20 outcome positions.
  */
 export interface SlotAllocation {
   walks: number;
@@ -117,30 +129,32 @@ export function distributeByLargestRemainder(
 }
 
 /**
- * Compute how many of the 20 outcome positions to allocate to each
+ * Compute how many of the 20 outcome fill positions to allocate to each
  * outcome type, based on the player's per-PA rates.
  *
- * Uses regression-calibrated coefficients derived from BBW binary card analysis
- * (3 seasons, 535 matched batters). Each outcome count is predicted by:
- *   count = SLOPE * lahman_rate + INTERCEPT
+ * Uses proportional allocation: count = round(rate * 26) across all 26
+ * drawable positions, with suppression compensation for grade-gated values
+ * (singles: values 7,8; triples: value 11).
  *
- * The regression naturally captures BBW's suppression compensation because it
- * was fit against real BBW card counts that already reflect the interplay
- * between card values and the pitcher grade gate.
+ * Verified against real BBW cards:
+ *   Buford 1971: BB/PA=0.121, round(0.121*26)=3 walks. BBW=3.
+ *   Belanger 1971: 1B/PA=0.203, compensated=8. BBW=8.
+ *   Robinson 1971: 1B/PA=0.167, compensated=7. BBW=7.
  *
- * Total card: 35 positions
- *   - 9 structural constants (fixed values)
- *   - 2 archetype flags (bytes 33-34)
- *   - 1 power rating (position 24, set separately)
- *   - 3 gate positions (pos 0, 15, 20, pre-set)
- *   = 20 outcome positions for sequential fill
+ * @param archetypeByte33 - Archetype value at position 33 (default: 0 = DOUBLE)
+ * @param archetypeByte34 - Archetype value at position 34 (default: 1 = HOME_RUN)
+ * @param avgPitcherGrade - Average pitcher grade for suppression compensation (default: 8)
  */
 export function computeSlotAllocation(
   rates: PlayerRates,
   gateWalkCount: number = 0,
   gateKCount: number = 0,
+  archetypeByte33: number = 0,
+  archetypeByte34: number = 1,
+  avgPitcherGrade: number = AVG_PITCHER_GRADE,
 ): SlotAllocation {
   const FILL_COUNT = OUTCOME_POSITION_COUNT; // 20
+  const D = SIMULATION_DRAWABLE_COUNT; // 26
   const speed = 0; // Speed slots handled post-allocation in fillVariablePositions
 
   // Zero-PA players (no stats) get all-out cards
@@ -148,33 +162,34 @@ export function computeSlotAllocation(
     return { walks: 0, strikeouts: 0, homeRuns: 0, singles: 0, doubles: 0, triples: 0, speed: 0, outs: FILL_COUNT };
   }
 
-  // Regression-based total counts across all drawable positions.
-  // The regression intercepts provide baseline counts even at zero rate,
-  // matching BBW's behavior where every batter gets some walks/Ks on their card.
-  let totalWalks = Math.round(
-    Math.max(0, SLOPES.walk * rates.walkRate + INTERCEPTS.walk),
-  );
-  let totalKs = Math.round(
-    Math.max(0, SLOPES.strikeout * rates.strikeoutRate + INTERCEPTS.strikeout),
-  );
+  // Proportional allocation: total counts across all 26 drawable positions
+  let totalWalks = Math.round(rates.walkRate * D);
+  let totalKs = Math.round(rates.strikeoutRate * D);
 
   // Ensure at least 1 of major outcomes for qualifying batters
-  if (rates.PA > 0) {
-    if (totalWalks === 0 && rates.walkRate > 0) totalWalks = 1;
-    if (totalKs === 0 && rates.strikeoutRate > 0) totalKs = 1;
-  }
+  if (totalWalks === 0 && rates.walkRate > 0) totalWalks = 1;
+  if (totalKs === 0 && rates.strikeoutRate > 0) totalKs = 1;
 
   // Subtract gate pre-sets from the fill allocation
   let walks = Math.max(0, totalWalks - gateWalkCount);
   let strikeouts = Math.max(0, totalKs - gateKCount);
 
-  // Hit counts from regression (already incorporates suppression compensation)
-  const rawHRs = Math.max(0, SLOPES.homeRun * rates.homeRunRate + INTERCEPTS.homeRun);
-  const rawSingles = Math.max(0, SLOPES.single * rates.singleRate + INTERCEPTS.single);
-  const rawDoubles = Math.max(0, SLOPES.double * rates.doubleRate + INTERCEPTS.double);
-  const rawTriples = Math.max(0, SLOPES.triple * rates.tripleRate + INTERCEPTS.triple);
+  // Hit counts with suppression compensation for grade-gated values
+  const rawHRs = Math.max(0, rates.homeRunRate * D);
+  const rawDoubles = Math.max(0, rates.doubleRate * D);
+  const rawSingles = Math.max(0,
+    suppressionCompensation(rates.singleRate * D, SUPPRESSION_FRACTIONS.single, avgPitcherGrade));
+  const rawTriples = Math.max(0,
+    suppressionCompensation(rates.tripleRate * D, SUPPRESSION_FRACTIONS.triple, avgPitcherGrade));
 
-  const rawHitTotal = rawHRs + rawSingles + rawDoubles + rawTriples;
+  // Subtract archetype hit contributions (positions 33-34 are pre-set)
+  const archHits = getArchetypeHitContributions(archetypeByte33, archetypeByte34);
+  const fillHRs = Math.max(0, rawHRs - archHits.homeRuns);
+  const fillDoubles = Math.max(0, rawDoubles - archHits.doubles);
+  const fillSingles = Math.max(0, rawSingles - archHits.singles);
+  const fillTriples = rawTriples; // No archetype contributes triples
+
+  const rawHitTotal = fillHRs + fillSingles + fillDoubles + fillTriples;
   let hitPositions = Math.round(rawHitTotal);
 
   // Budget: leave at least 1 out slot in the 20 fill positions
@@ -194,7 +209,7 @@ export function computeSlotAllocation(
   let triples = 0;
 
   if (rawHitTotal > 0 && hitPositions > 0) {
-    const rawValues = [rawHRs, rawSingles, rawDoubles, rawTriples];
+    const rawValues = [fillHRs, fillSingles, fillDoubles, fillTriples];
     const distributed = distributeByLargestRemainder(rawValues, hitPositions);
     homeRuns = distributed[0];
     singles = distributed[1];

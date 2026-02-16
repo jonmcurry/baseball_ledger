@@ -45,11 +45,15 @@ export const GATE_POSITIONS: readonly number[] = [0, 15, 20];
 export const ARCHETYPE_POSITIONS: readonly number[] = [33, 34];
 
 /**
- * All non-drawable positions during card draws.
- * Includes 9 structural constants + 2 archetype flag positions = 11 total.
- * Leaves 24 drawable outcome positions.
+ * Non-drawable positions during simulation PA draws.
+ * Only structural constants are excluded -- archetype positions 33-34 ARE drawn
+ * because Ghidra decompilation of FUN_1058_5f49 shows `iVar12 < 0x24` (positions 0-35),
+ * which includes positions 33-34. Archetype byte values double as outcome values
+ * (e.g., byte33=1 maps to HOME_RUN, byte34=0 maps to DOUBLE).
+ *
+ * This gives 26 drawable positions (35 - 9 structural).
  */
-export const NON_DRAWABLE_POSITIONS: readonly number[] = [...STRUCTURAL_POSITIONS, ...ARCHETYPE_POSITIONS];
+export const NON_DRAWABLE_POSITIONS: readonly number[] = [...STRUCTURAL_POSITIONS];
 
 /**
  * Map from 0-indexed position to structural constant value (REQ-DATA-005 Step 2).
@@ -90,16 +94,24 @@ export function isStructuralPosition(position: number): boolean {
 }
 
 /**
- * Check whether a 0-indexed position is non-drawable (structural constant).
+ * Check whether a 0-indexed position is non-drawable in simulation (structural constant only).
  */
 export function isNonDrawablePosition(position: number): boolean {
   return nonDrawableSet.has(position);
 }
 
 /**
- * Number of drawable card positions (35 total - 11 non-drawable = 24).
+ * Number of drawable card positions in simulation (35 total - 9 structural = 26).
+ * Confirmed by Ghidra: BBW draws from all non-structural positions including
+ * archetype bytes 33-34.
  */
 export const DRAWABLE_COUNT = CARD_LENGTH - NON_DRAWABLE_POSITIONS.length;
+
+/**
+ * Explicit constant for the proportional allocation model.
+ * Used by the card generator to compute: count = round(rate * SIMULATION_DRAWABLE_COUNT).
+ */
+export const SIMULATION_DRAWABLE_COUNT = 26;
 
 /**
  * Return the 26 non-structural variable positions, sorted ascending.

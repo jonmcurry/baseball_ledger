@@ -37,39 +37,42 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     expect(total).toBe(20);
   });
 
-  it('maps walk slots via calibrated regression', () => {
-    // Regression: round(9.92 * 0.10 + 1.75) = round(2.74) = 3 total walks
+  it('maps walk slots via proportional allocation', () => {
+    // Proportional: round(0.10 * 26) = round(2.6) = 3 walks
     // No gate pre-set subtraction when called without gate counts
     const rates = makeRates({ walkRate: 0.10 });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.walks).toBe(3);
   });
 
-  it('maps strikeout slots via calibrated regression', () => {
-    // Regression: round(3.59 * 0.20 + 2.62) = round(3.34) = 3 total Ks
-    // With no gate subtraction, all 3 are fill Ks
+  it('maps strikeout slots via proportional allocation', () => {
+    // Proportional: round(0.20 * 26) = round(5.2) = 5 total Ks
     const rates = makeRates({ strikeoutRate: 0.20 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.strikeouts).toBe(3);
+    expect(alloc.strikeouts).toBe(5);
   });
 
-  it('allocates HRs via calibrated regression', () => {
-    // Regression: 36.92 * 0.06 + 0.575 = 2.79 -> 3 HR positions (rounded in largest remainder)
+  it('allocates HRs via proportional allocation', () => {
+    // Proportional: 0.06 * 26 = 1.56, minus 1 archetype HR (default byte34=1)
+    // fillHRs = 0.56 -> rounds to 1 via largest remainder
     const rates = makeRates({ homeRunRate: 0.06 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBeGreaterThanOrEqual(2);
-    expect(alloc.homeRuns).toBeLessThanOrEqual(4);
+    expect(alloc.homeRuns).toBeGreaterThanOrEqual(0);
+    expect(alloc.homeRuns).toBeLessThanOrEqual(2);
   });
 
-  it('allocates HRs for average power via regression', () => {
-    // Regression: 36.92 * 0.04 + 0.575 = 2.05 -> 2 HR positions
+  it('allocates HRs for average power via proportional', () => {
+    // Proportional: 0.04 * 26 = 1.04, minus 1 archetype HR (default byte34=1)
+    // fillHRs = 0.04 -> rounds to 0 (archetype provides the HR)
     const rates = makeRates({ homeRunRate: 0.04 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.homeRuns).toBe(2);
+    expect(alloc.homeRuns).toBe(0);
   });
 
-  it('allocates singles via calibrated regression', () => {
-    // Regression: 27.15 * 0.18 + 2.01 = 6.90 -> ~7 singles (in largest remainder)
+  it('allocates singles with suppression compensation', () => {
+    // Proportional + suppression: 0.18 * 26 / (1 - 2/3 * 8/15) = 4.68 / 0.644 = 7.27
+    // Minus 0 archetype singles (default (0,1) = no singles)
+    // fillSingles = ~7 (via largest remainder)
     const rates = makeRates({ singleRate: 0.18 });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.singles).toBeGreaterThanOrEqual(5);
@@ -306,6 +309,10 @@ describe('applyGateValues (BBW gate positions)', () => {
 });
 
 describe('full card pipeline (gates + power + fill)', () => {
+  // Standard RH archetype: byte33=7 (SINGLE_CLEAN), byte34=0 (DOUBLE)
+  const ARCH_B33 = 7;
+  const ARCH_B34 = 0;
+
   function buildFullCard(overrides: Partial<PlayerRates> = {}) {
     const rates = makeRates(overrides);
     const card = new Array(CARD_LENGTH).fill(0);
@@ -313,11 +320,11 @@ describe('full card pipeline (gates + power + fill)', () => {
     const { gateWalkCount, gateKCount } = applyGateValues(
       card, rates.walkRate, rates.strikeoutRate, rates.iso,
     );
-    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount, ARCH_B33, ARCH_B34);
     fillVariablePositions(card, alloc, 0.300);
     card[POWER_POSITION] = computePowerRating(rates.iso);
-    card[33] = 7;
-    card[34] = 0;
+    card[33] = ARCH_B33;
+    card[34] = ARCH_B34;
     return card;
   }
 
@@ -409,7 +416,7 @@ describe('full card pipeline (gates + power + fill)', () => {
     const zeroPositions = card.filter((v: number) => v === 0).length;
     // With the full pipeline, only allocated double positions should be 0
     // (plus archetype byte 34 which is legitimately 0)
-    const alloc = computeSlotAllocation(makeRates());
+    const alloc = computeSlotAllocation(makeRates(), 0, 0, ARCH_B33, ARCH_B34);
     expect(zeroPositions).toBeLessThanOrEqual(alloc.doubles + 1); // +1 for archetype byte34
   });
 });

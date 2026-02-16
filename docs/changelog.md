@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-02-16 - Proportional Allocation: Replace Regression with BBW-Faithful Card Generation
+
+Replaced the OLS regression model (slopes + intercepts) with a proportional allocation
+model that directly matches real BBW card generation: `count = round(rate * 26)`. The
+regression model inflated simulation stats (BA ~0.363, R/game ~8.18) due to non-zero
+intercepts adding ~4 extra hit positions per card. The proportional model matches verified
+BBW cards within +/-1 position (Buford, Robinson, Belanger 1971).
+
+### Key Changes
+
+**Archetype Positions Now Drawable** -- Ghidra decompilation confirms `iVar12 < 0x24`
+(positions 0-35 valid). Archetype byte values at positions 33-34 double as outcome values
+in BBW simulation. `NON_DRAWABLE_POSITIONS` reduced from 11 to 9 (structural only).
+`SIMULATION_DRAWABLE_COUNT = 26` (was 24).
+
+**Proportional Allocation Model** -- Walk/K counts: `round(rate * 26)`. Hit counts use
+suppression compensation: `round(rate * 26 / (1 - suppFraction * G/15))` where G=8
+(avg pitcher grade), suppFraction=2/3 for singles (values 7,8 are grade-gated) and
+1/2 for triples (value 11 is grade-gated). HRs and doubles are never suppressed.
+
+**Archetype Hit Contribution Deduction** -- Archetype bytes produce hits when drawn
+(e.g., value 1 = HOME_RUN, value 0 = DOUBLE). These contributions are subtracted from
+fill targets before distributing to the 20 outcome positions, preventing double-counting.
+
+**Generator Reordering** -- Archetype computation moved before card fill so archetype
+bytes can be passed to allocation function.
+
+### Simulation Results (Dramatic Improvement)
+| Metric      | Regression Model | Proportional Model | MLB Target |
+|-------------|-----------------|-------------------|------------|
+| BA          | ~0.363          | 0.232-0.244       | ~0.270     |
+| R/game      | ~8.18           | ~4.41             | ~4.5       |
+| HR/game     | inflated        | ~1.14             | 1.0-1.5    |
+| BB/game     | --              | ~3.61             | 3.0-4.0    |
+| SO/game     | --              | ~8.33             | 5.0-9.0    |
+
+### Files Modified
+- `src/lib/card-generator/structural.ts` - Archetype positions now drawable (26 not 24)
+- `src/lib/card-generator/calibration-coefficients.ts` - Removed regression slopes/intercepts, added suppression fractions and archetype hit contribution function
+- `src/lib/card-generator/value-mapper.ts` - Proportional allocation replacing regression
+- `src/lib/card-generator/generator.ts` - Archetype computed before card fill
+- `src/lib/simulation/plate-appearance.ts` - JSDoc update for drawable archetype positions
+- `tests/unit/lib/card-generator/structural.test.ts` - Updated position math assertions
+- `tests/unit/lib/card-generator/value-mapper.test.ts` - Updated for proportional model
+- `tests/unit/lib/simulation/realism-check.test.ts` - Tightened BA bounds (0.320 ceiling)
+- `tests/unit/lib/simulation/full-game-calibration.test.ts` - Tightened stat ranges, archetype-aware card building
+
 ## 2026-02-16 - BBW Regression Calibration: Match Formula Cards to BBW Distributions
 
 Calibrated the formula card generator against real BBW binary data from all 3 seasons
