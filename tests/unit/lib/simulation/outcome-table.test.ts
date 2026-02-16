@@ -11,6 +11,7 @@ import { SeededRNG } from '@lib/rng/seeded-rng';
 import {
   OUTCOME_TABLE,
   lookupOutcome,
+  lookupIdtOutcome,
   selectWeightedRow,
   cardValueMatchesRow,
   getTotalWeight,
@@ -242,6 +243,83 @@ describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
       // Result should either succeed or fail after 3 attempts
       expect(result.attempts).toBeLessThanOrEqual(3);
       expect(result.attempts).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('lookupIdtOutcome() -- BBW-faithful IDT resolution', () => {
+    it('always succeeds (returns success: true)', () => {
+      const rng = new SeededRNG(42);
+      for (let i = 0; i < 100; i++) {
+        const result = lookupIdtOutcome(rng);
+        expect(result.success).toBe(true);
+        expect(result.outcome).toBeDefined();
+      }
+    });
+
+    it('outcomes are only from IDT rows 15-23', () => {
+      const rng = new SeededRNG(42);
+      const validOutcomes = new Set([27, 39, 34, 40, 20, 29, 19, 22, 24]);
+
+      for (let i = 0; i < 500; i++) {
+        const result = lookupIdtOutcome(rng);
+        expect(validOutcomes.has(result.outcome)).toBe(true);
+        expect(result.rowIndex).toBeGreaterThanOrEqual(15);
+        expect(result.rowIndex).toBeLessThanOrEqual(23);
+      }
+    });
+
+    it('weight distribution matches BBW_IDT_WEIGHTS over many samples', () => {
+      const rng = new SeededRNG(42);
+      const counts = new Map<number, number>();
+      const samples = 12000;
+
+      for (let i = 0; i < samples; i++) {
+        const result = lookupIdtOutcome(rng);
+        counts.set(result.rowIndex, (counts.get(result.rowIndex) ?? 0) + 1);
+      }
+
+      // BBW_IDT_WEIGHTS: [1,1,1,2,1,2,1,2,1] total=12
+      const expectedWeights = [1, 1, 1, 2, 1, 2, 1, 2, 1];
+      const totalWeight = 12;
+
+      for (let i = 0; i < 9; i++) {
+        const rowIdx = 15 + i;
+        const count = counts.get(rowIdx) ?? 0;
+        const expectedFraction = expectedWeights[i] / totalWeight;
+        const actualFraction = count / samples;
+        // Allow wide tolerance for stochastic test
+        expect(actualFraction).toBeGreaterThan(expectedFraction * 0.5);
+        expect(actualFraction).toBeLessThan(expectedFraction * 2.0);
+      }
+    });
+
+    it('deterministic with same seed', () => {
+      const rng1 = new SeededRNG(12345);
+      const rng2 = new SeededRNG(12345);
+
+      const results1 = Array.from({ length: 20 }, () => lookupIdtOutcome(rng1));
+      const results2 = Array.from({ length: 20 }, () => lookupIdtOutcome(rng2));
+
+      expect(results1).toEqual(results2);
+    });
+
+    it('produces ~75% reach-base outcomes and ~25% outs', () => {
+      const rng = new SeededRNG(42);
+      const outOutcomes = new Set([
+        OutcomeCategory.FLY_OUT,   // 22
+        OutcomeCategory.LINE_OUT,  // 24
+      ]);
+      let outs = 0;
+      const samples = 12000;
+
+      for (let i = 0; i < samples; i++) {
+        const result = lookupIdtOutcome(rng);
+        if (outOutcomes.has(result.outcome)) outs++;
+      }
+
+      // 3/12 = 25% outs, allow [15%, 35%]
+      expect(outs / samples).toBeGreaterThan(0.15);
+      expect(outs / samples).toBeLessThan(0.35);
     });
   });
 

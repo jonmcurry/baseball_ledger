@@ -227,8 +227,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
 
       // IDT should produce diverse outcomes (not just GROUND_OUT)
       expect(outcomeSet.size).toBeGreaterThanOrEqual(3);
-      // IDT should be used for most results (grade 15 always wins, 21 is IDT-active)
-      expect(idtUsedCount).toBeGreaterThan(samples * 0.30);
+      // BBW IDT always succeeds -- grade 15 always wins, 21 is IDT-active
+      expect(idtUsedCount).toBe(samples);
     });
 
     it('batter wins uses direct mapping (grade 1, mostly GROUND_OUT)', () => {
@@ -454,23 +454,18 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(nonGroundOutHigh).toBeGreaterThan(nonGroundOutLow);
     });
 
-    it('outcomeTableRow is set when IDT is used', () => {
-      // Grade 15 + IDT-active value (16) should produce some IDT results
+    it('outcomeTableRow is set when IDT is used (rows 15-23)', () => {
+      // Grade 15 + IDT-active value (16): BBW IDT always succeeds
       const card = createTestCard(16);
       const rng = new SeededRNG(42);
-      let hasTableRow = false;
 
       for (let i = 0; i < 100; i++) {
         const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcomeTableRow !== undefined) {
-          hasTableRow = true;
-          expect(result.outcomeTableRow).toBeGreaterThanOrEqual(0);
-          expect(result.outcomeTableRow).toBeLessThan(36);
-          break;
-        }
+        // BBW IDT always succeeds, so outcomeTableRow is always set
+        expect(result.outcomeTableRow).toBeDefined();
+        expect(result.outcomeTableRow).toBeGreaterThanOrEqual(15);
+        expect(result.outcomeTableRow).toBeLessThanOrEqual(23);
       }
-
-      expect(hasTableRow).toBe(true);
     });
 
     it('outcomeTableRow is undefined when direct mapping is used', () => {
@@ -657,8 +652,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
         if (!result.usedFallback) idtUsed++;
       }
 
-      // Grade 15 always wins, value 17 is IDT-active -> IDT fires
-      expect(idtUsed).toBeGreaterThan(samples * 0.30);
+      // Grade 15 always wins, value 17 is IDT-active, IDT always succeeds
+      expect(idtUsed).toBe(samples);
     });
 
     it('power rating values 15-21 all trigger IDT', () => {
@@ -673,7 +668,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
           if (!result.usedFallback) idtUsed++;
         }
 
-        expect(idtUsed).toBeGreaterThan(0);
+        // Grade 15 always wins and IDT always succeeds
+        expect(idtUsed).toBe(samples);
       }
     });
   });

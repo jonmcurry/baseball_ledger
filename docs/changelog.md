@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-16 - BBW-Faithful IDT Lookup Algorithm
+
+Replaced the broken IDT lookup with a BBW-faithful implementation confirmed by Ghidra
+decompilation (FUN_1058_5f49, lines 151-189). The old `lookupOutcome()` searched all
+36 rows with threshold matching and failed after 3 attempts (falling back to GROUND_OUT).
+BBW uses only rows 15-23 with separate `BBW_IDT_WEIGHTS`, no threshold matching, and
+always succeeds.
+
+### Key Changes
+
+**New `lookupIdtOutcome()`** -- Weighted random selection from 9 IDT rows (15-23) using
+BBW_IDT_WEIGHTS [1,1,1,2,1,2,1,2,1] (total=12). Always succeeds. Produces 75%
+reach-base outcomes (WALK, HBP, HR, errors) and 25% outs (FLY_OUT, LINE_OUT).
+
+**Path B Updated** -- `plate-appearance.ts` Path B now calls `lookupIdtOutcome(rng)`
+instead of the deprecated `lookupOutcome(cardValue, rng)`. Removed success/fallback
+branching since IDT always succeeds.
+
+**Tests Updated** -- New test suite for `lookupIdtOutcome()` (weight distribution,
+row range [15-23], determinism). Updated plate-appearance tests to expect 100% IDT
+success rate and row indices in [15, 23].
+
 ## 2026-02-16 - Proportional Allocation: Replace Regression with BBW-Faithful Card Generation
 
 Replaced the OLS regression model (slopes + intercepts) with a proportional allocation

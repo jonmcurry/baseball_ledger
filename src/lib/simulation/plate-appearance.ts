@@ -31,7 +31,7 @@ import type { CardValue } from '../types/player';
 import { OutcomeCategory } from '../types/game';
 import { NON_DRAWABLE_POSITIONS, CARD_LENGTH } from '../card-generator/structural';
 import { getDirectOutcome } from './card-value-fallback';
-import { lookupOutcome } from './outcome-table';
+import { lookupIdtOutcome } from './outcome-table';
 
 /**
  * Non-drawable positions (structural constants only) as a Set for O(1) lookup.
@@ -235,19 +235,13 @@ export function resolvePlateAppearance(
 
   if (pitcherWins && isIDTActive(rawCardValue)) {
     // Path B: PITCHER WINS + card value in [15, 23] -> IDT table lookup
-    // Active because card[24] (power rating) holds values 15-21 for most
-    // batters. When position 24 is drawn and pitcher wins the grade check,
-    // the IDT table determines the outcome.
-    const lookup = lookupOutcome(rawCardValue, rng);
-
-    if (lookup.success && lookup.outcome !== undefined) {
-      outcome = lookup.outcome;
-      usedFallback = false;
-      outcomeTableRow = lookup.rowIndex;
-    } else {
-      outcome = getDirectOutcome(rawCardValue);
-      usedFallback = true;
-    }
+    // BBW-faithful: weighted random from rows 15-23 using BBW_IDT_WEIGHTS.
+    // Always succeeds (no threshold matching, no retry/failure path).
+    // 75% reach-base outcomes, 25% outs -- IDT is batter-favorable.
+    const lookup = lookupIdtOutcome(rng);
+    outcome = lookup.outcome;
+    usedFallback = false;
+    outcomeTableRow = lookup.rowIndex;
   } else if (pitcherWins && isPitcherCheckValue(rawCardValue)) {
     // Path A: PITCHER WINS + card value in {7, 8, 11} -> pitcher card check
     // In real BBW, this reads the pitcher's card at the same position.
