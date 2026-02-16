@@ -323,6 +323,81 @@ describe('REQ-SIM-003: OutcomeTable IDT.OBJ Port', () => {
     });
   });
 
+  describe('lookupIdtOutcome() with bitmap gating', () => {
+    it('card value 17 gates rows 16, 18, 22 (PASSED_BALL, SPECIAL_EVENT, FLY_OUT)', () => {
+      const rng = new SeededRNG(42);
+      // Bitmap: row 16=0x04, row 18=0x05, row 22=0x0E
+      // Mask for cv 17: 1 << (17-15) = 0x04
+      // Gated: row 16 (0x04 & 0x04 != 0), row 18 (0x05 & 0x04 != 0), row 22 (0x0E & 0x04 != 0)
+      const gatedOutcomes = new Set([39, 40, 22]); // PASSED_BALL, SPECIAL_EVENT, FLY_OUT
+
+      for (let i = 0; i < 500; i++) {
+        const result = lookupIdtOutcome(rng, 17);
+        expect(gatedOutcomes.has(result.outcome)).toBe(false);
+      }
+    });
+
+    it('card value 20 has no gating (all rows active)', () => {
+      const rng = new SeededRNG(42);
+      // Mask for cv 20: 1 << (20-15) = 0x20
+      // No bitmap has bit 5 set, so all rows active
+      const allOutcomes = new Set<number>();
+
+      for (let i = 0; i < 2000; i++) {
+        const result = lookupIdtOutcome(rng, 20);
+        allOutcomes.add(result.outcome);
+      }
+
+      // Should see all 9 distinct outcomes (with enough samples)
+      // At minimum, should see most outcomes since all rows are active
+      expect(allOutcomes.size).toBeGreaterThanOrEqual(7);
+    });
+
+    it('without card value, behaves same as full-active', () => {
+      const rng1 = new SeededRNG(42);
+      const rng2 = new SeededRNG(42);
+
+      const results1 = Array.from({ length: 20 }, () => lookupIdtOutcome(rng1));
+      const results2 = Array.from({ length: 20 }, () => lookupIdtOutcome(rng2, undefined));
+
+      expect(results1).toEqual(results2);
+    });
+
+    it('card value outside IDT range uses full-active', () => {
+      const rng1 = new SeededRNG(42);
+      const rng2 = new SeededRNG(42);
+
+      const results1 = Array.from({ length: 20 }, () => lookupIdtOutcome(rng1));
+      const results2 = Array.from({ length: 20 }, () => lookupIdtOutcome(rng2, 10));
+
+      expect(results1).toEqual(results2);
+    });
+
+    it('gated card value redistributes weight to remaining rows', () => {
+      const rng = new SeededRNG(42);
+      // Card value 17 gates rows 16, 18, 22 (weights 1, 2, 2 = 5)
+      // Remaining total weight: 12 - 5 = 7
+      // Remaining rows: 15(w1), 17(w1), 19(w1), 20(w2), 21(w1), 23(w1)
+      const counts = new Map<number, number>();
+      const samples = 7000;
+
+      for (let i = 0; i < samples; i++) {
+        const result = lookupIdtOutcome(rng, 17);
+        counts.set(result.rowIndex, (counts.get(result.rowIndex) ?? 0) + 1);
+      }
+
+      // Verify only active rows appear
+      expect(counts.has(16)).toBe(false); // gated
+      expect(counts.has(18)).toBe(false); // gated
+      expect(counts.has(22)).toBe(false); // gated
+
+      // Row 20 (weight 2/7 ~= 28.6%) should be most common
+      const row20Frac = (counts.get(20) ?? 0) / samples;
+      expect(row20Frac).toBeGreaterThan(0.15);
+      expect(row20Frac).toBeLessThan(0.45);
+    });
+  });
+
   describe('integration: outcome distribution', () => {
     it('produces expected distribution of outcomes for card value 7', () => {
       const rng = new SeededRNG(42);

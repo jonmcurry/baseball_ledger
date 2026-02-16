@@ -238,7 +238,7 @@ export function resolvePlateAppearance(
     // BBW-faithful: weighted random from rows 15-23 using BBW_IDT_WEIGHTS.
     // Always succeeds (no threshold matching, no retry/failure path).
     // 75% reach-base outcomes, 25% outs -- IDT is batter-favorable.
-    const lookup = lookupIdtOutcome(rng);
+    const lookup = lookupIdtOutcome(rng, rawCardValue);
     outcome = lookup.outcome;
     usedFallback = false;
     outcomeTableRow = lookup.rowIndex;

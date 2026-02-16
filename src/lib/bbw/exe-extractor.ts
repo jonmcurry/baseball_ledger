@@ -53,6 +53,41 @@ export const BBW_IDT_WEIGHTS: readonly number[] = [
 ];
 
 /**
+ * Real BBW IDT bitmap extracted from WINBB.EXE DATA[row * 2 + 0x382A]
+ * for IDT rows 15-23 (the active range).
+ *
+ * Each byte is a gating mask for one IDT row. In the Ghidra decompilation
+ * (FUN_1058_5f49, line 155): `(*(byte *)(iVar12 * 2 + iVar9 + 0x382a) & bVar3) == 0`
+ * When the AND result is 0, the row is ACTIVE. When non-zero, GATED (inactive).
+ *
+ * bVar3 comes from FUN_1110_196c(), an undecompiled stack-machine function
+ * that returns a bit mask derived from the card value. Best-guess mapping:
+ * `1 << ((cardValue - 15) & 7)`, giving each card value a unique bit (0-7).
+ *
+ * Index 0 = row 15, index 1 = row 16, ..., index 8 = row 23.
+ * Row 15 (WALK):         0x00 -- never gated (always active)
+ * Row 16 (PASSED_BALL):  0x04 -- gated when bit 2 (card value 17)
+ * Row 17 (ERROR):        0x02 -- gated when bit 1 (card value 16)
+ * Row 18 (SPECIAL_EVENT):0x05 -- gated when bit 0 or 2 (card values 15, 17)
+ * Row 19 (HR_VARIANT):   0x00 -- never gated
+ * Row 20 (HBP):          0x00 -- never gated
+ * Row 21 (HR):           0x00 -- never gated
+ * Row 22 (FLY_OUT):      0x0E -- gated when bit 1, 2, or 3 (card values 16, 17, 18)
+ * Row 23 (LINE_OUT):     0x00 -- never gated
+ */
+export const BBW_IDT_BITMAP: readonly number[] = [
+  0x00, // row 15
+  0x04, // row 16
+  0x02, // row 17
+  0x05, // row 18
+  0x00, // row 19
+  0x00, // row 20
+  0x00, // row 21
+  0x0E, // row 22
+  0x00, // row 23
+];
+
+/**
  * NE executable data segment extraction.
  * Locates segment 36 in a WINBB.EXE buffer and returns the data segment bytes.
  *
@@ -114,4 +149,51 @@ export function extractIdtWeights(dataSegment: DataView): number[] {
     weights.push(dataSegment.getUint8(row + 0x382B));
   }
   return weights;
+}
+
+/**
+ * Extract the 9-byte IDT bitmap from the data segment.
+ * Each byte gates one IDT row (rows 15-23).
+ *
+ * Ghidra shows `*(byte *)(iVar12 * 2 + iVar9 + 0x382a)` -- only the low byte
+ * of each 16-bit word is used. Formula: row * 2 + 0x382A.
+ */
+export function extractIdtBitmap(dataSegment: DataView): number[] {
+  const bitmap: number[] = [];
+  for (let row = 15; row <= 23; row++) {
+    bitmap.push(dataSegment.getUint8(row * 2 + 0x382A));
+  }
+  return bitmap;
+}
+
+/**
+ * Compute the IDT bitmap mask for a given card value.
+ *
+ * In BBW, FUN_1110_196c() returns a single-byte bit mask. Without the
+ * function's decompilation, we use the linear mapping:
+ *   mask = 1 << ((cardValue - 15) & 7)
+ *
+ * This gives each card value (15-22) a unique bit position (0-7).
+ * Card value 23 wraps to bit 0 (same as card value 15).
+ *
+ * @param cardValue - The card value that triggered the IDT path (15-23)
+ * @returns Single-byte bit mask
+ */
+export function computeIdtBitmask(cardValue: number): number {
+  return 1 << ((cardValue - 15) & 7);
+}
+
+/**
+ * Check if an IDT row is active for a given card value.
+ *
+ * Per Ghidra (line 155): `(bitmap & mask) == 0` means ACTIVE.
+ *
+ * @param rowIndex - IDT row index (0-8, where 0 = row 15)
+ * @param cardValue - Card value that triggered IDT (15-23)
+ * @returns true if the row is active (not gated)
+ */
+export function isIdtRowActive(rowIndex: number, cardValue: number): boolean {
+  const bitmap = BBW_IDT_BITMAP[rowIndex];
+  const mask = computeIdtBitmask(cardValue);
+  return (bitmap & mask) === 0;
 }

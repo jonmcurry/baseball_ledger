@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-02-16 - IDT Bitmap Gating Extracted from WINBB.EXE
+
+Extracted the IDT bitmap table from WINBB.EXE DATA[row*2 + 0x382A] for rows 15-23.
+This bitmap gates which IDT rows are active per card value during IDT resolution.
+The bitmap mask function (FUN_1110_196c) is approximated as `1 << ((cardValue-15) & 7)`.
+
+### Key Changes
+
+**BBW_IDT_BITMAP constant** -- 9 bytes extracted from WINBB.EXE, verified by
+`extractIdtBitmap()` test. 5 rows always active (WALK, HR_VARIANT, HBP, HR, LINE_OUT),
+4 rows conditionally gated (PASSED_BALL, ERROR, SPECIAL_EVENT, FLY_OUT).
+
+**lookupIdtOutcome(rng, cardValue)** -- Now accepts optional card value. When provided,
+bitmap gating filters inactive rows and redistributes weight. Without card value,
+full-active fallback (backwards compatible).
+
+**plate-appearance.ts** -- Path B passes `rawCardValue` to `lookupIdtOutcome()`.
+
+**24 extraction tests** -- BBW_IDT_BITMAP constant validation, binary extraction
+verification, computeIdtBitmask, isIdtRowActive, and 5 bitmap-gated IDT lookup tests.
+
 ## 2026-02-16 - BBW-Faithful IDT Lookup Algorithm
 
 Replaced the broken IDT lookup with a BBW-faithful implementation confirmed by Ghidra

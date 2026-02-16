@@ -12,10 +12,10 @@
  * weighted random selection that always succeeds. The lookupIdtOutcome()
  * function implements this exact algorithm.
  *
- * IDT BITMAP GATING (remaining gap):
- * A bitmap at DATA[0x382A] can deactivate individual rows per card value.
- * Without the exact bitmap bytes extracted from WINBB.EXE, we use a
- * full-active approximation (all 9 rows active for all card values).
+ * IDT BITMAP GATING (extracted from WINBB.EXE):
+ * BBW_IDT_BITMAP at DATA[row*2 + 0x382A] gates rows per card value.
+ * The mask function FUN_1110_196c is approximated as 1 << ((cardValue-15) & 7).
+ * When (bitmap & mask) == 0, the row is ACTIVE; otherwise GATED.
  *
  * The IDT path is now ACTIVE because card[24] (power rating) holds values 15-21
  * for most batters. When position 24 is drawn and the pitcher wins the grade
@@ -27,7 +27,7 @@
 import type { SeededRNG } from '../rng/seeded-rng';
 import type { OutcomeTableEntry } from '../types/game';
 import { OutcomeCategory } from '../types/game';
-import { BBW_IDT_WEIGHTS } from '../bbw/exe-extractor';
+import { BBW_IDT_WEIGHTS, BBW_IDT_BITMAP, computeIdtBitmask } from '../bbw/exe-extractor';
 
 /**
  * Maximum number of lookup attempts before failing.
@@ -258,50 +258,75 @@ const IDT_ROWS: readonly { outcomeIndex: number; weight: number }[] = [
   { outcomeIndex: OUTCOME_TABLE[23].outcomeIndex, weight: BBW_IDT_WEIGHTS[8] },  // row 23: LINE_OUT (24)
 ];
 
-/** Total weight across all 9 IDT rows. */
-const IDT_TOTAL_WEIGHT = BBW_IDT_WEIGHTS.reduce((sum, w) => sum + w, 0);
-
 /**
- * BBW-faithful IDT outcome resolution.
+ * BBW-faithful IDT outcome resolution with bitmap gating.
  *
  * Confirmed by Ghidra decompilation (FUN_1058_5f49, lines 151-189):
- * 1. Accumulates total weight for active rows 15-23 using DATA[row + 0x382B]
- * 2. Generates random(totalWeight)
- * 3. Walks cumulative weights to select row
- * 4. Returns the outcomeIndex for the selected row
+ * 1. Compute bitmask from card value via FUN_1110_196c
+ * 2. Accumulate total weight for ACTIVE rows only (bitmap & mask == 0)
+ * 3. Generate random(totalWeight)
+ * 4. Walk cumulative weights of active rows to select
+ * 5. Return the outcomeIndex for the selected row
  *
  * Key differences from old lookupOutcome():
  * - Only uses rows 15-23 (NOT all 36 rows)
  * - Uses BBW_IDT_WEIGHTS (NOT in-table frequencyWeight)
  * - No threshold matching (BBW just selects and returns)
  * - Always succeeds (no retry/failure path)
- *
- * IDT bitmap gating (DATA[0x382A]) is omitted -- without the exact bytes,
- * all 9 rows are treated as active (full-active approximation).
+ * - Bitmap gating filters out inactive rows per card value
  *
  * @param rng - Seeded random number generator
+ * @param cardValue - Optional card value for bitmap gating (15-23).
+ *   When provided, rows gated by BBW_IDT_BITMAP are excluded.
+ *   When omitted, all 9 rows are active (full-active fallback).
  * @returns Always-successful IDT lookup result with outcome and row index
  */
-export function lookupIdtOutcome(rng: SeededRNG): IdtLookupResult {
-  const target = rng.nextIntExclusive(0, IDT_TOTAL_WEIGHT);
+export function lookupIdtOutcome(rng: SeededRNG, cardValue?: number): IdtLookupResult {
+  // Determine which rows are active
+  let activeRows: typeof IDT_ROWS[number][];
+  let activeIndices: number[];
+
+  if (cardValue !== undefined && cardValue >= 15 && cardValue <= 23) {
+    const mask = computeIdtBitmask(cardValue);
+    activeRows = [];
+    activeIndices = [];
+    for (let i = 0; i < IDT_ROWS.length; i++) {
+      if ((BBW_IDT_BITMAP[i] & mask) === 0) {
+        activeRows.push(IDT_ROWS[i]);
+        activeIndices.push(i);
+      }
+    }
+    // Fallback to full-active if bitmap gates ALL rows (shouldn't happen)
+    if (activeRows.length === 0) {
+      activeRows = [...IDT_ROWS];
+      activeIndices = IDT_ROWS.map((_, i) => i);
+    }
+  } else {
+    // No card value or out of range: full-active
+    activeRows = [...IDT_ROWS];
+    activeIndices = IDT_ROWS.map((_, i) => i);
+  }
+
+  const totalWeight = activeRows.reduce((sum, r) => sum + r.weight, 0);
+  const target = rng.nextIntExclusive(0, totalWeight);
 
   let cumulative = 0;
-  for (let i = 0; i < IDT_ROWS.length; i++) {
-    cumulative += IDT_ROWS[i].weight;
+  for (let i = 0; i < activeRows.length; i++) {
+    cumulative += activeRows[i].weight;
     if (target < cumulative) {
       return {
         success: true,
-        outcome: IDT_ROWS[i].outcomeIndex as OutcomeCategory,
-        rowIndex: 15 + i,
+        outcome: activeRows[i].outcomeIndex as OutcomeCategory,
+        rowIndex: 15 + activeIndices[i],
       };
     }
   }
 
-  // Fallback: should never reach here (weights sum to IDT_TOTAL_WEIGHT)
-  const lastIdx = IDT_ROWS.length - 1;
+  // Fallback: should never reach here
+  const lastIdx = activeRows.length - 1;
   return {
     success: true,
-    outcome: IDT_ROWS[lastIdx].outcomeIndex as OutcomeCategory,
-    rowIndex: 15 + lastIdx,
+    outcome: activeRows[lastIdx].outcomeIndex as OutcomeCategory,
+    rowIndex: 15 + activeIndices[lastIdx],
   };
 }

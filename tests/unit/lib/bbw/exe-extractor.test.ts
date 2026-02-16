@@ -10,9 +10,13 @@ import { resolve } from 'path';
 import {
   BBW_VARIANCE_TABLE,
   BBW_IDT_WEIGHTS,
+  BBW_IDT_BITMAP,
   extractDataSegment,
   extractVarianceTable,
   extractIdtWeights,
+  extractIdtBitmap,
+  computeIdtBitmask,
+  isIdtRowActive,
 } from '@lib/bbw/exe-extractor';
 
 const WINBB_PATH = resolve(__dirname, '../../../../BBW/WINBB.EXE');
@@ -97,5 +101,93 @@ describe('extractIdtWeights (from binary)', () => {
   it('matches the hardcoded constant', () => {
     const extracted = extractIdtWeights(dataSegment);
     expect(extracted).toEqual([...BBW_IDT_WEIGHTS]);
+  });
+});
+
+describe('BBW_IDT_BITMAP (hardcoded constant)', () => {
+  it('has exactly 9 entries (rows 15-23)', () => {
+    expect(BBW_IDT_BITMAP).toHaveLength(9);
+  });
+
+  it('all values are valid single bytes (0-255)', () => {
+    for (const b of BBW_IDT_BITMAP) {
+      expect(b).toBeGreaterThanOrEqual(0);
+      expect(b).toBeLessThanOrEqual(255);
+    }
+  });
+
+  it('5 of 9 rows are never gated (bitmap = 0x00)', () => {
+    const neverGated = BBW_IDT_BITMAP.filter(b => b === 0x00);
+    expect(neverGated).toHaveLength(5);
+  });
+
+  it('rows 15, 19, 20, 21, 23 are always active (0x00)', () => {
+    expect(BBW_IDT_BITMAP[0]).toBe(0x00); // row 15: WALK
+    expect(BBW_IDT_BITMAP[4]).toBe(0x00); // row 19: HR_VARIANT
+    expect(BBW_IDT_BITMAP[5]).toBe(0x00); // row 20: HBP
+    expect(BBW_IDT_BITMAP[6]).toBe(0x00); // row 21: HR
+    expect(BBW_IDT_BITMAP[8]).toBe(0x00); // row 23: LINE_OUT
+  });
+
+  it('gated rows have expected bitmap values', () => {
+    expect(BBW_IDT_BITMAP[1]).toBe(0x04); // row 16: PASSED_BALL
+    expect(BBW_IDT_BITMAP[2]).toBe(0x02); // row 17: ERROR
+    expect(BBW_IDT_BITMAP[3]).toBe(0x05); // row 18: SPECIAL_EVENT
+    expect(BBW_IDT_BITMAP[7]).toBe(0x0E); // row 22: FLY_OUT
+  });
+});
+
+describe('extractIdtBitmap (from binary)', () => {
+  it('matches the hardcoded constant', () => {
+    const extracted = extractIdtBitmap(dataSegment);
+    expect(extracted).toEqual([...BBW_IDT_BITMAP]);
+  });
+});
+
+describe('computeIdtBitmask', () => {
+  it('returns power of 2 for card values 15-22', () => {
+    for (let cv = 15; cv <= 22; cv++) {
+      const mask = computeIdtBitmask(cv);
+      expect(mask).toBe(1 << (cv - 15));
+    }
+  });
+
+  it('card value 23 wraps to bit 0 (same as card value 15)', () => {
+    expect(computeIdtBitmask(23)).toBe(computeIdtBitmask(15));
+  });
+});
+
+describe('isIdtRowActive', () => {
+  it('row 15 (WALK) is always active for any card value', () => {
+    for (let cv = 15; cv <= 23; cv++) {
+      expect(isIdtRowActive(0, cv)).toBe(true);
+    }
+  });
+
+  it('row 22 (FLY_OUT) is gated for card values 16, 17, 18', () => {
+    expect(isIdtRowActive(7, 16)).toBe(false); // bitmap 0x0E, mask 0x02
+    expect(isIdtRowActive(7, 17)).toBe(false); // bitmap 0x0E, mask 0x04
+    expect(isIdtRowActive(7, 18)).toBe(false); // bitmap 0x0E, mask 0x08
+  });
+
+  it('row 22 (FLY_OUT) is active for card values 15, 19-23', () => {
+    expect(isIdtRowActive(7, 15)).toBe(true);
+    for (let cv = 19; cv <= 23; cv++) {
+      expect(isIdtRowActive(7, cv)).toBe(true);
+    }
+  });
+
+  it('row 18 (SPECIAL_EVENT) is gated for card values 15, 17', () => {
+    expect(isIdtRowActive(3, 15)).toBe(false); // bitmap 0x05, mask 0x01
+    expect(isIdtRowActive(3, 17)).toBe(false); // bitmap 0x05, mask 0x04
+  });
+
+  it('row 18 (SPECIAL_EVENT) is active for card values 16, 18-22', () => {
+    expect(isIdtRowActive(3, 16)).toBe(true);
+    for (let cv = 18; cv <= 22; cv++) {
+      expect(isIdtRowActive(3, cv)).toBe(true);
+    }
+    // Card value 23 wraps to bit 0 (same as 15), which IS gated
+    expect(isIdtRowActive(3, 23)).toBe(false);
   });
 });
