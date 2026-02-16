@@ -13,6 +13,7 @@ import {
   selectCardPosition,
   readCardValue,
   resolvePlateAppearance,
+  resolveSymbolValue,
   IDT_ACTIVE_LOW,
   IDT_ACTIVE_HIGH,
   isIDTActive,
@@ -21,6 +22,7 @@ import {
 } from '@lib/simulation/plate-appearance';
 import { OutcomeCategory } from '@lib/types/game';
 import { STRUCTURAL_POSITIONS } from '@lib/card-generator/structural';
+import { generatePitcherBattingCard } from '@lib/card-generator/pitcher-card';
 import type { CardValue } from '@lib/types/player';
 
 describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', () => {
@@ -230,9 +232,9 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('batter wins uses direct mapping (grade 1, mostly GROUND_OUT)', () => {
-      // Card filled with value 21 (IDT-active). Grade 1: pitcher wins only 1/15 of time.
-      // Batter wins ~93% -> direct mapping -> value 21 = GROUND_OUT.
-      const card = createTestCard(21);
+      // Card filled with value 16 (IDT-active, unmapped -> GROUND_OUT). Grade 1: pitcher wins only 1/15 of time.
+      // Batter wins ~93% -> direct mapping -> value 16 = GROUND_OUT (default).
+      const card = createTestCard(16);
       const rng = new SeededRNG(42);
       let groundOuts = 0;
       const samples = 500;
@@ -406,8 +408,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('higher pitcher grade produces more IDT outcomes', () => {
-      // IDT-active card (value 21, in [15,23]). Compare grade 15 vs grade 1.
-      const card = createTestCard(21);
+      // IDT-active card (value 16, in [15,23]). Compare grade 15 vs grade 1.
+      const card = createTestCard(16);
       const samples = 500;
 
       const rngHigh = new SeededRNG(42);
@@ -429,9 +431,9 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('higher pitcher grade produces more non-direct-mapping outcomes', () => {
-      // Card filled with value 21 (GROUND_OUT, IDT-active in [15,23]).
+      // Card filled with value 16 (GROUND_OUT default, IDT-active in [15,23]).
       // High grade pitcher triggers IDT more often, remapping GROUND_OUT to other types.
-      const card = createTestCard(21);
+      const card = createTestCard(16);
       const samples = 500;
 
       const rngHigh = new SeededRNG(42);
@@ -453,8 +455,8 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
 
     it('outcomeTableRow is set when IDT is used', () => {
-      // Grade 15 + IDT-active value (21) should produce some IDT results
-      const card = createTestCard(21);
+      // Grade 15 + IDT-active value (16) should produce some IDT results
+      const card = createTestCard(16);
       const rng = new SeededRNG(42);
       let hasTableRow = false;
 
@@ -491,6 +493,143 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(result.pitcherGradeEffect.r2Roll).toBeGreaterThanOrEqual(1);
       expect(result.pitcherGradeEffect.r2Roll).toBeLessThanOrEqual(15);
       expect(result.pitcherGradeEffect.originalValue).toBe(result.cardValue);
+    });
+  });
+
+  describe('resolveSymbolValue() -- BBW symbol table (Gap 5)', () => {
+    it('resolves values 36-41 through the 10-entry symbol table', () => {
+      const rng = new SeededRNG(42);
+      const results = new Set<number>();
+      for (let i = 0; i < 200; i++) {
+        const resolved = resolveSymbolValue(36, rng);
+        results.add(resolved);
+      }
+      // Symbol table contains {36,37,38,39,40,41}
+      expect(results.size).toBeGreaterThanOrEqual(4);
+      for (const v of results) {
+        expect(v).toBeGreaterThanOrEqual(36);
+        expect(v).toBeLessThanOrEqual(41);
+      }
+    });
+
+    it('passes through non-symbol values unchanged', () => {
+      const rng = new SeededRNG(42);
+      for (const v of [0, 1, 7, 13, 14, 21, 35]) {
+        expect(resolveSymbolValue(v, rng)).toBe(v);
+      }
+    });
+
+    it('value 40 (reached on error) has ~30% weight in the table', () => {
+      const rng = new SeededRNG(99);
+      let count40 = 0;
+      const samples = 1000;
+      for (let i = 0; i < samples; i++) {
+        if (resolveSymbolValue(38, rng) === 40) count40++;
+      }
+      // 3/10 slots = 30%, allow [20%, 40%]
+      expect(count40 / samples).toBeGreaterThan(0.20);
+      expect(count40 / samples).toBeLessThan(0.40);
+    });
+
+    it('is deterministic with same seed', () => {
+      const rng1 = new SeededRNG(77);
+      const rng2 = new SeededRNG(77);
+      const seq1 = Array.from({ length: 50 }, () => resolveSymbolValue(39, rng1));
+      const seq2 = Array.from({ length: 50 }, () => resolveSymbolValue(39, rng2));
+      expect(seq1).toEqual(seq2);
+    });
+  });
+
+  describe('pitcher card read in Path A (Gap 4)', () => {
+    it('reads pitcher card when pitcher card is provided and pitcher wins', () => {
+      // Batter card filled with value 7 (pitcher check value, single)
+      const batterCard = createTestCard(7);
+      // Pitcher card: use generated pitcher batting card (~58% walks, ~17% K, ~25% outs)
+      const pitcherCard = generatePitcherBattingCard();
+
+      const rng = new SeededRNG(42);
+      const outcomes = new Map<OutcomeCategory, number>();
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
+        outcomes.set(result.outcome, (outcomes.get(result.outcome) ?? 0) + 1);
+      }
+
+      // With pitcher card, grade 15 always wins for value 7 (pitcher check).
+      // Pitcher card has walks (~58%), Ks (~17%), outs (~25%).
+      // So we should see walks, not just ground outs.
+      const walks = outcomes.get(OutcomeCategory.WALK) ?? 0;
+      expect(walks).toBeGreaterThan(0);
+      // Should also see ground outs (from out values on pitcher card)
+      const groundOuts = outcomes.get(OutcomeCategory.GROUND_OUT) ?? 0;
+      expect(groundOuts).toBeGreaterThan(0);
+    });
+
+    it('falls back to hardcoded outs when no pitcher card (legacy)', () => {
+      const batterCard = createTestCard(7);
+      const rng = new SeededRNG(42);
+      let groundOuts = 0;
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        // Old signature: no pitcher card
+        const result = resolvePlateAppearance(batterCard, 15, rng);
+        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
+      }
+
+      // Grade 15 always wins -> all value 7 -> GROUND_OUT (legacy behavior)
+      expect(groundOuts).toBe(samples);
+    });
+
+    it('pitcher card produces mixed outcomes for value 8', () => {
+      const batterCard = createTestCard(8);
+      const pitcherCard = generatePitcherBattingCard();
+      const rng = new SeededRNG(55);
+      const outcomeSet = new Set<OutcomeCategory>();
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
+        outcomeSet.add(result.outcome);
+      }
+
+      // Should produce diverse outcomes (walks, Ks, outs from pitcher card)
+      expect(outcomeSet.size).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('IDT activation via power rating at position 24 (Gap 1+6)', () => {
+    it('card value 17 (power rating) triggers IDT when pitcher wins', () => {
+      // Card with all positions set to 17 (in IDT range [15,23])
+      const card = createTestCard(17);
+      const rng = new SeededRNG(42);
+      let idtUsed = 0;
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (!result.usedFallback) idtUsed++;
+      }
+
+      // Grade 15 always wins, value 17 is IDT-active -> IDT fires
+      expect(idtUsed).toBeGreaterThan(samples * 0.30);
+    });
+
+    it('power rating values 15-21 all trigger IDT', () => {
+      for (let powerVal = 15; powerVal <= 21; powerVal++) {
+        const card = createTestCard(powerVal as CardValue);
+        const rng = new SeededRNG(42);
+        let idtUsed = 0;
+        const samples = 100;
+
+        for (let i = 0; i < samples; i++) {
+          const result = resolvePlateAppearance(card, 15, rng);
+          if (!result.usedFallback) idtUsed++;
+        }
+
+        expect(idtUsed).toBeGreaterThan(0);
+      }
     });
   });
 });

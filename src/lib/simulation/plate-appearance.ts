@@ -77,6 +77,34 @@ export function isPitcherCheckValue(cardValue: number): boolean {
 }
 
 /**
+ * BBW symbol resolution table from Ghidra decompilation.
+ * When a card value in [36, 41] is drawn, the actual outcome is determined
+ * by a random(10) lookup into this table:
+ *   Index: 0  1  2  3  4  5  6  7  8  9
+ *   Value: 36 36 37 38 39 39 40 40 40 41
+ *
+ * Distribution: 36(20%), 37(10%), 38(10%), 39(20%), 40(30%), 41(10%)
+ * Value 40 (reached on error) has highest weight at 30%.
+ */
+const SYMBOL_TABLE: readonly number[] = [36, 36, 37, 38, 39, 39, 40, 40, 40, 41];
+
+/**
+ * Resolve symbol card values (36-41) through the BBW symbol table.
+ * Non-symbol values pass through unchanged.
+ *
+ * @param rawValue - The card value to check
+ * @param rng - Seeded random number generator
+ * @returns The resolved card value (may differ if input was a symbol)
+ */
+export function resolveSymbolValue(rawValue: number, rng: SeededRNG): number {
+  if (rawValue >= 36 && rawValue <= 41) {
+    const idx = rng.nextIntExclusive(0, 10);
+    return SYMBOL_TABLE[idx];
+  }
+  return rawValue;
+}
+
+/**
  * Select a random card position (0-34) that is NOT a structural constant.
  * Re-rolls if a structural position is selected.
  *
@@ -160,15 +188,33 @@ export interface PlateAppearanceResult {
  *     -> Direct mapping: card value IS the outcome
  *
  * @param card - The batter's 35-element card array
+ * @param pitcherCard - The pitcher's 35-element card array (used for Path A suppression)
  * @param pitcherGrade - Pitcher's current effective grade (1-15)
  * @param rng - Seeded random number generator
  * @returns Complete plate appearance result
  */
 export function resolvePlateAppearance(
   card: readonly CardValue[],
-  pitcherGrade: number,
-  rng: SeededRNG
+  pitcherCardOrGrade: readonly CardValue[] | number,
+  pitcherGradeOrRng: number | SeededRNG,
+  rngOrUndefined?: SeededRNG
 ): PlateAppearanceResult {
+  // Support both old signature (card, grade, rng) and new (card, pitcherCard, grade, rng)
+  let pitcherCard: readonly CardValue[] | undefined;
+  let pitcherGrade: number;
+  let rng: SeededRNG;
+
+  if (typeof pitcherCardOrGrade === 'number') {
+    // Old signature: resolvePlateAppearance(card, grade, rng)
+    pitcherCard = undefined;
+    pitcherGrade = pitcherCardOrGrade;
+    rng = pitcherGradeOrRng as SeededRNG;
+  } else {
+    // New signature: resolvePlateAppearance(card, pitcherCard, grade, rng)
+    pitcherCard = pitcherCardOrGrade;
+    pitcherGrade = pitcherGradeOrRng as number;
+    rng = rngOrUndefined!;
+  }
   // Step 1: Select card position (skips non-drawable positions)
   const cardPosition = selectCardPosition(rng);
 
@@ -187,11 +233,9 @@ export function resolvePlateAppearance(
 
   if (pitcherWins && isIDTActive(rawCardValue)) {
     // Path B: PITCHER WINS + card value in [15, 23] -> IDT table lookup
-    // NOTE: This path is currently inactive because no generated cards place
-    // values 15-23 in drawable positions. The card generator uses values:
-    //   0, 1, 5, 7, 8, 9, 10, 11, 13, 14, 24, 26, 30, 31, 33, 34, 37, 41
-    // Preserved for future compatibility if real APBA card distributions
-    // are reverse-engineered or values 15-23 are added to the generator.
+    // Active because card[24] (power rating) holds values 15-21 for most
+    // batters. When position 24 is drawn and pitcher wins the grade check,
+    // the IDT table determines the outcome.
     const lookup = lookupOutcome(rawCardValue, rng);
 
     if (lookup.success && lookup.outcome !== undefined) {
@@ -205,21 +249,27 @@ export function resolvePlateAppearance(
   } else if (pitcherWins && isPitcherCheckValue(rawCardValue)) {
     // Path A: PITCHER WINS + card value in {7, 8, 11} -> pitcher card check
     // In real BBW, this reads the pitcher's card at the same position.
-    // Standard pitcher cards have ~85% out-type values, so the NET EFFECT
-    // of "pitcher wins" is conversion to an out.
-    // Values 7,8 (singles) -> GROUND_OUT
-    // Value 11 (triple) -> FLY_OUT
-    if (rawCardValue === 11) {
-      outcome = OutcomeCategory.FLY_OUT;
+    // The pitcher card value is then resolved through symbol table + direct mapping.
+    if (pitcherCard) {
+      const pitcherValue = readCardValue(pitcherCard, cardPosition);
+      const resolvedValue = resolveSymbolValue(pitcherValue, rng);
+      outcome = getDirectOutcome(resolvedValue);
     } else {
-      outcome = OutcomeCategory.GROUND_OUT;
+      // Fallback when no pitcher card available (legacy callers):
+      // Standard pitcher cards are ~85% out-type values
+      if (rawCardValue === 11) {
+        outcome = OutcomeCategory.FLY_OUT;
+      } else {
+        outcome = OutcomeCategory.GROUND_OUT;
+      }
     }
     usedFallback = false;
     outcomeTableRow = undefined;
   } else {
     // Step 5: BATTER WINS (R2 > grade) OR card value not grade-gated
-    // Direct mapping: card value IS the outcome
-    outcome = getDirectOutcome(rawCardValue);
+    // Symbol resolution: values 36-41 go through the symbol table first
+    const resolvedValue = resolveSymbolValue(rawCardValue, rng);
+    outcome = getDirectOutcome(resolvedValue);
     usedFallback = true;
   }
 

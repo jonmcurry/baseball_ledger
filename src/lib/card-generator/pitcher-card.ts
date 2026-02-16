@@ -11,7 +11,13 @@ import { computePitcherGrade } from './pitcher-grade';
  * Pitchers' batting cards are flooded with value 13 (walk).
  * Per SRD: 14-18 of 26 variable positions get value 13,
  * 3-5 get value 14 (strikeout), remaining get out types.
- * Power rating at position 24 = 13 (no power -- handled by structural constant overwrite).
+ * Power rating at position 24 = 13 (no power).
+ *
+ * Values are distributed evenly across positions (not sequential fill)
+ * to match real BBW pitcher card layouts where walks, Ks, and outs
+ * are interspersed rather than concentrated in position blocks.
+ * This matters because pitcher cards are read at specific positions
+ * during Path A suppression (pitcher wins + batter values {7, 8, 11}).
  */
 export function generatePitcherBattingCard(): CardValue[] {
   const card = new Array(CARD_LENGTH).fill(0);
@@ -20,25 +26,42 @@ export function generatePitcherBattingCard(): CardValue[] {
   const fillablePositions = getFillablePositions();
   const WALK_COUNT = 14;      // lower end of 14-18 range (24 fillable positions)
   const STRIKEOUT_COUNT = 4;  // middle of 3-5 range
-
-  let posIdx = 0;
-
-  // Fill walks (value 13)
-  for (let i = 0; i < WALK_COUNT && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.WALK;
-  }
-
-  // Fill strikeouts (value 14)
-  for (let i = 0; i < STRIKEOUT_COUNT && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
-  }
-
-  // Fill remaining with out types (rotating through out values)
   const outValues = [CARD_VALUES.OUT_GROUND, CARD_VALUES.OUT_CONTACT, CARD_VALUES.OUT_NONWALK, CARD_VALUES.OUT_FLY];
+
+  // Distribute evenly using stride pattern: place every Nth value to spread
+  // walks, Ks, and outs across positions (mimics real BBW card layout).
+  // Use fixed stride to be deterministic (no RNG needed for card generation).
+  const totalPositions = fillablePositions.length;
+  const placed = new Array(totalPositions).fill(0);
+
+  // Place walks with stride (~1.7 for 14 walks in 24 positions)
+  const walkStride = totalPositions / WALK_COUNT;
+  for (let i = 0; i < WALK_COUNT; i++) {
+    const pos = Math.floor(i * walkStride) % totalPositions;
+    placed[pos] = CARD_VALUES.WALK;
+  }
+
+  // Place Ks in remaining gaps
+  let kPlaced = 0;
+  for (let i = 0; i < totalPositions && kPlaced < STRIKEOUT_COUNT; i++) {
+    if (placed[i] === 0) {
+      placed[i] = CARD_VALUES.STRIKEOUT;
+      kPlaced++;
+    }
+  }
+
+  // Fill remaining with outs
   let outIdx = 0;
-  while (posIdx < fillablePositions.length) {
-    card[fillablePositions[posIdx++]] = outValues[outIdx % outValues.length];
-    outIdx++;
+  for (let i = 0; i < totalPositions; i++) {
+    if (placed[i] === 0) {
+      placed[i] = outValues[outIdx % outValues.length];
+      outIdx++;
+    }
+  }
+
+  // Apply to card
+  for (let i = 0; i < totalPositions; i++) {
+    card[fillablePositions[i]] = placed[i];
   }
 
   return card;

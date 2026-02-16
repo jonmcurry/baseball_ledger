@@ -35,6 +35,7 @@ import {
   advanceBatterIndex,
 } from './engine';
 import { resolvePlateAppearance } from './plate-appearance';
+import { checkUmpireDecision } from './umpire-decision';
 import { resolveOutcome } from './outcome-resolver';
 import type { OutcomeResolution } from './outcome-resolver';
 import { computeEffectiveGrade, computeGameGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
@@ -674,8 +675,9 @@ export function runGame(config: RunGameConfig): GameResult {
         platoonValue: 2,
       };
       const effectiveGrade = computeGameGrade(currentPitcher, gradeContext, rng);
-      const paResult = resolvePlateAppearance(batterCard.card, effectiveGrade, rng);
-      let outcome = paResult.outcome;
+      const paResult = resolvePlateAppearance(batterCard.card, currentPitcher.card, effectiveGrade, rng);
+      const umpireCheck = checkUmpireDecision(paResult.outcome, rng);
+      let outcome = umpireCheck.outcome;
 
       // Hit-and-run modifiers
       if (hitAndRunActive) {

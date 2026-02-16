@@ -18,6 +18,24 @@ export const CARD_LENGTH = 35;
 export const STRUCTURAL_POSITIONS: readonly number[] = [1, 3, 6, 11, 13, 18, 23, 25, 32];
 
 /**
+ * Power rating position (card[24]).
+ * Per BBW reverse engineering: Position 24 always holds the extra-base power
+ * rating (values 13-21). This is set separately from the outcome fill and is
+ * excluded from the sequential allocation of outcome slots.
+ */
+export const POWER_POSITION = 24;
+
+/**
+ * Gate positions -- positions with fixed or near-fixed values in BBW.
+ * From 828-card analysis:
+ *   Position 0: value 13 (41%) or 14 (32%) -- primary outcome gate (walk/K)
+ *   Position 15: value 33 (75%) -- power gate
+ *   Position 20: value 14 (94%) -- strikeout gate
+ * These are pre-set before the sequential outcome fill.
+ */
+export const GATE_POSITIONS: readonly number[] = [0, 15, 20];
+
+/**
  * Archetype flag positions (bytes 33-34).
  * Per reverse engineering: "These final two bytes encode special player attributes"
  * (7,0)=standard RH, (1,0)=power, (6,0)=speed, etc.
@@ -99,6 +117,7 @@ export function getVariablePositions(): number[] {
 }
 
 const archetypeSet = new Set(ARCHETYPE_POSITIONS);
+const gateSet = new Set(GATE_POSITIONS);
 
 /**
  * Return the 24 fillable variable positions (excludes structural + archetype).
@@ -113,3 +132,30 @@ export function getFillablePositions(): number[] {
   }
   return positions;
 }
+
+/**
+ * Return the 20 outcome-fill positions (excludes structural + archetype + power + gates).
+ * These are the positions filled by the sequential outcome allocation algorithm.
+ * The excluded positions are pre-set:
+ *   9 structural constants, 2 archetype flags, 1 power (pos 24), 3 gates (pos 0, 15, 20)
+ *   = 15 excluded, 35 - 15 = 20 outcome positions
+ */
+export function getOutcomePositions(): number[] {
+  const positions: number[] = [];
+  for (let i = 0; i < CARD_LENGTH; i++) {
+    if (!structuralSet.has(i) && !archetypeSet.has(i)
+      && i !== POWER_POSITION && !gateSet.has(i)) {
+      positions.push(i);
+    }
+  }
+  return positions;
+}
+
+/**
+ * Number of outcome-fill positions (35 - 9 structural - 2 archetype - 1 power - 3 gates = 20).
+ */
+export const OUTCOME_POSITION_COUNT = CARD_LENGTH
+  - STRUCTURAL_POSITIONS.length
+  - ARCHETYPE_POSITIONS.length
+  - 1  // POWER_POSITION
+  - GATE_POSITIONS.length;

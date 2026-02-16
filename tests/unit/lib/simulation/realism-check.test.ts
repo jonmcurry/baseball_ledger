@@ -9,8 +9,9 @@
 
 import { SeededRNG } from '@lib/rng/seeded-rng';
 import { resolvePlateAppearance } from '@lib/simulation/plate-appearance';
-import { computeSlotAllocation, fillVariablePositions } from '@lib/card-generator/value-mapper';
-import { applyStructuralConstants, CARD_LENGTH } from '@lib/card-generator/structural';
+import { computeSlotAllocation, fillVariablePositions, applyGateValues } from '@lib/card-generator/value-mapper';
+import { applyStructuralConstants, CARD_LENGTH, POWER_POSITION } from '@lib/card-generator/structural';
+import { computePowerRating } from '@lib/card-generator/power-rating';
 import { OutcomeCategory } from '@lib/types/game';
 import type { PlayerRates } from '@lib/card-generator/rate-calculator';
 import type { CardValue } from '@lib/types/player';
@@ -35,8 +36,14 @@ function build270HitterCard(): CardValue[] {
 
   const card: CardValue[] = new Array(CARD_LENGTH).fill(0);
   applyStructuralConstants(card);
-  const alloc = computeSlotAllocation(rates);
+  const { gateWalkCount, gateKCount } = applyGateValues(
+    card, rates.walkRate, rates.strikeoutRate, rates.iso,
+  );
+  const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
   fillVariablePositions(card, alloc, 0.295);
+  card[POWER_POSITION] = computePowerRating(rates.iso);
+  card[33] = 7; // archetype byte
+  card[34] = 0;
   return card;
 }
 
@@ -175,8 +182,14 @@ describe('Realism Check: Batting Average Simulation', () => {
 
     const card: CardValue[] = new Array(CARD_LENGTH).fill(0);
     applyStructuralConstants(card);
-    const alloc = computeSlotAllocation(rates);
+    const { gateWalkCount, gateKCount } = applyGateValues(
+      card, rates.walkRate, rates.strikeoutRate, rates.iso,
+    );
+    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
     fillVariablePositions(card, alloc, 0.340);
+    card[POWER_POSITION] = computePowerRating(rates.iso);
+    card[33] = 7;
+    card[34] = 0;
 
     const pitcherGrade = 8;
     const rng = new SeededRNG(42);

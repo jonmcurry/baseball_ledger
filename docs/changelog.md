@@ -1,5 +1,74 @@
 # Changelog
 
+## 2026-02-11 - BBW Fidelity Refactor: Card Gen + Simulation Engine
+
+Comprehensive refactor to close 13 identified gaps between our implementation
+and APBA BBW 3.0 mechanics, using Ghidra decompilation findings.
+
+### Phase A: Card Structure Fidelity
+- **Power rating at card[24]** (Gap 1): Power rating (values 13-21) now written
+  to card position 24 instead of stored separately. Activates the IDT lookup path
+  when position 24 is drawn during simulation.
+- **Gate positions** (Gaps 10, 11, 12): Three fixed-value positions added:
+  - Position 0: primary gate (value 13=walk or 14=K based on walk/K ratio)
+  - Position 15: power gate (value 33 for low-ISO players)
+  - Position 20: K gate (value 14, matching BBW's 94% K placement)
+- **Speed/SB card values** (Gap 2): Fast players (speed >= 0.6) now have values
+  21/36 (SB opportunity) on their cards. Elite speed (>= 0.8) adds value 23.
+- **Outcome positions reduced to 20**: 35 total - 9 structural - 2 archetype
+  - 1 power - 3 gates = 20 fillable outcome positions.
+
+### Phase B: PA Resolution Fidelity
+- **Symbol resolution** (Gap 5): Card values 36-41 now resolve through the BBW
+  symbol table `[36,36,37,38,39,39,40,40,40,41]` before outcome mapping. Value 40
+  (reached on error) has 30% weight.
+- **Pitcher card read** (Gap 4): Path A (values 7,8,11 + pitcher wins) now reads
+  the pitcher's actual batting card at the same position instead of hardcoding outs.
+  Pitcher batting cards are ~58% walks, ~17% K, ~25% outs.
+- **Pitcher batting cards**: New stride-based distribution in `generatePitcherBattingCard()`
+  distributes walks, Ks, and outs evenly across card positions to prevent correlation
+  with batter card positions.
+- **IDT bitmap gating** (Gap 6): Documented that exact bitmap at DATA[0x382A] is
+  unknown; using full-active approximation for all IDT rows.
+- **Umpire decision** (Gap 7): Wired `checkUmpireDecision()` into game-runner.ts
+  post-PA. ~3% of STRIKEOUT_LOOKING become WALK, ~3% of GROUND_OUT become SINGLE_CLEAN.
+- **Card value fallback updates**: Values 21, 23, 36 now map to STOLEN_BASE_OPP
+  instead of GROUND_OUT, enabling stolen base opportunities for fast players.
+
+### Phase C: Grade System Documentation
+- **Fatigue formula equivalence** (Gap 8): Documented that BBW's differential
+  formula `grade += (current - start)` is mathematically equivalent to our linear
+  formula when decay rate is constant per inning.
+- **Random variance table** (Gap 9): Documented that exact 40-byte table at
+  DATA[0x3802] is unknown; current approximation produces reasonable distributions.
+
+### Phase D: Tests and Validation
+- 10 new tests for symbol resolution, pitcher card read, IDT activation, and
+  umpire decision wiring (plate-appearance.test.ts, game-runner.test.ts).
+- Updated all test card helpers to use full generation pipeline (gates, power, fill).
+- Updated pitcher card helpers across test files to use `generatePitcherBattingCard()`.
+- 751 tests pass across 31 test files. Clean TypeScript compile.
+
+### Calibration Report (50 games)
+- PA/team/game: Home=42.3, Away=44.9
+- Team BA: Home=.295, Away=.292
+- R/team/game: 8.35
+- BB/team/game: 7.64
+- SO/team/game: 9.87
+- HR/team/game: 2.05
+- CG rate: 58%, SHO: 2
+
+### Files Modified
+- `src/lib/card-generator/structural.ts` - POWER_POSITION, GATE_POSITIONS, getOutcomePositions
+- `src/lib/card-generator/value-mapper.ts` - applyGateValues, speed values, reduced fill count
+- `src/lib/card-generator/generator.ts` - Full pipeline with gates + power
+- `src/lib/card-generator/pitcher-card.ts` - Stride-based value distribution
+- `src/lib/simulation/plate-appearance.ts` - Symbol resolution, pitcher card read
+- `src/lib/simulation/card-value-fallback.ts` - Speed value mappings
+- `src/lib/simulation/outcome-table.ts` - IDT bitmap gating documentation
+- `src/lib/simulation/game-runner.ts` - Pitcher card pass-through, umpire decision
+- `src/lib/simulation/pitching.ts` - Fatigue formula documentation
+
 ## 2026-02-15 - Card Generation Calibration + Full-Game Validation
 
 Added automated full-game calibration tests that validate the simulation

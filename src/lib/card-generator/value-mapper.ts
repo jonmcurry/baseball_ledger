@@ -1,6 +1,6 @@
 import type { CardValue } from '../types';
 import type { PlayerRates } from './rate-calculator';
-import { getFillablePositions } from './structural';
+import { getOutcomePositions, OUTCOME_POSITION_COUNT } from './structural';
 
 /**
  * APBA card value constants -- each value maps to an outcome category
@@ -67,8 +67,15 @@ const SUPPRESSABLE_SINGLE_FRACTION = 0.75;
 const SUPPRESSABLE_TRIPLE_FRACTION = 0.50;
 
 /**
- * Outcome slot allocation: how many of the 24 fillable positions
+ * Outcome slot allocation: how many of the 20 outcome positions
  * should hold each outcome value, based on player rates.
+ *
+ * Excludes 15 pre-set positions:
+ *   9 structural, 2 archetype, 1 power (pos 24), 3 gates (pos 0/15/20)
+ *
+ * Gate position pre-sets contribute 1 walk OR 1 K (position 0),
+ * 1 K (position 20), and 1 out (position 15). These are accounted for
+ * in the allocation so total card composition is correct.
  */
 export interface SlotAllocation {
   walks: number;
@@ -77,7 +84,7 @@ export interface SlotAllocation {
   singles: number;    // total singles across quality tiers
   doubles: number;
   triples: number;
-  speed: number;      // SB opportunity slots (always 0)
+  speed: number;      // SB opportunity slots
   outs: number;       // remaining positions filled with out values
 }
 
@@ -130,78 +137,82 @@ export function distributeByLargestRemainder(
 }
 
 /**
- * Compute how many of the 24 fillable card positions to allocate
- * to each outcome type, based on the player's per-PA rates.
- * (35 total - 9 structural - 2 archetype = 24 fillable positions)
+ * Compute how many of the 20 outcome positions to allocate to each
+ * outcome type, based on the player's per-PA rates.
+ *
+ * Total card: 35 positions
+ *   - 9 structural constants (fixed values)
+ *   - 2 archetype flags (bytes 33-34)
+ *   - 1 power rating (position 24, set separately)
+ *   - 3 gate positions (pos 0, 15, 20, pre-set)
+ *   = 20 outcome positions for sequential fill
+ *
+ * The TOTAL drawable positions is 24 (35 - 9 structural - 2 archetype).
+ * Gate pre-sets contribute outcomes that are counted in the rate budget:
+ *   - Position 0: 1 walk (value 13) or 1 K (value 14)
+ *   - Position 15: 1 out (value 33, power gate)
+ *   - Position 20: 1 K (value 14)
+ * These pre-set values are subtracted from the allocation so the total
+ * card composition across all 24 drawable positions matches target rates.
  *
  * Per-type hit compensation: Only card values {7, 8, 11} are suppressed
- * by the pitcher grade check (converted to outs when pitcher wins).
- * Values 0 (double), 1 (HR), 9 (single), 10 (triple) are NEVER suppressed.
- *
- * For suppressable types (singles on 7/8, triples on 11), the card needs
- * more positions than the raw rate so that after average-grade suppression
- * (8/15 probability), the effective rate matches the player's historical
- * stats. Non-suppressable types use raw rates with no inflation.
- *
- * Walks and strikeouts are allocated at their raw rates (no compensation)
- * because walks are never grade-gated and strikeouts are never suppressed.
+ * by the pitcher grade check. Non-suppressable types use raw rates.
  */
-export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
-  const FILLABLE_COUNT = 24;
-  const speed = 0; // Speed handled by player attributes, not card slots
+export function computeSlotAllocation(
+  rates: PlayerRates,
+  gateWalkCount: number = 0,
+  gateKCount: number = 0,
+): SlotAllocation {
+  // Total drawable positions (24) sets the rate basis.
+  // Gate positions pre-set some outcomes; we allocate the remaining 20.
+  const TOTAL_DRAWABLE = 24;
+  const FILL_COUNT = OUTCOME_POSITION_COUNT; // 20
+  const speed = 0; // Speed slots handled post-allocation in fillVariablePositions
 
-  // Walks: no compensation (never grade-gated)
-  let walks = Math.round(rates.walkRate * FILLABLE_COUNT);
-
-  // Strikeouts: no compensation (never suppressed)
-  let strikeouts = Math.round(rates.strikeoutRate * FILLABLE_COUNT);
+  // Total walks/Ks needed across all 24 drawable positions
+  let totalWalks = Math.round(rates.walkRate * TOTAL_DRAWABLE);
+  let totalKs = Math.round(rates.strikeoutRate * TOTAL_DRAWABLE);
 
   // Ensure at least 1 of major outcomes for qualifying batters
   if (rates.PA > 0) {
-    if (walks === 0 && rates.walkRate > 0) walks = 1;
-    if (strikeouts === 0 && rates.strikeoutRate > 0) strikeouts = 1;
+    if (totalWalks === 0 && rates.walkRate > 0) totalWalks = 1;
+    if (totalKs === 0 && rates.strikeoutRate > 0) totalKs = 1;
   }
 
-  // Per-type hit compensation.
-  // Only card values {7, 8, 11} are suppressed by pitcher grade check.
-  // Effective rate per card position accounts for the suppression mix:
-  //   effectiveRate = suppressableFrac * (1 - suppProb) + nonSuppressableFrac
-  // Card positions needed = (targetRate * 24) / effectiveRate
+  // Subtract gate pre-sets from the fill allocation
+  let walks = Math.max(0, totalWalks - gateWalkCount);
+  let strikeouts = Math.max(0, totalKs - gateKCount);
 
+  // Per-type hit compensation
   const singleEffRate = SUPPRESSABLE_SINGLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
     + (1 - SUPPRESSABLE_SINGLE_FRACTION);
   const tripleEffRate = SUPPRESSABLE_TRIPLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
     + (1 - SUPPRESSABLE_TRIPLE_FRACTION);
 
-  // HRs (value 1) and doubles (value 0): never suppressed, raw rate
-  const rawHRs = rates.homeRunRate * FILLABLE_COUNT;
-  const rawDoubles = rates.doubleRate * FILLABLE_COUNT;
-  // Singles (values 7/8/9): compensate for 75% suppressable fraction
+  // Hit rates computed against TOTAL_DRAWABLE (24) for correct proportions
+  const rawHRs = rates.homeRunRate * TOTAL_DRAWABLE;
+  const rawDoubles = rates.doubleRate * TOTAL_DRAWABLE;
   const rawSingles = rates.singleRate > 0
-    ? (rates.singleRate * FILLABLE_COUNT) / singleEffRate
+    ? (rates.singleRate * TOTAL_DRAWABLE) / singleEffRate
     : 0;
-  // Triples (values 10/11): compensate for 50% suppressable fraction
   const rawTriples = rates.tripleRate > 0
-    ? (rates.tripleRate * FILLABLE_COUNT) / tripleEffRate
+    ? (rates.tripleRate * TOTAL_DRAWABLE) / tripleEffRate
     : 0;
 
-  // Total hit positions needed on card
   const rawHitTotal = rawHRs + rawSingles + rawDoubles + rawTriples;
   let hitPositions = Math.round(rawHitTotal);
 
-  // Budget: leave at least 1 out slot after walks + Ks
-  let budget = FILLABLE_COUNT - walks - strikeouts - 1;
+  // Budget: leave at least 1 out slot in the 20 fill positions
+  let budget = FILL_COUNT - walks - strikeouts - 1;
   if (budget < 0) {
-    // Extreme case: walks + Ks fill the card; reduce from largest
-    while (walks + strikeouts > FILLABLE_COUNT - 1) {
+    while (walks + strikeouts > FILL_COUNT - 1) {
       if (strikeouts >= walks) strikeouts--;
       else walks--;
     }
-    budget = FILLABLE_COUNT - walks - strikeouts - 1;
+    budget = FILL_COUNT - walks - strikeouts - 1;
   }
   hitPositions = Math.min(hitPositions, Math.max(0, budget));
 
-  // Distribute hit positions among types proportionally (largest remainder)
   let homeRuns = 0;
   let singles = 0;
   let doubles = 0;
@@ -216,9 +227,8 @@ export function computeSlotAllocation(rates: PlayerRates): SlotAllocation {
     triples = distributed[3];
   }
 
-  // Out slots absorb the remainder -- always at least 1 out slot
   const total = walks + strikeouts + homeRuns + singles + doubles + triples;
-  const outs = Math.max(1, FILLABLE_COUNT - total);
+  const outs = Math.max(1, FILL_COUNT - total);
 
   return { walks, strikeouts, homeRuns, singles, doubles, triples, speed, outs };
 }
@@ -255,80 +265,147 @@ export function splitSinglesTiers(totalSingles: number, babip: number): [number,
 }
 
 /**
- * Fill the 24 fillable variable positions of a 35-element card array
- * with outcome values based on the slot allocation (REQ-DATA-005 Step 3).
+ * Pre-set gate positions on the card before outcome fill.
  *
- * Fills only the 24 non-structural, non-archetype positions.
- * Archetype positions 33-34 are set separately by the generator.
- * The card array must already have structural constants applied.
+ * Per BBW card analysis (828 cards, 1971 season):
+ *   Position 0: value 13 (41%) or 14 (32%) -- primary outcome gate
+ *   Position 15: value 33 (75%) -- power gate
+ *   Position 20: value 14 (94%) -- strikeout gate
+ *
+ * Returns counts of pre-set walks and Ks for allocation adjustment.
+ */
+export function applyGateValues(
+  card: CardValue[],
+  walkRate: number,
+  strikeoutRate: number,
+  iso: number,
+): { gateWalkCount: number; gateKCount: number } {
+  let gateWalkCount = 0;
+  let gateKCount = 0;
+
+  // Position 0: primary gate -- walk-heavy batters get 13, K-heavy get 14
+  if (walkRate > strikeoutRate) {
+    card[0] = CARD_VALUES.WALK;
+    gateWalkCount++;
+  } else {
+    card[0] = CARD_VALUES.STRIKEOUT;
+    gateKCount++;
+  }
+
+  // Position 15: power gate -- 33 for low-power, otherwise use walk/K
+  if (iso < 0.150) {
+    card[15] = CARD_VALUES.POWER_GATE; // value 33 -> ground out
+  } else {
+    card[15] = CARD_VALUES.POWER_GATE; // still 33 for consistency
+  }
+
+  // Position 20: strikeout gate -- always 14 (94% in BBW)
+  card[20] = CARD_VALUES.STRIKEOUT;
+  gateKCount++;
+
+  return { gateWalkCount, gateKCount };
+}
+
+/**
+ * Fill the 20 outcome positions of a 35-element card array with outcome
+ * values based on the slot allocation (REQ-DATA-005 Step 3).
+ *
+ * Fills only the 20 positions that are not structural, archetype, power,
+ * or gate positions. Gate positions (0, 15, 20) and power position (24)
+ * are set separately. Archetype positions 33-34 are set by the generator.
+ *
+ * The card array must already have structural constants and gate values applied.
  * Mutates and returns the card.
+ *
+ * @param speed - Player speed rating (0-1) for SB card value placement
  */
 export function fillVariablePositions(
   card: CardValue[],
   allocation: SlotAllocation,
   babip: number,
+  speed: number = 0,
 ): CardValue[] {
-  const fillablePositions = getFillablePositions();
+  const outcomePositions = getOutcomePositions();
   let posIdx = 0;
 
   // Fill walks (value 13)
-  for (let i = 0; i < allocation.walks && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.WALK;
+  for (let i = 0; i < allocation.walks && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = CARD_VALUES.WALK;
   }
 
   // Fill strikeouts (value 14)
-  for (let i = 0; i < allocation.strikeouts && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
+  for (let i = 0; i < allocation.strikeouts && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = CARD_VALUES.STRIKEOUT;
   }
 
   // Fill home runs (value 1, overflow to 5/37/41)
   const hrValues = [CARD_VALUES.HOME_RUN, CARD_VALUES.HOME_RUN_ALT1, CARD_VALUES.HOME_RUN_ALT2, CARD_VALUES.HOME_RUN_ALT3];
-  for (let i = 0; i < allocation.homeRuns && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = hrValues[Math.min(i, hrValues.length - 1)];
+  for (let i = 0; i < allocation.homeRuns && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = hrValues[Math.min(i, hrValues.length - 1)];
   }
 
   // Fill singles split by quality
   const [high, mid, low] = splitSinglesTiers(allocation.singles, babip);
-  for (let i = 0; i < high && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.SINGLE_HIGH;
+  for (let i = 0; i < high && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = CARD_VALUES.SINGLE_HIGH;
   }
-  for (let i = 0; i < mid && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.SINGLE_MID;
+  for (let i = 0; i < mid && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = CARD_VALUES.SINGLE_MID;
   }
-  for (let i = 0; i < low && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.SINGLE_LOW;
+  for (let i = 0; i < low && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = CARD_VALUES.SINGLE_LOW;
   }
 
   // Fill doubles (value 0)
-  for (let i = 0; i < allocation.doubles && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = CARD_VALUES.DOUBLE;
+  for (let i = 0; i < allocation.doubles && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = CARD_VALUES.DOUBLE;
   }
 
   // Fill triples (value 10/11)
   const tripleValues = [CARD_VALUES.TRIPLE_1, CARD_VALUES.TRIPLE_2];
-  for (let i = 0; i < allocation.triples && posIdx < fillablePositions.length; i++) {
-    card[fillablePositions[posIdx++]] = tripleValues[Math.min(i, tripleValues.length - 1)];
+  for (let i = 0; i < allocation.triples && posIdx < outcomePositions.length; i++) {
+    card[outcomePositions[posIdx++]] = tripleValues[Math.min(i, tripleValues.length - 1)];
   }
 
-  // Fill remaining with out values.
-  // All out values produce outs via direct mapping. No ROE in mix --
-  // errors are handled by the defense module's checkForError() in the game runner.
+  // Fill remaining with out values
   const outMixValues = [
     CARD_VALUES.OUT_GROUND,    // 30 - ground out advance
     CARD_VALUES.OUT_CONTACT,   // 26 - ground out
-    CARD_VALUES.POWER_GATE,    // 33 - ground out (default mapping)
     CARD_VALUES.OUT_NONWALK,   // 31 - fly out
     CARD_VALUES.SPECIAL_FLAG,  // 34 - ground out (default mapping)
     CARD_VALUES.OUT_GROUND,    // 30 - repeat
     CARD_VALUES.OUT_CONTACT,   // 26 - repeat
-    CARD_VALUES.OUT_FLY,       // 24 - line out
     CARD_VALUES.OUT_NONWALK,   // 31 - fly out
     CARD_VALUES.OUT_GROUND,    // 30 - repeat
   ];
   let outIdx = 0;
-  while (posIdx < fillablePositions.length) {
-    card[fillablePositions[posIdx++]] = outMixValues[outIdx % outMixValues.length];
+  while (posIdx < outcomePositions.length) {
+    card[outcomePositions[posIdx++]] = outMixValues[outIdx % outMixValues.length];
     outIdx++;
+  }
+
+  // Speed/SB card values: replace trailing out positions for fast players.
+  // Per BBW, values 21 (SB opportunity), 23 (speed), 36 (running play)
+  // appear on fast players' cards.
+  if (speed >= 0.6) {
+    const speedValues: number[] = [CARD_VALUES.SB_OPPORTUNITY]; // value 21
+    if (speed >= 0.7) speedValues.push(CARD_VALUES.SPEED_2); // value 36
+    if (speed >= 0.8) speedValues.push(CARD_VALUES.SPEED_1); // value 23
+
+    // Replace the last N out positions with speed values
+    for (let i = 0; i < speedValues.length; i++) {
+      // Walk backwards from the end to find out positions to replace
+      for (let j = outcomePositions.length - 1; j >= 0; j--) {
+        const pos = outcomePositions[j];
+        const val = card[pos];
+        // Only replace out-type values
+        if (val === CARD_VALUES.OUT_GROUND || val === CARD_VALUES.OUT_CONTACT
+          || val === CARD_VALUES.OUT_NONWALK || val === CARD_VALUES.SPECIAL_FLAG) {
+          card[pos] = speedValues[i];
+          break;
+        }
+      }
+    }
   }
 
   return card;

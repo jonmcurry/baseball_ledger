@@ -1,10 +1,10 @@
 import type { PlayerCard, Position, MlbBattingStats, MlbPitchingStats } from '../types';
 import type { PlayerPoolEntry, LeagueAverages } from '../csv/csv-types';
-import { CARD_LENGTH, applyStructuralConstants } from './structural';
+import { CARD_LENGTH, applyStructuralConstants, POWER_POSITION } from './structural';
 import { computePlayerRates } from './rate-calculator';
 import { computePowerRating } from './power-rating';
 import { determineArchetype, isEliteFielder } from './archetype';
-import { computeSlotAllocation, fillVariablePositions } from './value-mapper';
+import { computeSlotAllocation, fillVariablePositions, applyGateValues } from './value-mapper';
 import { generatePitcherBattingCard, buildPitcherAttributes } from './pitcher-card';
 
 /**
@@ -207,13 +207,20 @@ export function generateCard(
     card = new Array(CARD_LENGTH).fill(0);
     applyStructuralConstants(card);
 
-    // Step 3: Fill variable positions
-    const allocation = computeSlotAllocation(rates);
-    const babip = computeBABIP(entry);
-    fillVariablePositions(card, allocation, babip);
+    // Step 2b: Apply gate values (positions 0, 15, 20)
+    const { gateWalkCount, gateKCount } = applyGateValues(
+      card, rates.walkRate, rates.strikeoutRate, rates.iso,
+    );
 
-    // Step 4: Power rating
+    // Step 3: Fill outcome positions (20 positions, excluding gates/power)
+    const allocation = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    const babip = computeBABIP(entry);
+    const playerSpeed = computeSpeed(entry);
+    fillVariablePositions(card, allocation, babip, playerSpeed);
+
+    // Step 4: Power rating at position 24 (BBW card[24] = power value 13-21)
     powerRating = computePowerRating(rates.iso);
+    card[POWER_POSITION] = powerRating;
   } else {
     // Fallback: empty card (shouldn't happen for qualifying players)
     card = new Array(CARD_LENGTH).fill(0);

@@ -16,8 +16,10 @@
 import type { PlayerCard, Position } from '@lib/types/player';
 import { runGame } from '@lib/simulation/game-runner';
 import type { RunGameConfig } from '@lib/simulation/game-runner';
-import { computeSlotAllocation, fillVariablePositions, CARD_VALUES } from '@lib/card-generator/value-mapper';
-import { applyStructuralConstants, CARD_LENGTH, STRUCTURAL_POSITIONS, getFillablePositions } from '@lib/card-generator/structural';
+import { computeSlotAllocation, fillVariablePositions, applyGateValues, CARD_VALUES } from '@lib/card-generator/value-mapper';
+import { applyStructuralConstants, CARD_LENGTH, STRUCTURAL_POSITIONS, getOutcomePositions, POWER_POSITION, GATE_POSITIONS } from '@lib/card-generator/structural';
+import { computePowerRating } from '@lib/card-generator/power-rating';
+import { generatePitcherBattingCard } from '@lib/card-generator/pitcher-card';
 import type { PlayerRates } from '@lib/card-generator/rate-calculator';
 import type { CardValue } from '@lib/types/player';
 
@@ -29,8 +31,12 @@ import type { CardValue } from '@lib/types/player';
 function buildCardFromRates(rates: PlayerRates, babip = 0.295): CardValue[] {
   const card: CardValue[] = new Array(CARD_LENGTH).fill(0);
   applyStructuralConstants(card);
-  const alloc = computeSlotAllocation(rates);
+  const { gateWalkCount, gateKCount } = applyGateValues(
+    card, rates.walkRate, rates.strikeoutRate, rates.iso,
+  );
+  const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
   fillVariablePositions(card, alloc, babip);
+  card[POWER_POSITION] = computePowerRating(rates.iso);
   // Set archetype
   card[33] = 7; // standard RH
   card[34] = 0;
@@ -142,6 +148,8 @@ function makePitcherCard(overrides: Partial<PlayerCard> & { playerId: string }):
     primaryPosition: 'SP',
     eligiblePositions: ['SP'],
     isPitcher: true,
+    card: generatePitcherBattingCard(),
+    powerRating: 13,
     pitching: {
       role: 'SP',
       grade: 8, // League average grade
@@ -164,6 +172,8 @@ function makeRelieverCard(playerId: string, grade = 8): PlayerCard {
     primaryPosition: 'RP',
     eligiblePositions: ['RP'],
     isPitcher: true,
+    card: generatePitcherBattingCard(),
+    powerRating: 13,
     pitching: {
       role: 'RP',
       grade,
@@ -185,6 +195,8 @@ function makeCloserCard(playerId: string, grade = 9): PlayerCard {
     primaryPosition: 'CL',
     eligiblePositions: ['CL'],
     isPitcher: true,
+    card: generatePitcherBattingCard(),
+    powerRating: 13,
     pitching: {
       role: 'CL',
       grade,
@@ -281,8 +293,7 @@ function makeConfig(seed = 42): RunGameConfig {
 // ---------------------------------------------------------------------------
 
 describe('Card Composition Validation (BBW mechanics)', () => {
-  const fillable = new Set(getFillablePositions());
-  const structural = new Set(STRUCTURAL_POSITIONS);
+  const outcomeSet = new Set(getOutcomePositions());
 
   function countCardValues(card: CardValue[]) {
     let walks = 0, ks = 0, hrs = 0, singles = 0, doubles = 0, triples = 0, outs = 0;
@@ -291,8 +302,9 @@ describe('Card Composition Validation (BBW mechanics)', () => {
     const tripleValues = new Set([CARD_VALUES.TRIPLE_1, CARD_VALUES.TRIPLE_2]);
     const outValues = new Set([CARD_VALUES.OUT_GROUND, CARD_VALUES.OUT_CONTACT, CARD_VALUES.OUT_NONWALK, CARD_VALUES.OUT_FLY, CARD_VALUES.POWER_GATE, CARD_VALUES.SPECIAL_FLAG, CARD_VALUES.ERROR_REACH]);
 
+    // Count outcome positions (20 positions, excludes structural/archetype/power/gates)
     for (let i = 0; i < CARD_LENGTH; i++) {
-      if (!fillable.has(i)) continue;
+      if (!outcomeSet.has(i)) continue;
       const v = card[i];
       if (v === CARD_VALUES.WALK) walks++;
       else if (v === CARD_VALUES.STRIKEOUT) ks++;
@@ -302,6 +314,15 @@ describe('Card Composition Validation (BBW mechanics)', () => {
       else if (tripleValues.has(v)) triples++;
       else if (outValues.has(v)) outs++;
     }
+
+    // Also count gate positions (positions 0, 15, 20)
+    for (const gatePos of GATE_POSITIONS) {
+      const v = card[gatePos];
+      if (v === CARD_VALUES.WALK) walks++;
+      else if (v === CARD_VALUES.STRIKEOUT) ks++;
+      else if (outValues.has(v)) outs++;
+    }
+
     return { walks, ks, hrs, singles, doubles, triples, outs, total: walks + ks + hrs + singles + doubles + triples + outs };
   }
 
@@ -309,22 +330,22 @@ describe('Card Composition Validation (BBW mechanics)', () => {
     const card = buildCardFromRates(avgHitterRates());
     const counts = countCardValues(card);
 
-    // Total fillable positions must be exactly 24
-    expect(counts.total).toBe(24);
+    // Total: 20 outcome + 3 gate = 23 (position 24 = power, not counted)
+    expect(counts.total).toBe(23);
 
-    // Walk slots: walkRate 0.09 * 24 = 2.16 -> 2
+    // Walk slots: walkRate 0.09 * 24 = 2.16 -> 2 total (may include gate)
     expect(counts.walks).toBeGreaterThanOrEqual(1);
     expect(counts.walks).toBeLessThanOrEqual(3);
 
-    // K slots: strikeoutRate 0.17 * 24 = 4.08 -> 4
+    // K slots: strikeoutRate 0.17 * 24 = 4.08 -> 4 total (includes 1-2 gate Ks)
     expect(counts.ks).toBeGreaterThanOrEqual(3);
-    expect(counts.ks).toBeLessThanOrEqual(5);
+    expect(counts.ks).toBeLessThanOrEqual(6);
 
     // HR slots: homeRunRate 0.035 * 24 = 0.84 -> 1 (no inflation)
     expect(counts.hrs).toBeGreaterThanOrEqual(0);
     expect(counts.hrs).toBeLessThanOrEqual(2);
 
-    // Singles: singleRate 0.165 compensated for suppression -> ~6-7
+    // Singles: singleRate 0.165 compensated for suppression -> ~5-8
     expect(counts.singles).toBeGreaterThanOrEqual(4);
     expect(counts.singles).toBeLessThanOrEqual(9);
 
@@ -332,9 +353,9 @@ describe('Card Composition Validation (BBW mechanics)', () => {
     expect(counts.doubles).toBeGreaterThanOrEqual(0);
     expect(counts.doubles).toBeLessThanOrEqual(2);
 
-    // Outs: remainder should be significant (>= 8)
-    expect(counts.outs).toBeGreaterThanOrEqual(6);
-    expect(counts.outs).toBeLessThanOrEqual(16);
+    // Outs: includes gate power position (33->out) + outcome outs
+    expect(counts.outs).toBeGreaterThanOrEqual(5);
+    expect(counts.outs).toBeLessThanOrEqual(14);
   });
 
   it('power hitter card has more HR slots than weak hitter', () => {
@@ -366,12 +387,13 @@ describe('Card Composition Validation (BBW mechanics)', () => {
     expect(weakCounts.outs).toBeGreaterThan(powerCounts.outs);
   });
 
-  it('all generated cards fill exactly 24 positions', () => {
+  it('all generated cards fill exactly 23 countable positions (20 outcome + 3 gates)', () => {
     const profiles = [avgHitterRates(), powerHitterRates(), contactHitterRates(), weakHitterRates()];
     for (const rates of profiles) {
       const card = buildCardFromRates(rates);
       const counts = countCardValues(card);
-      expect(counts.total).toBe(24);
+      // 20 outcome positions + 3 gate positions = 23 (power at pos 24 not counted)
+      expect(counts.total).toBe(23);
     }
   });
 });

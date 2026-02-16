@@ -73,6 +73,20 @@ export interface PitcherGameState {
  * - Relievers: full grade through stamina, then -3 per inning beyond
  * - Minimum grade: 1
  *
+ * BBW Equivalence (Gap 8):
+ * Ghidra decompilation shows BBW uses `grade += (currentGrade - startingGrade)`
+ * per fatigued check. With constant decay per inning, this differential formula
+ * produces the same result as our linear formula: `grade = base - (decay * inningsBeyond)`.
+ * The formulas are mathematically equivalent when decay rate is constant.
+ * Decay rates (2 for starters, 3 for relievers) are approximated from observed
+ * BBW behavior -- exact values from DATA segment are not yet confirmed by Ghidra.
+ *
+ * Random Variance Table (Gap 9):
+ * BBW uses a 40-entry table at DATA[0x3802] for grade variance. Our current
+ * 40-entry table is estimated. Without the exact bytes from WINBB.EXE's data
+ * segment, we cannot improve this further. The approximation produces reasonable
+ * grade variance distributions.
+ *
  * @param pitcher - The pitcher's card with pitching attributes
  * @param inningsPitched - Innings pitched in current game
  */

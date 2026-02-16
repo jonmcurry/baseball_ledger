@@ -5,6 +5,17 @@
  * The original IDT.OBJ is a 36-entry x 4-column matrix (144 bytes).
  * Each row defines a weighted outcome mapping.
  *
+ * IDT BITMAP GATING (Gap 6):
+ * In real BBW, a bitmap at DATA[0x382A] determines which IDT rows are active
+ * for each card value in [15, 23]. The exact bitmap bytes are unknown from our
+ * Ghidra analysis. We use a full-active approximation: all 36 rows are eligible
+ * for all card values. This produces reasonable outcome distributions but may
+ * differ slightly from BBW's exact per-value row filtering.
+ *
+ * The IDT path is now ACTIVE because card[24] (power rating) holds values 15-21
+ * for most batters. When position 24 is drawn and the pitcher wins the grade
+ * check, the IDT table determines the replacement outcome.
+ *
  * This is a Layer 1 module: pure logic with no I/O, runs in any JS runtime.
  */
 

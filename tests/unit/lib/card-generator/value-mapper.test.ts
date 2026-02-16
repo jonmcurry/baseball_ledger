@@ -2,10 +2,12 @@ import {
   computeSlotAllocation,
   splitSinglesTiers,
   fillVariablePositions,
+  applyGateValues,
   CARD_VALUES,
 } from '@lib/card-generator/value-mapper';
 import type { PlayerRates } from '@lib/card-generator/rate-calculator';
-import { applyStructuralConstants, CARD_LENGTH, STRUCTURAL_POSITIONS } from '@lib/card-generator/structural';
+import { applyStructuralConstants, CARD_LENGTH, STRUCTURAL_POSITIONS, POWER_POSITION } from '@lib/card-generator/structural';
+import { computePowerRating } from '@lib/card-generator/power-rating';
 
 function makeRates(overrides: Partial<PlayerRates> = {}): PlayerRates {
   return {
@@ -27,12 +29,12 @@ function makeRates(overrides: Partial<PlayerRates> = {}): PlayerRates {
 }
 
 describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
-  it('allocates all 24 variable positions', () => {
+  it('allocates all 20 outcome positions', () => {
     const rates = makeRates();
     const alloc = computeSlotAllocation(rates);
     const total = alloc.walks + alloc.strikeouts + alloc.homeRuns +
       alloc.singles + alloc.doubles + alloc.triples + alloc.speed + alloc.outs;
-    expect(total).toBe(24);
+    expect(total).toBe(20);
   });
 
   it('maps walk slots with scale factor', () => {
@@ -113,16 +115,16 @@ describe('computeSlotAllocation (REQ-DATA-005 Step 3)', () => {
     });
     const alloc = computeSlotAllocation(rates);
     expect(alloc.outs).toBeGreaterThanOrEqual(0);
-    // Total must be 24
+    // Total must be 20 (outcome positions, excludes power + 3 gates)
     const total = alloc.walks + alloc.strikeouts + alloc.homeRuns +
       alloc.singles + alloc.doubles + alloc.triples + alloc.speed + alloc.outs;
-    expect(total).toBe(24);
+    expect(total).toBe(20);
   });
 
   it('handles zero PA gracefully', () => {
     const rates = makeRates({ PA: 0, walkRate: 0, strikeoutRate: 0, homeRunRate: 0, singleRate: 0, doubleRate: 0, tripleRate: 0, sbRate: 0 });
     const alloc = computeSlotAllocation(rates);
-    expect(alloc.outs).toBe(24); // All positions become outs
+    expect(alloc.outs).toBe(20); // All outcome positions become outs
   });
 });
 
@@ -260,5 +262,155 @@ describe('fillVariablePositions', () => {
     const alloc = computeSlotAllocation(makeRates());
     const result = fillVariablePositions(card, alloc, 0.300);
     expect(result).toBe(card);
+  });
+});
+
+describe('applyGateValues (BBW gate positions)', () => {
+  it('sets position 0 to WALK when walkRate > strikeoutRate', () => {
+    const card = new Array(CARD_LENGTH).fill(0);
+    const { gateWalkCount, gateKCount } = applyGateValues(card, 0.12, 0.08, 0.150);
+    expect(card[0]).toBe(CARD_VALUES.WALK);
+    expect(gateWalkCount).toBe(1);
+    expect(gateKCount).toBe(1); // Position 20 K gate
+  });
+
+  it('sets position 0 to STRIKEOUT when strikeoutRate >= walkRate', () => {
+    const card = new Array(CARD_LENGTH).fill(0);
+    const { gateWalkCount, gateKCount } = applyGateValues(card, 0.08, 0.15, 0.150);
+    expect(card[0]).toBe(CARD_VALUES.STRIKEOUT);
+    expect(gateWalkCount).toBe(0);
+    expect(gateKCount).toBe(2); // Position 0 K + Position 20 K
+  });
+
+  it('sets position 15 to POWER_GATE (33)', () => {
+    const card = new Array(CARD_LENGTH).fill(0);
+    applyGateValues(card, 0.09, 0.15, 0.150);
+    expect(card[15]).toBe(CARD_VALUES.POWER_GATE);
+  });
+
+  it('sets position 20 to STRIKEOUT always', () => {
+    const card = new Array(CARD_LENGTH).fill(0);
+    applyGateValues(card, 0.09, 0.15, 0.150);
+    expect(card[20]).toBe(CARD_VALUES.STRIKEOUT);
+  });
+
+  it('does not modify other positions', () => {
+    const card = new Array(CARD_LENGTH).fill(99);
+    applyGateValues(card, 0.09, 0.15, 0.150);
+    // Only positions 0, 15, 20 should be changed
+    for (let i = 0; i < CARD_LENGTH; i++) {
+      if (i !== 0 && i !== 15 && i !== 20) {
+        expect(card[i]).toBe(99);
+      }
+    }
+  });
+});
+
+describe('full card pipeline (gates + power + fill)', () => {
+  function buildFullCard(overrides: Partial<PlayerRates> = {}) {
+    const rates = makeRates(overrides);
+    const card = new Array(CARD_LENGTH).fill(0);
+    applyStructuralConstants(card);
+    const { gateWalkCount, gateKCount } = applyGateValues(
+      card, rates.walkRate, rates.strikeoutRate, rates.iso,
+    );
+    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    fillVariablePositions(card, alloc, 0.300);
+    card[POWER_POSITION] = computePowerRating(rates.iso);
+    card[33] = 7;
+    card[34] = 0;
+    return card;
+  }
+
+  it('card[24] equals power rating for ISO 0.170', () => {
+    const card = buildFullCard({ iso: 0.170 });
+    expect(card[POWER_POSITION]).toBe(18); // Above average (0.150-0.189)
+  });
+
+  it('card[24] equals power rating for ISO 0.050', () => {
+    const card = buildFullCard({ iso: 0.050 });
+    expect(card[POWER_POSITION]).toBe(15); // Minimal power (0.050-0.079)
+  });
+
+  it('card[24] equals power rating for ISO 0.280+', () => {
+    const card = buildFullCard({ iso: 0.300 });
+    expect(card[POWER_POSITION]).toBe(21); // Excellent power
+  });
+
+  it('position 0 is always 13 or 14', () => {
+    const profiles = [
+      { walkRate: 0.12, strikeoutRate: 0.08 },
+      { walkRate: 0.06, strikeoutRate: 0.20 },
+      { walkRate: 0.10, strikeoutRate: 0.10 },
+    ];
+    for (const overrides of profiles) {
+      const card = buildFullCard(overrides);
+      expect([13, 14]).toContain(card[0]);
+    }
+  });
+
+  it('position 20 is always 14 (K gate)', () => {
+    const card = buildFullCard();
+    expect(card[20]).toBe(14);
+  });
+
+  it('position 15 is always 33 (power gate)', () => {
+    const card = buildFullCard();
+    expect(card[15]).toBe(33);
+  });
+
+  it('fast players (speed >= 0.6) have SB values on card', () => {
+    const rates = makeRates({ sbRate: 0.70 });
+    const card = new Array(CARD_LENGTH).fill(0);
+    applyStructuralConstants(card);
+    const { gateWalkCount, gateKCount } = applyGateValues(
+      card, rates.walkRate, rates.strikeoutRate, rates.iso,
+    );
+    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    fillVariablePositions(card, alloc, 0.300, 0.7);
+    card[POWER_POSITION] = computePowerRating(rates.iso);
+
+    const speedValues = new Set([
+      CARD_VALUES.SB_OPPORTUNITY,
+      CARD_VALUES.SPEED_1,
+      CARD_VALUES.SPEED_2,
+    ]);
+    const hasSpeed = card.some((v, i) =>
+      speedValues.has(v) && !STRUCTURAL_POSITIONS.includes(i)
+    );
+    expect(hasSpeed).toBe(true);
+  });
+
+  it('slow players (speed < 0.6) have no SB values', () => {
+    const rates = makeRates({ sbRate: 0.10 });
+    const card = new Array(CARD_LENGTH).fill(0);
+    applyStructuralConstants(card);
+    const { gateWalkCount, gateKCount } = applyGateValues(
+      card, rates.walkRate, rates.strikeoutRate, rates.iso,
+    );
+    const alloc = computeSlotAllocation(rates, gateWalkCount, gateKCount);
+    fillVariablePositions(card, alloc, 0.300, 0.3);
+    card[POWER_POSITION] = computePowerRating(rates.iso);
+
+    const speedValues = new Set([
+      CARD_VALUES.SB_OPPORTUNITY,
+      CARD_VALUES.SPEED_1,
+      CARD_VALUES.SPEED_2,
+    ]);
+    const hasSpeed = card.some((v, i) =>
+      speedValues.has(v) && !STRUCTURAL_POSITIONS.includes(i)
+    );
+    expect(hasSpeed).toBe(false);
+  });
+
+  it('no position has value 0 except doubles positions', () => {
+    const card = buildFullCard();
+    // Value 0 = DOUBLE. Only legitimate double positions should have it.
+    // Count how many value-0 positions exist
+    const zeroPositions = card.filter((v: number) => v === 0).length;
+    // With the full pipeline, only allocated double positions should be 0
+    // (plus archetype byte 34 which is legitimately 0)
+    const alloc = computeSlotAllocation(makeRates());
+    expect(zeroPositions).toBeLessThanOrEqual(alloc.doubles + 1); // +1 for archetype byte34
   });
 });
