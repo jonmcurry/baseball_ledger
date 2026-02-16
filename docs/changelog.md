@@ -1,5 +1,60 @@
 # Changelog
 
+## 2026-02-16 - BBW Fidelity Overhaul: Power Rating, Archetype Modifiers, Rotation
+
+Three fixes to bring simulation stats closer to real baseball:
+
+### Phase 1: Fix Power Rating Bug (cardValue 13 -> 15)
+**Root Cause**: `POWER_TIERS[0]` assigned card value 13 (WALK) at position 24
+for no-power hitters (ISO < 0.050). Position 24 is drawable (~4.2% of PAs),
+and value 13 bypasses the pitcher grade gate entirely, producing an
+uncompensated walk. Real BBW cards (confirmed via Belanger binary data) use
+IDT-active values (15-21) at position 24 even for 0-HR players.
+
+**Fix**: Changed no-power tier card value from 13 to 15 (lowest IDT-active
+value). All 8 power tiers now use IDT-active values [15-21], ensuring
+position 24 draws always go through the pitcher grade gate.
+
+### Phase 2: Wire Archetype Modifiers into Game Runner
+**Root Cause**: `archetype-modifier.ts` was fully implemented (power +15% HR
+on fly outs, contact -20% K to ground out, speed SB flagging) but
+`game-runner.ts` never called it -- the modifiers were dead code.
+
+**Fix**: Added `applyArchetypeModifier()` call in game-runner.ts after umpire
+check and before hit-and-run modifiers. Batter archetype now affects outcomes
+per REQ-SIM-004 Step 6.
+
+### Phase 3: 5-Man Rotation Tests
+Updated rotation test from 4-man to 5-man (real MLB standard). Added test
+confirming 162 games distribute ~32 starts per pitcher. The cycling logic
+(`getNextStarter`) was already correct via modulo.
+
+### Phase 4: Calibration Tightening
+- Added realistic archetypes to calibration lineup (contact, power, speed, standard)
+- Tightened stat assertion ranges:
+  - R/team/game: [1.5, 9] -> [2, 8]
+  - Team BA: [.200, .320] -> [.220, .300]
+  - SO/team/game: [2, 14] -> [3, 13]
+  - HR/team/game: [0.2, 3] -> [0.3, 2.5]
+
+### Calibration Results (50-game report)
+| Stat | Before | After | Real Target |
+|------|--------|-------|-------------|
+| R/team/game | 6.14 | 5.98 | 4-5 |
+| Team BA | .284/.264 | .270/.273 | .250-.270 |
+| BB/team/game | 4.14 | 4.13 | 3-4 |
+| SO/team/game | 8.79 | 9.01 | 5-9 |
+| HR/team/game | 1.88 | 1.86 | 1.0-1.3 |
+| CG | 69 | 66 | realistic |
+| SHO | 1 | 3 | realistic |
+
+### Tests (TDD approach per Rule 11)
+- All failing tests written first, confirmed bug reproduction
+- New test: "all POWER_TIERS card values are IDT-active [15-21]"
+- New test: "power archetype batters produce more HRs than standard"
+- Updated rotation tests to 5-man with 162-game distribution test
+- 556 simulation tests pass, clean TypeScript compile
+
 ## 2026-02-15 - Fix Path A Walk Inflation (Pitcher Suppression Bug)
 
 Fixed catastrophic walk/ERA inflation caused by Path A pitcher card reads producing

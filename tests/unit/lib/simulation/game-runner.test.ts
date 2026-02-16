@@ -14,6 +14,7 @@ import { OutcomeCategory } from '../../../../src/lib/types/game';
 import { runGame } from '../../../../src/lib/simulation/game-runner';
 import type { RunGameConfig } from '../../../../src/lib/simulation/game-runner';
 import { generatePitcherBattingCard } from '../../../../src/lib/card-generator/pitcher-card';
+import { isPowerArchetype, isContactSpeedArchetype, isSpeedArchetype } from '../../../../src/lib/simulation/archetype-modifier';
 
 // ---------------------------------------------------------------------------
 // Test Helpers
@@ -651,6 +652,48 @@ describe('game-runner', () => {
       expect(r1.homeScore).toBe(r2.homeScore);
       expect(r1.awayScore).toBe(r2.awayScore);
       expect(r1.playByPlay.length).toBe(r2.playByPlay.length);
+    });
+  });
+
+  describe('Archetype modifier integration (REQ-SIM-004 Step 6)', () => {
+    it('power archetype batters produce more HRs than standard archetype over many games', () => {
+      // Create configs where home batters have power archetype (1,0)
+      // and away batters have standard archetype (7,0).
+      // Over 50 games, power batters should produce more HRs from the
+      // 15% fly-out -> HR upgrade.
+      let powerHRs = 0;
+      let standardHRs = 0;
+
+      for (let seed = 1; seed <= 50; seed++) {
+        const config = makeDefaultConfig(seed);
+
+        // Override home batters to power archetype
+        for (const [id, card] of config.homeBatterCards) {
+          config.homeBatterCards.set(id, {
+            ...card,
+            archetype: { byte33: 1, byte34: 0 }, // power
+          });
+        }
+
+        const result = runGame(config);
+
+        // Count HRs from play-by-play for each side
+        // top = away batting (standard), bottom = home batting (power)
+        for (const play of result.playByPlay) {
+          if (play.outcome === OutcomeCategory.HOME_RUN ||
+              play.outcome === OutcomeCategory.HOME_RUN_VARIANT) {
+            if (play.halfInning === 'top') {
+              standardHRs++;
+            } else {
+              powerHRs++;
+            }
+          }
+        }
+      }
+
+      // Power archetype should produce more HRs than standard.
+      // With 15% fly-out -> HR upgrade, the effect is measurable over 50 games.
+      expect(powerHRs).toBeGreaterThan(standardHRs);
     });
   });
 });

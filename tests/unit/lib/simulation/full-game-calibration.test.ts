@@ -245,6 +245,19 @@ function makeConfig(seed = 42): RunGameConfig {
   // Mix batting hands: ~55% RH, ~30% LH, ~15% switch (realistic MLB distribution)
   const battingHands: ('R' | 'L' | 'S')[] = ['L', 'R', 'R', 'R', 'L', 'R', 'S', 'R', 'L'];
 
+  // Match archetypes to hitter profiles (contact=0,2; avg=7,0; power=1,0; weak=7,0)
+  const archetypes: { byte33: number; byte34: number }[] = [
+    { byte33: 0, byte34: 2 }, // 1: contact+speed
+    { byte33: 7, byte34: 0 }, // 2: standard
+    { byte33: 1, byte34: 0 }, // 3: power
+    { byte33: 1, byte34: 0 }, // 4: power
+    { byte33: 7, byte34: 0 }, // 5: standard
+    { byte33: 7, byte34: 0 }, // 6: standard
+    { byte33: 7, byte34: 0 }, // 7: standard (weak)
+    { byte33: 7, byte34: 0 }, // 8: standard (weak)
+    { byte33: 6, byte34: 0 }, // 9: speed
+  ];
+
   for (let i = 0; i < 9; i++) {
     const rates = hitterProfiles[i];
     const card = buildCardFromRates(rates);
@@ -252,6 +265,7 @@ function makeConfig(seed = 42): RunGameConfig {
       playerId: `home-${i}`,
       card,
       battingHand: battingHands[i],
+      archetype: archetypes[i],
       speed: rates.sbRate > 0.3 ? 0.7 : 0.4,
       contactRate: 1 - rates.strikeoutRate,
       power: rates.homeRunRate * 10,
@@ -261,6 +275,7 @@ function makeConfig(seed = 42): RunGameConfig {
       playerId: `away-${i}`,
       card,
       battingHand: battingHands[i],
+      archetype: archetypes[i],
       speed: rates.sbRate > 0.3 ? 0.7 : 0.4,
       contactRate: 1 - rates.strikeoutRate,
       power: rates.homeRunRate * 10,
@@ -484,21 +499,21 @@ describe('Full-Game Stat Calibration', () => {
     expect(stats.avgAwayPAPerGame).toBeLessThanOrEqual(48);
   });
 
-  it('runs per team per game is in realistic range [1.5, 9]', () => {
+  it('runs per team per game is in realistic range [2, 8]', () => {
     const stats = runGames(GAME_COUNT);
 
     // MLB average is ~4-5 R/team/game
-    expect(stats.avgRunsPerGame).toBeGreaterThanOrEqual(1.5);
-    expect(stats.avgRunsPerGame).toBeLessThanOrEqual(9);
+    expect(stats.avgRunsPerGame).toBeGreaterThanOrEqual(2);
+    expect(stats.avgRunsPerGame).toBeLessThanOrEqual(8);
   });
 
-  it('team batting average is in realistic range [.200, .320]', () => {
+  it('team batting average is in realistic range [.220, .300]', () => {
     const stats = runGames(GAME_COUNT);
 
-    expect(stats.homeBA).toBeGreaterThanOrEqual(0.200);
-    expect(stats.homeBA).toBeLessThanOrEqual(0.320);
-    expect(stats.awayBA).toBeGreaterThanOrEqual(0.200);
-    expect(stats.awayBA).toBeLessThanOrEqual(0.320);
+    expect(stats.homeBA).toBeGreaterThanOrEqual(0.220);
+    expect(stats.homeBA).toBeLessThanOrEqual(0.300);
+    expect(stats.awayBA).toBeGreaterThanOrEqual(0.220);
+    expect(stats.awayBA).toBeLessThanOrEqual(0.300);
   });
 
   it('walks per team per game is in realistic range [1, 6]', () => {
@@ -510,20 +525,20 @@ describe('Full-Game Stat Calibration', () => {
     expect(stats.avgBBPerTeamPerGame).toBeLessThanOrEqual(6);
   });
 
-  it('strikeouts per team per game is in realistic range [2, 14]', () => {
+  it('strikeouts per team per game is in realistic range [3, 13]', () => {
     const stats = runGames(GAME_COUNT);
 
     // MLB average varies by era: 5-9 SO/team/game
-    expect(stats.avgSOPerTeamPerGame).toBeGreaterThanOrEqual(2);
-    expect(stats.avgSOPerTeamPerGame).toBeLessThanOrEqual(14);
+    expect(stats.avgSOPerTeamPerGame).toBeGreaterThanOrEqual(3);
+    expect(stats.avgSOPerTeamPerGame).toBeLessThanOrEqual(13);
   });
 
-  it('HR per team per game is in realistic range [0.2, 3]', () => {
+  it('HR per team per game is in realistic range [0.3, 2.5]', () => {
     const stats = runGames(GAME_COUNT);
 
     // MLB average is ~1-1.5 HR/team/game
-    expect(stats.avgHRPerTeamPerGame).toBeGreaterThanOrEqual(0.2);
-    expect(stats.avgHRPerTeamPerGame).toBeLessThanOrEqual(3);
+    expect(stats.avgHRPerTeamPerGame).toBeGreaterThanOrEqual(0.3);
+    expect(stats.avgHRPerTeamPerGame).toBeLessThanOrEqual(2.5);
   });
 
   it('individual R totals match team scores in every game', () => {

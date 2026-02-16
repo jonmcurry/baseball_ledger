@@ -53,6 +53,7 @@ import type { GameSituation } from './manager-ai';
 import { resolveBunt } from './bunt-resolver';
 import { attemptStolenBase, canAttemptStolenBase } from './stolen-base';
 import { checkForError } from './defense';
+import { applyArchetypeModifier } from './archetype-modifier';
 import {
   buildLineScore,
   buildBoxScore,
@@ -677,7 +678,9 @@ export function runGame(config: RunGameConfig): GameResult {
       const effectiveGrade = computeGameGrade(currentPitcher, gradeContext, rng);
       const paResult = resolvePlateAppearance(batterCard.card, currentPitcher.card, effectiveGrade, rng);
       const umpireCheck = checkUmpireDecision(paResult.outcome, rng);
-      let outcome = umpireCheck.outcome;
+      // REQ-SIM-004 Step 6: Apply archetype modifier after umpire check
+      const archetypeResult = applyArchetypeModifier(umpireCheck.outcome, batterCard.archetype, rng);
+      let outcome = archetypeResult.outcome;
 
       // Hit-and-run modifiers
       if (hitAndRunActive) {

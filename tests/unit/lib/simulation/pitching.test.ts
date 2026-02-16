@@ -314,27 +314,43 @@ describe('shouldBringInCloser (REQ-SIM-013)', () => {
 // getNextStarter (REQ-SIM-014)
 // ---------------------------------------------------------------------------
 describe('getNextStarter (REQ-SIM-014)', () => {
+  // Real MLB uses 5-man rotation: each SP gets ~32 starts in 162 games
   const rotation = [
     makePitcher({ id: 'sp1' }),
     makePitcher({ id: 'sp2' }),
     makePitcher({ id: 'sp3' }),
     makePitcher({ id: 'sp4' }),
+    makePitcher({ id: 'sp5' }),
   ];
 
-  it('cycles through 4-man rotation sequentially', () => {
+  it('cycles through 5-man rotation sequentially', () => {
     expect(getNextStarter(rotation, 0).playerId).toBe('sp1');
     expect(getNextStarter(rotation, 1).playerId).toBe('sp2');
     expect(getNextStarter(rotation, 2).playerId).toBe('sp3');
     expect(getNextStarter(rotation, 3).playerId).toBe('sp4');
+    expect(getNextStarter(rotation, 4).playerId).toBe('sp5');
   });
 
-  it('wraps around after 4th starter', () => {
-    expect(getNextStarter(rotation, 4).playerId).toBe('sp1');
-    expect(getNextStarter(rotation, 5).playerId).toBe('sp2');
+  it('wraps around after 5th starter', () => {
+    expect(getNextStarter(rotation, 5).playerId).toBe('sp1');
+    expect(getNextStarter(rotation, 6).playerId).toBe('sp2');
+  });
+
+  it('distributes ~32 starts per pitcher over 162 games', () => {
+    const starts = new Map<string, number>();
+    for (let g = 0; g < 162; g++) {
+      const sp = getNextStarter(rotation, g);
+      starts.set(sp.playerId, (starts.get(sp.playerId) ?? 0) + 1);
+    }
+    // 162 / 5 = 32.4, so each SP gets 32 or 33 starts
+    for (const [, count] of starts) {
+      expect(count).toBeGreaterThanOrEqual(32);
+      expect(count).toBeLessThanOrEqual(33);
+    }
   });
 
   it('handles large game numbers', () => {
-    expect(getNextStarter(rotation, 100).playerId).toBe('sp1'); // 100 % 4 = 0
+    expect(getNextStarter(rotation, 100).playerId).toBe('sp1'); // 100 % 5 = 0
     expect(getNextStarter(rotation, 101).playerId).toBe('sp2');
   });
 });

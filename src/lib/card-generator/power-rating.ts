@@ -12,8 +12,14 @@ export interface PowerTier {
 /**
  * APBA 8-tier power scale mapped from ISO (REQ-DATA-005 Step 4).
  *
+ * All card values MUST be IDT-active [15-21] so they go through the pitcher
+ * grade gate when position 24 is drawn. Value 13 (walk) was previously used
+ * for no-power but that bypassed the grade gate entirely, adding uncompensated
+ * walks for every weak hitter. Real BBW cards (e.g. Belanger, 0 HR) use
+ * IDT-active values at position 24.
+ *
  * ISO Range     | Card[24] | Tier
- * < 0.050       | 13       | No power (pitchers, slap hitters)
+ * < 0.050       | 15       | No power (pitchers, slap hitters)
  * 0.050 - 0.079 | 15       | Minimal power
  * 0.080 - 0.109 | 16       | Below average
  * 0.110 - 0.149 | 17       | Average power
@@ -23,7 +29,7 @@ export interface PowerTier {
  * >= 0.280      | 21       | Excellent power
  */
 export const POWER_TIERS: readonly PowerTier[] = [
-  { maxISO: 0.050, cardValue: 13, label: 'No power' },
+  { maxISO: 0.050, cardValue: 15, label: 'No power' },
   { maxISO: 0.080, cardValue: 15, label: 'Minimal power' },
   { maxISO: 0.110, cardValue: 16, label: 'Below average' },
   { maxISO: 0.150, cardValue: 17, label: 'Average power' },
@@ -35,7 +41,8 @@ export const POWER_TIERS: readonly PowerTier[] = [
 
 /**
  * Map ISO (Isolated Power = SLG - BA) to the APBA 8-tier power rating.
- * Returns the CardValue (13, 15-21) for card position 24.
+ * Returns the CardValue (15-21) for card position 24. All values are
+ * IDT-active so position 24 draws always go through the grade gate.
  */
 export function computePowerRating(iso: number): CardValue {
   for (const tier of POWER_TIERS) {

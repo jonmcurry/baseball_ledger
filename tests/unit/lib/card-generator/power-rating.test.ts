@@ -3,6 +3,7 @@ import {
   getPowerLabel,
   POWER_TIERS,
 } from '@lib/card-generator/power-rating';
+import { IDT_ACTIVE_LOW, IDT_ACTIVE_HIGH } from '@lib/simulation/plate-appearance';
 
 describe('POWER_TIERS', () => {
   it('defines exactly 8 tiers', () => {
@@ -18,13 +19,21 @@ describe('POWER_TIERS', () => {
   it('last tier has Infinity upper bound', () => {
     expect(POWER_TIERS[POWER_TIERS.length - 1].maxISO).toBe(Infinity);
   });
+
+  it('all card values are IDT-active [15-21], never walk value 13', () => {
+    for (const tier of POWER_TIERS) {
+      expect(tier.cardValue).toBeGreaterThanOrEqual(IDT_ACTIVE_LOW);
+      expect(tier.cardValue).toBeLessThanOrEqual(IDT_ACTIVE_HIGH);
+      expect(tier.cardValue).not.toBe(13); // 13 = WALK, must never be a power rating
+    }
+  });
 });
 
 describe('computePowerRating (REQ-DATA-005 Step 4)', () => {
-  it('returns 13 for ISO < 0.050 (no power)', () => {
-    expect(computePowerRating(0)).toBe(13);
-    expect(computePowerRating(0.030)).toBe(13);
-    expect(computePowerRating(0.049)).toBe(13);
+  it('returns 15 for ISO < 0.050 (no power -- IDT-active, not walk)', () => {
+    expect(computePowerRating(0)).toBe(15);
+    expect(computePowerRating(0.030)).toBe(15);
+    expect(computePowerRating(0.049)).toBe(15);
   });
 
   it('returns 15 for ISO 0.050-0.079 (minimal)', () => {
@@ -69,8 +78,8 @@ describe('computePowerRating (REQ-DATA-005 Step 4)', () => {
     expect(computePowerRating(0.500)).toBe(21);
   });
 
-  it('handles negative ISO (should return 13)', () => {
-    expect(computePowerRating(-0.010)).toBe(13);
+  it('handles negative ISO (should return 15 -- no power tier)', () => {
+    expect(computePowerRating(-0.010)).toBe(15);
   });
 
   // Realistic examples
@@ -79,7 +88,7 @@ describe('computePowerRating (REQ-DATA-005 Step 4)', () => {
   });
 
   it('rates a slap hitter (ISO ~0.040) as no power', () => {
-    expect(computePowerRating(0.040)).toBe(13);
+    expect(computePowerRating(0.040)).toBe(15);
   });
 
   it('rates an average hitter (ISO ~0.130) as average', () => {
@@ -89,8 +98,9 @@ describe('computePowerRating (REQ-DATA-005 Step 4)', () => {
 
 describe('getPowerLabel', () => {
   it('returns correct label for each tier value', () => {
-    expect(getPowerLabel(13)).toBe('No power');
-    expect(getPowerLabel(15)).toBe('Minimal power');
+    // No power and Minimal power share cardValue 15; getPowerLabel returns
+    // the first match which is 'No power'.
+    expect(getPowerLabel(15)).toBe('No power');
     expect(getPowerLabel(16)).toBe('Below average');
     expect(getPowerLabel(17)).toBe('Average power');
     expect(getPowerLabel(18)).toBe('Above average');
@@ -100,6 +110,7 @@ describe('getPowerLabel', () => {
   });
 
   it('returns Unknown for invalid card value', () => {
+    expect(getPowerLabel(13)).toBe('Unknown'); // 13 = walk, not a valid power tier
     expect(getPowerLabel(14)).toBe('Unknown');
     expect(getPowerLabel(99)).toBe('Unknown');
   });
