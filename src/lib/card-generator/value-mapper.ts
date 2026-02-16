@@ -67,6 +67,30 @@ const SUPPRESSABLE_SINGLE_FRACTION = 0.75;
 const SUPPRESSABLE_TRIPLE_FRACTION = 0.50;
 
 /**
+ * BBW card K scaling factor.
+ *
+ * Cross-validation (1971 season, 450 matched players) shows:
+ *   BBW mean K positions on card: 2.28
+ *   Formula mean K positions on card: 3.48
+ *   Ratio: 2.28 / 3.48 = 0.655
+ *
+ * BBW puts fewer Ks directly on cards because the pitcher grade gate
+ * generates additional Ks during simulation. The card K count represents
+ * only the batter-inherent K tendency; the pitcher adds more Ks dynamically.
+ */
+const CARD_K_FACTOR = 0.65;
+
+/**
+ * BBW card doubles scaling factor.
+ *
+ * Cross-validation (1971 season, 450 matched players) shows:
+ *   BBW mean doubles on card: 1.19
+ *   Formula mean doubles on card: 1.50
+ *   Ratio: 1.19 / 1.50 = 0.79
+ */
+const CARD_DOUBLES_FACTOR = 0.79;
+
+/**
  * Outcome slot allocation: how many of the 20 outcome positions
  * should hold each outcome value, based on player rates.
  *
@@ -169,9 +193,11 @@ export function computeSlotAllocation(
   const FILL_COUNT = OUTCOME_POSITION_COUNT; // 20
   const speed = 0; // Speed slots handled post-allocation in fillVariablePositions
 
-  // Total walks/Ks needed across all 24 drawable positions
+  // Total walks/Ks needed across all 24 drawable positions.
+  // K count is scaled by CARD_K_FACTOR because BBW puts fewer Ks on cards,
+  // relying on the pitcher grade gate to generate additional Ks during play.
   let totalWalks = Math.round(rates.walkRate * TOTAL_DRAWABLE);
-  let totalKs = Math.round(rates.strikeoutRate * TOTAL_DRAWABLE);
+  let totalKs = Math.round(rates.strikeoutRate * TOTAL_DRAWABLE * CARD_K_FACTOR);
 
   // Ensure at least 1 of major outcomes for qualifying batters
   if (rates.PA > 0) {
@@ -189,9 +215,12 @@ export function computeSlotAllocation(
   const tripleEffRate = SUPPRESSABLE_TRIPLE_FRACTION * (1 - AVG_SUPPRESSION_PROB)
     + (1 - SUPPRESSABLE_TRIPLE_FRACTION);
 
-  // Hit rates computed against TOTAL_DRAWABLE (24) for correct proportions
+  // Hit rates computed against TOTAL_DRAWABLE (24) for correct proportions.
+  // Doubles are scaled by CARD_DOUBLES_FACTOR per cross-validation.
+  // Singles use existing singleEffRate compensation (no additional boost --
+  // the K factor reduction frees card positions that naturally flow to hits).
   const rawHRs = rates.homeRunRate * TOTAL_DRAWABLE;
-  const rawDoubles = rates.doubleRate * TOTAL_DRAWABLE;
+  const rawDoubles = rates.doubleRate * TOTAL_DRAWABLE * CARD_DOUBLES_FACTOR;
   const rawSingles = rates.singleRate > 0
     ? (rates.singleRate * TOTAL_DRAWABLE) / singleEffRate
     : 0;

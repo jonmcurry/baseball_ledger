@@ -1,5 +1,6 @@
-import type { PlayerCard, Position, MlbBattingStats, MlbPitchingStats } from '../types';
+import type { PlayerCard, Position, MlbBattingStats, MlbPitchingStats, PitcherAttributes } from '../types';
 import type { PlayerPoolEntry, LeagueAverages } from '../csv/csv-types';
+import type { BbwPlayerRecord, BbwBattingStats, BbwPitchingStats } from '../bbw/types';
 import { CARD_LENGTH, applyStructuralConstants, POWER_POSITION } from './structural';
 import { computePlayerRates } from './rate-calculator';
 import { computePowerRating } from './power-rating';
@@ -341,4 +342,204 @@ export function generateAllCards(
     .map((e) => e.pitchingStats!.ERA);
 
   return pool.map((entry) => generateCard(entry, leagueAverages, allPitcherERAs));
+}
+
+/**
+ * Parse a BBW position string to extract primary position and batting/throwing hand.
+ *
+ * Position player format: "[POS] [DEF] [BAT] [NUM]" e.g. "OF  2 B 17"
+ * Pitcher format: "[HAND] [GRADE] [FLAGS]" e.g. "L 14     Z"
+ */
+function parseBbwPositionString(posStr: string): {
+  primaryPosition: Position;
+  isPitcher: boolean;
+  battingHand: 'L' | 'R' | 'S';
+  throwingHand: 'L' | 'R';
+  pitcherGrade?: number;
+  isReliever?: boolean;
+} {
+  const trimmed = posStr.trim();
+
+  // Pitcher: starts with L or R followed by space and a number (grade)
+  const pitcherMatch = trimmed.match(/^([LR])\s+(\d+)(\*)?/);
+  if (pitcherMatch) {
+    const throwingHand = pitcherMatch[1] as 'L' | 'R';
+    const grade = parseInt(pitcherMatch[2], 10);
+    const isReliever = pitcherMatch[3] === '*';
+    return {
+      primaryPosition: isReliever ? 'RP' : 'SP',
+      isPitcher: true,
+      battingHand: throwingHand === 'L' ? 'L' : 'R',
+      throwingHand,
+      pitcherGrade: grade,
+      isReliever,
+    };
+  }
+
+  // Position player: starts with position code
+  const posMatch = trimmed.match(/^(OF|1B|2B|3B|SS|C|DH)\s+\d+\s+([LRBS])/);
+  if (posMatch) {
+    const pos = posMatch[1] as Position;
+    const hand = posMatch[2];
+    return {
+      primaryPosition: pos,
+      isPitcher: false,
+      battingHand: hand === 'B' || hand === 'S' ? 'S' : hand as 'L' | 'R',
+      throwingHand: 'R', // Default; position players' throwing hand not in position string
+    };
+  }
+
+  // Fallback
+  return {
+    primaryPosition: 'DH',
+    isPitcher: false,
+    battingHand: 'R',
+    throwingHand: 'R',
+  };
+}
+
+/**
+ * Convert a BBW binary player record + stats into a PlayerCard.
+ *
+ * The card bytes come directly from PLAYERS.DAT (the exact same card BBW uses).
+ * Stats come from NSTAT.DAT/PSTAT.DAT. Defensive ratings are derived from stats.
+ *
+ * @param player - Parsed PLAYERS.DAT record
+ * @param batting - Matching NSTAT.DAT record (same index)
+ * @param pitching - Matching PSTAT.DAT record (if pitcher), or undefined
+ * @param seasonYear - The season year for this data set
+ * @param allPitcherERAs - All pitcher ERAs in the season for grade percentile calculation
+ */
+export function generateCardFromBbw(
+  player: BbwPlayerRecord,
+  batting: BbwBattingStats,
+  pitching: BbwPitchingStats | undefined,
+  seasonYear: number,
+  allPitcherERAs: number[],
+): PlayerCard {
+  const parsed = parseBbwPositionString(player.positionString);
+
+  // Card bytes directly from PLAYERS.DAT binary
+  const card = [...player.card];
+  const powerRating = card[24];
+  const archetype = { byte33: card[33], byte34: card[34] };
+
+  // Compute batting-derived attributes from NSTAT
+  const PA = batting.AB + batting.BB + batting.HBP;
+  const singles = Math.max(0, batting.H - batting.doubles - batting.triples - batting.HR);
+  const BA = batting.AB > 0 ? batting.H / batting.AB : 0;
+  const TB = singles + 2 * batting.doubles + 3 * batting.triples + 4 * batting.HR;
+  const SLG = batting.AB > 0 ? TB / batting.AB : 0;
+  const OBP = PA > 0 ? (batting.H + batting.BB + batting.HBP) / PA : 0;
+  const iso = SLG - BA;
+
+  // Speed from SB data
+  const sbTotal = batting.SB; // CS not in NSTAT, approximate
+  const speed = PA > 0 ? Math.min(1.0, sbTotal / 50) : 0;
+
+  // Discipline from BB/SO ratio
+  const discipline = batting.SO > 0 ? Math.min(1.0, batting.BB / batting.SO) : (batting.BB > 0 ? 1.0 : 0);
+
+  // Contact rate
+  const contactRate = PA > 0 ? Math.max(0, 1 - batting.SO / PA) : 0;
+
+  // Build pitcher attributes from PSTAT
+  let pitcherAttrs: PitcherAttributes | undefined;
+  if (pitching && parsed.isPitcher) {
+    const era = pitching.outs > 0 ? (pitching.ER * 27) / pitching.outs : 99;
+    const whip = pitching.IP > 0 ? (pitching.BB + pitching.H) / pitching.IP : 99;
+    const k9 = pitching.IP > 0 ? (pitching.SO * 9) / pitching.IP : 0;
+    const bb9 = pitching.IP > 0 ? (pitching.BB * 9) / pitching.IP : 0;
+    const hr9 = pitching.IP > 0 ? (pitching.HRA * 9) / pitching.IP : 0;
+
+    // Use position string grade if available, otherwise compute from ERA rank
+    let grade = parsed.pitcherGrade ?? 8;
+    if (!parsed.pitcherGrade && allPitcherERAs.length > 0) {
+      const sorted = [...allPitcherERAs].sort((a, b) => a - b);
+      const rank = sorted.indexOf(era);
+      const pct = rank / sorted.length;
+      grade = Math.max(1, Math.min(15, Math.round(15 - pct * 14)));
+    }
+
+    pitcherAttrs = {
+      role: pitching.SV >= 10 ? 'CL' : (pitching.GS / pitching.G >= 0.5 ? 'SP' : 'RP'),
+      grade,
+      stamina: pitching.IP / Math.max(1, pitching.GS || pitching.G),
+      era,
+      whip,
+      k9,
+      bb9,
+      hr9,
+      usageFlags: [],
+      isReliever: parsed.isReliever ?? false,
+    };
+  }
+
+  // MLB batting stats
+  const mlbBattingStats: MlbBattingStats = {
+    G: batting.G,
+    AB: batting.AB,
+    R: batting.R,
+    H: batting.H,
+    doubles: batting.doubles,
+    triples: batting.triples,
+    HR: batting.HR,
+    RBI: batting.RBI,
+    SB: batting.SB,
+    CS: 0, // Not in NSTAT
+    BB: batting.BB,
+    SO: batting.SO,
+    BA,
+    OBP,
+    SLG,
+    OPS: OBP + SLG,
+  };
+
+  // MLB pitching stats
+  let mlbPitchingStats: MlbPitchingStats | undefined;
+  if (pitching) {
+    mlbPitchingStats = {
+      G: pitching.G,
+      GS: pitching.GS,
+      W: pitching.W,
+      L: pitching.L,
+      SV: pitching.SV,
+      IP: pitching.IP,
+      H: pitching.H,
+      ER: pitching.ER,
+      HR: pitching.HRA,
+      BB: pitching.BB,
+      SO: pitching.SO,
+      ERA: pitching.outs > 0 ? (pitching.ER * 27) / pitching.outs : 99,
+      WHIP: pitching.IP > 0 ? (pitching.BB + pitching.H) / pitching.IP : 99,
+    };
+  }
+
+  // Capitalize last name for consistency with Lahman format
+  const nameLast = player.lastName.charAt(0) + player.lastName.slice(1).toLowerCase();
+
+  return {
+    playerId: `bbw_${seasonYear}_${player.index}`,
+    nameFirst: player.firstName,
+    nameLast,
+    seasonYear,
+    battingHand: parsed.battingHand,
+    throwingHand: parsed.throwingHand,
+    primaryPosition: parsed.primaryPosition,
+    eligiblePositions: [parsed.primaryPosition],
+    isPitcher: parsed.isPitcher,
+    card,
+    powerRating,
+    archetype,
+    speed,
+    power: iso,
+    discipline,
+    contactRate,
+    fieldingPct: 0.970, // Default; fielding data not in PLAYERS.DAT
+    range: 0.5,
+    arm: 0.5,
+    pitching: pitcherAttrs,
+    mlbBattingStats,
+    mlbPitchingStats,
+  };
 }

@@ -144,17 +144,15 @@ export const PLATOON_GRADE_MAX = 30;
  * 40 entries indexed by random(40). Values are small signed integers
  * that add noise to the effective grade.
  *
- * Confirmed by Ghidra: `tableAdj = DATA[randomIdx + 0x3802]`
- * Exact table values approximated from expected distribution:
- * - Mostly 0s (no change)
- * - Some small positive/negative adjustments
- * - Net effect centered around 0
+ * EXTRACTED from WINBB.EXE DATA[0x3802] (segment 36).
+ * Distribution: 1x(+3), 3x(+2), 6x(+1), 20x(0), 6x(-1), 3x(-2), 1x(-3)
+ * Mean = 0.0, symmetric around zero. Range [-3, +3].
  */
 export const RANDOM_VARIANCE_TABLE: readonly number[] = [
-  -2, -1, -1, -1, -1, 0, 0, 0, 0, 0,
-   0,  0,  0,  0,  0, 0, 0, 0, 0, 0,
-   0,  0,  0,  0,  0, 0, 0, 0, 0, 0,
-   0,  0,  0,  0,  0, 1, 1, 1, 1,  2,
+   3,  2,  2,  2,  1,  1,  1,  1,  1,  1,
+   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  -1, -1, -1, -1, -1, -1, -2, -2, -2, -3,
 ];
 
 /**

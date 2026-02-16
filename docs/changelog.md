@@ -1,5 +1,61 @@
 # Changelog
 
+## 2026-02-16 - Dual-Mode Card System: BBW Binary Parsers + Formula Calibration
+
+Foundational infrastructure for using real APBA BBW binary card data alongside
+a calibrated formula generator for non-BBW seasons.
+
+### Phase 1: BBW Binary Parsers (`src/lib/bbw/`)
+- **PLAYERS.DAT parser**: Extracts 146-byte player records with 35-byte card blocks,
+  names (Pascal strings, uppercase last names), meta blocks, position strings
+- **NSTAT.DAT parser**: Extracts 32-byte batting stat records (uint16 + uint8 fields)
+- **PSTAT.DAT parser**: Extracts 22-byte pitching stat records with IP stored as outs*3
+- All parsers verified against 1971 season: 828 players, 828 batting, 343 pitching
+- Known card bytes match exactly: Buford, Robinson, Belanger, Cuellar
+
+### Phase 2: Cross-Validation (1971 BBW vs Formula)
+- Matched 450/828 BBW players to Lahman data by name
+- Key findings (pre-calibration): walk r=0.785, K r=-0.167, HR r=0.590
+- Formula overproduced Ks (3.48 vs 2.28 BBW mean) and underproduced singles
+
+### Phase 3: Formula Calibration
+- Added `CARD_K_FACTOR = 0.65` to reduce card K allocation (BBW puts fewer Ks
+  on cards, relying on pitcher grade gate to generate Ks during simulation)
+- Added `CARD_DOUBLES_FACTOR = 0.79` per cross-validation data
+- Post-calibration: K reduced from 3.48 to 3.00 (closer to BBW 2.28)
+
+### Phase 4: WINBB.EXE Data Extraction
+- **Variance table**: Extracted real 40-byte random variance table from
+  WINBB.EXE DATA[0x3802] (segment 36). Distribution: 1x(+3), 3x(+2), 6x(+1),
+  20x(0), 6x(-1), 3x(-2), 1x(-3). Replaces old approximation in pitching.ts.
+- **IDT frequency weights**: Extracted 9-byte weight table at DATA[row+0x382B]
+  for IDT rows 15-23: [1,1,1,2,1,2,1,2,1] (total weight 12)
+
+### Phase 5: Dual-Mode Card Source
+- `generateCardFromBbw()`: Converts BBW binary records into PlayerCard objects
+  with exact byte preservation (no formula modification of card values)
+- Parses position strings for pitcher grades, batting/throwing hand, position
+- Computes batting/pitching stats from NSTAT/PSTAT binary data
+- BBW seasons use real binary cards; non-BBW seasons use calibrated formula
+
+### Files Added
+- `src/lib/bbw/types.ts` - BBW binary data types and record size constants
+- `src/lib/bbw/players-parser.ts` - PLAYERS.DAT parser
+- `src/lib/bbw/nstat-parser.ts` - NSTAT.DAT parser
+- `src/lib/bbw/pstat-parser.ts` - PSTAT.DAT parser
+- `src/lib/bbw/exe-extractor.ts` - WINBB.EXE data segment extractor
+- `src/lib/bbw/index.ts` - Module public API
+- `tests/unit/lib/bbw/parsers.test.ts` - Binary parser verification (22 tests)
+- `tests/unit/lib/bbw/exe-extractor.test.ts` - EXE extraction verification (11 tests)
+- `tests/unit/lib/bbw/cross-validation.test.ts` - BBW vs formula comparison (3 tests)
+- `tests/unit/lib/bbw/dual-mode.test.ts` - Binary-to-PlayerCard conversion (6 tests)
+
+### Files Modified
+- `src/lib/simulation/pitching.ts` - Replaced variance table with real BBW data
+- `src/lib/card-generator/value-mapper.ts` - Added K factor and doubles factor
+- `src/lib/card-generator/generator.ts` - Added `generateCardFromBbw()` function
+- `tests/unit/lib/card-generator/value-mapper.test.ts` - Updated for calibration
+
 ## 2026-02-16 - BBW Fidelity Overhaul: Power Rating, Archetype Modifiers, Rotation
 
 Three fixes to bring simulation stats closer to real baseball:
