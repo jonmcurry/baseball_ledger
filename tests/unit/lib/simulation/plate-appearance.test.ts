@@ -556,14 +556,16 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
         outcomes.set(result.outcome, (outcomes.get(result.outcome) ?? 0) + 1);
       }
 
-      // With pitcher card, grade 15 always wins for value 7 (pitcher check).
-      // Pitcher card has walks (~58%), Ks (~17%), outs (~25%).
-      // So we should see walks, not just ground outs.
+      // Path A is pitcher suppression -- walks on pitcher card are filtered to ground outs.
+      // So walks should be 0, and ground outs should be dominant.
       const walks = outcomes.get(OutcomeCategory.WALK) ?? 0;
-      expect(walks).toBeGreaterThan(0);
-      // Should also see ground outs (from out values on pitcher card)
+      expect(walks).toBe(0);
+      // Should see ground outs (from walk->ground_out filter + out values on pitcher card)
       const groundOuts = outcomes.get(OutcomeCategory.GROUND_OUT) ?? 0;
-      expect(groundOuts).toBeGreaterThan(0);
+      expect(groundOuts).toBeGreaterThan(samples * 0.50);
+      // Should also see strikeouts (from K values on pitcher card -- value 14 = STRIKEOUT_SWINGING)
+      const strikeouts = outcomes.get(OutcomeCategory.STRIKEOUT_SWINGING) ?? 0;
+      expect(strikeouts).toBeGreaterThan(0);
     });
 
     it('falls back to hardcoded outs when no pitcher card (legacy)', () => {
@@ -596,6 +598,49 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
 
       // Should produce diverse outcomes (walks, Ks, outs from pitcher card)
       expect(outcomeSet.size).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  describe('Path A walk suppression (pitcher card reads never produce walks)', () => {
+    it('Path A never produces walks from pitcher card', () => {
+      // Batter card filled with value 7 (pitcher check value).
+      // Pitcher card has ~58% walk values. Grade 15 always wins.
+      // Path A is "pitcher suppression" -- walks should be mapped to outs.
+      const batterCard = createTestCard(7);
+      const pitcherCard = generatePitcherBattingCard();
+      const rng = new SeededRNG(42);
+      const samples = 1000;
+      let walks = 0;
+      let groundOuts = 0;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
+        if (result.outcome === OutcomeCategory.WALK) walks++;
+        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
+      }
+
+      // Path A is pitcher suppression -- should NEVER produce walks
+      expect(walks).toBe(0);
+      // Walk values on pitcher card should become ground outs instead
+      expect(groundOuts).toBeGreaterThan(samples * 0.40);
+    });
+
+    it('Path A walk suppression applies to all pitcher check values {7, 8, 11}', () => {
+      const pitcherCard = generatePitcherBattingCard();
+
+      for (const checkValue of [7, 8, 11]) {
+        const batterCard = createTestCard(checkValue as CardValue);
+        const rng = new SeededRNG(42);
+        let walks = 0;
+        const samples = 500;
+
+        for (let i = 0; i < samples; i++) {
+          const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
+          if (result.outcome === OutcomeCategory.WALK) walks++;
+        }
+
+        expect(walks).toBe(0);
+      }
     });
   });
 

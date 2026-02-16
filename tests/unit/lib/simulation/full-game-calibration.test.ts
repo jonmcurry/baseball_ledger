@@ -501,12 +501,13 @@ describe('Full-Game Stat Calibration', () => {
     expect(stats.awayBA).toBeLessThanOrEqual(0.320);
   });
 
-  it('walks per team per game is in realistic range [1, 8]', () => {
+  it('walks per team per game is in realistic range [1, 6]', () => {
     const stats = runGames(GAME_COUNT);
 
-    // MLB average is ~3-4 BB/team/game
+    // MLB average is ~3-4 BB/team/game. Path A walk suppression fix
+    // eliminated the ~58% walk inflation from pitcher card reads.
     expect(stats.avgBBPerTeamPerGame).toBeGreaterThanOrEqual(1);
-    expect(stats.avgBBPerTeamPerGame).toBeLessThanOrEqual(8);
+    expect(stats.avgBBPerTeamPerGame).toBeLessThanOrEqual(6);
   });
 
   it('strikeouts per team per game is in realistic range [2, 14]', () => {

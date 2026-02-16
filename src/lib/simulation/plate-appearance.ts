@@ -253,7 +253,14 @@ export function resolvePlateAppearance(
     if (pitcherCard) {
       const pitcherValue = readCardValue(pitcherCard, cardPosition);
       const resolvedValue = resolveSymbolValue(pitcherValue, rng);
-      outcome = getDirectOutcome(resolvedValue);
+      const directOutcome = getDirectOutcome(resolvedValue);
+      // Path A is pitcher suppression -- walk values on the pitcher card
+      // should produce outs, not walks. The pitcher "won" this PA.
+      if (directOutcome === OutcomeCategory.WALK) {
+        outcome = OutcomeCategory.GROUND_OUT;
+      } else {
+        outcome = directOutcome;
+      }
     } else {
       // Fallback when no pitcher card available (legacy callers):
       // Standard pitcher cards are ~85% out-type values

@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-02-15 - Fix Path A Walk Inflation (Pitcher Suppression Bug)
+
+Fixed catastrophic walk/ERA inflation caused by Path A pitcher card reads producing
+walks instead of outs during pitcher suppression.
+
+### Root Cause
+When the pitcher won the grade check for batter card values {7, 8, 11} (singles/triples),
+Path A read the pitcher's batting card to determine the replacement outcome. The pitcher
+batting card has ~58% walk values (14 out of 24 fillable positions), so suppressed singles
+were converted to walks instead of outs. This massively inflated walk rate, run scoring,
+and ERA across the entire simulation.
+
+### Fix
+In `plate-appearance.ts`, when Path A reads the pitcher card and resolves a WALK outcome,
+it is now remapped to GROUND_OUT. The rationale: Path A represents the pitcher winning the
+plate appearance and suppressing the batter's hit -- the outcome should be an out, not
+putting the batter on base.
+
+### Impact (50-game calibration)
+| Stat | Before Fix | After Fix | Real Target |
+|------|-----------|-----------|-------------|
+| BB/team/game | ~7.64 | 4.14 | 3-4 |
+| R/team/game | ~8.35 | 6.14 | 4-5 |
+| Team BA | .293/.273 | .284/.264 | .250-.270 |
+| CG (per 100 starts) | 0 | 69 | realistic |
+| SHO | 0 | 1 | realistic |
+
+### Tests (TDD)
+- Added "Path A never produces walks from pitcher card" test (written first, confirmed failure)
+- Added "Path A walk suppression applies to all pitcher check values {7, 8, 11}" test
+- Updated existing pitcher card read test to expect walks=0 and strikeouts (STRIKEOUT_SWINGING)
+- Tightened calibration BB/game range from [1, 8] to [1, 6]
+
 ## 2026-02-15 - Pennant Race Theme Implementation
 
 Implemented the "Pennant Race" UI theme -- bold red/white/blue Americana aesthetic
