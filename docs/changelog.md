@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-02-16 - Dual-Mode Pipeline Integration: BBW Binary Cards in League Creation
+
+Wires the dual-mode card system into the league creation pipeline so that BBW
+seasons (1921, 1943, 1971) automatically use real binary cards from PLAYERS.DAT
+while all other seasons use calibrated formula cards from Lahman CSV data.
+
+### Pipeline Integration
+- **`src/lib/bbw/bbw-pipeline.ts`**: Pure-function pipeline that converts an
+  entire BBW season (PLAYERS/NSTAT/PSTAT) into PlayerCard[] with sequential
+  pitcher-to-PSTAT matching. Includes `BBW_SEASON_MAP`, `detectBbwYearsInRange()`.
+- **`api/_lib/load-bbw.ts`**: Filesystem I/O layer that reads BBW binary files
+  from .WDD directories with existence checking and graceful fallback.
+- **`src/lib/csv/load-pipeline.ts`**: Added `excludeYears` option to
+  `CsvPipelineInput` so BBW-covered years are skipped by the formula pipeline.
+- **`src/lib/csv/player-pool.ts`**: `buildPlayerPool()` now accepts `excludeYears`
+  parameter to filter out specific season years from the Lahman pool.
+- **`api/leagues/index.ts`**: League creation now orchestrates both pipelines:
+  1. Detects BBW seasons within the requested year range
+  2. Loads binary data and runs BBW pipeline for those seasons
+  3. Runs CSV pipeline with those years excluded
+  4. Merges all cards and name caches into a single pool
+
+### Key Design Decisions
+- BBW seasons produce their own complete roster (e.g., 828 players for 1971)
+  independent of Lahman data -- no name matching needed
+- Year exclusion prevents duplicate players for BBW-covered seasons
+- BBW pitcher grades range 1-22 (wider than the 1-15 formula approximation)
+- Graceful fallback: if BBW files are missing, falls back to formula cards
+
+### Files Added
+- `src/lib/bbw/bbw-pipeline.ts` - Season pipeline with pitcher-PSTAT matching
+- `api/_lib/load-bbw.ts` - BBW binary file I/O layer
+- `tests/unit/lib/bbw/bbw-pipeline.test.ts` - Pipeline conversion tests (17 tests)
+
+### Files Modified
+- `src/lib/bbw/index.ts` - Re-exports new pipeline functions
+- `src/lib/csv/load-pipeline.ts` - Added `excludeYears` to CsvPipelineInput
+- `src/lib/csv/player-pool.ts` - Added `excludeYears` filtering in buildPlayerPool
+- `api/leagues/index.ts` - Dual-mode pipeline orchestration
+- `tests/unit/lib/csv/load-pipeline.test.ts` - Added 3 excludeYears tests
+
 ## 2026-02-16 - Dual-Mode Card System: BBW Binary Parsers + Formula Calibration
 
 Foundational infrastructure for using real APBA BBW binary card data alongside

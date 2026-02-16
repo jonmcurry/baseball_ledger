@@ -125,4 +125,36 @@ describe('runCsvPipeline', () => {
     expect(result).toHaveProperty('cards');
     expect(result).toHaveProperty('errors');
   });
+
+  describe('excludeYears', () => {
+    it('excludes specified years from pool', () => {
+      const result = runCsvPipeline({
+        ...input,
+        excludeYears: [1971],
+      });
+
+      expect(result.pool).toHaveLength(0);
+      expect(result.cards).toHaveLength(0);
+    });
+
+    it('does not affect other years in range', () => {
+      // yearRange 1971-1971, exclude 1970 (not in range anyway)
+      const result = runCsvPipeline({
+        ...input,
+        excludeYears: [1970],
+      });
+
+      expect(result.pool.length).toBeGreaterThan(0);
+      for (const entry of result.pool) {
+        expect(entry.seasonYear).toBe(1971);
+      }
+    });
+
+    it('handles empty excludeYears array', () => {
+      const withExclude = runCsvPipeline({ ...input, excludeYears: [] });
+      const without = runCsvPipeline(input);
+
+      expect(withExclude.pool.length).toBe(without.pool.length);
+    });
+  });
 });

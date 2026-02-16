@@ -24,6 +24,8 @@ export interface CsvPipelineInput {
   readonly yearRangeStart: number;
   readonly yearRangeEnd: number;
   readonly negroLeaguesEnabled?: boolean;
+  /** Years to exclude from formula card generation (e.g., BBW-covered years). */
+  readonly excludeYears?: readonly number[];
 }
 
 export interface CsvPipelineResult {
@@ -58,9 +60,12 @@ export function runCsvPipeline(input: CsvPipelineInput): CsvPipelineResult {
   errors.push(...pitchingResult.errors);
   errors.push(...fieldingResult.errors);
 
-  // Step 2: Build player pool (optionally excluding Negro League records)
+  // Step 2: Build player pool (optionally excluding Negro League records and BBW years)
   const excludeLeagues = input.negroLeaguesEnabled === false
     ? new Set<string>(NEGRO_LEAGUE_CODES)
+    : undefined;
+  const excludeYears = input.excludeYears && input.excludeYears.length > 0
+    ? new Set<number>(input.excludeYears)
     : undefined;
 
   const poolResult = buildPlayerPool(
@@ -70,6 +75,7 @@ export function runCsvPipeline(input: CsvPipelineInput): CsvPipelineResult {
     fieldingResult.data,
     yearRange,
     excludeLeagues,
+    excludeYears,
   );
   errors.push(...poolResult.errors);
   const pool = poolResult.data;

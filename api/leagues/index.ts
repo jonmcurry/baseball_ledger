@@ -5,7 +5,8 @@
  * After league insert:
  *   1. Generates teams with random names/divisions (REQ-LGE-004, REQ-LGE-005)
  *   2. Auto-assigns first team to commissioner (REQ-LGE-007)
- *   3. Generates player pool from Lahman CSVs (REQ-DATA-002)
+ *   3. Generates player pool: BBW binary cards for available seasons,
+ *      formula cards from Lahman CSVs for all other seasons (REQ-DATA-002)
  * Returns 201 Created with LeagueSummary.
  */
 
@@ -20,11 +21,14 @@ import { snakeToCamel } from '../_lib/transform';
 import { createServerClient } from '../../src/lib/supabase/server';
 import type { Json } from '../../src/lib/types/database';
 import { loadCsvFiles } from '../_lib/load-csvs';
+import { loadBbwSeason } from '../_lib/load-bbw';
 import { runCsvPipeline } from '../../src/lib/csv/load-pipeline';
+import { detectBbwYearsInRange, runBbwPipeline } from '../../src/lib/bbw/bbw-pipeline';
 import { generateTeamNames } from '../../src/lib/league/team-generator';
 import { assignDivisions } from '../../src/lib/league/division-assignment';
 import { SeededRNG } from '../../src/lib/rng/seeded-rng';
 import { calculatePlayerValue } from '../../src/lib/draft/ai-valuation';
+import type { PlayerCard } from '../../src/lib/types/player';
 
 const BATCH_SIZE = 200;
 
@@ -92,24 +96,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw { category: 'DATA', code: 'TEAM_INSERT_FAILED', message: teamsError.message };
     }
 
-    // Generate player pool from CSVs (REQ-DATA-002, REQ-DATA-005, REQ-DATA-006)
+    // Generate player pool: BBW binary cards + Lahman formula cards (REQ-DATA-002, REQ-DATA-005)
     try {
+      const allCards: PlayerCard[] = [];
+      const allNameCache: Record<string, string> = {};
+
+      // Detect BBW seasons within the requested year range
+      const bbwYears = detectBbwYearsInRange(body.yearRangeStart, body.yearRangeEnd);
+
+      // Load BBW binary cards for available seasons
+      for (const year of bbwYears) {
+        const season = loadBbwSeason(year);
+        if (season) {
+          const bbwResult = runBbwPipeline(
+            season.players, season.battingStats, season.pitchingStats, year,
+          );
+          allCards.push(...bbwResult.cards);
+          Object.assign(allNameCache, bbwResult.playerNameCache);
+          console.log(`[league ${data.id}] BBW ${year}: ${bbwResult.cards.length} binary cards loaded`);
+        }
+      }
+
+      // Generate formula cards from Lahman CSVs for non-BBW years
       const csvFiles = loadCsvFiles();
       const pipeline = runCsvPipeline({
         ...csvFiles,
         yearRangeStart: body.yearRangeStart,
         yearRangeEnd: body.yearRangeEnd,
         negroLeaguesEnabled: body.negroLeaguesEnabled,
+        excludeYears: bbwYears,
       });
 
-      // Batch insert cards into player_pool table
-      console.log(`[league ${data.id}] Pipeline generated ${pipeline.cards.length} cards, ${pipeline.pool.length} pool entries, ${pipeline.errors.length} errors`);
+      allCards.push(...pipeline.cards);
+      Object.assign(allNameCache, pipeline.playerNameCache);
+
+      console.log(`[league ${data.id}] Pipeline: ${pipeline.cards.length} formula cards, ${bbwYears.length} BBW seasons (${allCards.length} total)`);
       if (pipeline.errors.length > 0) {
         console.warn(`[league ${data.id}] Pipeline errors (first 5):`, pipeline.errors.slice(0, 5));
       }
 
-      if (pipeline.cards.length > 0) {
-        const poolRecords = pipeline.cards.map((card) => ({
+      // Batch insert all cards into player_pool table
+      if (allCards.length > 0) {
+        const poolRecords = allCards.map((card) => ({
           league_id: data.id,
           player_id: card.playerId,
           season_year: card.seasonYear,
@@ -135,10 +163,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log(`[league ${data.id}] Pool insert complete: ${insertedCount} inserted, ${failedBatches} batches failed`);
       }
 
-      // Update league with player name cache (REQ-DATA-003)
+      // Update league with merged player name cache (REQ-DATA-003)
       await supabase
         .from('leagues')
-        .update({ player_name_cache: pipeline.playerNameCache })
+        .update({ player_name_cache: allNameCache })
         .eq('id', data.id);
     } catch (poolErr) {
       // Graceful degradation: league is created, pool generation failed.

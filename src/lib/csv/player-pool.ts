@@ -41,6 +41,7 @@ export function buildPlayerPool(
   fielding: Map<string, FieldingSeasonRecord[]>,
   yearRange: { start: number; end: number },
   excludeLeagues?: Set<string>,
+  excludeYears?: Set<number>,
 ): CsvParseResult<PlayerPoolEntry[]> {
   const pool: PlayerPoolEntry[] = [];
   const errors: string[] = [];
@@ -52,6 +53,7 @@ export function buildPlayerPool(
     for (const season of seasons) {
       if (season.yearID < yearRange.start || season.yearID > yearRange.end) continue;
       if (excludeLeagues && excludeLeagues.has(season.lgID)) continue;
+      if (excludeYears && excludeYears.has(season.yearID)) continue;
       let years = playerYears.get(playerID);
       if (!years) {
         years = new Set();
@@ -65,6 +67,7 @@ export function buildPlayerPool(
     for (const season of seasons) {
       if (season.yearID < yearRange.start || season.yearID > yearRange.end) continue;
       if (excludeLeagues && excludeLeagues.has(season.lgID)) continue;
+      if (excludeYears && excludeYears.has(season.yearID)) continue;
       let years = playerYears.get(playerID);
       if (!years) {
         years = new Set();

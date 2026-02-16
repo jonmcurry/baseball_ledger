@@ -19,3 +19,9 @@ export type {
   BbwPitchingStats,
   BbwSeason,
 } from './types';
+export {
+  BBW_SEASON_MAP,
+  getBbwSeasonYears,
+  detectBbwYearsInRange,
+  runBbwPipeline,
+} from './bbw-pipeline';
