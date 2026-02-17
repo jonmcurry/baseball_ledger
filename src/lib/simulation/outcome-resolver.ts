@@ -182,6 +182,36 @@ function resolveSingleClean(bases: BaseState, batterId: string): OutcomeResoluti
   };
 }
 
+/**
+ * Resolve SINGLE_ADVANCE: runner on 1B advances to 3B (not just 2B).
+ * Card value 9 produces this outcome -- not pitcher-suppressible.
+ * Per SRD: "Runner on 1B -> 2B or 3B (speed check)" but the
+ * card-level outcome itself grants the aggressive advance.
+ * Speed check in game-runner only fires for SINGLE_CLEAN (runner on 2B).
+ */
+function resolveSingleAdvance(bases: BaseState, batterId: string): OutcomeResolution {
+  let runs = 0;
+
+  // REQ-SIM-007: resolve 3B first, then 2B, then 1B
+  if (bases.third !== null) { runs++; }
+  if (bases.second !== null) { runs++; }
+
+  // 1B -> 3B (advance variant grants extra base)
+  let newThird: string | null = null;
+  if (bases.first !== null) { newThird = bases.first; }
+
+  return {
+    basesAfter: { first: batterId, second: null, third: newThird },
+    outsAdded: 0,
+    runsScored: runs,
+    batterReachedBase: true,
+    batterDestination: '1B',
+    isNoPA: false,
+    sacrificeFly: false,
+    rbiCredits: runs,
+  };
+}
+
 function resolveDouble(bases: BaseState, batterId: string): OutcomeResolution {
   let runs = 0;
 
@@ -510,10 +540,12 @@ export function resolveOutcome(
   switch (outcome) {
     // Hits
     case OutcomeCategory.SINGLE_CLEAN:
-    case OutcomeCategory.SINGLE_ADVANCE:
-      // SINGLE_ADVANCE is identical to SINGLE_CLEAN in conservative mode.
-      // Task 9 (Baserunner Engine) will add speed check for extra-base taking.
       return resolveSingleClean(bases, batterId);
+
+    case OutcomeCategory.SINGLE_ADVANCE:
+      // Card value 9 grants aggressive advance: 1B runner goes to 3B.
+      // Speed checks in game-runner only fire for SINGLE_CLEAN (runner on 2B).
+      return resolveSingleAdvance(bases, batterId);
 
     case OutcomeCategory.DOUBLE:
       return resolveDouble(bases, batterId);

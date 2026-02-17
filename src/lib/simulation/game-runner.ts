@@ -735,7 +735,7 @@ export function runGame(config: RunGameConfig): GameResult {
         // earnedRuns updated below alongside pitchingLine ER
       }
 
-      // Error check for outs
+      // Error check for outs (fielding miscues on batted-ball outs)
       if (resolution.outsAdded > 0 && !isStrikeout(outcome)) {
         const errorResult = checkForError(batterCard.fieldingPct, rng);
         if (errorResult.errorOccurred) {
@@ -743,6 +743,15 @@ export function runGame(config: RunGameConfig): GameResult {
           else tracker.awayErrors++;
           tracker.unearnedRunBudget++;
         }
+      }
+
+      // REACHED_ON_ERROR: the error IS the outcome, so any runs that
+      // scored on this play (runners advancing) are unearned. Increment
+      // budget before ER tracking below consumes it.
+      if (outcome === OutcomeCategory.REACHED_ON_ERROR) {
+        if (isTopHalf) tracker.homeErrors++;
+        else tracker.awayErrors++;
+        tracker.unearnedRunBudget++;
       }
 
       // Update pitching line

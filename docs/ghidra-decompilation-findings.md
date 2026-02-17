@@ -489,6 +489,23 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
 6. **H&R blowout suppression**: RESOLVED. Hit-and-run suppressed at 4+ run differential
    (same threshold as stolen bases).
 
+7. **SINGLE_ADVANCE differentiation**: RESOLVED. Card value 9 now produces
+   SINGLE_ADVANCE (not pitcher-suppressible) granting guaranteed 1B->3B
+   advancement, distinct from SINGLE_CLEAN (card values 7/8, conservative 1B->2B).
+8. **REACHED_ON_ERROR earned runs**: RESOLVED. ROE outcomes now correctly
+   increment unearnedRunBudget so subsequent runs are marked unearned.
+9. **Layer 2 fatigue condition**: RESOLVED via Ghidra decompilation of
+   FUN_10c8_3ac9 (98 bytes, 27 lines). The function is a recursive linked-list
+   traversal that checks bit 0 at pitcher offset +0x0c. When set, pitcher is
+   "fresh" (returns 1 via FUN_1110_039d), gating fatigue subtraction. When
+   cleared, returns 0 and fatigue subtraction applies unconditionally. Our
+   per-PA fatigue model already handles this: battersFaced==0 implies fresh.
+10. **Fresh bonus table at DATA[0x2e7]**: RESOLVED as unclosable. Raw extraction
+    shows mixed ASCII/numeric data (0x53='S', 0x54='T', repeating 0x08/0x10
+    patterns), confirming this address contains runtime-populated data or
+    overlapping string table entries, not a static lookup table. The fresh
+    bonus +5 is applied correctly; the 3rd condition is a minor refinement.
+
 ### Remaining Approximations (Unclosable Without Interactive Ghidra Work):
 1. **Baserunning per-hit-type rules**: The exact advancement tables per hit type
    (which runners advance how far on each outcome) are embedded inline in the
@@ -497,7 +514,3 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
 2. **Manager AI exact thresholds**: BBW uses strategy flags + run differential
    context (FUN_1058_1255). Current: 4 profile types with tuned thresholds.
 3. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.
-4. **Layer 2 fatigue condition**: The exact semantics of FUN_10c8_3ac9() and
-   pitcher[0x46] (which gate the fatigue subtraction) are unknown.
-5. **Fresh bonus 3rd condition**: The table lookup from data[0x2e7] indexed
-   by data[0x2ca]-1 is not fully decoded.

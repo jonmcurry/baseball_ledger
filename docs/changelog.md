@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-17 - SINGLE_ADVANCE, ROE Earned Runs, Ghidra Layer 2 Decompilation
+
+Close remaining simulation gaps and resolve two previously-unknown Ghidra targets.
+
+Changes:
+- **SINGLE_ADVANCE differentiation**: Card value 9 now produces SINGLE_ADVANCE (not
+  pitcher-suppressible), granting guaranteed 1B->3B runner advancement. Card values 7/8
+  produce SINGLE_CLEAN with conservative 1B->2B advancement. New `resolveSingleAdvance()`
+  function in outcome-resolver.ts.
+- **REACHED_ON_ERROR earned run fix**: ROE outcomes now correctly increment
+  `unearnedRunBudget` so subsequent runs scored on the play are marked unearned.
+  Previously, the budget was never incremented because `outsAdded === 0` for ROE.
+- **Layer 2 fatigue condition decoded**: Ghidra headless decompilation of FUN_10c8_3ac9
+  (98 bytes) reveals a recursive linked-list traversal checking bit 0 at pitcher offset
+  +0x0c -- a "fresh" flag gating fatigue subtraction. Our per-PA fatigue model already
+  handles this via `battersFaced === 0` semantics.
+- **DATA[0x2e7] table resolved**: Raw extraction shows mixed ASCII/numeric data,
+  confirming the fresh bonus 3rd condition is runtime-populated, not a static table.
+  Remaining approximations reduced from 5 to 3.
+
 ## 2026-02-17 - DP Defense, Speed-Check Baserunning, H&R Blowout Suppression
 
 Close three simulation fidelity gaps using existing module code and BBW behavior analysis.

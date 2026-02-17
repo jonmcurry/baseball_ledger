@@ -164,9 +164,22 @@ describe('resolveOutcome: Singles (REQ-SIM-005)', () => {
     expect(r.runsScored).toBe(1);
   });
 
-  it('SINGLE_ADVANCE with runner on 1B: conservative 1B->2B', () => {
+  it('SINGLE_ADVANCE with runner on 1B: 1B->3B (advance variant)', () => {
     const r = resolveOutcome(OutcomeCategory.SINGLE_ADVANCE, bases('r1'), 0, 'bat');
-    expect(r.basesAfter).toEqual(bases('bat', 'r1'));
+    expect(r.basesAfter).toEqual(bases('bat', null, 'r1'));
+    expect(r.runsScored).toBe(0);
+  });
+
+  it('SINGLE_ADVANCE with bases loaded: 3B+2B score, 1B->3B, batter->1B', () => {
+    const r = resolveOutcome(OutcomeCategory.SINGLE_ADVANCE, bases('r1', 'r2', 'r3'), 0, 'bat');
+    expect(r.basesAfter).toEqual(bases('bat', null, 'r1'));
+    expect(r.runsScored).toBe(2);
+    expect(r.rbiCredits).toBe(2);
+  });
+
+  it('SINGLE_ADVANCE empty bases: just batter to 1B', () => {
+    const r = resolveOutcome(OutcomeCategory.SINGLE_ADVANCE, EMPTY, 0, 'bat');
+    expect(r.basesAfter).toEqual(bases('bat'));
     expect(r.runsScored).toBe(0);
   });
 
