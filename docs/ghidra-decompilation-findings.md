@@ -454,9 +454,17 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
 1. **Umpire decision**: BBW's FUN_1058_7726 is DETERMINISTIC based on player
    record offsets 0x2f, 0x33, 0x35. Without PLAYERS.DAT field map, we use
    3% probabilistic approximation matching observed aggregate rates.
-2. **Fatigue accumulation**: BBW stores fatigue at data[0x47], accumulated
-   elsewhere. Our linear decay (2/inning starters, 3/inning relievers) is
-   an approximation.
+2. **Fatigue accumulation**: BBW's data[0x47] mechanism confirmed by full
+   byte-scan of all 35 code segments:
+   - Zeroed at game start (1068:3da0, 10a0:1e6e)
+   - Incremented by 1 per event (INC at 1058:2cb4)
+   - Conditionally adjusted +1/+2 based on pitcher type at data[0x2cb]
+     (10a0:9bab/9bcf)
+   - Capped at 30 (PUSH 0x1E for min() at 10a0:9b93)
+   - Grade = max(data[0x43] - data[0x47], 1)
+   Our per-inning linear decay approximates this per-event counter.
+   The exact trigger conditions require decompiling the full parent
+   function at 1058:~2940 (not in our 13-function set).
 3. **Fresh bonus 3rd condition**: BBW checks 3 OR conditions; we check 2.
    The third involves a season data lookup we cannot decode.
 4. **Baserunning**: Not in 13 decompiled functions. Speed-check heuristic.

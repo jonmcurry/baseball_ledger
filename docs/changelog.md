@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-16 - BBW Fatigue Mechanism Confirmed via Full Byte Scan
+
+Performed exhaustive byte-level scan of all 35 WINBB.EXE code segments to find
+every instruction that reads or writes offset 0x47 (fatigue accumulator). Found
+94 total hits across the binary, including 6 WRITE sites.
+
+Key findings:
+- data[0x47] zeroed at game start (1068:3da0, 10a0:1e6e)
+- data[0x47] incremented by 1 per event (INC at 1058:2cb4)
+- data[0x47] conditionally adjusted +1/+2 based on pitcher type (10a0:9bab)
+- data[0x47] capped at 30 (PUSH 0x1E for min() at 10a0:9b93)
+- grade = max(data[0x43] - data[0x47], 1) confirmed in FUN_1058_5be1
+
+Our per-inning linear decay (2 starters, 3 relievers) is a reasonable
+approximation of BBW's per-event counter model. Updated pitching.ts BBW
+equivalence comments and ghidra-decompilation-findings.md section 8.
+
+Also created function definitions for all 13 known decompiled addresses in
+the Ghidra project (previously only existed as manual GUI decompilations).
+
 ## 2026-02-16 - Grade MAX_GRADE Cap, Umpire Decision Documentation
 
 Fixed missing MAX_GRADE (30) cap on final grade after variance layer in

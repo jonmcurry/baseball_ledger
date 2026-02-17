@@ -82,10 +82,16 @@ export interface PitcherGameState {
  *
  * BBW Equivalence:
  * Ghidra FUN_1058_5be1 shows BBW uses `grade = max(data[0x43] - data[0x47], 1)`
- * for fatigue. Our linear formula `grade = base - (decay * inningsBeyond)` is
- * equivalent if data[0x47] accumulates at a constant rate per inning.
- * Decay rates (2 for starters, 3 for relievers) are approximated from observed
- * BBW behavior -- the exact accumulation of data[0x47] is set elsewhere in BBW.
+ * for fatigue. BBW's actual mechanism (confirmed by byte-scan of WINBB.EXE):
+ *   - data[0x47] zeroed at game start (1068:3da0)
+ *   - data[0x47] incremented by 1 per event (INC at 1058:2cb4)
+ *   - data[0x47] conditionally adjusted +1/+2 based on pitcher type (10a0:9bab)
+ *   - data[0x47] capped at 30 (PUSH 0x1E min() at 10a0:9b93)
+ *
+ * Our per-inning linear formula approximates this per-event counter model.
+ * Decay rates (2 for starters, 3 for relievers) produce similar aggregate
+ * degradation curves. The exact event trigger conditions require decompiling
+ * the full parent function at 1058:~2940, which is not in our 13-function set.
  *
  * @param pitcher - The pitcher's card with pitching attributes
  * @param inningsPitched - Innings pitched in current game
