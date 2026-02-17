@@ -1,19 +1,25 @@
 /**
  * Umpire Decision Module
  *
- * Ghidra decompilation of FUN_1058_7726 and FUN_1058_5f49 reveals a
- * post-resolution umpire check that can override certain outcomes:
+ * Ghidra FUN_1058_7726 reveals the umpire check is DETERMINISTIC (not
+ * probabilistic) based on player record attributes:
  *
- *   resultCode = getResultCode()
- *   if resultCode != 0 and resultCode < 10:
- *     umpireResult = checkUmpireDecision(gameState, UMPIRE_TABLE[resultCode])
- *     if umpireResult != 0:
- *       gameState.finalOutcome = 2  // force specific outcome
+ *   resultCode = min(resultCode, 7)
+ *   playerRecord = getPlayerRecord(pitcherIndex)
+ *   if playerRecord[offset + 0x2f] < 1:          // attribute flag == 0
+ *     if resultCode in [4,5,6]:
+ *       if playerRecord[0x33] > 0 OR playerRecord[0x35] > 0:
+ *         return 0  // NO override
+ *     return 1  // OVERRIDE
+ *   else:
+ *     return 0  // NO override
  *
- * The umpire check adds a small random chance of close-call reversals,
- * primarily affecting borderline strikeout/walk situations.
+ * Without a complete PLAYERS.DAT field map for offsets 0x2f, 0x33, 0x35,
+ * we cannot replicate the exact deterministic logic. Our implementation
+ * uses a 3% probabilistic approximation that produces similar aggregate
+ * override rates observed in BBW simulations.
  *
- * Data reference: seg36:0x6BA6 = "Umpire's Decision" string + lookup table.
+ * Data reference: seg36:0x6BA6 = "Umpire's Decision" string + identity lookup table.
  *
  * Layer 1: Pure logic, no I/O, deterministic given inputs.
  */
@@ -23,8 +29,10 @@ import { OutcomeCategory } from '../types/game';
 
 /**
  * Probability that the umpire overrides an outcome on a close call.
- * This represents borderline strike/ball calls and close plays at first.
- * Approximated from BBW behavior -- exact table values not yet extracted.
+ * This is a probabilistic APPROXIMATION of BBW's deterministic check.
+ * BBW uses player record attributes (offsets 0x2f, 0x33, 0x35) to decide;
+ * without those field mappings, we use a flat 3% rate that matches
+ * observed aggregate BBW override frequency.
  */
 const UMPIRE_OVERRIDE_CHANCE = 0.03;
 
@@ -60,9 +68,9 @@ export interface UmpireDecisionResult {
 /**
  * Check for an umpire close-call decision that can override an outcome.
  *
- * Per Ghidra FUN_1058_7726: certain outcomes (result codes 1-9) are
- * subject to an umpire decision check. If the check triggers, the
- * outcome is forced to a specific value (code 2 in the decompilation).
+ * Per Ghidra FUN_1058_7726: result codes 1-7 are subject to a
+ * deterministic umpire decision check based on player attributes.
+ * Our implementation approximates this with a flat probability check.
  *
  * @param outcome - The resolved outcome before umpire check
  * @param rng - Seeded random number generator

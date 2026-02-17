@@ -356,7 +356,7 @@ describe('getNextStarter (REQ-SIM-014)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5-Layer Grade Adjustment Constants (Ghidra confirmed)
+// 6-Layer Grade Adjustment Constants (Ghidra confirmed)
 // ---------------------------------------------------------------------------
 describe('Grade adjustment constants (Ghidra confirmed)', () => {
   it('RELIEF_PENALTY is 2', () => {
@@ -388,9 +388,9 @@ describe('Grade adjustment constants (Ghidra confirmed)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// computeGameGrade - 5-Layer Grade Adjustment (Ghidra FUN_1058_5be1)
+// computeGameGrade - 6-Layer Grade Adjustment (Ghidra FUN_1058_5be1)
 // ---------------------------------------------------------------------------
-describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
+describe('computeGameGrade (Ghidra 6-layer grade adjustment)', () => {
   function makeGradeContext(overrides: Partial<GradeContext> = {}): GradeContext {
     return {
       inningsPitched: 0,
@@ -417,8 +417,27 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(grade).toBeLessThanOrEqual(15);
   });
 
-  // --- Layer 1: Fatigue ---
-  it('Layer 1: fatigue reduces grade beyond stamina', () => {
+  it('grade never exceeds MAX_GRADE (30) per Ghidra FUN_1058_5be1', () => {
+    // High base grade + fresh bonus + platoon should still cap at 30
+    const pitcher = makePitcher({ grade: 15, stamina: 9 });
+    const ctx = makeGradeContext({
+      isFresh: true,
+      pitcherType: 1,
+      batterHand: 'R',
+      pitcherHand: 'R',
+      platoonValue: 10,
+    });
+
+    for (let i = 0; i < 200; i++) {
+      const rng = new SeededRNG(i);
+      const grade = computeGameGrade(pitcher, ctx, rng);
+      expect(grade).toBeLessThanOrEqual(30);
+      expect(grade).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  // --- Layers 1-2: Base + Fatigue ---
+  it('Layer 2: fatigue reduces grade beyond stamina', () => {
     const pitcher = makePitcher({ grade: 12, stamina: 6 });
     const ctx = makeGradeContext({ inningsPitched: 9 }); // 3 beyond stamina
     const rng = new SeededRNG(42);
@@ -428,7 +447,7 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(grade).toBeLessThan(12);
   });
 
-  it('Layer 1: no fatigue within stamina', () => {
+  it('Layer 2: no fatigue within stamina', () => {
     const pitcher = makePitcher({ grade: 12, stamina: 9 });
     const ctx = makeGradeContext({ inningsPitched: 5 });
     const rng = new SeededRNG(42);
@@ -439,8 +458,8 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(grade).toBeLessThanOrEqual(15);
   });
 
-  // --- Layer 2: Relief Penalty ---
-  it('Layer 2: relief pitcher gets -2 penalty', () => {
+  // --- Layer 3: Relief Penalty ---
+  it('Layer 3: relief pitcher gets -2 penalty', () => {
     const pitcher = makePitcher({ role: 'RP', grade: 10, stamina: 3, isReliever: true });
     const ctx = makeGradeContext({ isReliefSituation: true, pitcherType: 0 });
 
@@ -457,7 +476,7 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(avg).toBeGreaterThan(4);
   });
 
-  it('Layer 2: closer (pitcherType 7) does NOT get relief penalty', () => {
+  it('Layer 3: closer (pitcherType 7) does NOT get relief penalty', () => {
     const pitcher = makePitcher({ role: 'CL', grade: 10, stamina: 3, isReliever: true });
     const ctxCloser = makeGradeContext({ isReliefSituation: true, pitcherType: 7 });
     const ctxRelief = makeGradeContext({ isReliefSituation: true, pitcherType: 0 });
@@ -476,8 +495,8 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(totalCloser / samples).toBeGreaterThan(totalRelief / samples);
   });
 
-  // --- Layer 3: Fresh Pitcher Bonus ---
-  it('Layer 3: fresh pitcher gets +5 bonus', () => {
+  // --- Layer 4: Fresh Pitcher Bonus ---
+  it('Layer 4: fresh pitcher gets +5 bonus', () => {
     const pitcher = makePitcher({ grade: 8, stamina: 7 });
     const ctxFresh = makeGradeContext({ isFresh: true, pitcherType: 1 });
     const ctxNotFresh = makeGradeContext({ isFresh: false });
@@ -496,7 +515,7 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(totalFresh / samples).toBeGreaterThan(totalNotFresh / samples);
   });
 
-  it('Layer 3: fresh bonus clamped to FRESH_GRADE_MAX (20)', () => {
+  it('Layer 4: fresh bonus clamped to FRESH_GRADE_MAX (20)', () => {
     const pitcher = makePitcher({ grade: 15, stamina: 9 });
     const ctx = makeGradeContext({ isFresh: true, pitcherType: 1 });
 
@@ -504,13 +523,13 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     for (let i = 0; i < 50; i++) {
       const rng = new SeededRNG(i);
       const grade = computeGameGrade(pitcher, ctx, rng);
-      // After clamping and random variance, should not exceed reasonable bounds
-      expect(grade).toBeLessThanOrEqual(25); // Platoon max is 30, but no platoon here
+      // After clamping and random variance, should not exceed MAX_GRADE (30)
+      expect(grade).toBeLessThanOrEqual(30);
     }
   });
 
-  // --- Layer 4: Platoon ---
-  it('Layer 4: same-hand matchup increases pitcher grade', () => {
+  // --- Layer 5: Platoon ---
+  it('Layer 5: same-hand matchup increases pitcher grade', () => {
     const pitcher = makePitcher({ grade: 10, stamina: 9 });
     const ctxSameHand = makeGradeContext({
       batterHand: 'R',
@@ -537,7 +556,7 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(totalSame / samples).toBeGreaterThan(totalDiff / samples);
   });
 
-  it('Layer 4: opposite-hand gets no platoon adjustment', () => {
+  it('Layer 5: opposite-hand gets no platoon adjustment', () => {
     const pitcher = makePitcher({ grade: 10, stamina: 9 });
     const ctxDiffHand = makeGradeContext({
       batterHand: 'L',
@@ -564,8 +583,8 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     expect(Math.abs((totalDiff / samples) - (totalNoPlat / samples))).toBeLessThan(0.1);
   });
 
-  // --- Layer 5: Random Variance ---
-  it('Layer 5: random variance adds noise to grade', () => {
+  // --- Layer 6: Random Variance ---
+  it('Layer 6: random variance adds noise to grade', () => {
     const pitcher = makePitcher({ grade: 10, stamina: 9 });
     const ctx = makeGradeContext();
 
@@ -596,7 +615,7 @@ describe('computeGameGrade (Ghidra 5-layer grade adjustment)', () => {
     }
   });
 
-  it('all 5 layers stack correctly', () => {
+  it('all 6 layers stack correctly', () => {
     // Pitcher: grade 12, reliever, fresh, same-hand with platoon
     const pitcher = makePitcher({ role: 'RP', grade: 12, stamina: 2, isReliever: true });
     const ctx = makeGradeContext({

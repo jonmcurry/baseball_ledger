@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-02-16 - Grade MAX_GRADE Cap, Umpire Decision Documentation
+
+Fixed missing MAX_GRADE (30) cap on final grade after variance layer in
+`computeGameGrade()`. Ghidra FUN_1058_5be1 shows `min(grade + variance, 30)`
+then `max(result, 1)` -- we were only doing the floor, not the ceiling.
+
+Updated grade adjustment from "5-layer" to "6-layer" to match Ghidra's
+actual structure (base copy + fatigue + relief + fresh + platoon + variance).
+
+Documented that BBW's umpire decision (FUN_1058_7726) is DETERMINISTIC
+based on player record attributes at offsets 0x2f, 0x33, 0x35 -- not
+probabilistic. Without PLAYERS.DAT field map, our 3% flat rate remains
+the best approximation. Updated all comments to reflect this.
+
+Analyzed FUN_10a0_3c17 (Card Value Resolution, 1,628 bytes) and
+FUN_1058_6db5 (PA Large, 1,926 bytes). No additional closable gaps found --
+both are complex orchestration functions already covered by our PA pipeline.
+
+Updated ghidra-decompilation-findings.md section 8 with comprehensive
+implementation status and documented all known unclosable gaps.
+
 ## 2026-02-16 - FUN_1110_196c Confirmed, Defense Determinism Fix
 
 Decompiled FUN_1110_196c via Ghidra headless and confirmed it is a standard Borland

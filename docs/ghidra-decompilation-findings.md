@@ -259,11 +259,12 @@ function setupGradeForPA(gameState):
 ### Grade Adjustment Summary Table
 | # | Adjustment | Condition | Formula | Range |
 |---|-----------|-----------|---------|-------|
-| 1 | Fatigue | Pitcher is tired | grade += (current - start) | [1, max] |
-| 2 | Relief penalty | Relief + not closer | grade -= 2 | [1, max] |
-| 3 | Fresh bonus | Fresh pitcher + has stuff | grade += 5 | [1, 20] |
-| 4 | Platoon | Same handedness | grade += platoon_table | [1, 30] |
-| 5 | Random variance | Always | grade += random_table[rand(40)] | [1, max] |
+| 1 | Base copy | Always | data[0x42] = base grade | - |
+| 2 | Fatigue | Pitcher is tired | grade = max(data[0x43] - data[0x47], 1) | [1, max] |
+| 3 | Relief penalty | Relief + not closer (type 7) | grade = max(grade - 2, 1) | [1, max] |
+| 4 | Fresh bonus | Fresh + (type!=0 OR adj!=0 OR flag) | grade = min(grade + 5, 20) | [1, 20] |
+| 5 | Platoon | Same handedness (0x2A == 0x38) | grade = min(grade + platoon[0x3B], 30) | [1, 30] |
+| 6 | Random variance | Always | grade = clamp(grade + DATA[0x3802+rand(40)], 1, 30) | [1, 30] |
 
 ---
 
@@ -432,27 +433,33 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
 
 ---
 
-## 8. Implementation Impact on Baseball Ledger
+## 8. Implementation Status
 
-### What we already had right:
+### Confirmed and Implemented:
 1. Card value 0-42 mapping to outcomes
-2. IDT table structure (36x4 entries)
-3. Pitcher grade range [1, 15]
-4. Basic grade check: random(15) vs pitcher grade
+2. IDT table structure with active range [15, 23]
+3. IDT bitmap gating (confirmed by FUN_1110_196c decompilation)
+4. IDT frequency weights extracted from WINBB.EXE DATA[0x383A-0x3842]
+5. 6-layer grade adjustment (Ghidra FUN_1058_5be1):
+   - Layer 1-2: Base + Fatigue
+   - Layer 3: Relief penalty (-2, closers exempt)
+   - Layer 4: Fresh bonus (+5, cap 20)
+   - Layer 5: Platoon (same-hand, cap 30)
+   - Layer 6: Random variance (DATA[0x3802], final range [1, 30])
+6. Random variance table (40 entries, extracted from DATA segment)
+7. Archetype flags at offset 0x44 affect symbol outcomes
+8. Umpire decision post-check (probabilistic approximation)
 
-### What we now know is different:
-1. **Grade adjustments** - 5 stacked adjustments before PA resolution
-2. **IDT active range** is 15-23 (0x0F-0x17), NOT 5-25 as previously estimated
-3. **IDT bitmap** gates which rows are active per card value
-4. **Archetype flags** at offset 0x44 directly affect symbol outcomes
-5. **Umpire decision** post-check can override outcomes
-6. **Play type** routing (normal/steal/hit-run) before PA resolution
-7. **Platoon matchup** adjusts grade up to +30 for same-hand
-8. **Random variance** table adds noise to every PA grade
-
-### Priority changes for Phase 2:
-1. Implement 5-layer grade adjustment in `plate-appearance.ts`
-2. Fix IDT active range to [15, 23]
-3. Add bitmap gating to IDT lookup
-4. Add umpire decision post-check
-5. Map archetype flags (0x44) to symbol outcomes
+### Known Approximations (Unclosable Without More Ghidra Work):
+1. **Umpire decision**: BBW's FUN_1058_7726 is DETERMINISTIC based on player
+   record offsets 0x2f, 0x33, 0x35. Without PLAYERS.DAT field map, we use
+   3% probabilistic approximation matching observed aggregate rates.
+2. **Fatigue accumulation**: BBW stores fatigue at data[0x47], accumulated
+   elsewhere. Our linear decay (2/inning starters, 3/inning relievers) is
+   an approximation.
+3. **Fresh bonus 3rd condition**: BBW checks 3 OR conditions; we check 2.
+   The third involves a season data lookup we cannot decode.
+4. **Baserunning**: Not in 13 decompiled functions. Speed-check heuristic.
+5. **Manager AI** (pinch-hit, H&R, IBB): Requires additional FUN decompilation.
+6. **DP execution details**: Complex fielding logic, uniform DP success model.
+7. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.

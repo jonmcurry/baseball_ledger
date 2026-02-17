@@ -24,6 +24,13 @@ const RELIEVER_GRADE_DECAY = 3;
 /** Minimum effective grade (never drops below this) */
 const MIN_GRADE = 1;
 
+/**
+ * Maximum effective grade (never exceeds this).
+ * Confirmed by Ghidra FUN_1058_5be1: final variance step uses
+ * min(grade, 0x1e) then max(grade, 1) -- range [1, 30].
+ */
+const MAX_GRADE = 30;
+
 /** ER threshold for removal trigger (REQ-SIM-011) */
 const ER_REMOVAL_THRESHOLD = 4;
 
@@ -73,19 +80,12 @@ export interface PitcherGameState {
  * - Relievers: full grade through stamina, then -3 per inning beyond
  * - Minimum grade: 1
  *
- * BBW Equivalence (Gap 8):
- * Ghidra decompilation shows BBW uses `grade += (currentGrade - startingGrade)`
- * per fatigued check. With constant decay per inning, this differential formula
- * produces the same result as our linear formula: `grade = base - (decay * inningsBeyond)`.
- * The formulas are mathematically equivalent when decay rate is constant.
+ * BBW Equivalence:
+ * Ghidra FUN_1058_5be1 shows BBW uses `grade = max(data[0x43] - data[0x47], 1)`
+ * for fatigue. Our linear formula `grade = base - (decay * inningsBeyond)` is
+ * equivalent if data[0x47] accumulates at a constant rate per inning.
  * Decay rates (2 for starters, 3 for relievers) are approximated from observed
- * BBW behavior -- exact values from DATA segment are not yet confirmed by Ghidra.
- *
- * Random Variance Table (Gap 9):
- * BBW uses a 40-entry table at DATA[0x3802] for grade variance. Our current
- * 40-entry table is estimated. Without the exact bytes from WINBB.EXE's data
- * segment, we cannot improve this further. The approximation produces reasonable
- * grade variance distributions.
+ * BBW behavior -- the exact accumulation of data[0x47] is set elsewhere in BBW.
  *
  * @param pitcher - The pitcher's card with pitching attributes
  * @param inningsPitched - Innings pitched in current game
@@ -110,37 +110,37 @@ export function computeEffectiveGrade(
 }
 
 // ---------------------------------------------------------------------------
-// 5-Layer Grade Adjustment (Ghidra FUN_1058_5be1)
+// 6-Layer Grade Adjustment (Ghidra FUN_1058_5be1)
 // ---------------------------------------------------------------------------
 
 /**
- * Relief pitcher penalty (Layer 2).
+ * Relief pitcher penalty (Layer 3).
  * Non-closer relief pitchers get -2 grade when entering in relief.
  * Confirmed by Ghidra: `pitcherData.grade = clamp(pitcherData.grade - 2, 1)`
  */
 export const RELIEF_PENALTY = 2;
 
 /**
- * Fresh pitcher bonus (Layer 3).
+ * Fresh pitcher bonus (Layer 4).
  * A fresh pitcher (not fatigued, first appearance) gets +5 grade.
  * Confirmed by Ghidra: `pitcherData.grade = clamp(pitcherData.grade + 5, 20)`
  */
 export const FRESH_BONUS = 5;
 
 /**
- * Maximum grade after fresh bonus (Layer 3 cap).
+ * Maximum grade after fresh bonus (Layer 4 cap).
  * Fresh bonus cannot push grade above 20.
  */
 export const FRESH_GRADE_MAX = 20;
 
 /**
- * Maximum grade after platoon adjustment (Layer 4 cap).
+ * Maximum grade after platoon adjustment (Layer 5 cap).
  * Platoon adjustment cannot push grade above 30.
  */
 export const PLATOON_GRADE_MAX = 30;
 
 /**
- * Random variance adjustment table (Layer 5).
+ * Random variance adjustment table (Layer 6).
  * 40 entries indexed by random(40). Values are small signed integers
  * that add noise to the effective grade.
  *
@@ -157,7 +157,7 @@ export const RANDOM_VARIANCE_TABLE: readonly number[] = [
 
 /**
  * Context for computing the full game-time grade adjustment.
- * Provides all state needed for the 5-layer calculation.
+ * Provides all state needed for the 6-layer calculation.
  */
 export interface GradeContext {
   /** Innings pitched in current game (for fatigue calculation) */
@@ -179,20 +179,21 @@ export interface GradeContext {
 }
 
 /**
- * Compute the full 5-layer game-time grade for PA resolution.
+ * Compute the full 6-layer game-time grade for PA resolution.
  *
  * Confirmed by Ghidra decompilation of FUN_1058_5be1 (Grade Setup):
  *
- * Layer 1: Fatigue -- grade degrades beyond stamina innings
- * Layer 2: Relief Penalty -- non-closer relievers get -2
- * Layer 3: Fresh Bonus -- fresh pitchers get +5 (capped at 20)
- * Layer 4: Platoon -- same-hand matchup: grade += platoonValue (capped at 30)
- * Layer 5: Random Variance -- random(40) indexes into adjustment table
+ * Layer 1: Base grade copy (implicit in computeEffectiveGrade)
+ * Layer 2: Fatigue -- grade degrades beyond stamina innings
+ * Layer 3: Relief Penalty -- non-closer relievers get -2 (min 1)
+ * Layer 4: Fresh Bonus -- fresh pitchers get +5 (capped at 20)
+ * Layer 5: Platoon -- same-hand matchup: grade += platoonValue (capped at 30)
+ * Layer 6: Random Variance -- random(40) indexes into table (final range [1, 30])
  *
  * @param pitcher - The pitcher's PlayerCard
- * @param context - Game context for all 5 layers
- * @param rng - Seeded RNG for random variance (Layer 5)
- * @returns The final effective grade (clamped to minimum 1)
+ * @param context - Game context for all layers
+ * @param rng - Seeded RNG for random variance (Layer 6)
+ * @returns The final effective grade (clamped to [1, 30])
  */
 export function computeGameGrade(
   pitcher: PlayerCard,
@@ -202,16 +203,16 @@ export function computeGameGrade(
   const pitching = pitcher.pitching;
   if (!pitching) return MIN_GRADE;
 
-  // Layer 1: Fatigue (reuse existing logic)
+  // Layers 1-2: Base grade + Fatigue (reuse existing logic)
   let grade = computeEffectiveGrade(pitcher, context.inningsPitched);
 
-  // Layer 2: Relief Penalty
+  // Layer 3: Relief Penalty
   // Non-closer relievers get -2 when in a relief situation
   if (context.isReliefSituation && context.pitcherType !== 7) {
     grade = Math.max(MIN_GRADE, grade - RELIEF_PENALTY);
   }
 
-  // Layer 3: Fresh Pitcher Bonus
+  // Layer 4: Fresh Pitcher Bonus
   // Fresh pitcher gets +5, capped at FRESH_GRADE_MAX (20)
   if (context.isFresh) {
     if (context.pitcherType !== 0 || context.fatigueAdj !== 0) {
@@ -219,7 +220,7 @@ export function computeGameGrade(
     }
   }
 
-  // Layer 4: Platoon Matchup
+  // Layer 5: Platoon Matchup
   // Same-hand: pitcher grade increases by platoonValue (capped at 30)
   // Ghidra: `if pitcherInfo.throwHand == batterData.batHand`
   const isSameHand =
@@ -229,11 +230,13 @@ export function computeGameGrade(
     grade = Math.min(grade + context.platoonValue, PLATOON_GRADE_MAX);
   }
 
-  // Layer 5: Random Variance
+  // Layer 6: Random Variance
   // random(40) indexes into the variance table
+  // Ghidra FUN_1058_5be1: min(grade + variance, 30) then max(result, 1)
   const varianceIdx = rng.nextIntExclusive(0, RANDOM_VARIANCE_TABLE.length);
   const varianceAdj = RANDOM_VARIANCE_TABLE[varianceIdx];
-  grade = Math.max(MIN_GRADE, grade + varianceAdj);
+  grade = Math.min(MAX_GRADE, grade + varianceAdj);
+  grade = Math.max(MIN_GRADE, grade);
 
   return grade;
 }
