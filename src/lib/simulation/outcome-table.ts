@@ -1,4 +1,7 @@
 /**
+ * @deprecated Replaced by SERD 5-column ApbaCard system (apba-card-generator.ts).
+ * The IDT outcome table is no longer used for PA resolution. Kept for reference.
+ *
  * OutcomeTable - IDT.OBJ Decision Table Port
  *
  * REQ-SIM-003: Port APBA's IDT.OBJ decision table as a TypeScript OutcomeTable.

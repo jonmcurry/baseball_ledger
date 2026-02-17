@@ -1,4 +1,22 @@
+import type { OutcomeCategory } from './game';
+
 export type CardValue = number; // 0-42
+
+/** SERD 5-column card system. Pitcher grade selects column A-E. */
+export type ApbaColumn = 'A' | 'B' | 'C' | 'D' | 'E';
+
+/** 36 outcome slots per column (simulating 2d6 roll, 36 equiprobable results). */
+export type ColumnCard = readonly OutcomeCategory[];
+
+/** 5-column APBA card. Each column has 36 OutcomeCategory outcomes.
+ *  Column A = best pitcher (precise control), E = worst (wild). */
+export interface ApbaCard {
+  A: ColumnCard;
+  B: ColumnCard;
+  C: ColumnCard;
+  D: ColumnCard;
+  E: ColumnCard;
+}
 
 export type Position =
   | 'C' | '1B' | '2B' | '3B' | 'SS'
@@ -87,9 +105,11 @@ export interface PlayerCard {
   eligiblePositions: Position[];
   isPitcher: boolean;
 
-  // The card: 35-element array, each value 0-42
-  // 9 positions are structural constants (positions 1,3,6,11,13,18,23,25,32)
-  // ~26 positions vary per player, encoding outcome probability distribution
+  // SERD 5-column card: each column has 36 OutcomeCategory outcomes.
+  // Pitcher grade selects column (A=best, E=worst). One roll -> one lookup -> one outcome.
+  apbaCard: ApbaCard;
+
+  // Legacy 35-byte card (deprecated, kept for backwards compatibility during transition)
   card: CardValue[];         // length = 35
 
   // Position 24: Extra-base power rating (7-tier scale)

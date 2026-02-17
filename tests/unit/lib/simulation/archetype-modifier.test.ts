@@ -67,45 +67,17 @@ describe('isContactSpeedArchetype', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Power archetype modifier
+// Power archetype modifier (SERD: baked into card, no runtime modifier)
 // ---------------------------------------------------------------------------
-describe('applyArchetypeModifier: Power (1,0)/(1,1) (REQ-SIM-004 step 6)', () => {
-  it('has 15% chance to upgrade FLY_OUT to HOME_RUN for power hitter', () => {
-    // Run many trials to verify ~15% upgrade rate
-    let hrCount = 0;
-    const trials = 2000;
-
-    for (let i = 0; i < trials; i++) {
-      const rng = new SeededRNG(i * 31);
-      const result = applyArchetypeModifier(OutcomeCategory.FLY_OUT, POWER_RH, rng);
-      if (result.outcome === OutcomeCategory.HOME_RUN) {
-        hrCount++;
-      }
-    }
-
-    const rate = hrCount / trials;
-    expect(rate).toBeGreaterThan(0.10);
-    expect(rate).toBeLessThan(0.22);
+describe('applyArchetypeModifier: Power (1,0)/(1,1) (SERD - no runtime modifier)', () => {
+  it('does not modify FLY_OUT for power hitters (baked into card)', () => {
+    const rng = new SeededRNG(42);
+    const result = applyArchetypeModifier(OutcomeCategory.FLY_OUT, POWER_RH, rng);
+    expect(result.outcome).toBe(OutcomeCategory.FLY_OUT);
+    expect(result.modified).toBe(false);
   });
 
-  it('works same for power LH (1,1)', () => {
-    let hrCount = 0;
-    const trials = 2000;
-
-    for (let i = 0; i < trials; i++) {
-      const rng = new SeededRNG(i * 37);
-      const result = applyArchetypeModifier(OutcomeCategory.FLY_OUT, POWER_LH, rng);
-      if (result.outcome === OutcomeCategory.HOME_RUN) {
-        hrCount++;
-      }
-    }
-
-    const rate = hrCount / trials;
-    expect(rate).toBeGreaterThan(0.10);
-    expect(rate).toBeLessThan(0.22);
-  });
-
-  it('does not modify non-FLY_OUT outcomes for power hitters', () => {
+  it('does not modify any outcome for power hitters', () => {
     const rng = new SeededRNG(42);
     const outcomes = [
       OutcomeCategory.SINGLE_CLEAN,
@@ -113,6 +85,8 @@ describe('applyArchetypeModifier: Power (1,0)/(1,1) (REQ-SIM-004 step 6)', () =>
       OutcomeCategory.GROUND_OUT,
       OutcomeCategory.WALK,
       OutcomeCategory.STRIKEOUT_SWINGING,
+      OutcomeCategory.FLY_OUT,
+      OutcomeCategory.HOME_RUN,
     ];
 
     for (const oc of outcomes) {
@@ -122,25 +96,11 @@ describe('applyArchetypeModifier: Power (1,0)/(1,1) (REQ-SIM-004 step 6)', () =>
     }
   });
 
-  it('passes through HOME_RUN unchanged', () => {
+  it('power LH (1,1) also has no runtime modifier', () => {
     const rng = new SeededRNG(42);
-    const result = applyArchetypeModifier(OutcomeCategory.HOME_RUN, POWER_RH, rng);
-    expect(result.outcome).toBe(OutcomeCategory.HOME_RUN);
-  });
-
-  it('returns modified=true when FLY_OUT upgrades to HR', () => {
-    // Find a seed that produces an upgrade
-    for (let seed = 0; seed < 200; seed++) {
-      const rng = new SeededRNG(seed);
-      const result = applyArchetypeModifier(OutcomeCategory.FLY_OUT, POWER_RH, rng);
-      if (result.outcome === OutcomeCategory.HOME_RUN) {
-        expect(result.modified).toBe(true);
-        expect(result.modifierType).toBe('power');
-        return;
-      }
-    }
-    // Should find at least one in 200 tries at 15%
-    throw new Error('Expected at least one FLY_OUT->HR upgrade in 200 trials');
+    const result = applyArchetypeModifier(OutcomeCategory.FLY_OUT, POWER_LH, rng);
+    expect(result.outcome).toBe(OutcomeCategory.FLY_OUT);
+    expect(result.modified).toBe(false);
   });
 });
 
@@ -189,69 +149,41 @@ describe('applyArchetypeModifier: Speed (6,0) (REQ-SIM-004 step 6)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Contact+Speed archetype modifier
+// Contact+Speed archetype modifier (SERD: baked into card, no runtime modifier)
 // ---------------------------------------------------------------------------
-describe('applyArchetypeModifier: Contact+Speed (0,2) (REQ-SIM-004 step 6)', () => {
-  it('has 20% chance to downgrade STRIKEOUT_SWINGING to GROUND_OUT', () => {
-    let groundOutCount = 0;
-    const trials = 2000;
-
-    for (let i = 0; i < trials; i++) {
-      const rng = new SeededRNG(i * 41);
-      const result = applyArchetypeModifier(OutcomeCategory.STRIKEOUT_SWINGING, CONTACT_SPEED, rng);
-      if (result.outcome === OutcomeCategory.GROUND_OUT) {
-        groundOutCount++;
-      }
-    }
-
-    const rate = groundOutCount / trials;
-    expect(rate).toBeGreaterThan(0.15);
-    expect(rate).toBeLessThan(0.27);
+describe('applyArchetypeModifier: Contact+Speed (0,2) (SERD - no runtime modifier)', () => {
+  it('does not modify STRIKEOUT_SWINGING (contact bonus baked into card)', () => {
+    const rng = new SeededRNG(42);
+    const result = applyArchetypeModifier(OutcomeCategory.STRIKEOUT_SWINGING, CONTACT_SPEED, rng);
+    expect(result.outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
+    expect(result.modified).toBe(false);
   });
 
-  it('has 20% chance to downgrade STRIKEOUT_LOOKING to GROUND_OUT', () => {
-    let groundOutCount = 0;
-    const trials = 2000;
-
-    for (let i = 0; i < trials; i++) {
-      const rng = new SeededRNG(i * 43);
-      const result = applyArchetypeModifier(OutcomeCategory.STRIKEOUT_LOOKING, CONTACT_SPEED, rng);
-      if (result.outcome === OutcomeCategory.GROUND_OUT) {
-        groundOutCount++;
-      }
-    }
-
-    const rate = groundOutCount / trials;
-    expect(rate).toBeGreaterThan(0.15);
-    expect(rate).toBeLessThan(0.27);
+  it('does not modify STRIKEOUT_LOOKING (contact bonus baked into card)', () => {
+    const rng = new SeededRNG(42);
+    const result = applyArchetypeModifier(OutcomeCategory.STRIKEOUT_LOOKING, CONTACT_SPEED, rng);
+    expect(result.outcome).toBe(OutcomeCategory.STRIKEOUT_LOOKING);
+    expect(result.modified).toBe(false);
   });
 
-  it('does not modify non-strikeout outcomes', () => {
+  it('does not modify any outcome for contact+speed hitters', () => {
     const rng = new SeededRNG(42);
     const outcomes = [
       OutcomeCategory.SINGLE_CLEAN,
       OutcomeCategory.FLY_OUT,
       OutcomeCategory.WALK,
       OutcomeCategory.HOME_RUN,
+      OutcomeCategory.STRIKEOUT_SWINGING,
+      OutcomeCategory.STRIKEOUT_LOOKING,
+      OutcomeCategory.GROUND_OUT,
+      OutcomeCategory.DOUBLE,
     ];
 
     for (const oc of outcomes) {
       const result = applyArchetypeModifier(oc, CONTACT_SPEED, rng);
       expect(result.outcome).toBe(oc);
+      expect(result.modified).toBe(false);
     }
-  });
-
-  it('returns modified=true when strikeout becomes ground out', () => {
-    for (let seed = 0; seed < 200; seed++) {
-      const rng = new SeededRNG(seed);
-      const result = applyArchetypeModifier(OutcomeCategory.STRIKEOUT_SWINGING, CONTACT_SPEED, rng);
-      if (result.outcome === OutcomeCategory.GROUND_OUT) {
-        expect(result.modified).toBe(true);
-        expect(result.modifierType).toBe('contact');
-        return;
-      }
-    }
-    throw new Error('Expected at least one K->GO downgrade in 200 trials');
   });
 });
 

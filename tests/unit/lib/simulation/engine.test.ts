@@ -10,11 +10,22 @@ import {
 } from '@lib/simulation/engine';
 import type { GameState, TeamState } from '@lib/types/game';
 import type { PlayerCard } from '@lib/types';
+import { generateApbaCard, generatePitcherApbaCard } from '@lib/card-generator/apba-card-generator';
+import type { PlayerRates } from '@lib/card-generator/rate-calculator';
+
+const DEFAULT_RATES: PlayerRates = {
+  PA: 600, walkRate: 0.09, strikeoutRate: 0.17, homeRunRate: 0.035,
+  singleRate: 0.165, doubleRate: 0.045, tripleRate: 0.005, sbRate: 0.30,
+  iso: 0.160, hbpRate: 0.01, sfRate: 0.01, shRate: 0, gdpRate: 0.02,
+};
+const DEFAULT_APBA_CARD = generateApbaCard(DEFAULT_RATES, { byte33: 7, byte34: 0 });
+const PITCHER_APBA_CARD = generatePitcherApbaCard();
 
 // ---------------------------------------------------------------------------
 // Test helpers
 // ---------------------------------------------------------------------------
 function makePlayerCard(id: string, position: string = 'CF'): PlayerCard {
+  const isPitcherPos = position === 'SP' || position === 'RP' || position === 'CL';
   return {
     playerId: id,
     nameFirst: 'Test',
@@ -24,7 +35,8 @@ function makePlayerCard(id: string, position: string = 'CF'): PlayerCard {
     throwingHand: 'R' as const,
     primaryPosition: position as PlayerCard['primaryPosition'],
     eligiblePositions: [position as PlayerCard['primaryPosition']],
-    isPitcher: position === 'SP' || position === 'RP' || position === 'CL',
+    isPitcher: isPitcherPos,
+    apbaCard: isPitcherPos ? PITCHER_APBA_CARD : DEFAULT_APBA_CARD,
     card: new Array(35).fill(7),
     powerRating: 17,
     archetype: { byte33: 7, byte34: 0 },

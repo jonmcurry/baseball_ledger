@@ -1,4 +1,7 @@
 /**
+ * @deprecated Replaced by SERD 5-column ApbaCard system (apba-card-generator.ts).
+ * Direct mapping is no longer used for PA resolution. Kept for reference.
+ *
  * Direct Card Value Fallback Mapping
  *
  * REQ-SIM-004a: Direct card value to outcome fallback mapping.

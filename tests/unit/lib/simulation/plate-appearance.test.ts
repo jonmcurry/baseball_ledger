@@ -1,166 +1,85 @@
 /**
- * Plate Appearance Resolution Unit Tests
+ * Tests for SERD single-algorithm plate appearance resolution.
  *
- * REQ-SIM-004: Card lookup with pitcher grade gate and IDT decision table.
- * Tests the real APBA BBW resolution flow:
- *   card draw -> grade check -> IDT table (pitcher wins) / direct mapping (batter wins)
- *
- * TDD: These tests are written FIRST before the implementation.
+ * One PRNG roll -> one column lookup -> one outcome.
+ * Pitcher grade selects column A-E. Card directly contains OutcomeCategory values.
  */
 
+import { OutcomeCategory } from '@lib/types/game';
+import type { ApbaCard, ApbaColumn } from '@lib/types/player';
 import { SeededRNG } from '@lib/rng/seeded-rng';
 import {
-  selectCardPosition,
-  readCardValue,
   resolvePlateAppearance,
-  resolveSymbolValue,
+  gradeToColumn,
   IDT_ACTIVE_LOW,
   IDT_ACTIVE_HIGH,
-  isIDTActive,
-  PITCHER_CHECK_VALUES,
-  isPitcherCheckValue,
 } from '@lib/simulation/plate-appearance';
-import { OutcomeCategory } from '@lib/types/game';
-import { STRUCTURAL_POSITIONS } from '@lib/card-generator/structural';
-import { generatePitcherBattingCard } from '@lib/card-generator/pitcher-card';
-import type { CardValue } from '@lib/types/player';
 
-describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', () => {
-  // Create a test card with known values at non-structural positions
-  function createTestCard(fillValue: CardValue = 7): CardValue[] {
-    const card: CardValue[] = new Array(35).fill(fillValue);
-    // Apply structural constants at positions 1, 3, 6, 11, 13, 18, 23, 25, 32
-    card[1] = 30;
-    card[3] = 28;
-    card[6] = 27;
-    card[11] = 26;
-    card[13] = 31;
-    card[18] = 29;
-    card[23] = 25;
-    card[25] = 32;
-    card[32] = 35;
-    return card;
-  }
+// --- Helpers ---
 
-  describe('IDT_ACTIVE_LOW and IDT_ACTIVE_HIGH constants (Ghidra confirmed)', () => {
-    it('IDT_ACTIVE_LOW is 15 (confirmed by Ghidra: 0x0F)', () => {
-      expect(IDT_ACTIVE_LOW).toBe(15);
+/** Build a simple test card where each column has a single repeated outcome. */
+function makeUniformCard(outcomes: Record<ApbaColumn, OutcomeCategory>): ApbaCard {
+  return {
+    A: Array(36).fill(outcomes.A),
+    B: Array(36).fill(outcomes.B),
+    C: Array(36).fill(outcomes.C),
+    D: Array(36).fill(outcomes.D),
+    E: Array(36).fill(outcomes.E),
+  };
+}
+
+/** Build a card where column C has a specific pattern and others are all outs. */
+function makeTestCard(columnCOutcomes: OutcomeCategory[]): ApbaCard {
+  const outs = Array(36).fill(OutcomeCategory.GROUND_OUT);
+  return {
+    A: [...outs],
+    B: [...outs],
+    C: columnCOutcomes.length === 36 ? columnCOutcomes : [...columnCOutcomes, ...outs].slice(0, 36),
+    D: [...outs],
+    E: [...outs],
+  };
+}
+
+// --- Tests ---
+
+describe('SERD Plate Appearance Resolution', () => {
+  describe('gradeToColumn()', () => {
+    it('maps grade 1-3 to E (terrible)', () => {
+      expect(gradeToColumn(1)).toBe('E');
+      expect(gradeToColumn(3)).toBe('E');
     });
 
-    it('IDT_ACTIVE_HIGH is 23 (confirmed by Ghidra: 0x17)', () => {
-      expect(IDT_ACTIVE_HIGH).toBe(23);
-    });
-  });
-
-  describe('isIDTActive() -- Ghidra confirmed range [15, 23]', () => {
-    it('returns true for values in IDT range [15, 23]', () => {
-      expect(isIDTActive(15)).toBe(true);
-      expect(isIDTActive(17)).toBe(true);  // double outcome
-      expect(isIDTActive(19)).toBe(true);  // home run outcome
-      expect(isIDTActive(21)).toBe(true);  // ground out outcome
-      expect(isIDTActive(23)).toBe(true);  // pop out outcome
+    it('maps grade 4-6 to D (below average)', () => {
+      expect(gradeToColumn(4)).toBe('D');
+      expect(gradeToColumn(6)).toBe('D');
     });
 
-    it('returns false for values below IDT range (0-14)', () => {
-      expect(isIDTActive(0)).toBe(false);   // double (card value)
-      expect(isIDTActive(1)).toBe(false);   // home run (card value)
-      expect(isIDTActive(7)).toBe(false);   // single (card value)
-      expect(isIDTActive(13)).toBe(false);  // walk (card value)
-      expect(isIDTActive(14)).toBe(false);  // strikeout (card value)
+    it('maps grade 7-12 to C (average)', () => {
+      expect(gradeToColumn(7)).toBe('C');
+      expect(gradeToColumn(12)).toBe('C');
     });
 
-    it('returns false for values above IDT range (24+)', () => {
-      expect(isIDTActive(24)).toBe(false);  // line out
-      expect(isIDTActive(26)).toBe(false);  // ground out
-      expect(isIDTActive(30)).toBe(false);  // ground out advance
-      expect(isIDTActive(37)).toBe(false);  // HR variant
-      expect(isIDTActive(40)).toBe(false);  // reached on error
-    });
-  });
-
-  describe('PITCHER_CHECK_VALUES (Ghidra confirmed: card values 7, 8, 11)', () => {
-    it('contains exactly {7, 8, 11}', () => {
-      expect(PITCHER_CHECK_VALUES.has(7)).toBe(true);
-      expect(PITCHER_CHECK_VALUES.has(8)).toBe(true);
-      expect(PITCHER_CHECK_VALUES.has(11)).toBe(true);
-      expect(PITCHER_CHECK_VALUES.size).toBe(3);
+    it('maps grade 13-18 to B (strong)', () => {
+      expect(gradeToColumn(13)).toBe('B');
+      expect(gradeToColumn(18)).toBe('B');
     });
 
-    it('does not contain walk (13), K (14), HR (1), or double (0)', () => {
-      expect(PITCHER_CHECK_VALUES.has(0)).toBe(false);
-      expect(PITCHER_CHECK_VALUES.has(1)).toBe(false);
-      expect(PITCHER_CHECK_VALUES.has(13)).toBe(false);
-      expect(PITCHER_CHECK_VALUES.has(14)).toBe(false);
-    });
-  });
-
-  describe('isPitcherCheckValue()', () => {
-    it('returns true for pitcher-checked values {7, 8, 11}', () => {
-      expect(isPitcherCheckValue(7)).toBe(true);
-      expect(isPitcherCheckValue(8)).toBe(true);
-      expect(isPitcherCheckValue(11)).toBe(true);
-    });
-
-    it('returns false for non-pitcher-checked values', () => {
-      expect(isPitcherCheckValue(0)).toBe(false);
-      expect(isPitcherCheckValue(1)).toBe(false);
-      expect(isPitcherCheckValue(9)).toBe(false);
-      expect(isPitcherCheckValue(13)).toBe(false);
-      expect(isPitcherCheckValue(14)).toBe(false);
-      expect(isPitcherCheckValue(21)).toBe(false);
-    });
-  });
-
-  describe('selectCardPosition()', () => {
-    it('returns a position in range [0, 34]', () => {
-      const rng = new SeededRNG(42);
-      for (let i = 0; i < 100; i++) {
-        const pos = selectCardPosition(rng);
-        expect(pos).toBeGreaterThanOrEqual(0);
-        expect(pos).toBeLessThanOrEqual(34);
-      }
-    });
-
-    it('produces deterministic results with same seed', () => {
-      const rng1 = new SeededRNG(12345);
-      const rng2 = new SeededRNG(12345);
-
-      const sequence1 = Array.from({ length: 20 }, () => selectCardPosition(rng1));
-      const sequence2 = Array.from({ length: 20 }, () => selectCardPosition(rng2));
-
-      expect(sequence1).toEqual(sequence2);
-    });
-
-    it('skips structural constant positions (re-rolls)', () => {
-      const rng = new SeededRNG(42);
-      const structuralSet = new Set(STRUCTURAL_POSITIONS);
-
-      for (let i = 0; i < 100; i++) {
-        const pos = selectCardPosition(rng);
-        expect(structuralSet.has(pos)).toBe(false);
-      }
-    });
-  });
-
-  describe('readCardValue()', () => {
-    it('returns the value at the given position', () => {
-      const card = createTestCard();
-      card[0] = 13; // Walk at position 0
-
-      expect(readCardValue(card, 0)).toBe(13);
-    });
-
-    it('handles structural positions', () => {
-      const card = createTestCard();
-      expect(readCardValue(card, 1)).toBe(30);
+    it('maps grade 19-30 to A (elite)', () => {
+      expect(gradeToColumn(19)).toBe('A');
+      expect(gradeToColumn(30)).toBe('A');
     });
   });
 
   describe('resolvePlateAppearance()', () => {
-    it('returns a PlateAppearanceResult with all required fields', () => {
+    it('returns a valid PlateAppearanceResult', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.STRIKEOUT_SWINGING,
+        B: OutcomeCategory.FLY_OUT,
+        C: OutcomeCategory.SINGLE_CLEAN,
+        D: OutcomeCategory.DOUBLE,
+        E: OutcomeCategory.HOME_RUN,
+      });
       const rng = new SeededRNG(42);
-      const card = createTestCard();
-
       const result = resolvePlateAppearance(card, 10, rng);
 
       expect(result).toHaveProperty('cardPosition');
@@ -168,518 +87,165 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(result).toHaveProperty('outcome');
       expect(result).toHaveProperty('usedFallback');
       expect(result).toHaveProperty('pitcherGradeEffect');
+      expect(result).toHaveProperty('column');
+      expect(result.outcomeTableRow).toBeUndefined();
+      expect(result.usedFallback).toBe(false);
     });
 
-    it('cardPosition is always a non-structural position', () => {
+    it('grade 10 selects column C and returns SINGLE_CLEAN from uniform card', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.STRIKEOUT_SWINGING,
+        B: OutcomeCategory.FLY_OUT,
+        C: OutcomeCategory.SINGLE_CLEAN,
+        D: OutcomeCategory.DOUBLE,
+        E: OutcomeCategory.HOME_RUN,
+      });
       const rng = new SeededRNG(42);
-      const card = createTestCard();
-      const structuralSet = new Set(STRUCTURAL_POSITIONS);
-
-      for (let i = 0; i < 100; i++) {
-        const result = resolvePlateAppearance(card, 10, rng);
-        expect(structuralSet.has(result.cardPosition)).toBe(false);
-      }
+      const result = resolvePlateAppearance(card, 10, rng);
+      expect(result.column).toBe('C');
+      expect(result.outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
     });
 
-    it('outcome is a valid OutcomeCategory', () => {
+    it('grade 20 selects column A', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.STRIKEOUT_SWINGING,
+        B: OutcomeCategory.FLY_OUT,
+        C: OutcomeCategory.SINGLE_CLEAN,
+        D: OutcomeCategory.DOUBLE,
+        E: OutcomeCategory.HOME_RUN,
+      });
       const rng = new SeededRNG(42);
-      const card = createTestCard();
-
-      for (let i = 0; i < 100; i++) {
-        const result = resolvePlateAppearance(card, 10, rng);
-        expect(Object.values(OutcomeCategory)).toContain(result.outcome);
-      }
+      const result = resolvePlateAppearance(card, 20, rng);
+      expect(result.column).toBe('A');
+      expect(result.outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
     });
 
-    it('produces deterministic results with same seed', () => {
-      const card = createTestCard();
+    it('grade 2 selects column E', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.STRIKEOUT_SWINGING,
+        B: OutcomeCategory.FLY_OUT,
+        C: OutcomeCategory.SINGLE_CLEAN,
+        D: OutcomeCategory.DOUBLE,
+        E: OutcomeCategory.HOME_RUN,
+      });
+      const rng = new SeededRNG(42);
+      const result = resolvePlateAppearance(card, 2, rng);
+      expect(result.column).toBe('E');
+      expect(result.outcome).toBe(OutcomeCategory.HOME_RUN);
+    });
 
-      const rng1 = new SeededRNG(12345);
-      const results1 = Array.from({ length: 10 }, () =>
-        resolvePlateAppearance(card, 10, rng1)
-      );
+    it('same seed produces same outcome (determinism)', () => {
+      const card = makeTestCard([
+        OutcomeCategory.SINGLE_CLEAN, OutcomeCategory.DOUBLE, OutcomeCategory.HOME_RUN,
+        OutcomeCategory.WALK, OutcomeCategory.STRIKEOUT_SWINGING, OutcomeCategory.FLY_OUT,
+        OutcomeCategory.GROUND_OUT, OutcomeCategory.SINGLE_ADVANCE, OutcomeCategory.TRIPLE,
+        ...Array(27).fill(OutcomeCategory.GROUND_OUT),
+      ]);
 
-      const rng2 = new SeededRNG(12345);
-      const results2 = Array.from({ length: 10 }, () =>
-        resolvePlateAppearance(card, 10, rng2)
-      );
+      const results1: OutcomeCategory[] = [];
+      const results2: OutcomeCategory[] = [];
+
+      for (let i = 0; i < 10; i++) {
+        const rng1 = new SeededRNG(100 + i);
+        const rng2 = new SeededRNG(100 + i);
+        results1.push(resolvePlateAppearance(card, 10, rng1).outcome);
+        results2.push(resolvePlateAppearance(card, 10, rng2).outcome);
+      }
 
       expect(results1).toEqual(results2);
     });
 
-    it('pitcher wins uses IDT for IDT-active values (diverse outcomes)', () => {
-      // Card filled with value 21 (GROUND_OUT outcome index, IDT-active in [15,23]).
-      // Grade 15 always wins the grade check (R2 <= 15 is always true).
-      // IDT should remap value 21 to various outcomes, not just GROUND_OUT.
-      const card = createTestCard(21);
-      const rng = new SeededRNG(42);
-      const outcomeSet = new Set<OutcomeCategory>();
-      let idtUsedCount = 0;
-      const samples = 500;
+    it('different seeds produce different outcomes', () => {
+      const card = makeTestCard([
+        OutcomeCategory.SINGLE_CLEAN, OutcomeCategory.DOUBLE, OutcomeCategory.HOME_RUN,
+        OutcomeCategory.WALK, OutcomeCategory.STRIKEOUT_SWINGING, OutcomeCategory.FLY_OUT,
+        OutcomeCategory.GROUND_OUT, OutcomeCategory.SINGLE_ADVANCE, OutcomeCategory.TRIPLE,
+        ...Array(27).fill(OutcomeCategory.GROUND_OUT),
+      ]);
 
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        outcomeSet.add(result.outcome);
-        if (!result.usedFallback) {
-          idtUsedCount++;
-        }
+      const outcomes = new Set<OutcomeCategory>();
+      for (let seed = 1; seed <= 100; seed++) {
+        const rng = new SeededRNG(seed);
+        outcomes.add(resolvePlateAppearance(card, 10, rng).outcome);
       }
-
-      // IDT should produce diverse outcomes (not just GROUND_OUT)
-      expect(outcomeSet.size).toBeGreaterThanOrEqual(3);
-      // BBW IDT always succeeds -- grade 15 always wins, 21 is IDT-active
-      expect(idtUsedCount).toBe(samples);
+      expect(outcomes.size).toBeGreaterThan(1);
     });
 
-    it('batter wins uses direct mapping (grade 1, mostly GROUND_OUT)', () => {
-      // Card filled with value 16 (IDT-active, unmapped -> GROUND_OUT). Grade 1: pitcher wins only 1/15 of time.
-      // Batter wins ~93% -> direct mapping -> value 16 = GROUND_OUT (default).
-      const card = createTestCard(16);
-      const rng = new SeededRNG(42);
-      let groundOuts = 0;
-      const samples = 500;
+    it('roll index is always in [0, 35]', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.GROUND_OUT,
+        B: OutcomeCategory.GROUND_OUT,
+        C: OutcomeCategory.GROUND_OUT,
+        D: OutcomeCategory.GROUND_OUT,
+        E: OutcomeCategory.GROUND_OUT,
+      });
 
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 1, rng);
-        if (result.outcome === OutcomeCategory.GROUND_OUT) {
-          groundOuts++;
-        }
-      }
-
-      // With grade 1, batter wins ~93% of time -> direct mapping -> mostly ground outs
-      expect(groundOuts).toBeGreaterThan(samples * 0.70);
-    });
-
-    it('non-IDT values bypass IDT even when pitcher wins (value 1 = HR)', () => {
-      // Card filled with value 1 (HOME_RUN, NOT IDT-active: 1 < 15).
-      // Even grade 15 cannot suppress HRs through IDT.
-      const card = createTestCard(1);
-      const rng = new SeededRNG(42);
-      let homeRuns = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.HOME_RUN) {
-          homeRuns++;
-        }
-        // Should always use fallback (direct mapping) since value 1 is not IDT-active
-        expect(result.usedFallback).toBe(true);
-      }
-
-      // All draws should produce HOME_RUN via direct mapping
-      expect(homeRuns).toBe(samples);
-    });
-
-    it('pitcher check value 7 produces GROUND_OUT when pitcher wins', () => {
-      // Card filled with value 7 (SINGLE_CLEAN, pitcher-check value).
-      // Grade 15 always wins. Pitcher wins = out for singles.
-      const card = createTestCard(7);
-      const rng = new SeededRNG(42);
-      let groundOuts = 0;
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.GROUND_OUT) {
-          groundOuts++;
-        }
-      }
-
-      // Grade 15 always wins -> all value-7 draws produce GROUND_OUT
-      expect(groundOuts).toBe(samples);
-    });
-
-    it('pitcher check value 8 produces GROUND_OUT when pitcher wins', () => {
-      const card = createTestCard(8);
-      const rng = new SeededRNG(42);
-      let groundOuts = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
-      }
-
-      expect(groundOuts).toBe(samples);
-    });
-
-    it('pitcher check value 11 produces FLY_OUT when pitcher wins', () => {
-      const card = createTestCard(11);
-      const rng = new SeededRNG(42);
-      let flyOuts = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.FLY_OUT) flyOuts++;
-      }
-
-      expect(flyOuts).toBe(samples);
-    });
-
-    it('value 9 (SINGLE_LOW) is never suppressed even with grade 15', () => {
-      const card = createTestCard(9);
-      const rng = new SeededRNG(42);
-      let singles = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.SINGLE_ADVANCE) singles++;
-        expect(result.usedFallback).toBe(true);
-      }
-
-      expect(singles).toBe(samples);
-    });
-
-    it('value 10 (TRIPLE_1) is never suppressed even with grade 15', () => {
-      const card = createTestCard(10);
-      const rng = new SeededRNG(42);
-      let triples = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.TRIPLE) triples++;
-        expect(result.usedFallback).toBe(true);
-      }
-
-      expect(triples).toBe(samples);
-    });
-
-    it('pitcher check values use direct mapping when batter wins (grade 1)', () => {
-      // Card filled with value 7. Grade 1: pitcher wins only 1/15 of time.
-      // Batter wins ~93% -> direct mapping -> SINGLE_CLEAN.
-      const card = createTestCard(7);
-      const rng = new SeededRNG(42);
-      let singles = 0;
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 1, rng);
-        if (
-          result.outcome === OutcomeCategory.SINGLE_CLEAN ||
-          result.outcome === OutcomeCategory.SINGLE_ADVANCE
-        ) {
-          singles++;
-        }
-      }
-
-      // Batter wins ~93%: mostly direct-mapped singles
-      expect(singles).toBeGreaterThan(samples * 0.70);
-    });
-
-    it('non-IDT values bypass IDT even when pitcher wins (value 13 = walk)', () => {
-      // Card filled with value 13 (WALK, NOT IDT-active per Ghidra: 13 < 15).
-      // Walks are NEVER remapped by IDT -- they always produce WALK.
-      const card = createTestCard(13);
-      const rng = new SeededRNG(42);
-      let walks = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.WALK) {
-          walks++;
-        }
-        expect(result.usedFallback).toBe(true);
-      }
-
-      expect(walks).toBe(samples);
-    });
-
-    it('non-IDT out values always produce outs regardless of grade', () => {
-      // Card filled with value 26 (GROUND_OUT, NOT IDT-active: 26 > 23).
-      const card = createTestCard(26);
-      const rng = new SeededRNG(42);
-      let groundOuts = 0;
-      const samples = 200;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 1, rng);
-        if (result.outcome === OutcomeCategory.GROUND_OUT) {
-          groundOuts++;
-        }
-        expect(result.usedFallback).toBe(true);
-      }
-
-      expect(groundOuts).toBe(samples);
-    });
-
-    it('higher pitcher grade produces more IDT outcomes for non-out values', () => {
-      // IDT-active card (value 21 = STOLEN_BASE_OPP, non-out, in [15,23]).
-      // Out-type values (e.g., 16 -> GROUND_OUT) are preserved as outs and skip IDT.
-      const card = createTestCard(21);
-      const samples = 500;
-
-      const rngHigh = new SeededRNG(42);
-      let idtHighGrade = 0;
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rngHigh);
-        if (!result.usedFallback) idtHighGrade++;
-      }
-
-      const rngLow = new SeededRNG(42);
-      let idtLowGrade = 0;
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 1, rngLow);
-        if (!result.usedFallback) idtLowGrade++;
-      }
-
-      // Grade 15 should trigger IDT much more often than grade 1
-      expect(idtHighGrade).toBeGreaterThan(idtLowGrade);
-    });
-
-    it('out-type IDT-active values are preserved as outs when pitcher wins', () => {
-      // Card filled with value 16 (GROUND_OUT default, IDT-active in [15,23]).
-      // Out-preservation: pitcher winning against out-type values keeps the out
-      // rather than routing through IDT (which gives 67% reach-base outcomes).
-      const card = createTestCard(16);
-      const samples = 500;
-
-      const rng = new SeededRNG(42);
-      let groundOuts = 0;
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
-      }
-
-      // All outcomes should be GROUND_OUT (out-preservation, no IDT remapping)
-      expect(groundOuts).toBe(samples);
-    });
-
-    it('outcomeTableRow is set when IDT is used for non-out values (rows 15-23)', () => {
-      // Grade 15 + IDT-active non-out value (21 = STOLEN_BASE_OPP): IDT fires
-      const card = createTestCard(21);
-      const rng = new SeededRNG(42);
-
-      for (let i = 0; i < 100; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        // Non-out IDT-active values go through IDT, outcomeTableRow is set
-        expect(result.outcomeTableRow).toBeDefined();
-        expect(result.outcomeTableRow).toBeGreaterThanOrEqual(15);
-        expect(result.outcomeTableRow).toBeLessThanOrEqual(23);
+      for (let seed = 1; seed <= 200; seed++) {
+        const rng = new SeededRNG(seed);
+        const result = resolvePlateAppearance(card, 10, rng);
+        expect(result.cardPosition).toBeGreaterThanOrEqual(0);
+        expect(result.cardPosition).toBeLessThanOrEqual(35);
       }
     });
 
-    it('outcomeTableRow is undefined for out-type IDT-active values', () => {
-      // Grade 15 + IDT-active out value (16 -> GROUND_OUT): out preserved, no IDT
-      const card = createTestCard(16);
-      const rng = new SeededRNG(42);
+    it('higher grade produces more outs (column A vs column E)', () => {
+      const card: ApbaCard = {
+        A: Array(36).fill(OutcomeCategory.STRIKEOUT_SWINGING),
+        B: [...Array(18).fill(OutcomeCategory.STRIKEOUT_SWINGING), ...Array(18).fill(OutcomeCategory.SINGLE_CLEAN)],
+        C: [...Array(12).fill(OutcomeCategory.STRIKEOUT_SWINGING), ...Array(24).fill(OutcomeCategory.SINGLE_CLEAN)],
+        D: [...Array(6).fill(OutcomeCategory.STRIKEOUT_SWINGING), ...Array(30).fill(OutcomeCategory.SINGLE_CLEAN)],
+        E: Array(36).fill(OutcomeCategory.SINGLE_CLEAN),
+      };
 
-      for (let i = 0; i < 100; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        // Out-type values skip IDT, so outcomeTableRow is undefined
-        expect(result.outcomeTableRow).toBeUndefined();
+      let hitsGrade25 = 0;
+      let hitsGrade3 = 0;
+
+      for (let seed = 1; seed <= 500; seed++) {
+        const rng25 = new SeededRNG(seed);
+        const rng3 = new SeededRNG(seed);
+        if (resolvePlateAppearance(card, 25, rng25).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade25++;
+        if (resolvePlateAppearance(card, 3, rng3).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade3++;
       }
+
+      expect(hitsGrade25).toBe(0);
+      expect(hitsGrade3).toBe(500);
     });
 
-    it('outcomeTableRow is undefined when direct mapping is used', () => {
-      // Value 1 (HR) is not IDT-active, always direct mapping
-      const card = createTestCard(1);
+    it('cardValue matches the outcome enum value', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.WALK,
+        B: OutcomeCategory.WALK,
+        C: OutcomeCategory.WALK,
+        D: OutcomeCategory.WALK,
+        E: OutcomeCategory.WALK,
+      });
       const rng = new SeededRNG(42);
-
-      for (let i = 0; i < 50; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        expect(result.outcomeTableRow).toBeUndefined();
-      }
-    });
-
-    it('grade check R2 roll is recorded in pitcherGradeEffect', () => {
-      const card = createTestCard(21);
-      const rng = new SeededRNG(42);
-
       const result = resolvePlateAppearance(card, 10, rng);
+      expect(result.cardValue).toBe(OutcomeCategory.WALK);
+      expect(result.cardValue).toBe(result.outcome);
+    });
 
-      expect(result.pitcherGradeEffect.r2Roll).toBeGreaterThanOrEqual(1);
-      expect(result.pitcherGradeEffect.r2Roll).toBeLessThanOrEqual(15);
-      expect(result.pitcherGradeEffect.originalValue).toBe(result.cardValue);
+    it('pitcherGradeEffect.r2Roll equals the effective grade', () => {
+      const card = makeUniformCard({
+        A: OutcomeCategory.GROUND_OUT,
+        B: OutcomeCategory.GROUND_OUT,
+        C: OutcomeCategory.GROUND_OUT,
+        D: OutcomeCategory.GROUND_OUT,
+        E: OutcomeCategory.GROUND_OUT,
+      });
+      const rng = new SeededRNG(42);
+      const result = resolvePlateAppearance(card, 20, rng);
+      expect(result.pitcherGradeEffect.r2Roll).toBe(20);
     });
   });
 
-  describe('resolveSymbolValue() -- BBW symbol table (Gap 5)', () => {
-    it('resolves values 36-41 through the 10-entry symbol table', () => {
-      const rng = new SeededRNG(42);
-      const results = new Set<number>();
-      for (let i = 0; i < 200; i++) {
-        const resolved = resolveSymbolValue(36, rng);
-        results.add(resolved);
-      }
-      // Symbol table contains {36,37,38,39,40,41}
-      expect(results.size).toBeGreaterThanOrEqual(4);
-      for (const v of results) {
-        expect(v).toBeGreaterThanOrEqual(36);
-        expect(v).toBeLessThanOrEqual(41);
-      }
+  describe('legacy constants', () => {
+    it('IDT_ACTIVE_LOW is 15 (backwards compatibility)', () => {
+      expect(IDT_ACTIVE_LOW).toBe(15);
     });
 
-    it('passes through non-symbol values unchanged', () => {
-      const rng = new SeededRNG(42);
-      for (const v of [0, 1, 7, 13, 14, 21, 35]) {
-        expect(resolveSymbolValue(v, rng)).toBe(v);
-      }
-    });
-
-    it('value 40 (reached on error) has ~30% weight in the table', () => {
-      const rng = new SeededRNG(99);
-      let count40 = 0;
-      const samples = 1000;
-      for (let i = 0; i < samples; i++) {
-        if (resolveSymbolValue(38, rng) === 40) count40++;
-      }
-      // 3/10 slots = 30%, allow [20%, 40%]
-      expect(count40 / samples).toBeGreaterThan(0.20);
-      expect(count40 / samples).toBeLessThan(0.40);
-    });
-
-    it('is deterministic with same seed', () => {
-      const rng1 = new SeededRNG(77);
-      const rng2 = new SeededRNG(77);
-      const seq1 = Array.from({ length: 50 }, () => resolveSymbolValue(39, rng1));
-      const seq2 = Array.from({ length: 50 }, () => resolveSymbolValue(39, rng2));
-      expect(seq1).toEqual(seq2);
-    });
-  });
-
-  describe('pitcher card read in Path A (Gap 4)', () => {
-    it('reads pitcher card when pitcher card is provided and pitcher wins', () => {
-      // Batter card filled with value 7 (pitcher check value, single)
-      const batterCard = createTestCard(7);
-      // Pitcher card: use generated pitcher batting card (~58% walks, ~17% K, ~25% outs)
-      const pitcherCard = generatePitcherBattingCard();
-
-      const rng = new SeededRNG(42);
-      const outcomes = new Map<OutcomeCategory, number>();
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
-        outcomes.set(result.outcome, (outcomes.get(result.outcome) ?? 0) + 1);
-      }
-
-      // Path A is pitcher suppression -- walks on pitcher card are filtered to ground outs.
-      // So walks should be 0, and ground outs should be dominant.
-      const walks = outcomes.get(OutcomeCategory.WALK) ?? 0;
-      expect(walks).toBe(0);
-      // Should see ground outs (from walk->ground_out filter + out values on pitcher card)
-      const groundOuts = outcomes.get(OutcomeCategory.GROUND_OUT) ?? 0;
-      expect(groundOuts).toBeGreaterThan(samples * 0.50);
-      // Should also see strikeouts (from K values on pitcher card -- value 14 = STRIKEOUT_SWINGING)
-      const strikeouts = outcomes.get(OutcomeCategory.STRIKEOUT_SWINGING) ?? 0;
-      expect(strikeouts).toBeGreaterThan(0);
-    });
-
-    it('falls back to hardcoded outs when no pitcher card (legacy)', () => {
-      const batterCard = createTestCard(7);
-      const rng = new SeededRNG(42);
-      let groundOuts = 0;
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        // Old signature: no pitcher card
-        const result = resolvePlateAppearance(batterCard, 15, rng);
-        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
-      }
-
-      // Grade 15 always wins -> all value 7 -> GROUND_OUT (legacy behavior)
-      expect(groundOuts).toBe(samples);
-    });
-
-    it('pitcher card produces mixed outcomes for value 8', () => {
-      const batterCard = createTestCard(8);
-      const pitcherCard = generatePitcherBattingCard();
-      const rng = new SeededRNG(55);
-      const outcomeSet = new Set<OutcomeCategory>();
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
-        outcomeSet.add(result.outcome);
-      }
-
-      // Should produce diverse outcomes (walks, Ks, outs from pitcher card)
-      expect(outcomeSet.size).toBeGreaterThanOrEqual(3);
-    });
-  });
-
-  describe('Path A walk suppression (pitcher card reads never produce walks)', () => {
-    it('Path A never produces walks from pitcher card', () => {
-      // Batter card filled with value 7 (pitcher check value).
-      // Pitcher card has ~58% walk values. Grade 15 always wins.
-      // Path A is "pitcher suppression" -- walks should be mapped to outs.
-      const batterCard = createTestCard(7);
-      const pitcherCard = generatePitcherBattingCard();
-      const rng = new SeededRNG(42);
-      const samples = 1000;
-      let walks = 0;
-      let groundOuts = 0;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
-        if (result.outcome === OutcomeCategory.WALK) walks++;
-        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
-      }
-
-      // Path A is pitcher suppression -- should NEVER produce walks
-      expect(walks).toBe(0);
-      // Walk values on pitcher card should become ground outs instead
-      expect(groundOuts).toBeGreaterThan(samples * 0.40);
-    });
-
-    it('Path A walk suppression applies to all pitcher check values {7, 8, 11}', () => {
-      const pitcherCard = generatePitcherBattingCard();
-
-      for (const checkValue of [7, 8, 11]) {
-        const batterCard = createTestCard(checkValue as CardValue);
-        const rng = new SeededRNG(42);
-        let walks = 0;
-        const samples = 500;
-
-        for (let i = 0; i < samples; i++) {
-          const result = resolvePlateAppearance(batterCard, pitcherCard, 15, rng);
-          if (result.outcome === OutcomeCategory.WALK) walks++;
-        }
-
-        expect(walks).toBe(0);
-      }
-    });
-  });
-
-  describe('IDT out-preservation for power rating values (Gap 1+6)', () => {
-    it('out-type power values (15-20) are preserved as outs, not routed through IDT', () => {
-      // Values 15-20 have no explicit mapping -> default GROUND_OUT (out-type).
-      // Out-preservation: pitcher winning keeps the out instead of IDT remapping.
-      for (let powerVal = 15; powerVal <= 20; powerVal++) {
-        const card = createTestCard(powerVal as CardValue);
-        const rng = new SeededRNG(42);
-        let idtUsed = 0;
-        const samples = 100;
-
-        for (let i = 0; i < samples; i++) {
-          const result = resolvePlateAppearance(card, 15, rng);
-          if (!result.usedFallback) idtUsed++;
-        }
-
-        // Out-type values skip IDT (out-preservation)
-        expect(idtUsed).toBe(0);
-      }
-    });
-
-    it('non-out power value 21 (STOLEN_BASE_OPP) triggers IDT when pitcher wins', () => {
-      // Value 21 maps to STOLEN_BASE_OPP (not an out), so IDT fires
-      const card = createTestCard(21);
-      const rng = new SeededRNG(42);
-      let idtUsed = 0;
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (!result.usedFallback) idtUsed++;
-      }
-
-      // Grade 15 always wins, value 21 is non-out IDT-active, IDT fires
-      expect(idtUsed).toBe(samples);
+    it('IDT_ACTIVE_HIGH is 23 (backwards compatibility)', () => {
+      expect(IDT_ACTIVE_HIGH).toBe(23);
     });
   });
 });

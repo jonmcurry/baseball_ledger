@@ -14,7 +14,17 @@ import { OutcomeCategory } from '../../../../src/lib/types/game';
 import { runGame } from '../../../../src/lib/simulation/game-runner';
 import type { RunGameConfig } from '../../../../src/lib/simulation/game-runner';
 import { generatePitcherBattingCard } from '../../../../src/lib/card-generator/pitcher-card';
+import { generateApbaCard, generatePitcherApbaCard } from '../../../../src/lib/card-generator/apba-card-generator';
+import type { PlayerRates } from '../../../../src/lib/card-generator/rate-calculator';
 import { isPowerArchetype, isContactSpeedArchetype, isSpeedArchetype } from '../../../../src/lib/simulation/archetype-modifier';
+
+const DEFAULT_RATES: PlayerRates = {
+  PA: 600, walkRate: 0.09, strikeoutRate: 0.17, homeRunRate: 0.035,
+  singleRate: 0.165, doubleRate: 0.045, tripleRate: 0.005, sbRate: 0.30,
+  iso: 0.160, hbpRate: 0.01, sfRate: 0.01, shRate: 0, gdpRate: 0.02,
+};
+const DEFAULT_APBA_CARD = generateApbaCard(DEFAULT_RATES, { byte33: 7, byte34: 0 });
+const PITCHER_APBA_CARD = generatePitcherApbaCard();
 
 // ---------------------------------------------------------------------------
 // Test Helpers
@@ -57,6 +67,7 @@ function makePlayerCard(overrides: Partial<PlayerCard> & { playerId: string }): 
     primaryPosition: 'CF',
     eligiblePositions: ['CF'],
     isPitcher: false,
+    apbaCard: DEFAULT_APBA_CARD,
     card: makeRealisticCard(),
     powerRating: 17,
     archetype: { byte33: 7, byte34: 0 },
@@ -76,6 +87,7 @@ function makePitcherCard(overrides: Partial<PlayerCard> & { playerId: string }):
     primaryPosition: 'SP',
     eligiblePositions: ['SP'],
     isPitcher: true,
+    apbaCard: PITCHER_APBA_CARD,
     card: generatePitcherBattingCard(),
     powerRating: 13,
     pitching: {
@@ -100,6 +112,7 @@ function makeRelieverCard(playerId: string, grade = 8): PlayerCard {
     primaryPosition: 'RP',
     eligiblePositions: ['RP'],
     isPitcher: true,
+    apbaCard: PITCHER_APBA_CARD,
     card: generatePitcherBattingCard(),
     powerRating: 13,
     pitching: {
@@ -123,6 +136,7 @@ function makeCloserCard(playerId: string, grade = 9): PlayerCard {
     primaryPosition: 'CL',
     eligiblePositions: ['CL'],
     isPitcher: true,
+    apbaCard: PITCHER_APBA_CARD,
     card: generatePitcherBattingCard(),
     powerRating: 13,
     pitching: {
@@ -668,11 +682,18 @@ describe('game-runner', () => {
       for (let seed = 1; seed <= 50; seed++) {
         const config = makeDefaultConfig(seed);
 
-        // Override home batters to power archetype
+        // Override home batters to power archetype with power-hitter card
+        const powerRates: PlayerRates = {
+          PA: 650, walkRate: 0.12, strikeoutRate: 0.22, homeRunRate: 0.065,
+          singleRate: 0.14, doubleRate: 0.055, tripleRate: 0.003, sbRate: 0.10,
+          iso: 0.260, hbpRate: 0.01, sfRate: 0.01, shRate: 0, gdpRate: 0.02,
+        };
+        const powerApbaCard = generateApbaCard(powerRates, { byte33: 1, byte34: 0 });
         for (const [id, card] of config.homeBatterCards) {
           config.homeBatterCards.set(id, {
             ...card,
-            archetype: { byte33: 1, byte34: 0 }, // power
+            archetype: { byte33: 1, byte34: 0 },
+            apbaCard: powerApbaCard,
           });
         }
 

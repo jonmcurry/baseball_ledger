@@ -16,6 +16,7 @@ export const _meta = {
 import type { DraftState, DraftPickResult } from '../../src/lib/types/draft';
 import type { AvailablePlayer } from '../../src/stores/draftStore';
 import type { PlayerCard } from '../../src/lib/types/player';
+import { generateApbaCard } from '../../src/lib/card-generator/apba-card-generator';
 
 export function createMockDraftState(overrides: Partial<DraftState> = {}): DraftState {
   return {
@@ -71,6 +72,11 @@ function createMockPlayerCard(): PlayerCard {
     primaryPosition: 'RF',
     eligiblePositions: ['RF', 'LF'],
     isPitcher: false,
+    apbaCard: generateApbaCard({
+      PA: 600, walkRate: 0.15, strikeoutRate: 0.10, homeRunRate: 0.10,
+      singleRate: 0.15, doubleRate: 0.05, tripleRate: 0.01, sbRate: 0.10,
+      iso: 0.350, hbpRate: 0.005, sfRate: 0.01, shRate: 0, gdpRate: 0.02,
+    }, { byte33: 1, byte34: 0 }),
     card: Array.from({ length: 35 }, () => 7),
     powerRating: 21,
     archetype: { byte33: 1, byte34: 0 },

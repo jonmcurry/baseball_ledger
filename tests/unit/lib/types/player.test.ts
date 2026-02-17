@@ -5,6 +5,7 @@ import type {
   PitcherAttributes,
   PlayerCard,
 } from '@lib/types/player';
+import { generateApbaCard, generatePitcherApbaCard } from '@lib/card-generator/apba-card-generator';
 
 describe('Player types', () => {
   describe('CardValue', () => {
@@ -86,6 +87,11 @@ describe('Player types', () => {
         primaryPosition: 'RF',
         eligiblePositions: ['RF', 'LF', '1B'],
         isPitcher: false,
+        apbaCard: generateApbaCard({
+          PA: 600, walkRate: 0.15, strikeoutRate: 0.10, homeRunRate: 0.10,
+          singleRate: 0.15, doubleRate: 0.05, tripleRate: 0.01, sbRate: 0.10,
+          iso: 0.350, hbpRate: 0.005, sfRate: 0.01, shRate: 0, gdpRate: 0.02,
+        }, { byte33: 1, byte34: 0 }),
         card: Array(35).fill(0) as CardValue[],
         powerRating: 21,
         archetype: { byte33: 1, byte34: 0 },
@@ -115,6 +121,7 @@ describe('Player types', () => {
         primaryPosition: 'SP',
         eligiblePositions: ['SP'],
         isPitcher: true,
+        apbaCard: generatePitcherApbaCard(),
         card: Array(35).fill(0) as CardValue[],
         powerRating: 13,
         archetype: { byte33: 0, byte34: 6 },

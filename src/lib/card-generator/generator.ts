@@ -7,6 +7,7 @@ import { computePowerRating } from './power-rating';
 import { determineArchetype, isEliteFielder } from './archetype';
 import { computeSlotAllocation, fillVariablePositions, applyGateValues } from './value-mapper';
 import { generatePitcherBattingCard, buildPitcherAttributes } from './pitcher-card';
+import { generateApbaCard, generatePitcherApbaCard } from './apba-card-generator';
 
 /**
  * Determine primary position from fielding records.
@@ -216,11 +217,13 @@ export function generateCard(
 
   let card: number[];
   let powerRating: number;
+  let apbaCard;
 
   if (isPitcher) {
     // Step 6: Pitcher batting card
     card = generatePitcherBattingCard();
     powerRating = 13; // No power
+    apbaCard = generatePitcherApbaCard();
   } else if (entry.battingStats) {
     // Steps 1-3: Batter card generation
     const rates = computePlayerRates(entry.battingStats);
@@ -247,11 +250,15 @@ export function generateCard(
     // Step 4: Power rating at position 24 (BBW card[24] = power value 13-21)
     powerRating = computePowerRating(rates.iso);
     card[POWER_POSITION] = powerRating;
+
+    // SERD: Generate 5-column APBA card from the same rates
+    apbaCard = generateApbaCard(rates, archetype);
   } else {
     // Fallback: empty card (shouldn't happen for qualifying players)
     card = new Array(CARD_LENGTH).fill(0);
     applyStructuralConstants(card);
     powerRating = 13;
+    apbaCard = generatePitcherApbaCard();
   }
 
   // Set archetype bytes on card (positions 33-34, after fill)
@@ -318,6 +325,7 @@ export function generateCard(
     primaryPosition,
     eligiblePositions,
     isPitcher,
+    apbaCard,
     card,
     powerRating,
     archetype,
@@ -520,6 +528,25 @@ export function generateCardFromBbw(
     };
   }
 
+  // Generate SERD 5-column card from BBW batting stats
+  const bbwApbaCard = parsed.isPitcher
+    ? generatePitcherApbaCard()
+    : generateApbaCard({
+        PA: PA || 1,
+        walkRate: PA > 0 ? batting.BB / PA : 0,
+        strikeoutRate: PA > 0 ? batting.SO / PA : 0,
+        homeRunRate: PA > 0 ? batting.HR / PA : 0,
+        singleRate: PA > 0 ? singles / PA : 0,
+        doubleRate: PA > 0 ? batting.doubles / PA : 0,
+        tripleRate: PA > 0 ? batting.triples / PA : 0,
+        sbRate: batting.SB > 0 ? 1 : 0,
+        iso,
+        hbpRate: PA > 0 ? batting.HBP / PA : 0,
+        sfRate: 0,
+        shRate: 0,
+        gdpRate: 0,
+      }, archetype);
+
   // Capitalize last name for consistency with Lahman format
   const nameLast = player.lastName.charAt(0) + player.lastName.slice(1).toLowerCase();
 
@@ -533,6 +560,7 @@ export function generateCardFromBbw(
     primaryPosition: parsed.primaryPosition,
     eligiblePositions: [parsed.primaryPosition],
     isPitcher: parsed.isPitcher,
+    apbaCard: bbwApbaCard,
     card,
     powerRating,
     archetype,

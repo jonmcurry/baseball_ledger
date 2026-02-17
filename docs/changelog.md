@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-02-17 - SERD Single-Algorithm PA Resolution
+
+Replaced the 35-byte abstract card system with 3-path PA resolution (IDT table,
+pitcher card check, direct mapping) with the SERD single-algorithm approach.
+Eliminates compounding biases that produced 80 HR leaders, 6.26+ ERAs, and 223 RBI
+leaders in full-season simulations.
+
+Architecture:
+- **ApbaCard**: 5 columns (A-E) x 36 OutcomeCategory outcomes each. Column C matches
+  the player's actual MLB rates. Pitcher quality selects which column to read.
+- **Single PA algorithm**: One PRNG roll (0-35), pitcher grade selects column A-E,
+  direct OutcomeCategory lookup. ~10 lines replacing ~120 lines of 3-path logic.
+- **Grade-to-column mapping**: Grade 1-3=E, 4-6=D, 7-12=C, 13-18=B, 19+=A.
+  Typical grade-8 starter lands on Column C (neutral) for most of the game.
+
+New files:
+- `src/lib/card-generator/apba-card-generator.ts` - SERD card generation with
+  gradeToColumn, COLUMN_MULTIPLIERS, generateApbaCard, generatePitcherApbaCard
+- `tests/unit/lib/card-generator/apba-card-generator.test.ts` - 21 card gen tests
+
+Modified files:
+- `src/lib/types/player.ts` - Added ApbaColumn, ColumnCard, ApbaCard types
+- `src/lib/simulation/plate-appearance.ts` - Rewritten from 327 to ~100 lines
+- `src/lib/simulation/game-runner.ts` - Updated PA call to new 3-arg signature
+- `src/lib/simulation/archetype-modifier.ts` - Removed runtime power/contact
+  modifiers (now baked into card via PlayerRates). Speed SB flag retained.
+- `src/lib/card-generator/generator.ts` - Populates apbaCard field
+
+Deprecated (kept for reference):
+- `src/lib/simulation/outcome-table.ts` - IDT no longer used
+- `src/lib/simulation/card-value-fallback.ts` - Direct mapping no longer used
+
+Calibration results (200-game diagnostic):
+- BA: .263 (was massively inflated)
+- H/team/game: 9.64 (target 7.5-10.5)
+- SO/team/game: 8.07 (realistic)
+- HR/team/game: 1.14 (realistic)
+- R/team/game: 5.74 (includes IBB-inflated baserunners from manager-AI)
+
 ## 2026-02-17 - Stat Inflation Fix: IDT Out-Preservation and Card Out Mix Rebalance
 
 Fixed run scoring inflation (5.88 -> 4.67 R/team/game) through two targeted fixes

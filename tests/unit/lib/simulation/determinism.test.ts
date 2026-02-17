@@ -11,6 +11,16 @@
 import type { PlayerCard, Position } from '../../../../src/lib/types/player';
 import { runGame } from '../../../../src/lib/simulation/game-runner';
 import type { RunGameConfig } from '../../../../src/lib/simulation/game-runner';
+import { generateApbaCard, generatePitcherApbaCard } from '../../../../src/lib/card-generator/apba-card-generator';
+import type { PlayerRates } from '../../../../src/lib/card-generator/rate-calculator';
+
+const DEFAULT_RATES: PlayerRates = {
+  PA: 600, walkRate: 0.09, strikeoutRate: 0.17, homeRunRate: 0.035,
+  singleRate: 0.165, doubleRate: 0.045, tripleRate: 0.005, sbRate: 0.30,
+  iso: 0.160, hbpRate: 0.01, sfRate: 0.01, shRate: 0, gdpRate: 0.02,
+};
+const DEFAULT_APBA_CARD = generateApbaCard(DEFAULT_RATES, { byte33: 7, byte34: 0 });
+const PITCHER_APBA_CARD = generatePitcherApbaCard();
 
 // ---------------------------------------------------------------------------
 // Test Helpers
@@ -41,6 +51,7 @@ function makePlayerCard(overrides: Partial<PlayerCard> & { playerId: string }): 
     primaryPosition: 'CF',
     eligiblePositions: ['CF'],
     isPitcher: false,
+    apbaCard: DEFAULT_APBA_CARD,
     card: makeRealisticCard(),
     powerRating: 17,
     archetype: { byte33: 7, byte34: 0 },
@@ -61,6 +72,7 @@ function makePitcherCard(playerId: string, grade = 10): PlayerCard {
     primaryPosition: 'SP',
     eligiblePositions: ['SP'],
     isPitcher: true,
+    apbaCard: PITCHER_APBA_CARD,
     pitching: {
       role: 'SP',
       grade,
@@ -82,6 +94,7 @@ function makeRelieverCard(playerId: string): PlayerCard {
     primaryPosition: 'RP',
     eligiblePositions: ['RP'],
     isPitcher: true,
+    apbaCard: PITCHER_APBA_CARD,
     pitching: {
       role: 'RP',
       grade: 8,
@@ -103,6 +116,7 @@ function makeCloserCard(playerId: string): PlayerCard {
     primaryPosition: 'CL',
     eligiblePositions: ['CL'],
     isPitcher: true,
+    apbaCard: PITCHER_APBA_CARD,
     pitching: {
       role: 'CL',
       grade: 9,

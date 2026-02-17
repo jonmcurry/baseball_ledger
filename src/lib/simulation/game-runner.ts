@@ -649,7 +649,7 @@ export function runGame(config: RunGameConfig): GameResult {
       const effectiveGrade = computeGameGrade(currentPitcher, gradeContext, rng);
       // BBW: data[0x47] increments per PA (fatigue counter, after grade calc)
       currentPitcherState.battersFaced++;
-      const paResult = resolvePlateAppearance(batterCard.card, currentPitcher.card, effectiveGrade, rng);
+      const paResult = resolvePlateAppearance(batterCard.apbaCard, effectiveGrade, rng);
       const umpireCheck = checkUmpireDecision(paResult.outcome, rng);
       // REQ-SIM-004 Step 6: Apply archetype modifier after umpire check
       const archetypeResult = applyArchetypeModifier(umpireCheck.outcome, batterCard.archetype, rng);

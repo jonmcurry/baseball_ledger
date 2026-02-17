@@ -150,29 +150,20 @@ function noModification(outcome: OutcomeCategory): ArchetypeModifierResult {
  *
  * Called after outcome determination (step 5) per REQ-SIM-004 step 6.
  *
+ * With the SERD 5-column card system, power and contact bonuses are baked
+ * into the card itself (via PlayerRates -> column multipliers). Only the
+ * speed SB opportunity flag remains as a runtime modifier.
+ *
  * @param outcome - The determined OutcomeCategory
  * @param archetype - The batter's archetype flags (bytes 33-34)
- * @param rng - Seeded random number generator
+ * @param _rng - Seeded random number generator (unused in SERD mode)
  * @returns Modified outcome with metadata
  */
 export function applyArchetypeModifier(
   outcome: OutcomeCategory,
   archetype: PlayerArchetype,
-  rng: SeededRNG,
+  _rng: SeededRNG,
 ): ArchetypeModifierResult {
-  // Power archetype: +15% HR on FLY_OUT
-  if (isPowerArchetype(archetype)) {
-    if (outcome === OutcomeCategory.FLY_OUT && rng.chance(POWER_HR_UPGRADE_CHANCE)) {
-      return {
-        outcome: OutcomeCategory.HOME_RUN,
-        modified: true,
-        modifierType: 'power',
-        triggerStolenBaseCheck: false,
-      };
-    }
-    return noModification(outcome);
-  }
-
   // Speed archetype: flag SB opportunity on singles/walks
   if (isSpeedArchetype(archetype)) {
     if (SINGLE_OR_WALK_OUTCOMES.has(outcome)) {
@@ -186,19 +177,6 @@ export function applyArchetypeModifier(
     return noModification(outcome);
   }
 
-  // Contact+Speed archetype: -20% strikeout probability
-  if (isContactSpeedArchetype(archetype)) {
-    if (STRIKEOUT_OUTCOMES.has(outcome) && rng.chance(CONTACT_K_DOWNGRADE_CHANCE)) {
-      return {
-        outcome: OutcomeCategory.GROUND_OUT,
-        modified: true,
-        modifierType: 'contact',
-        triggerStolenBaseCheck: false,
-      };
-    }
-    return noModification(outcome);
-  }
-
-  // All other archetypes (elite defense, standard, pitcher, utility): no modifier
+  // All other archetypes: no runtime modifier (power/contact baked into card)
   return noModification(outcome);
 }
