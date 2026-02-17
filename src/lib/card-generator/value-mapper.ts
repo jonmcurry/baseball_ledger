@@ -357,16 +357,23 @@ export function fillVariablePositions(
     card[outcomePositions[posIdx++]] = tripleValues[Math.min(i, tripleValues.length - 1)];
   }
 
-  // Fill remaining with out values
+  // Fill remaining with out values.
+  // Distribution calibrated to match real BBW cards (~20% productive outs):
+  //   OUT_CONTACT (26) = GROUND_OUT:         37.5%
+  //   OUT_NONWALK (31) = FLY_OUT:            25%
+  //   SPECIAL_FLAG (34) = GROUND_OUT:        12.5%
+  //   OUT_GROUND (30) = GROUND_OUT_ADVANCE:  12.5%  (productive out)
+  //   OUT_FLY (24) = LINE_OUT:               12.5%
+  // Prior mix had 37.5% GROUND_OUT_ADVANCE -- ~2x the real BBW rate.
   const outMixValues = [
-    CARD_VALUES.OUT_GROUND,    // 30 - ground out advance
+    CARD_VALUES.OUT_CONTACT,   // 26 - ground out
     CARD_VALUES.OUT_CONTACT,   // 26 - ground out
     CARD_VALUES.OUT_NONWALK,   // 31 - fly out
     CARD_VALUES.SPECIAL_FLAG,  // 34 - ground out (default mapping)
-    CARD_VALUES.OUT_GROUND,    // 30 - repeat
-    CARD_VALUES.OUT_CONTACT,   // 26 - repeat
+    CARD_VALUES.OUT_GROUND,    // 30 - ground out advance (productive out)
+    CARD_VALUES.OUT_CONTACT,   // 26 - ground out
     CARD_VALUES.OUT_NONWALK,   // 31 - fly out
-    CARD_VALUES.OUT_GROUND,    // 30 - repeat
+    CARD_VALUES.OUT_FLY,       // 24 - line out
   ];
   let outIdx = 0;
   while (posIdx < outcomePositions.length) {

@@ -504,30 +504,29 @@ describe('Full-Game Stat Calibration', () => {
     expect(stats.avgAwayPAPerGame).toBeLessThanOrEqual(48);
   });
 
-  it('runs per team per game is in realistic range [2, 8]', () => {
+  it('runs per team per game is in realistic range [3.5, 5.5]', () => {
     const stats = runGames(GAME_COUNT);
 
-    // MLB average is ~4-5 R/team/game
-    expect(stats.avgRunsPerGame).toBeGreaterThanOrEqual(2);
-    expect(stats.avgRunsPerGame).toBeLessThanOrEqual(8);
+    // MLB average is ~4-5 R/team/game; tightened after IDT out-preservation fix
+    expect(stats.avgRunsPerGame).toBeGreaterThanOrEqual(3.5);
+    expect(stats.avgRunsPerGame).toBeLessThanOrEqual(5.5);
   });
 
-  it('team batting average is in realistic range [.220, .300]', () => {
+  it('team batting average is in realistic range [.220, .280]', () => {
     const stats = runGames(GAME_COUNT);
 
-    expect(stats.homeBA).toBeGreaterThanOrEqual(0.200);
-    expect(stats.homeBA).toBeLessThanOrEqual(0.300);
-    expect(stats.awayBA).toBeGreaterThanOrEqual(0.200);
-    expect(stats.awayBA).toBeLessThanOrEqual(0.300);
+    expect(stats.homeBA).toBeGreaterThanOrEqual(0.220);
+    expect(stats.homeBA).toBeLessThanOrEqual(0.280);
+    expect(stats.awayBA).toBeGreaterThanOrEqual(0.220);
+    expect(stats.awayBA).toBeLessThanOrEqual(0.280);
   });
 
-  it('walks per team per game is in realistic range [1, 6]', () => {
+  it('walks per team per game is in realistic range [2.0, 4.5]', () => {
     const stats = runGames(GAME_COUNT);
 
-    // MLB average is ~3-4 BB/team/game. Path A walk suppression fix
-    // eliminated the ~58% walk inflation from pitcher card reads.
-    expect(stats.avgBBPerTeamPerGame).toBeGreaterThanOrEqual(1);
-    expect(stats.avgBBPerTeamPerGame).toBeLessThanOrEqual(6);
+    // MLB average is ~3-4 BB/team/game. Tightened after stat-inflation fixes.
+    expect(stats.avgBBPerTeamPerGame).toBeGreaterThanOrEqual(2.0);
+    expect(stats.avgBBPerTeamPerGame).toBeLessThanOrEqual(4.5);
   });
 
   it('strikeouts per team per game is in realistic range [3, 13]', () => {
@@ -538,13 +537,12 @@ describe('Full-Game Stat Calibration', () => {
     expect(stats.avgSOPerTeamPerGame).toBeLessThanOrEqual(13);
   });
 
-  it('HR per team per game is in realistic range [0.3, 2.5]', () => {
+  it('HR per team per game is in realistic range [0.5, 2.0]', () => {
     const stats = runGames(GAME_COUNT);
 
-    // MLB average is ~1-1.5 HR/team/game; with proportional allocation
-    // and archetype contributions, HR rate depends on lineup composition
-    expect(stats.avgHRPerTeamPerGame).toBeGreaterThanOrEqual(0.1);
-    expect(stats.avgHRPerTeamPerGame).toBeLessThanOrEqual(2.5);
+    // MLB average is ~1-1.5 HR/team/game; tightened after stat-inflation fixes
+    expect(stats.avgHRPerTeamPerGame).toBeGreaterThanOrEqual(0.5);
+    expect(stats.avgHRPerTeamPerGame).toBeLessThanOrEqual(2.0);
   });
 
   it('individual R totals match team scores in every game', () => {

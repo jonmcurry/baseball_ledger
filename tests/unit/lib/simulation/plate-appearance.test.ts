@@ -407,9 +407,10 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(groundOuts).toBe(samples);
     });
 
-    it('higher pitcher grade produces more IDT outcomes', () => {
-      // IDT-active card (value 16, in [15,23]). Compare grade 15 vs grade 1.
-      const card = createTestCard(16);
+    it('higher pitcher grade produces more IDT outcomes for non-out values', () => {
+      // IDT-active card (value 21 = STOLEN_BASE_OPP, non-out, in [15,23]).
+      // Out-type values (e.g., 16 -> GROUND_OUT) are preserved as outs and skip IDT.
+      const card = createTestCard(21);
       const samples = 500;
 
       const rngHigh = new SeededRNG(42);
@@ -430,41 +431,47 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
       expect(idtHighGrade).toBeGreaterThan(idtLowGrade);
     });
 
-    it('higher pitcher grade produces more non-direct-mapping outcomes', () => {
+    it('out-type IDT-active values are preserved as outs when pitcher wins', () => {
       // Card filled with value 16 (GROUND_OUT default, IDT-active in [15,23]).
-      // High grade pitcher triggers IDT more often, remapping GROUND_OUT to other types.
+      // Out-preservation: pitcher winning against out-type values keeps the out
+      // rather than routing through IDT (which gives 67% reach-base outcomes).
       const card = createTestCard(16);
       const samples = 500;
 
-      const rngHigh = new SeededRNG(42);
-      let nonGroundOutHigh = 0;
+      const rng = new SeededRNG(42);
+      let groundOuts = 0;
       for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rngHigh);
-        if (result.outcome !== OutcomeCategory.GROUND_OUT) nonGroundOutHigh++;
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (result.outcome === OutcomeCategory.GROUND_OUT) groundOuts++;
       }
 
-      const rngLow = new SeededRNG(42);
-      let nonGroundOutLow = 0;
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 1, rngLow);
-        if (result.outcome !== OutcomeCategory.GROUND_OUT) nonGroundOutLow++;
-      }
-
-      // High grade remaps more outcomes away from default GROUND_OUT via IDT
-      expect(nonGroundOutHigh).toBeGreaterThan(nonGroundOutLow);
+      // All outcomes should be GROUND_OUT (out-preservation, no IDT remapping)
+      expect(groundOuts).toBe(samples);
     });
 
-    it('outcomeTableRow is set when IDT is used (rows 15-23)', () => {
-      // Grade 15 + IDT-active value (16): BBW IDT always succeeds
+    it('outcomeTableRow is set when IDT is used for non-out values (rows 15-23)', () => {
+      // Grade 15 + IDT-active non-out value (21 = STOLEN_BASE_OPP): IDT fires
+      const card = createTestCard(21);
+      const rng = new SeededRNG(42);
+
+      for (let i = 0; i < 100; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        // Non-out IDT-active values go through IDT, outcomeTableRow is set
+        expect(result.outcomeTableRow).toBeDefined();
+        expect(result.outcomeTableRow).toBeGreaterThanOrEqual(15);
+        expect(result.outcomeTableRow).toBeLessThanOrEqual(23);
+      }
+    });
+
+    it('outcomeTableRow is undefined for out-type IDT-active values', () => {
+      // Grade 15 + IDT-active out value (16 -> GROUND_OUT): out preserved, no IDT
       const card = createTestCard(16);
       const rng = new SeededRNG(42);
 
       for (let i = 0; i < 100; i++) {
         const result = resolvePlateAppearance(card, 15, rng);
-        // BBW IDT always succeeds, so outcomeTableRow is always set
-        expect(result.outcomeTableRow).toBeDefined();
-        expect(result.outcomeTableRow).toBeGreaterThanOrEqual(15);
-        expect(result.outcomeTableRow).toBeLessThanOrEqual(23);
+        // Out-type values skip IDT, so outcomeTableRow is undefined
+        expect(result.outcomeTableRow).toBeUndefined();
       }
     });
 
@@ -639,25 +646,11 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
     });
   });
 
-  describe('IDT activation via power rating at position 24 (Gap 1+6)', () => {
-    it('card value 17 (power rating) triggers IDT when pitcher wins', () => {
-      // Card with all positions set to 17 (in IDT range [15,23])
-      const card = createTestCard(17);
-      const rng = new SeededRNG(42);
-      let idtUsed = 0;
-      const samples = 500;
-
-      for (let i = 0; i < samples; i++) {
-        const result = resolvePlateAppearance(card, 15, rng);
-        if (!result.usedFallback) idtUsed++;
-      }
-
-      // Grade 15 always wins, value 17 is IDT-active, IDT always succeeds
-      expect(idtUsed).toBe(samples);
-    });
-
-    it('power rating values 15-21 all trigger IDT', () => {
-      for (let powerVal = 15; powerVal <= 21; powerVal++) {
+  describe('IDT out-preservation for power rating values (Gap 1+6)', () => {
+    it('out-type power values (15-20) are preserved as outs, not routed through IDT', () => {
+      // Values 15-20 have no explicit mapping -> default GROUND_OUT (out-type).
+      // Out-preservation: pitcher winning keeps the out instead of IDT remapping.
+      for (let powerVal = 15; powerVal <= 20; powerVal++) {
         const card = createTestCard(powerVal as CardValue);
         const rng = new SeededRNG(42);
         let idtUsed = 0;
@@ -668,9 +661,25 @@ describe('REQ-SIM-004: Plate Appearance Resolution (Real APBA BBW IDT Flow)', ()
           if (!result.usedFallback) idtUsed++;
         }
 
-        // Grade 15 always wins and IDT always succeeds
-        expect(idtUsed).toBe(samples);
+        // Out-type values skip IDT (out-preservation)
+        expect(idtUsed).toBe(0);
       }
+    });
+
+    it('non-out power value 21 (STOLEN_BASE_OPP) triggers IDT when pitcher wins', () => {
+      // Value 21 maps to STOLEN_BASE_OPP (not an out), so IDT fires
+      const card = createTestCard(21);
+      const rng = new SeededRNG(42);
+      let idtUsed = 0;
+      const samples = 500;
+
+      for (let i = 0; i < samples; i++) {
+        const result = resolvePlateAppearance(card, 15, rng);
+        if (!result.usedFallback) idtUsed++;
+      }
+
+      // Grade 15 always wins, value 21 is non-out IDT-active, IDT fires
+      expect(idtUsed).toBe(samples);
     });
   });
 });

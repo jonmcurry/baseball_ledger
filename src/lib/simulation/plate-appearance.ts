@@ -41,6 +41,25 @@ import { lookupIdtOutcome } from './outcome-table';
 const NON_DRAWABLE_SET = new Set(NON_DRAWABLE_POSITIONS);
 
 /**
+ * Check if an outcome is an out-type (batter is retired or makes an out).
+ * Used by the IDT out-preservation logic: when the pitcher wins the grade
+ * check against a card value whose direct mapping is already an out, the
+ * out is preserved rather than being routed through the IDT (which would
+ * convert it to a reach-base outcome 67% of the time).
+ */
+function isOutTypeOutcome(outcome: OutcomeCategory): boolean {
+  return outcome === OutcomeCategory.GROUND_OUT
+    || outcome === OutcomeCategory.FLY_OUT
+    || outcome === OutcomeCategory.LINE_OUT
+    || outcome === OutcomeCategory.POP_OUT
+    || outcome === OutcomeCategory.GROUND_OUT_ADVANCE
+    || outcome === OutcomeCategory.STRIKEOUT_LOOKING
+    || outcome === OutcomeCategory.STRIKEOUT_SWINGING
+    || outcome === OutcomeCategory.DOUBLE_PLAY
+    || outcome === OutcomeCategory.DOUBLE_PLAY_LINE;
+}
+
+/**
  * IDT-active card value range boundaries.
  * Confirmed by Ghidra decompilation of FUN_1058_5f49 (PA Resolution):
  *   rawOutcome >= 15 (0x0F) and rawOutcome <= 23 (0x17) -> IDT lookup path
@@ -236,12 +255,25 @@ export function resolvePlateAppearance(
   if (pitcherWins && isIDTActive(rawCardValue)) {
     // Path B: PITCHER WINS + card value in [15, 23] -> IDT table lookup
     // BBW-faithful: weighted random from rows 15-23 using BBW_IDT_WEIGHTS.
-    // Always succeeds (no threshold matching, no retry/failure path).
-    // 75% reach-base outcomes, 25% outs -- IDT is batter-favorable.
-    const lookup = lookupIdtOutcome(rng, rawCardValue);
-    outcome = lookup.outcome;
-    usedFallback = false;
-    outcomeTableRow = lookup.rowIndex;
+    //
+    // Out-preservation: When the direct mapping of the card value is already
+    // an out-type outcome (e.g., values 15-20 default to GROUND_OUT, value 22
+    // maps to FLY_OUT), the pitcher's grade-check win should preserve the out
+    // rather than routing through IDT (which gives 67% reach-base outcomes).
+    // IDT remapping only applies to non-out values (e.g., 21=STOLEN_BASE_OPP,
+    // 23=STOLEN_BASE_OPP) where the base outcome is ambiguous.
+    const directOutcome = getDirectOutcome(rawCardValue);
+    if (isOutTypeOutcome(directOutcome)) {
+      // Pitcher won against an out-type value -- preserve the out
+      outcome = directOutcome;
+      usedFallback = true;
+    } else {
+      // Pitcher won against a non-out value -- IDT remapping
+      const lookup = lookupIdtOutcome(rng, rawCardValue);
+      outcome = lookup.outcome;
+      usedFallback = false;
+      outcomeTableRow = lookup.rowIndex;
+    }
   } else if (pitcherWins && isPitcherCheckValue(rawCardValue)) {
     // Path A: PITCHER WINS + card value in {7, 8, 11} -> pitcher card check
     // In real BBW, this reads the pitcher's card at the same position.

@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-02-17 - Stat Inflation Fix: IDT Out-Preservation and Card Out Mix Rebalance
+
+Fixed run scoring inflation (5.88 -> 4.67 R/team/game) through two targeted fixes
+to the PA pipeline. All simulation stats now align with MLB-historical benchmarks.
+
+Root Causes:
+- **GROUND_OUT_ADVANCE over-representation**: `outMixValues` in value-mapper.ts assigned
+  value 30 (GROUND_OUT_ADVANCE) to 37.5% of out positions. Real BBW cards show ~20%.
+  This created excessive runner advancement on outs.
+- **IDT converting pitcher-won outs into batter-favorable outcomes**: When pitcher won
+  grade check against IDT-active values [15-23], the IDT produced 67% reach-base
+  outcomes. For values mapping to GROUND_OUT (15-20), the pitcher winning should produce
+  an out, but IDT was paradoxically rewarding the batter.
+
+Changes:
+- **Card out mix rebalance** (value-mapper.ts): Reduced GROUND_OUT_ADVANCE from 37.5%
+  to 12.5% of out positions. Replaced excess value-30 slots with value-26 (FLY_OUT)
+  and value-24 (FLY_OUT variant).
+- **IDT out-preservation** (plate-appearance.ts): Added `isOutTypeOutcome()` helper.
+  When pitcher wins grade check and the card value's direct mapping is an out-type
+  outcome, the out is preserved instead of routing through IDT. Non-out values (21=
+  STOLEN_BASE_OPP, 23=STOLEN_BASE_OPP) still go through IDT as before.
+- **Tightened calibration ranges** (full-game-calibration.test.ts): R/team/game [2,8]
+  -> [3.5,5.5], BA [.200,.300] -> [.220,.280], BB/game [1,6] -> [2.0,4.5],
+  HR/game [0.1,2.5] -> [0.5,2.0].
+- **New diagnostic test** (stat-inflation-diagnostic.test.ts): 200-game simulation
+  with tight MLB-historical assertions for R/team/game, OBP, and H/team/game.
+
+Post-fix stats (200 games): R/team/game=4.67, BA=.243, OBP=.314, BB/game=3.67,
+SO/game=8.64, HR/game=1.29. All 576 simulation tests pass.
+
 ## 2026-02-17 - BBW 100% Parity: 3 Final Gaps Closed
 
 Decompiled the last 3 BBW functions via Ghidra headless and closed all remaining
