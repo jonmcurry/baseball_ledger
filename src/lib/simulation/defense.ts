@@ -10,6 +10,7 @@
  * Layer 1: Pure logic, no I/O, deterministic given inputs.
  */
 
+import type { PlayerCard, Position } from '../types/player';
 import type { SeededRNG } from '../rng/seeded-rng';
 import { OutcomeCategory } from '../types/game';
 
@@ -118,4 +119,43 @@ export function checkDPDefense(
 
   // Below threshold: 10% failure rate
   return !rng.chance(DP_FAILURE_RATE);
+}
+
+/**
+ * Get the outfielder arm rating for speed check modifiers.
+ * Prefers CF; falls back to any OF, then default 0.6.
+ */
+export function getOutfielderArm(
+  lineup: { playerId: string; position: Position }[],
+  cards: Map<string, PlayerCard>,
+): number {
+  const cf = lineup.find((s) => s.position === 'CF');
+  if (cf) {
+    const card = cards.get(cf.playerId);
+    if (card) return card.arm;
+  }
+  for (const s of lineup) {
+    if (s.position === 'LF' || s.position === 'CF' || s.position === 'RF') {
+      const card = cards.get(s.playerId);
+      if (card) return card.arm;
+    }
+  }
+  return 0.6;
+}
+
+/**
+ * Get middle infield fielding percentages for DP defense checks.
+ */
+export function getMiddleInfieldFielding(
+  lineup: { playerId: string; position: Position }[],
+  cards: Map<string, PlayerCard>,
+): { ss: number; secondBase: number } {
+  let ss = 0.97;
+  let secondBase = 0.97;
+  for (const s of lineup) {
+    const card = cards.get(s.playerId);
+    if (s.position === 'SS' && card) ss = card.fieldingPct;
+    if (s.position === '2B' && card) secondBase = card.fieldingPct;
+  }
+  return { ss, secondBase };
 }

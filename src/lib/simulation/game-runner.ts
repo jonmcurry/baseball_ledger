@@ -36,7 +36,7 @@ import {
 } from './engine';
 import { resolvePlateAppearance } from './plate-appearance';
 import { checkUmpireDecision } from './umpire-decision';
-import { resolveOutcome } from './outcome-resolver';
+import { resolveOutcome, isHitOutcome, isWalkOutcome, isStrikeout, isSingleOutcome } from './outcome-resolver';
 import type { OutcomeResolution } from './outcome-resolver';
 import { computeEffectiveGrade, computeGameGrade, shouldRemoveStarter, selectReliever, shouldBringInCloser } from './pitching';
 import type { PitcherGameState, GradeContext } from './pitching';
@@ -47,12 +47,12 @@ import {
   evaluatePitcherPullDecision,
   evaluateHitAndRunDecision,
   evaluatePinchHitDecision,
-  evaluateAggressiveBaserunning,
 } from './manager-ai';
 import type { GameSituation } from './manager-ai';
 import { resolveBunt } from './bunt-resolver';
 import { attemptStolenBase, canAttemptStolenBase } from './stolen-base';
-import { checkForError } from './defense';
+import { checkForError, checkDPDefense, getOutfielderArm, getMiddleInfieldFielding } from './defense';
+import { advanceRunnerOnSingle, advanceRunnerOnDouble } from './baserunner';
 import { applyArchetypeModifier } from './archetype-modifier';
 import {
   buildLineScore,
@@ -119,39 +119,6 @@ interface GameTracker {
   currentHalfInningRuns: number;
   consecutiveHitsWalks: number;
   unearnedRunBudget: number;
-}
-
-function isHitOutcome(outcome: OutcomeCategory): boolean {
-  return (
-    outcome === OutcomeCategory.SINGLE_CLEAN ||
-    outcome === OutcomeCategory.SINGLE_ADVANCE ||
-    outcome === OutcomeCategory.DOUBLE ||
-    outcome === OutcomeCategory.TRIPLE ||
-    outcome === OutcomeCategory.HOME_RUN ||
-    outcome === OutcomeCategory.HOME_RUN_VARIANT
-  );
-}
-
-function isWalkOutcome(outcome: OutcomeCategory): boolean {
-  return (
-    outcome === OutcomeCategory.WALK ||
-    outcome === OutcomeCategory.WALK_INTENTIONAL ||
-    outcome === OutcomeCategory.HIT_BY_PITCH
-  );
-}
-
-function isStrikeout(outcome: OutcomeCategory): boolean {
-  return (
-    outcome === OutcomeCategory.STRIKEOUT_LOOKING ||
-    outcome === OutcomeCategory.STRIKEOUT_SWINGING
-  );
-}
-
-function isSingleOutcome(outcome: OutcomeCategory): boolean {
-  return (
-    outcome === OutcomeCategory.SINGLE_CLEAN ||
-    outcome === OutcomeCategory.SINGLE_ADVANCE
-  );
 }
 
 function countRunnersOnBase(bases: BaseState): number {
@@ -703,6 +670,17 @@ export function runGame(config: RunGameConfig): GameResult {
         }
       }
 
+      // DP defense check: verify middle infield can turn the DP
+      // If defense fails, downgrade to fielder's choice (only lead runner out)
+      if (outcome === OutcomeCategory.DOUBLE_PLAY) {
+        const fieldingLineup = isTopHalf ? config.homeLineup : config.awayLineup;
+        const fieldingCards = isTopHalf ? localHomeBatterCards : localAwayBatterCards;
+        const mi = getMiddleInfieldFielding(fieldingLineup, fieldingCards);
+        if (!checkDPDefense(mi.ss, mi.secondBase, rng)) {
+          outcome = OutcomeCategory.FIELDERS_CHOICE;
+        }
+      }
+
       // Resolve outcome against base/out state
       const basesBefore = { ...state.bases };
       const resolution = resolveOutcome(outcome, state.bases, state.outs, batterSlot.playerId);
@@ -799,50 +777,61 @@ export function runGame(config: RunGameConfig): GameResult {
         awayScore: isTopHalf ? state.awayScore + resolution.runsScored : state.awayScore,
       };
 
-      // Hit-and-run: advance runner from 1B to 3B on single (instead of 2B)
-      if (hitAndRunActive && isSingleOutcome(outcome) && state.bases.second !== null && state.bases.third === null) {
-        state = {
-          ...state,
-          bases: { ...state.bases, second: null, third: state.bases.second },
-        };
-      }
+      // Baserunner speed checks: extra-base advancement on singles/doubles
+      // Replaces manager-AI aggressive baserunning with physics-based speed checks
+      // from baserunner.ts (REQ-SIM-006).
+      if (state.outs < 3) {
+        const fieldingLineup = isTopHalf ? config.homeLineup : config.awayLineup;
+        const fieldingCards = isTopHalf ? localHomeBatterCards : localAwayBatterCards;
+        const ofArm = getOutfielderArm(fieldingLineup, fieldingCards);
 
-      // Aggressive baserunning: extra-base advance on singles/doubles
-      if (isHitOutcome(outcome) && !isStrikeout(outcome) && state.outs < 3) {
-        const aggrSituation: GameSituation = {
-          ...situation,
-          runnerOnFirst: state.bases.first !== null,
-          runnerOnSecond: state.bases.second !== null,
-          runnerOnThird: state.bases.third !== null,
-          outs: state.outs,
-        };
-        if (evaluateAggressiveBaserunning(battingProfile, aggrSituation, rng)) {
-          // Runner on 2B advances to home on single
-          if (isSingleOutcome(outcome) && state.bases.second !== null) {
-            const runnerId = state.bases.second;
-            const runnerLine = getOrCreateBattingLine(tracker, runnerId);
-            runnerLine.R++;
-            state = {
-              ...state,
-              bases: { ...state.bases, second: null },
-              homeScore: isTopHalf ? state.homeScore : state.homeScore + 1,
-              awayScore: isTopHalf ? state.awayScore + 1 : state.awayScore,
-            };
-            tracker.currentHalfInningRuns++;
-            const aggrUnearned = Math.min(1, tracker.unearnedRunBudget);
-            tracker.unearnedRunBudget -= aggrUnearned;
-            pitchingLine.R++;
-            pitchingLine.ER += 1 - aggrUnearned;
-            currentPitcherState.earnedRuns += 1 - aggrUnearned;
-            currentPitcherState.isShutout = false;
-            battingLine.RBI++;
+        if (isSingleOutcome(outcome)) {
+          // Runner who was on 1B is now on 2B after conservative resolution.
+          // Speed check: can they take 3B instead?
+          if (basesBefore.first !== null && state.bases.second === basesBefore.first && state.bases.third === null) {
+            const runnerId = basesBefore.first;
+            const runnerCard = batterCards.get(runnerId);
+            if (runnerCard) {
+              // H&R guarantees extra base (runner was already moving)
+              const takesExtra = hitAndRunActive || (() => {
+                const adv = advanceRunnerOnSingle('first', runnerCard.speed, runnerCard.archetype, ofArm, state.outs, rng);
+                return adv.tookExtraBase;
+              })();
+              if (takesExtra) {
+                state = {
+                  ...state,
+                  bases: { ...state.bases, second: null, third: runnerId },
+                };
+              }
+            }
           }
-          // Runner on 1B advances to 3B on single
-          else if (isSingleOutcome(outcome) && state.bases.first !== null && state.bases.third === null) {
-            state = {
-              ...state,
-              bases: { ...state.bases, first: null, third: state.bases.first },
-            };
+        } else if (outcome === OutcomeCategory.DOUBLE) {
+          // Runner who was on 1B is now on 3B after conservative resolution.
+          // Speed check: can they score instead?
+          if (basesBefore.first !== null && state.bases.third === basesBefore.first) {
+            const runnerId = basesBefore.first;
+            const runnerCard = batterCards.get(runnerId);
+            if (runnerCard) {
+              const adv = advanceRunnerOnDouble('first', runnerCard.speed, runnerCard.archetype, ofArm, state.outs, rng);
+              if (adv.scored) {
+                const runnerLine = getOrCreateBattingLine(tracker, runnerId);
+                runnerLine.R++;
+                state = {
+                  ...state,
+                  bases: { ...state.bases, third: null },
+                  homeScore: isTopHalf ? state.homeScore : state.homeScore + 1,
+                  awayScore: isTopHalf ? state.awayScore + 1 : state.awayScore,
+                };
+                tracker.currentHalfInningRuns++;
+                const extraUnearned = Math.min(1, tracker.unearnedRunBudget);
+                tracker.unearnedRunBudget -= extraUnearned;
+                pitchingLine.R++;
+                pitchingLine.ER += 1 - extraUnearned;
+                currentPitcherState.earnedRuns += 1 - extraUnearned;
+                currentPitcherState.isShutout = false;
+                battingLine.RBI++;
+              }
+            }
           }
         }
       }

@@ -478,16 +478,26 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
    - Layer 5 (platoon): pitcher[0x2a] == batter[0x38] -> min(grade + batter[0x3b], 30)
    - Layer 6 (variance): random(40) indexes DATA[0x3802] -> min(grade + v, 30)
 
+### Recently Closed Gaps:
+4. **DP defense check**: RESOLVED. `checkDPDefense()` now called with actual SS + 2B
+   fielding percentages during ground-ball DP resolution. Below .950 avg, 10% failure
+   rate degrades to fielder's choice.
+5. **Baserunner speed checks**: RESOLVED. `advanceRunnerOnSingle()` and
+   `advanceRunnerOnDouble()` from baserunner.ts wired into game loop. Runner on 1B
+   takes extra base based on speed, archetype, outfielder arm, and outs.
+   Hit-and-run guarantees extra base. Replaces manager-AI aggressive baserunning.
+6. **H&R blowout suppression**: RESOLVED. Hit-and-run suppressed at 4+ run differential
+   (same threshold as stolen bases).
+
 ### Remaining Approximations (Unclosable Without Interactive Ghidra Work):
-1. **Baserunning algorithm**: Runner array at data[0x34e + base*2] (2 bytes
-   per base), advance flag at data[0x337] (0/1/2). Logic is embedded inline
-   in the 3,660-line game loop (FUN_1058_2cd7), not in a separate callable
-   function. Decompiling the full flow for each hit type requires interactive
-   Ghidra analysis. Current: speed-check heuristic.
-2. **Manager AI** (pinch-hit, H&R, IBB): Requires additional FUN decompilation.
-3. **DP execution details**: Complex fielding logic, uniform DP success model.
-4. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.
-5. **Layer 2 fatigue condition**: The exact semantics of FUN_10c8_3ac9() and
+1. **Baserunning per-hit-type rules**: The exact advancement tables per hit type
+   (which runners advance how far on each outcome) are embedded inline in the
+   3,660-line game loop (FUN_1058_2cd7). Runner array at data[0x34e + base*2],
+   advance flag at data[0x337] (0/1/2). Current: deterministic defaults + speed checks.
+2. **Manager AI exact thresholds**: BBW uses strategy flags + run differential
+   context (FUN_1058_1255). Current: 4 profile types with tuned thresholds.
+3. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.
+4. **Layer 2 fatigue condition**: The exact semantics of FUN_10c8_3ac9() and
    pitcher[0x46] (which gate the fatigue subtraction) are unknown.
-6. **Fresh bonus 3rd condition**: The table lookup from data[0x2e7] indexed
+5. **Fresh bonus 3rd condition**: The table lookup from data[0x2e7] indexed
    by data[0x2ca]-1 is not fully decoded.

@@ -274,6 +274,15 @@ describe('evaluateHitAndRunDecision (REQ-AI-002)', () => {
     }
   });
 
+  it('never triggers in blowout (up or down by 4+)', () => {
+    const sit1 = baseSituation({ runnerOnFirst: true, runnerOnSecond: false, runnerOnThird: false, outs: 0, scoreDiff: 4 });
+    const sit2 = baseSituation({ runnerOnFirst: true, runnerOnSecond: false, runnerOnThird: false, outs: 0, scoreDiff: -5 });
+    for (let i = 0; i < 50; i++) {
+      expect(evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit1, new SeededRNG(i))).toBe(false);
+      expect(evaluateHitAndRunDecision(MANAGER_PROFILES.aggressive, sit2, new SeededRNG(i))).toBe(false);
+    }
+  });
+
   it('aggressive manager triggers more often than conservative', () => {
     const sit = baseSituation({
       inning: 7, runnerOnFirst: true, runnerOnSecond: false, runnerOnThird: false,

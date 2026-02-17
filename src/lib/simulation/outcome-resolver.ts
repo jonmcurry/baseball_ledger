@@ -581,3 +581,40 @@ export function resolveOutcome(
       return noChange(bases);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Outcome Category Predicates
+// ---------------------------------------------------------------------------
+
+export function isHitOutcome(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.SINGLE_CLEAN ||
+    outcome === OutcomeCategory.SINGLE_ADVANCE ||
+    outcome === OutcomeCategory.DOUBLE ||
+    outcome === OutcomeCategory.TRIPLE ||
+    outcome === OutcomeCategory.HOME_RUN ||
+    outcome === OutcomeCategory.HOME_RUN_VARIANT
+  );
+}
+
+export function isWalkOutcome(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.WALK ||
+    outcome === OutcomeCategory.WALK_INTENTIONAL ||
+    outcome === OutcomeCategory.HIT_BY_PITCH
+  );
+}
+
+export function isStrikeout(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.STRIKEOUT_LOOKING ||
+    outcome === OutcomeCategory.STRIKEOUT_SWINGING
+  );
+}
+
+export function isSingleOutcome(outcome: OutcomeCategory): boolean {
+  return (
+    outcome === OutcomeCategory.SINGLE_CLEAN ||
+    outcome === OutcomeCategory.SINGLE_ADVANCE
+  );
+}

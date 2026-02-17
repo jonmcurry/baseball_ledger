@@ -192,9 +192,11 @@ export function evaluateHitAndRunDecision(
   rng: SeededRNG,
 ): boolean {
   // Prerequisites: runner on 1B only, no other bases occupied, < 2 outs
+  // BBW: H&R suppressed in blowout games (same threshold as steal)
   if (!sit.runnerOnFirst) return false;
   if (sit.runnerOnSecond || sit.runnerOnThird) return false;
   if (sit.outs >= 2) return false;
+  if (Math.abs(sit.scoreDiff) >= STEAL_BLOWOUT_THRESHOLD) return false;
 
   const baseFactor = sit.batterContactRate;
   const multiplier = getInningMultiplier(profile, sit.inning);

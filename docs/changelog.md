@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-17 - DP Defense, Speed-Check Baserunning, H&R Blowout Suppression
+
+Close three simulation fidelity gaps using existing module code and BBW behavior analysis.
+
+Changes:
+- **DP defense integration**: Ground-ball DPs now call `checkDPDefense()` with actual
+  SS + 2B fielding percentages from the fielding team's lineup. Below .950 average,
+  10% chance the DP fails and degrades to a fielder's choice.
+- **Speed-check baserunning**: Replaced manager-AI aggressive baserunning with
+  physics-based speed checks from `baserunner.ts` (REQ-SIM-006). Runner on 1B takes
+  extra base on singles/doubles based on speed, archetype, outfielder arm, and outs.
+  Hit-and-run guarantees the extra base (runner already moving).
+- **H&R blowout suppression**: Hit-and-run decisions now suppressed when score
+  differential is 4+ runs (same threshold as stolen base suppression).
+- **Code extraction**: Moved `getOutfielderArm()` and `getMiddleInfieldFielding()` to
+  defense.ts; moved outcome predicates (`isHitOutcome`, `isWalkOutcome`, `isStrikeout`,
+  `isSingleOutcome`) to outcome-resolver.ts. Game-runner.ts back under 1000 lines.
+
 ## 2026-02-17 - Per-PA Fatigue Model + Game Loop Decompilation
 
 Full decompilation of the BBW game loop (FUN_1058_2cb4 + FUN_1058_2cd7, 11,983 bytes)
