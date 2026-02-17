@@ -20,6 +20,14 @@ import type { SeededRNG } from '../rng/seeded-rng';
 /** Score differential threshold beyond which steals are not attempted */
 const STEAL_BLOWOUT_THRESHOLD = 4;
 
+/**
+ * BBW FUN_1058_1255 opcode 'D': pitcher grade threshold for steal suppression.
+ * When opposing pitcher's effective grade exceeds 14/15 (~93%), steals are
+ * suppressed (pitcher too dominant to risk). Extracted from decompiled
+ * bytecode VM: if (pitcher.grade > 0x0E) skip_steal.
+ */
+const PITCHER_GRADE_STEAL_GATE = 14 / 15;
+
 /** Maximum score differential for bunt consideration */
 const BUNT_SCORE_DIFF_MAX = 2;
 
@@ -97,6 +105,8 @@ export function evaluateStealDecision(
   if (!sit.runnerOnFirst && !sit.runnerOnSecond) return false;
   if (sit.outs >= 2) return false;
   if (Math.abs(sit.scoreDiff) >= STEAL_BLOWOUT_THRESHOLD) return false;
+  // BBW: elite pitcher (grade > 14/15) suppresses steal attempts
+  if (sit.pitcherEffectiveGradePct > PITCHER_GRADE_STEAL_GATE) return false;
 
   const closeGame = Math.abs(sit.scoreDiff) <= 2;
   const baseFactor = sit.runnerSpeed * (closeGame ? 1.0 : 0.5);

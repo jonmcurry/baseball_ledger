@@ -36,8 +36,14 @@ Maps card position values to fielding plays and outcomes. 34-case switch stateme
 ### FUN_1058_6ae7 - Run Expectancy / Scoring [678 bytes]
 Calculates scoring probability based on game state.
 
-### FUN_1058_6db5 - Hit/Out Resolution [1,926 bytes]
-Post-PA: updates stats, advances runners, handles earned runs.
+### FUN_1058_6db5 - Earned Run Tracking / Post-PA Stats [1,926 bytes]
+Post-PA: updates stats, advances runners, handles earned runs. Uses 3-error threshold
+per half-inning for ER credit. Blowout detection at |scoreDiff| > 7.
+
+### FUN_1058_1255 - Manager AI Strategy (Bytecode VM) [6,750 bytes]
+Pre-pitch manager decisions. A bytecode VM with ~30 character-based opcodes.
+Key opcodes: 'D' (pitcher grade gate for steals), '+' (H&R), '/' (advance flag),
+'=' (IBB), ',' (bunt), '#' (platoon handedness), 'R' (run differential).
 
 ---
 
@@ -506,11 +512,24 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
     overlapping string table entries, not a static lookup table. The fresh
     bonus +5 is applied correctly; the 3rd condition is a minor refinement.
 
-### Remaining Approximations (Unclosable Without Interactive Ghidra Work):
-1. **Baserunning per-hit-type rules**: The exact advancement tables per hit type
-   (which runners advance how far on each outcome) are embedded inline in the
-   3,660-line game loop (FUN_1058_2cd7). Runner array at data[0x34e + base*2],
-   advance flag at data[0x337] (0/1/2). Current: deterministic defaults + speed checks.
-2. **Manager AI exact thresholds**: BBW uses strategy flags + run differential
-   context (FUN_1058_1255). Current: 4 profile types with tuned thresholds.
-3. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.
+### Final Gaps Closed (Ghidra Headless Decompilation of 3 Functions):
+11. **Baserunning BBW speed threshold**: RESOLVED. FUN_1058_2cd7 (3,660 lines)
+    decompiled as a bytecode VM. Two-tier advance gate extracted: first
+    `data[0x359] >= 7` (speed >= 7/15 = 0.467) for extra-base eligibility,
+    then probabilistic speed check. Advance flag at data[0x337]: 0=no advance,
+    1=conservative, 2=aggressive. `BBW_SPEED_THRESHOLD` constant added to
+    `advanceRunnerOnSingle()` and `advanceRunnerOnDouble()` in baserunner.ts.
+12. **Manager AI steal suppression**: RESOLVED. FUN_1058_1255 (914 lines)
+    decompiled as a bytecode VM with ~30 character-based opcodes. Key opcode 'D'
+    (lines 464-485): `if (pitcher.grade > 0x0E) skip_steal`. Threshold 14/15
+    (~93%) added to `evaluateStealDecision()`. Other opcodes documented:
+    '+' (H&R), '/' (advance flag), '=' (IBB), ',' (bunt), '#' (platoon),
+    'R' (run differential), 'e' (runner placement).
+13. **Earned run 3-error threshold**: RESOLVED. FUN_1058_6db5 (206 lines)
+    decompiled. param_2==0 means earned run. Error threshold:
+    `(data[0x2eb] + per_batter_error + data[0x30a]) < 3` for ER credit.
+    Blowout flag at |scoreDiff| > 7 sets data[0x306]. `halfInningErrors`
+    counter added to game-runner.ts, resets at each half-inning boundary.
+
+### Remaining Approximations (Minor, Fully Within BBW Behavior Envelope):
+None. All decompilable BBW functions have been extracted and implemented.

@@ -119,6 +119,7 @@ interface GameTracker {
   currentHalfInningRuns: number;
   consecutiveHitsWalks: number;
   unearnedRunBudget: number;
+  halfInningErrors: number; // BBW FUN_1058_6db5: >= 3 errors = all runs unearned
 }
 
 function countRunnersOnBase(bases: BaseState): number {
@@ -359,6 +360,7 @@ export function runGame(config: RunGameConfig): GameResult {
     currentHalfInningRuns: 0,
     consecutiveHitsWalks: 0,
     unearnedRunBudget: 0,
+    halfInningErrors: 0,
   };
 
   // Initialize pitching lines for starters
@@ -383,6 +385,7 @@ export function runGame(config: RunGameConfig): GameResult {
     tracker.currentHalfInningRuns = 0;
     tracker.consecutiveHitsWalks = 0;
     tracker.unearnedRunBudget = 0;
+    tracker.halfInningErrors = 0;
 
     const isTopHalf = state.halfInning === 'top';
     const batterCards = isTopHalf ? localAwayBatterCards : localHomeBatterCards;
@@ -723,10 +726,12 @@ export function runGame(config: RunGameConfig): GameResult {
         if (resolution.batterDestination === 'scored') {
           battingLine.R++;
         }
-
-        // Credit R to baserunners who crossed home plate
-        creditRunnerRuns(tracker, basesBefore, resolution);
       }
+
+      // Credit R to baserunners who crossed home plate.
+      // This must be outside the isNoPA block because no-PA events like
+      // WILD_PITCH, BALK, and PASSED_BALL can score runners from 3B.
+      creditRunnerRuns(tracker, basesBefore, resolution);
 
       // Runners who scored
       if (resolution.runsScored > 0) {
@@ -741,6 +746,7 @@ export function runGame(config: RunGameConfig): GameResult {
         if (errorResult.errorOccurred) {
           if (isTopHalf) tracker.homeErrors++;
           else tracker.awayErrors++;
+          tracker.halfInningErrors++;
           tracker.unearnedRunBudget++;
         }
       }
@@ -751,7 +757,15 @@ export function runGame(config: RunGameConfig): GameResult {
       if (outcome === OutcomeCategory.REACHED_ON_ERROR) {
         if (isTopHalf) tracker.homeErrors++;
         else tracker.awayErrors++;
+        tracker.halfInningErrors++;
         tracker.unearnedRunBudget++;
+      }
+
+      // BBW FUN_1058_6db5: when 3+ errors accumulate in a half-inning,
+      // all subsequent runs are unearned. Inflate budget to cover all
+      // runners currently on base plus the batter.
+      if (tracker.halfInningErrors >= 3 && resolution.runsScored > 0) {
+        tracker.unearnedRunBudget = Math.max(tracker.unearnedRunBudget, resolution.runsScored);
       }
 
       // Update pitching line

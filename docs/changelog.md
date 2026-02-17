@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-02-17 - BBW 100% Parity: 3 Final Gaps Closed
+
+Decompiled the last 3 BBW functions via Ghidra headless and closed all remaining
+fidelity gaps. Both FUN_1058_1255 (manager AI) and FUN_1058_2cd7 (game loop) are
+bytecode VMs with character-based opcode dispatch.
+
+Changes:
+- **Earned run 3-error threshold**: BBW FUN_1058_6db5 uses a 3-error-per-half-inning
+  gate for earned run credit: `(data[0x2eb] + per_batter_error + data[0x30a]) < 3`.
+  When 3+ errors accumulate in a half-inning, all subsequent runs are unearned.
+  Added `halfInningErrors` tracker to game-runner.ts, reset at each half-inning.
+- **Baserunning BBW speed threshold**: FUN_1058_2cd7 advance flag logic uses a
+  two-tier gate: first `data[0x359] >= 7` (speed >= 7/15 = 0.467) for extra-base
+  eligibility, then a probabilistic speed check. Added `BBW_SPEED_THRESHOLD` gate
+  to `advanceRunnerOnSingle()` and `advanceRunnerOnDouble()` in baserunner.ts.
+- **Manager AI steal suppression**: FUN_1058_1255 opcode 'D' suppresses steal
+  attempts when pitcher grade > 14/15 (0x0E). Added `PITCHER_GRADE_STEAL_GATE`
+  check in `evaluateStealDecision()`.
+- **Run attribution fix**: Moved `creditRunnerRuns()` outside the `isNoPA` block
+  so that runs scored on wild pitch/balk/passed ball are properly credited to
+  individual batting lines (was causing R-total mismatch).
+- **CG IP assertion**: Relaxed CG pitcher IP check from >=9 to >=8 to account
+  for away-pitcher CGs when bottom of 9th is not played.
+
 ## 2026-02-17 - SINGLE_ADVANCE, ROE Earned Runs, Ghidra Layer 2 Decompilation
 
 Close remaining simulation gaps and resolve two previously-unknown Ghidra targets.

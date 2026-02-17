@@ -24,6 +24,15 @@ const STRONG_ARM_PENALTY = 0.10;
 /** Two-out aggressiveness bonus per REQ-SIM-006 */
 const TWO_OUT_BONUS = 0.10;
 
+/**
+ * BBW FUN_1058_2cd7 speed eligibility threshold.
+ * Runners with speed < 7/15 (0.467) are never eligible for extra-base
+ * advancement. This gates the probabilistic speed check that follows.
+ * In the decompiled game loop, the advance flag is set to 2 (aggressive)
+ * only when data[0x359] >= 7 ('\a').
+ */
+const BBW_SPEED_THRESHOLD = 7 / 15;
+
 /** Base positions for type safety */
 export type BasePosition = 'first' | 'second' | 'third';
 
@@ -104,6 +113,11 @@ export function advanceRunnerOnSingle(
     return { destination: 'scored', scored: true, tookExtraBase: false };
   }
 
+  // BBW gate: runners below speed threshold never attempt extra base
+  if (runnerSpeed < BBW_SPEED_THRESHOLD) {
+    return { destination: 'second', scored: false, tookExtraBase: false };
+  }
+
   // Runner on 1B: speed check for extra base
   const effectiveSpeed = computeEffectiveSpeed(runnerSpeed, runnerArchetype, outfielderArm, outs);
   if (performSpeedCheck(rng, effectiveSpeed)) {
@@ -129,6 +143,11 @@ export function advanceRunnerOnDouble(
 ): RunnerAdvancement {
   if (currentBase === 'third' || currentBase === 'second') {
     return { destination: 'scored', scored: true, tookExtraBase: false };
+  }
+
+  // BBW gate: runners below speed threshold never attempt extra base
+  if (runnerSpeed < BBW_SPEED_THRESHOLD) {
+    return { destination: 'third', scored: false, tookExtraBase: false };
   }
 
   // Runner on 1B: speed check to score

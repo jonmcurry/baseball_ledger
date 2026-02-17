@@ -607,8 +607,9 @@ describe('game-runner', () => {
         for (const line of result.playerPitchingLines) {
           if (line.CG === 1) {
             cgFound = true;
-            // CG pitcher must have pitched at least 9 IP
-            expect(line.IP).toBeGreaterThanOrEqual(9);
+            // CG pitcher must have pitched at least 8 IP (8 if away pitcher
+            // and home team doesn't bat in bottom of 9th)
+            expect(line.IP).toBeGreaterThanOrEqual(8);
           }
           // SHO implies CG
           if (line.SHO === 1) {
