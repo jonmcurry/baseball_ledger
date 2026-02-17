@@ -175,7 +175,7 @@ function buildGameSituation(
   benchPlayers?: PlayerCard[],
 ): GameSituation {
   const startingGrade = pitcherCard.pitching?.grade ?? 1;
-  const effectiveGrade = computeEffectiveGrade(pitcherCard, pitcherState.inningsPitched);
+  const effectiveGrade = computeEffectiveGrade(pitcherCard, pitcherState.battersFaced);
 
   // Compute bench OPS for pinch-hit decisions
   let bestBenchOps: number | undefined;
@@ -207,6 +207,7 @@ function buildGameSituation(
 function initPitcherState(): PitcherGameState {
   return {
     inningsPitched: 0,
+    battersFaced: 0,
     earnedRuns: 0,
     consecutiveHitsWalks: 0,
     currentInning: 1,
@@ -658,7 +659,7 @@ export function runGame(config: RunGameConfig): GameResult {
       }
 
       // -- Standard plate appearance --
-      // 5-layer grade: fatigue, relief penalty, fresh bonus, platoon, random variance
+      // 6-layer grade: fatigue, relief penalty, fresh bonus, platoon, random variance
       const startingPitcherForSide = isTopHalf ? config.homeStartingPitcher : config.awayStartingPitcher;
       const isReliefSituation = currentPitcher.playerId !== startingPitcherForSide.playerId;
       let pitcherType = 0; // starter
@@ -666,16 +667,18 @@ export function runGame(config: RunGameConfig): GameResult {
         pitcherType = currentPitcher.pitching?.role === 'CL' ? 7 : 1;
       }
       const gradeContext: GradeContext = {
-        inningsPitched: currentPitcherState.inningsPitched,
+        battersFaced: currentPitcherState.battersFaced,
         isReliefSituation,
         pitcherType,
-        isFresh: isReliefSituation && currentPitcherState.inningsPitched === 0,
+        isFresh: isReliefSituation && currentPitcherState.battersFaced === 0,
         fatigueAdj: 0,
         batterHand: batterCard.battingHand,
         pitcherHand: currentPitcher.throwingHand,
         platoonValue: 2,
       };
       const effectiveGrade = computeGameGrade(currentPitcher, gradeContext, rng);
+      // BBW: data[0x47] increments per PA (fatigue counter, after grade calc)
+      currentPitcherState.battersFaced++;
       const paResult = resolvePlateAppearance(batterCard.card, currentPitcher.card, effectiveGrade, rng);
       const umpireCheck = checkUmpireDecision(paResult.outcome, rng);
       // REQ-SIM-004 Step 6: Apply archetype modifier after umpire check

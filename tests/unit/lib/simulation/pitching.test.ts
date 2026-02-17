@@ -59,6 +59,7 @@ function makePitcher(overrides: Partial<PitcherAttributes> & { id?: string } = {
 function makePitcherState(overrides: Partial<PitcherGameState> = {}): PitcherGameState {
   return {
     inningsPitched: 0,
+    battersFaced: 0,
     earnedRuns: 0,
     consecutiveHitsWalks: 0,
     currentInning: 1,
@@ -72,39 +73,46 @@ function makePitcherState(overrides: Partial<PitcherGameState> = {}): PitcherGam
 // ---------------------------------------------------------------------------
 // computeEffectiveGrade (REQ-SIM-010)
 // ---------------------------------------------------------------------------
-describe('computeEffectiveGrade (REQ-SIM-010)', () => {
-  it('returns full grade within stamina innings (starter)', () => {
+describe('computeEffectiveGrade (REQ-SIM-010, per-PA fatigue)', () => {
+  // BBW model: fatigue = max(0, battersFaced - stamina*4), grade = max(base - fatigue, 1)
+
+  it('returns full grade within stamina PAs (starter)', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 7 });
-    expect(computeEffectiveGrade(pitcher, 5)).toBe(14);
+    // stamina*4 = 28 PAs before fatigue kicks in
+    expect(computeEffectiveGrade(pitcher, 20)).toBe(14);
   });
 
-  it('returns full grade at exactly stamina innings (starter)', () => {
+  it('returns full grade at exactly stamina PAs (starter)', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 7 });
-    expect(computeEffectiveGrade(pitcher, 7)).toBe(14);
+    expect(computeEffectiveGrade(pitcher, 28)).toBe(14); // stamina*4 = 28
   });
 
-  it('degrades by 2 per inning beyond stamina (starter)', () => {
+  it('degrades by 1 per PA beyond stamina PAs (BBW per-PA model)', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 7 });
-    expect(computeEffectiveGrade(pitcher, 8)).toBe(12); // 14 - 2*1
-    expect(computeEffectiveGrade(pitcher, 9)).toBe(10); // 14 - 2*2
-    expect(computeEffectiveGrade(pitcher, 10)).toBe(8); // 14 - 2*3
+    // staminaPAs = 28
+    expect(computeEffectiveGrade(pitcher, 29)).toBe(13); // 14 - 1
+    expect(computeEffectiveGrade(pitcher, 30)).toBe(12); // 14 - 2
+    expect(computeEffectiveGrade(pitcher, 31)).toBe(11); // 14 - 3
   });
 
   it('minimum effective grade is 1', () => {
     const pitcher = makePitcher({ grade: 5, stamina: 3 });
-    expect(computeEffectiveGrade(pitcher, 10)).toBe(1); // 5 - 2*7 = -9, clamped to 1
+    // staminaPAs = 12, battersFaced=20 -> fatigue=8, grade=max(5-8,1)=1
+    expect(computeEffectiveGrade(pitcher, 20)).toBe(1);
   });
 
-  it('relief pitcher degrades by 3 per inning beyond stamina', () => {
+  it('reliever also degrades by 1 per PA beyond stamina PAs', () => {
     const pitcher = makePitcher({ role: 'RP', grade: 10, stamina: 2, isReliever: true });
-    expect(computeEffectiveGrade(pitcher, 2)).toBe(10); // within stamina
-    expect(computeEffectiveGrade(pitcher, 3)).toBe(7);  // 10 - 3*1
-    expect(computeEffectiveGrade(pitcher, 4)).toBe(4);  // 10 - 3*2
+    // staminaPAs = 8
+    expect(computeEffectiveGrade(pitcher, 8)).toBe(10); // within stamina
+    expect(computeEffectiveGrade(pitcher, 9)).toBe(9);  // 10 - 1
+    expect(computeEffectiveGrade(pitcher, 10)).toBe(8);  // 10 - 2
   });
 
   it('reliever minimum effective grade is 1', () => {
     const pitcher = makePitcher({ role: 'RP', grade: 6, stamina: 1, isReliever: true });
-    expect(computeEffectiveGrade(pitcher, 5)).toBe(1); // 6 - 3*4 = -6, clamped to 1
+    // staminaPAs = 4, battersFaced=15 -> fatigue=11, grade=max(6-11,1)=1
+    expect(computeEffectiveGrade(pitcher, 15)).toBe(1);
   });
 });
 
@@ -114,14 +122,15 @@ describe('computeEffectiveGrade (REQ-SIM-010)', () => {
 describe('shouldRemoveStarter (REQ-SIM-011)', () => {
   it('triggers when effective grade <= 50% of starting grade', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 4 });
-    // At inning 9: 14 - 2*5 = 4, which is < 7 (50% of 14)
-    const state = makePitcherState({ inningsPitched: 9 });
+    // staminaPAs=16, battersFaced=24 -> fatigue=8, grade=6 < 7 (50% of 14)
+    const state = makePitcherState({ inningsPitched: 9, battersFaced: 24 });
     expect(shouldRemoveStarter(pitcher, state)).toBe(true);
   });
 
   it('does not trigger when grade still above 50%', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 7 });
-    const state = makePitcherState({ inningsPitched: 7 });
+    // staminaPAs=28, battersFaced=28 -> fatigue=0, grade=14
+    const state = makePitcherState({ inningsPitched: 7, battersFaced: 28 });
     expect(shouldRemoveStarter(pitcher, state)).toBe(false);
   });
 
@@ -218,6 +227,7 @@ describe('shouldRemoveStarter (REQ-SIM-011)', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 4 });
     const state = makePitcherState({
       inningsPitched: 9,
+      battersFaced: 36, // staminaPAs=16, fatigue=20, grade=1 (<7)
       isShutout: true,
       isNoHitter: true,
     });
@@ -228,6 +238,7 @@ describe('shouldRemoveStarter (REQ-SIM-011)', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 4 });
     const state = makePitcherState({
       inningsPitched: 9,
+      battersFaced: 36, // heavy fatigue
       isShutout: false,
       isNoHitter: true,
     });
@@ -393,7 +404,7 @@ describe('Grade adjustment constants (Ghidra confirmed)', () => {
 describe('computeGameGrade (Ghidra 6-layer grade adjustment)', () => {
   function makeGradeContext(overrides: Partial<GradeContext> = {}): GradeContext {
     return {
-      inningsPitched: 0,
+      battersFaced: 0,
       isReliefSituation: false,
       pitcherType: 0,
       isFresh: false,
@@ -436,20 +447,22 @@ describe('computeGameGrade (Ghidra 6-layer grade adjustment)', () => {
     }
   });
 
-  // --- Layers 1-2: Base + Fatigue ---
-  it('Layer 2: fatigue reduces grade beyond stamina', () => {
+  // --- Layers 1-2: Base + Fatigue (per-PA) ---
+  it('Layer 2: fatigue reduces grade beyond stamina PAs', () => {
     const pitcher = makePitcher({ grade: 12, stamina: 6 });
-    const ctx = makeGradeContext({ inningsPitched: 9 }); // 3 beyond stamina
+    // staminaPAs=24, battersFaced=30 -> fatigue=6, grade=6
+    const ctx = makeGradeContext({ battersFaced: 30 });
     const rng = new SeededRNG(42);
 
     const grade = computeGameGrade(pitcher, ctx, rng);
-    // Base fatigue: 12 - 2*3 = 6, then random variance
+    // Base fatigue: 12 - 6 = 6, then random variance
     expect(grade).toBeLessThan(12);
   });
 
-  it('Layer 2: no fatigue within stamina', () => {
+  it('Layer 2: no fatigue within stamina PAs', () => {
     const pitcher = makePitcher({ grade: 12, stamina: 9 });
-    const ctx = makeGradeContext({ inningsPitched: 5 });
+    // staminaPAs=36, battersFaced=20 -> within stamina
+    const ctx = makeGradeContext({ battersFaced: 20 });
     const rng = new SeededRNG(42);
 
     const grade = computeGameGrade(pitcher, ctx, rng);
@@ -603,7 +616,7 @@ describe('computeGameGrade (Ghidra 6-layer grade adjustment)', () => {
   it('grade is always clamped to minimum 1', () => {
     const pitcher = makePitcher({ grade: 3, stamina: 1, isReliever: true });
     const ctx = makeGradeContext({
-      inningsPitched: 5, // Heavy fatigue
+      battersFaced: 20, // staminaPAs=4, fatigue=16, way beyond grade
       isReliefSituation: true,
       pitcherType: 0,
     });
@@ -619,17 +632,17 @@ describe('computeGameGrade (Ghidra 6-layer grade adjustment)', () => {
     // Pitcher: grade 12, reliever, fresh, same-hand with platoon
     const pitcher = makePitcher({ role: 'RP', grade: 12, stamina: 2, isReliever: true });
     const ctx = makeGradeContext({
-      inningsPitched: 0,         // Layer 1: No fatigue
-      isReliefSituation: true,   // Layer 2: -2 (not closer)
+      battersFaced: 0,           // Layer 1-2: No fatigue
+      isReliefSituation: true,   // Layer 3: -2 (not closer)
       pitcherType: 1,            // Non-zero enables fresh bonus
-      isFresh: true,             // Layer 3: +5
-      batterHand: 'R',           // Layer 4: same-hand
+      isFresh: true,             // Layer 4: +5
+      batterHand: 'R',           // Layer 5: same-hand
       pitcherHand: 'R',
-      platoonValue: 2,           // Layer 4: +2
+      platoonValue: 2,           // Layer 5: +2
     });
 
     // Expected: 12 - 2 (relief) + 5 (fresh, clamped to 20) + 2 (platoon) = 17
-    // Plus layer 5 random variance (~0 average)
+    // Plus layer 6 random variance (~0 average)
     let total = 0;
     const samples = 100;
     for (let i = 0; i < samples; i++) {

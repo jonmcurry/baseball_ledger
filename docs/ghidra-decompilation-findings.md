@@ -2,8 +2,10 @@
 
 ## Method
 Ghidra 12.0.3 headless decompilation with JDK 21, NE format, x86:LE:16:Protected Mode.
-Auto-analysis found 4,583 functions across 36 code segments. 13 targeted simulation
-functions decompiled to C pseudocode. Full output saved in `BBW/ghidra_decompiled.txt`.
+Auto-analysis found 4,583 functions across 36 code segments (57 in segment 1058 alone
+via Ghidra auto-analysis). 13 targeted simulation functions + 13 additional functions
+decompiled to C pseudocode. Full output saved in `BBW/ghidra_decompiled.txt` and
+`scripts/decomp_*.c`.
 
 ## Segment Map (Key Segments)
 
@@ -450,24 +452,42 @@ All accessed via ES:[DI+offset] (16-bit far pointer to game state).
 7. Archetype flags at offset 0x44 affect symbol outcomes
 8. Umpire decision post-check (probabilistic approximation)
 
-### Known Approximations (Unclosable Without More Ghidra Work):
-1. **Umpire decision**: BBW's FUN_1058_7726 is DETERMINISTIC based on player
-   record offsets 0x2f, 0x33, 0x35. Without PLAYERS.DAT field map, we use
-   3% probabilistic approximation matching observed aggregate rates.
-2. **Fatigue accumulation**: BBW's data[0x47] mechanism confirmed by full
-   byte-scan of all 35 code segments:
-   - Zeroed at game start (1068:3da0, 10a0:1e6e)
-   - Incremented by 1 per event (INC at 1058:2cb4)
-   - Conditionally adjusted +1/+2 based on pitcher type at data[0x2cb]
-     (10a0:9bab/9bcf)
-   - Capped at 30 (PUSH 0x1E for min() at 10a0:9b93)
+### Resolved (Previously Approximations):
+1. **Umpire decision**: RESOLVED. PLAYERS.DAT analysis shows offset 0x2f is
+   ALWAYS 0 for all 828 players in 1971S dataset, meaning the "else" branch
+   (no override) is never taken. The low ~3% effective rate comes from the
+   CALLER rarely invoking the check. Our 3% probabilistic approximation is
+   validated as accurate.
+2. **Fatigue accumulation**: RESOLVED. Full decompilation of FUN_1058_2cb4
+   (fatigue stub, 35 bytes) + game loop (FUN_1058_2cd7, 11,983 bytes) +
+   pre-fatigue function (FUN_1058_1255, 6,750 bytes) confirms:
+   - data[0x47] zeroed at game start (1068:3da0, 10a0:1e6e)
+   - data[0x47] incremented by 1 PER PLATE APPEARANCE (confirmed in 3 locations:
+     FUN_1058_2cb4 line 25, FUN_1058_1255 line 866, FUN_1058_2cd7 line 3641)
+   - Conditionally adjusted +1/+2 based on pitcher type (10a0:9bab/9bcf)
+   - Capped at 30 (PUSH 0x1E at 10a0:9b93)
    - Grade = max(data[0x43] - data[0x47], 1)
-   Our per-inning linear decay approximates this per-event counter.
-   The exact trigger conditions require decompiling the full parent
-   function at 1058:~2940 (not in our 13-function set).
-3. **Fresh bonus 3rd condition**: BBW checks 3 OR conditions; we check 2.
-   The third involves a season data lookup we cannot decode.
-4. **Baserunning**: Not in 13 decompiled functions. Speed-check heuristic.
-5. **Manager AI** (pinch-hit, H&R, IBB): Requires additional FUN decompilation.
-6. **DP execution details**: Complex fielding logic, uniform DP success model.
-7. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.
+   NOW IMPLEMENTED: `computeEffectiveGrade(pitcher, battersFaced)` uses
+   per-PA fatigue model matching BBW's data[0x47] counter.
+3. **Grade adjustment exact conditions**: RESOLVED via full decompilation of
+   FUN_1058_5be1 (83 lines). All 6 layers documented with exact BBW offsets:
+   - Layer 2 (fatigue): conditional on FUN_10c8_3ac9(pitcher) != 1 OR pitcher[0x46] != 0
+   - Layer 3 (relief): data[0x314] != 0 AND data[0x311] != 7
+   - Layer 4 (fresh): data[0x49] != 0 AND (data[0x311] || data[0x2eb] || table)
+     -> min(grade + 5, 20); guard against reducing extended grades
+   - Layer 5 (platoon): pitcher[0x2a] == batter[0x38] -> min(grade + batter[0x3b], 30)
+   - Layer 6 (variance): random(40) indexes DATA[0x3802] -> min(grade + v, 30)
+
+### Remaining Approximations (Unclosable Without Interactive Ghidra Work):
+1. **Baserunning algorithm**: Runner array at data[0x34e + base*2] (2 bytes
+   per base), advance flag at data[0x337] (0/1/2). Logic is embedded inline
+   in the 3,660-line game loop (FUN_1058_2cd7), not in a separate callable
+   function. Decompiling the full flow for each hit type requires interactive
+   Ghidra analysis. Current: speed-check heuristic.
+2. **Manager AI** (pinch-hit, H&R, IBB): Requires additional FUN decompilation.
+3. **DP execution details**: Complex fielding logic, uniform DP success model.
+4. **Earned run reconstruction**: FUN_1058_6db5 is 1,926 bytes; conservative ER budget.
+5. **Layer 2 fatigue condition**: The exact semantics of FUN_10c8_3ac9() and
+   pitcher[0x46] (which gate the fatigue subtraction) are unknown.
+6. **Fresh bonus 3rd condition**: The table lookup from data[0x2e7] indexed
+   by data[0x2ca]-1 is not fully decoded.

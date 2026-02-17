@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-17 - Per-PA Fatigue Model + Game Loop Decompilation
+
+Full decompilation of the BBW game loop (FUN_1058_2cb4 + FUN_1058_2cd7, 11,983 bytes)
+confirms fatigue counter data[0x47] increments once per plate appearance, not per inning.
+
+Changes:
+- **Per-PA fatigue model**: `computeEffectiveGrade(pitcher, battersFaced)` replaces
+  the old per-inning model. Fatigue kicks in after `stamina * 4` PAs (matching BBW's
+  immediate counter with our stamina concept). Degradation is -1 per PA beyond threshold.
+- **PitcherGameState.battersFaced**: New field tracks batters faced per pitcher in game.
+  Incremented after each PA grade calculation (matching BBW's post-grade-check INC).
+- **GradeContext.battersFaced**: Replaces `inningsPitched` for fatigue layer input.
+- **Fresh bonus guard**: `Math.max(grade, withBonus)` prevents fresh bonus from
+  reducing extended-range grades (>15) below their current value.
+- **Grade function documentation**: All 6 layers annotated with exact BBW offsets
+  from FUN_1058_5be1 decompilation (83 lines of C pseudocode).
+- **Baserunning scan**: Runner array at data[0x34e + base*2], advance flag at
+  data[0x337]. Logic is inline in game loop (3,660 lines), not a separate function.
+  Remains unclosable without interactive Ghidra analysis.
+
+Decompiled 13 additional functions via Ghidra auto-analysis (57 total in segment 1058).
+Saved to scripts/decomp_*.c for reference.
+
 ## 2026-02-16 - BBW Fatigue Mechanism Confirmed via Full Byte Scan
 
 Performed exhaustive byte-level scan of all 35 WINBB.EXE code segments to find

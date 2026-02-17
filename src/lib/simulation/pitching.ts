@@ -15,11 +15,12 @@
 import type { PlayerCard } from '../types/player';
 import type { SeededRNG } from '../rng/seeded-rng';
 
-/** Grade degradation per inning beyond stamina for starters */
-const STARTER_GRADE_DECAY = 2;
-
-/** Grade degradation per inning beyond stamina for relievers */
-const RELIEVER_GRADE_DECAY = 3;
+/**
+ * Approximate batters faced per inning of stamina.
+ * BBW uses per-event fatigue (data[0x47] increments per PA).
+ * This converts our stamina (in innings) to a PA threshold.
+ */
+const PAS_PER_STAMINA_INNING = 4;
 
 /** Minimum effective grade (never drops below this) */
 const MIN_GRADE = 1;
@@ -63,6 +64,8 @@ const CLOSER_MAX_RUNNERS = 2;
  */
 export interface PitcherGameState {
   inningsPitched: number;
+  /** Batters faced in current game (BBW fatigue counter, maps to data[0x47]) */
+  battersFaced: number;
   earnedRuns: number;
   consecutiveHitsWalks: number;
   currentInning: number;
@@ -76,43 +79,39 @@ export interface PitcherGameState {
  * Compute the effective grade for a pitcher based on fatigue.
  *
  * Per REQ-SIM-010:
- * - Starters: full grade through stamina, then -2 per inning beyond
- * - Relievers: full grade through stamina, then -3 per inning beyond
+ * - Pitchers have full grade through stamina-equivalent PAs
+ * - Beyond stamina, grade degrades by 1 per additional PA faced
  * - Minimum grade: 1
  *
- * BBW Equivalence:
- * Ghidra FUN_1058_5be1 shows BBW uses `grade = max(data[0x43] - data[0x47], 1)`
- * for fatigue. BBW's actual mechanism (confirmed by byte-scan of WINBB.EXE):
+ * BBW Equivalence (confirmed by Ghidra decompilation of game loop):
+ * Ghidra FUN_1058_5be1 shows BBW uses `grade = max(data[0x43] - data[0x47], 1)`.
+ * BBW's mechanism (confirmed by full decompilation of FUN_1058_2cb4 + game loop):
  *   - data[0x47] zeroed at game start (1068:3da0)
- *   - data[0x47] incremented by 1 per event (INC at 1058:2cb4)
+ *   - data[0x47] incremented by 1 per plate appearance (game loop at 1058:2cb4,
+ *     also in FUN_1058_1255 line 866 and FUN_1058_2cd7 line 3641)
  *   - data[0x47] conditionally adjusted +1/+2 based on pitcher type (10a0:9bab)
  *   - data[0x47] capped at 30 (PUSH 0x1E min() at 10a0:9b93)
  *
- * Our per-inning linear formula approximates this per-event counter model.
- * Decay rates (2 for starters, 3 for relievers) produce similar aggregate
- * degradation curves. The exact event trigger conditions require decompiling
- * the full parent function at 1058:~2940, which is not in our 13-function set.
+ * Our model uses `battersFaced` as the fatigue counter (matching BBW data[0x47]),
+ * with stamina converted to a PA threshold via PAS_PER_STAMINA_INNING.
  *
  * @param pitcher - The pitcher's card with pitching attributes
- * @param inningsPitched - Innings pitched in current game
+ * @param battersFaced - Number of batters faced in current game
  */
 export function computeEffectiveGrade(
   pitcher: PlayerCard,
-  inningsPitched: number,
+  battersFaced: number,
 ): number {
   const pitching = pitcher.pitching;
   if (!pitching) return MIN_GRADE;
 
   const baseGrade = pitching.grade;
-  const stamina = pitching.stamina;
-  const inningsBeyond = Math.max(0, inningsPitched - stamina);
+  const staminaPAs = pitching.stamina * PAS_PER_STAMINA_INNING;
+  const fatigue = Math.max(0, battersFaced - staminaPAs);
 
-  if (inningsBeyond === 0) return baseGrade;
+  if (fatigue === 0) return baseGrade;
 
-  const decay = pitching.isReliever ? RELIEVER_GRADE_DECAY : STARTER_GRADE_DECAY;
-  const degraded = baseGrade - (decay * inningsBeyond);
-
-  return Math.max(MIN_GRADE, degraded);
+  return Math.max(MIN_GRADE, baseGrade - fatigue);
 }
 
 // ---------------------------------------------------------------------------
@@ -166,8 +165,8 @@ export const RANDOM_VARIANCE_TABLE: readonly number[] = [
  * Provides all state needed for the 6-layer calculation.
  */
 export interface GradeContext {
-  /** Innings pitched in current game (for fatigue calculation) */
-  inningsPitched: number;
+  /** Batters faced in current game (BBW per-PA fatigue counter) */
+  battersFaced: number;
   /** True if pitcher entered in a relief situation */
   isReliefSituation: boolean;
   /** Pitcher type flag (7 = closer, other = non-closer) */
@@ -187,14 +186,16 @@ export interface GradeContext {
 /**
  * Compute the full 6-layer game-time grade for PA resolution.
  *
- * Confirmed by Ghidra decompilation of FUN_1058_5be1 (Grade Setup):
+ * Confirmed by full Ghidra decompilation of FUN_1058_5be1 (Grade Setup, 83 lines):
  *
- * Layer 1: Base grade copy (implicit in computeEffectiveGrade)
- * Layer 2: Fatigue -- grade degrades beyond stamina innings
- * Layer 3: Relief Penalty -- non-closer relievers get -2 (min 1)
- * Layer 4: Fresh Bonus -- fresh pitchers get +5 (capped at 20)
- * Layer 5: Platoon -- same-hand matchup: grade += platoonValue (capped at 30)
- * Layer 6: Random Variance -- random(40) indexes into table (final range [1, 30])
+ * Layer 1: Base grade from pitcher record data[0x43]
+ * Layer 2: Fatigue -- grade = max(data[0x43] - data[0x47], 1), per-PA counter
+ *          Condition: FUN_10c8_3ac9(pitcher) != 1 OR pitcher[0x46] != 0
+ * Layer 3: Relief Penalty -- data[0x314] != 0 AND data[0x311] != 7 -> grade -= 2
+ * Layer 4: Fresh Bonus -- data[0x49] != 0 AND (data[0x311] != 0 OR
+ *          data[0x2eb] != 0 OR table_lookup != 0) -> min(grade + 5, 20)
+ * Layer 5: Platoon -- pitcher[0x2a] == batter[0x38] -> min(grade + batter[0x3b], 30)
+ * Layer 6: Random Variance -- random(40) indexes DATA[0x3802] -> min(grade + v, 30)
  *
  * @param pitcher - The pitcher's PlayerCard
  * @param context - Game context for all layers
@@ -209,8 +210,8 @@ export function computeGameGrade(
   const pitching = pitcher.pitching;
   if (!pitching) return MIN_GRADE;
 
-  // Layers 1-2: Base grade + Fatigue (reuse existing logic)
-  let grade = computeEffectiveGrade(pitcher, context.inningsPitched);
+  // Layers 1-2: Base grade + Fatigue (per-PA model, reuse existing logic)
+  let grade = computeEffectiveGrade(pitcher, context.battersFaced);
 
   // Layer 3: Relief Penalty
   // Non-closer relievers get -2 when in a relief situation
@@ -219,10 +220,13 @@ export function computeGameGrade(
   }
 
   // Layer 4: Fresh Pitcher Bonus
-  // Fresh pitcher gets +5, capped at FRESH_GRADE_MAX (20)
+  // BBW: data[0x49] != 0 AND (data[0x311] != 0 OR data[0x2eb] != 0 OR table != 0)
+  // Fresh pitcher gets +5, capped at FRESH_GRADE_MAX (20).
+  // Guard: never reduce grade below current (for extended grades > 15).
   if (context.isFresh) {
     if (context.pitcherType !== 0 || context.fatigueAdj !== 0) {
-      grade = Math.min(grade + FRESH_BONUS, FRESH_GRADE_MAX);
+      const withBonus = Math.min(grade + FRESH_BONUS, FRESH_GRADE_MAX);
+      grade = Math.max(grade, withBonus);
     }
   }
 
@@ -270,7 +274,7 @@ export function shouldRemoveStarter(
   const pitching = pitcher.pitching;
   if (!pitching) return false;
 
-  const effectiveGrade = computeEffectiveGrade(pitcher, state.inningsPitched);
+  const effectiveGrade = computeEffectiveGrade(pitcher, state.battersFaced);
   const startingGrade = pitching.grade;
 
   // Trigger 1: Grade at 50% or less of starting grade
