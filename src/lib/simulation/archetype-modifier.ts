@@ -121,17 +121,6 @@ const SINGLE_OR_WALK_OUTCOMES: ReadonlySet<OutcomeCategory> = new Set([
   OutcomeCategory.HIT_BY_PITCH,
 ]);
 
-const STRIKEOUT_OUTCOMES: ReadonlySet<OutcomeCategory> = new Set([
-  OutcomeCategory.STRIKEOUT_LOOKING,
-  OutcomeCategory.STRIKEOUT_SWINGING,
-]);
-
-/** Power bonus probability: 15% chance FLY_OUT -> HOME_RUN */
-const POWER_HR_UPGRADE_CHANCE = 0.15;
-
-/** Contact bonus probability: 20% chance strikeout -> GROUND_OUT */
-const CONTACT_K_DOWNGRADE_CHANCE = 0.20;
-
 // ---------------------------------------------------------------------------
 // Main modifier function
 // ---------------------------------------------------------------------------

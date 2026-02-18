@@ -223,7 +223,7 @@ export function generateApbaCard(
   _archetype: PlayerArchetype,
 ): ApbaCard {
   const columns: ApbaColumn[] = ['A', 'B', 'C', 'D', 'E'];
-  const card: Record<string, OutcomeCategory[]> = {};
+  const card: Partial<Record<ApbaColumn, OutcomeCategory[]>> = {};
 
   for (let ci = 0; ci < columns.length; ci++) {
     const col = columns[ci];

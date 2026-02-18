@@ -6,7 +6,7 @@ export type CardValue = number; // 0-42
 export type ApbaColumn = 'A' | 'B' | 'C' | 'D' | 'E';
 
 /** 36 outcome slots per column (simulating 2d6 roll, 36 equiprobable results). */
-export type ColumnCard = readonly OutcomeCategory[];
+export type ColumnCard = OutcomeCategory[];
 
 /** 5-column APBA card. Each column has 36 OutcomeCategory outcomes.
  *  Column A = best pitcher (precise control), E = worst (wild). */
