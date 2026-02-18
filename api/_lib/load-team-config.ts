@@ -10,6 +10,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PlayerCard, Position } from '../../src/lib/types/player';
 import type { ManagerStyle } from '../../src/lib/simulation/manager-profiles';
+import { generatePitcherApbaCard } from '../../src/lib/card-generator/apba-card-generator';
 
 export interface TeamConfig {
   lineup: { playerId: string; playerName: string; position: Position }[];
@@ -145,6 +146,7 @@ export function createFallbackPitcher(): PlayerCard {
     eligiblePositions: ['SP'],
     isPitcher: true,
     card: new Array(35).fill(7),
+    apbaCard: generatePitcherApbaCard(),
     powerRating: 13,
     archetype: { byte33: 7, byte34: 0 },
     speed: 0.3,
