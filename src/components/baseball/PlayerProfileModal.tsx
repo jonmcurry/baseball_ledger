@@ -1,8 +1,9 @@
 /**
  * PlayerProfileModal
  *
- * "Vintage Baseball Card" popup (REQ-UI-009).
- * Styled as a classic 1950s-60s Topps/Bowman trading card.
+ * "Encyclopedia Spread" player profile (REQ-UI-009, Section 3.4).
+ * Heritage Editorial design: drop-cap biography, clean stat tables,
+ * hairline borders, no leather/gold/rounded elements.
  *
  * Layer 6: Presentational component.
  */
@@ -38,19 +39,21 @@ function pctLabel(value: number): string {
   return (value * 100).toFixed(0) + '%';
 }
 
-function getPositionColor(position: string): string {
-  if (['SP', 'RP', 'CL'].includes(position)) return 'bg-[var(--color-stitch)]';
-  if (position === 'C') return 'bg-[var(--color-leather)]';
-  if (['1B', '2B', '3B', 'SS'].includes(position)) return 'bg-[var(--color-dirt)]';
-  if (['LF', 'CF', 'RF'].includes(position)) return 'bg-[var(--color-grass)]';
-  return 'bg-[var(--color-gold)]';
+/** Position badge CSS class. */
+function positionBadgeClass(pos: string): string {
+  if (['SP', 'RP', 'CL'].includes(pos)) return 'position-badge position-badge-pitcher';
+  if (pos === 'C') return 'position-badge position-badge-catcher';
+  if (['1B', '2B', '3B', 'SS'].includes(pos)) return 'position-badge position-badge-infield';
+  if (['LF', 'CF', 'RF', 'OF'].includes(pos)) return 'position-badge position-badge-outfield';
+  if (pos === 'DH') return 'position-badge position-badge-dh';
+  return 'position-badge';
 }
 
 function StatRow({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) {
   return (
-    <div className={`flex justify-between py-1.5 ${highlight ? 'bg-[var(--color-gold)]/10' : ''}`}>
-      <span className="text-xs uppercase tracking-wide text-[var(--color-muted)]">{label}</span>
-      <span className="font-stat text-sm font-bold text-[var(--color-ink)]">{value}</span>
+    <div className={`flex justify-between border-b border-[var(--border-subtle)] py-1.5 ${highlight ? 'bg-[var(--accent-muted)]' : ''}`}>
+      <span className="font-body text-xs uppercase tracking-wide text-[var(--text-secondary)]">{label}</span>
+      <span className="font-stat text-sm font-bold text-[var(--text-primary)]">{value}</span>
     </div>
   );
 }
@@ -68,73 +71,130 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`relative px-4 py-2 font-headline text-xs font-bold uppercase tracking-wider transition-all ${
+      className={`relative px-4 py-2 font-headline text-xs font-bold uppercase tracking-wider transition-colors ${
         isActive
-          ? 'text-[var(--color-cream)]'
-          : 'text-[var(--color-cream)]/60 hover:text-[var(--color-cream)]'
+          ? 'text-[var(--text-primary)]'
+          : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
       }`}
     >
       {label}
       {isActive && (
-        <span className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 bg-[var(--color-gold)]" />
+        <span className="absolute bottom-0 left-1/2 h-0.5 w-8 -translate-x-1/2 bg-[var(--accent-secondary)]" />
       )}
     </button>
   );
 }
 
-function RatingBar({ value, max = 1, color = 'gold' }: { value: number; max?: number; color?: string }) {
+function RatingBar({ value, max = 1 }: { value: number; max?: number }) {
   const pct = Math.min(100, (value / max) * 100);
-  const colorClass = color === 'gold' ? 'bg-[var(--color-gold)]' : 'bg-[var(--color-stitch)]';
 
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-ink)]/10">
+    <div className="h-1.5 w-full overflow-hidden bg-[var(--border-subtle)]">
       <div
-        className={`h-full ${colorClass} transition-all duration-500`}
+        className="h-full bg-[var(--accent-secondary)] transition-all duration-500"
         style={{ width: `${pct}%` }}
       />
     </div>
   );
 }
 
+/** Build a biographical narrative from player card data. */
+function buildBiography(player: PlayerCard): string {
+  const pos = player.primaryPosition;
+  const year = player.seasonYear;
+  const name = `${player.nameFirst} ${player.nameLast}`;
+  const powerLabel = POWER_LABELS[player.powerRating] ?? 'average';
+
+  if (player.isPitcher && player.pitching) {
+    const role = player.pitching.role === 'SP' ? 'starting pitcher' : 'reliever';
+    const era = player.pitching.era.toFixed(2);
+    const grade = player.pitching.grade;
+    return `${name}, a ${role} of the ${year} season, carried a grade of ${grade} and posted an earned run average of ${era}. Allowing just ${player.pitching.whip.toFixed(2)} baserunners per inning and fanning ${player.pitching.k9.toFixed(1)} per nine, this arm commanded attention from the mound.`;
+  }
+
+  const bats = player.battingHand === 'L' ? 'left-handed' : player.battingHand === 'R' ? 'right-handed' : 'switch';
+  const speed = player.speed >= 0.7 ? 'fleet-footed' : player.speed >= 0.4 ? 'capable on the basepaths' : 'not known for speed';
+  return `${name}, ${bats} ${pos.toLowerCase() === 'dh' ? 'designated hitter' : pos.toLowerCase()} of the ${year} campaign, brought ${powerLabel.toLowerCase()} power to the plate. A ${speed} player with a ${pctLabel(player.contactRate)} contact rate, ${player.nameLast} commanded a disciplined eye at ${pctLabel(player.discipline)}.`;
+}
+
+/** Headline stat display -- 3 key numbers. */
+function HeadlineStats({ items }: { items: { value: string; label: string }[] }) {
+  return (
+    <div className="mb-4 grid grid-cols-3 gap-4 border-b border-[var(--border-default)] pb-4">
+      {items.map((item) => (
+        <div key={item.label} className="text-center">
+          <div className="font-stat text-2xl font-bold text-[var(--text-primary)]">
+            {item.value}
+          </div>
+          <div className="font-stat text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
+            {item.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Section heading within a tab. */
+function SectionHeading({ title }: { title: string }) {
+  return (
+    <div className="mb-2 border-b-2 border-[var(--text-primary)] pb-1">
+      <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+        {title}
+      </h4>
+    </div>
+  );
+}
+
 function CardRatingsTab({ player }: { player: PlayerCard }) {
   const powerLabel = POWER_LABELS[player.powerRating] ?? String(player.powerRating);
+  const biography = buildBiography(player);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Biographical narrative with drop-cap */}
+      <p className="drop-cap font-body text-sm leading-relaxed text-[var(--text-primary)]">
+        {biography}
+      </p>
+
       {/* Batting / Card Attributes */}
       {!player.isPitcher && (
-        <div className="vintage-card overflow-hidden">
-          <div className="bg-[var(--color-scoreboard)] px-3 py-2">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
-              Batting Ratings
-            </h4>
-          </div>
-          <div className="space-y-1 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase text-[var(--color-muted)]">Power</span>
-              <span className="font-stat text-sm font-bold text-[var(--color-stitch)]">{powerLabel}</span>
+        <div>
+          <SectionHeading title="Batting Ratings" />
+          <div className="space-y-3 py-2">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-body text-xs uppercase tracking-wide text-[var(--text-secondary)]">Power</span>
+                <span className="font-stat text-sm font-bold text-[var(--accent-secondary)]">{powerLabel}</span>
+              </div>
+              <RatingBar value={player.powerRating - 13} max={8} />
             </div>
-            <RatingBar value={player.powerRating - 13} max={8} color="stitch" />
 
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs uppercase text-[var(--color-muted)]">Speed</span>
-              <span className="font-stat text-sm">{pctLabel(player.speed)}</span>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-body text-xs uppercase tracking-wide text-[var(--text-secondary)]">Speed</span>
+                <span className="font-stat text-sm">{pctLabel(player.speed)}</span>
+              </div>
+              <RatingBar value={player.speed} />
             </div>
-            <RatingBar value={player.speed} />
 
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs uppercase text-[var(--color-muted)]">Contact</span>
-              <span className="font-stat text-sm">{pctLabel(player.contactRate)}</span>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-body text-xs uppercase tracking-wide text-[var(--text-secondary)]">Contact</span>
+                <span className="font-stat text-sm">{pctLabel(player.contactRate)}</span>
+              </div>
+              <RatingBar value={player.contactRate} />
             </div>
-            <RatingBar value={player.contactRate} />
 
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs uppercase text-[var(--color-muted)]">Discipline</span>
-              <span className="font-stat text-sm">{pctLabel(player.discipline)}</span>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-body text-xs uppercase tracking-wide text-[var(--text-secondary)]">Discipline</span>
+                <span className="font-stat text-sm">{pctLabel(player.discipline)}</span>
+              </div>
+              <RatingBar value={player.discipline} />
             </div>
-            <RatingBar value={player.discipline} />
 
-            <div className="mt-3 border-t border-[var(--color-leather)]/20 pt-2">
+            <div className="border-t border-[var(--border-default)] pt-2">
               <StatRow label="ISO (Power)" value={player.power.toFixed(3)} />
             </div>
           </div>
@@ -143,29 +203,25 @@ function CardRatingsTab({ player }: { player: PlayerCard }) {
 
       {/* Pitching Attributes */}
       {player.pitching && (
-        <div className="vintage-card overflow-hidden">
-          <div className="bg-[var(--color-stitch)] px-3 py-2">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-white">
-              Pitching Ratings
-            </h4>
-          </div>
-          <div className="p-3">
-            {/* Pitcher Grade - Big Display */}
-            <div className="mb-4 flex items-center justify-center gap-4 rounded-lg bg-[var(--color-scoreboard)] p-3">
+        <div>
+          <SectionHeading title="Pitching Ratings" />
+          <div className="py-2">
+            {/* Grade + Role headline */}
+            <div className="mb-4 flex items-center gap-6 border-b border-[var(--border-default)] pb-4">
               <div className="text-center">
-                <div className="font-scoreboard text-4xl font-bold text-[var(--color-gold)]">
+                <div className="font-stat text-4xl font-bold text-[var(--accent-secondary)]">
                   {player.pitching.grade}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">
+                <div className="font-stat text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
                   Grade
                 </div>
               </div>
-              <div className="h-12 w-px bg-[var(--color-scoreboard-text)]/20" />
+              <div className="h-10 w-px bg-[var(--border-default)]" />
               <div className="text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
+                <div className="font-stat text-2xl font-bold text-[var(--text-primary)]">
                   {player.pitching.role}
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">
+                <div className="font-stat text-[10px] uppercase tracking-wider text-[var(--text-tertiary)]">
                   Role
                 </div>
               </div>
@@ -183,41 +239,37 @@ function CardRatingsTab({ player }: { player: PlayerCard }) {
       )}
 
       {/* Fielding */}
-      <div className="vintage-card overflow-hidden">
-        <div className="bg-[var(--color-grass)] px-3 py-2">
-          <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-white">
-            Fielding
-          </h4>
-        </div>
-        <div className="p-3">
+      <div>
+        <SectionHeading title="Fielding" />
+        <div className="py-2">
           <div className="mb-3 flex flex-wrap gap-1">
             {player.eligiblePositions.map((pos) => (
               <span
                 key={pos}
-                className={`${getPositionColor(pos)} rounded px-2 py-0.5 text-xs font-bold text-white`}
+                className={`inline-block px-2 py-0.5 text-[10px] font-bold ${positionBadgeClass(pos)}`}
               >
                 {pos}
               </span>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded bg-[var(--color-cream-dark)] p-2">
-              <div className="font-stat text-lg font-bold text-[var(--color-scoreboard)]">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
                 {player.fieldingPct.toFixed(3)}
               </div>
-              <div className="text-[10px] uppercase text-[var(--color-muted)]">FLD%</div>
+              <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">FLD%</div>
             </div>
-            <div className="rounded bg-[var(--color-cream-dark)] p-2">
-              <div className="font-stat text-lg font-bold text-[var(--color-scoreboard)]">
+            <div>
+              <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
                 {pctLabel(player.range)}
               </div>
-              <div className="text-[10px] uppercase text-[var(--color-muted)]">Range</div>
+              <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">Range</div>
             </div>
-            <div className="rounded bg-[var(--color-cream-dark)] p-2">
-              <div className="font-stat text-lg font-bold text-[var(--color-scoreboard)]">
+            <div>
+              <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
                 {pctLabel(player.arm)}
               </div>
-              <div className="text-[10px] uppercase text-[var(--color-muted)]">Arm</div>
+              <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">Arm</div>
             </div>
           </div>
         </div>
@@ -233,8 +285,7 @@ function MlbStatsTab({ player }: { player: PlayerCard }) {
   if (!batting && !pitching) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <div className="mb-2 text-4xl">📊</div>
-        <p className="font-headline text-sm text-[var(--color-muted)]">
+        <p className="font-body text-sm text-[var(--text-secondary)]">
           No MLB stats available for this player.
         </p>
       </div>
@@ -242,37 +293,17 @@ function MlbStatsTab({ player }: { player: PlayerCard }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Batting Stats */}
       {batting && (
-        <div className="vintage-card overflow-hidden">
-          <div className="bg-[var(--color-scoreboard)] px-3 py-2">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
-              {player.seasonYear} Season Batting
-            </h4>
-          </div>
-          <div className="p-3">
-            {/* Triple Crown Stats - Big Display */}
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
-                  {batting.BA.toFixed(3).replace('0.', '.')}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">AVG</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
-                  {batting.HR}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">HR</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
-                  {batting.RBI}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">RBI</div>
-              </div>
-            </div>
+        <div>
+          <SectionHeading title={`${player.seasonYear} Season Batting`} />
+          <div className="py-2">
+            <HeadlineStats items={[
+              { value: batting.BA.toFixed(3).replace('0.', '.'), label: 'AVG' },
+              { value: String(batting.HR), label: 'HR' },
+              { value: String(batting.RBI), label: 'RBI' },
+            ]} />
 
             <div className="grid grid-cols-2 gap-x-4 text-sm">
               <StatRow label="Games" value={batting.G} />
@@ -286,26 +317,24 @@ function MlbStatsTab({ player }: { player: PlayerCard }) {
               <StatRow label="Strikeouts" value={batting.SO} />
             </div>
 
-            <div className="mt-3 border-t border-[var(--color-leather)]/20 pt-3">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="font-stat text-lg font-bold text-[var(--color-gold)]">
-                    {batting.OBP.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] uppercase text-[var(--color-muted)]">OBP</div>
+            <div className="mt-3 grid grid-cols-3 gap-4 border-t border-[var(--border-default)] pt-3 text-center">
+              <div>
+                <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                  {batting.OBP.toFixed(3)}
                 </div>
-                <div>
-                  <div className="font-stat text-lg font-bold text-[var(--color-gold)]">
-                    {batting.SLG.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] uppercase text-[var(--color-muted)]">SLG</div>
+                <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">OBP</div>
+              </div>
+              <div>
+                <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                  {batting.SLG.toFixed(3)}
                 </div>
-                <div>
-                  <div className="font-stat text-lg font-bold text-[var(--color-stitch)]">
-                    {batting.OPS.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] uppercase text-[var(--color-muted)]">OPS</div>
+                <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">SLG</div>
+              </div>
+              <div>
+                <div className="font-stat text-lg font-bold text-[var(--accent-secondary)]">
+                  {batting.OPS.toFixed(3)}
                 </div>
+                <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">OPS</div>
               </div>
             </div>
           </div>
@@ -314,34 +343,14 @@ function MlbStatsTab({ player }: { player: PlayerCard }) {
 
       {/* Pitching Stats */}
       {pitching && (
-        <div className="vintage-card overflow-hidden">
-          <div className="bg-[var(--color-stitch)] px-3 py-2">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-white">
-              {player.seasonYear} Season Pitching
-            </h4>
-          </div>
-          <div className="p-3">
-            {/* Key Pitching Stats - Big Display */}
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-gold)]">
-                  {pitching.ERA.toFixed(2)}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">ERA</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
-                  {pitching.W}-{pitching.L}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">W-L</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
-                  {pitching.SO}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">K</div>
-              </div>
-            </div>
+        <div>
+          <SectionHeading title={`${player.seasonYear} Season Pitching`} />
+          <div className="py-2">
+            <HeadlineStats items={[
+              { value: pitching.ERA.toFixed(2), label: 'ERA' },
+              { value: `${pitching.W}-${pitching.L}`, label: 'W-L' },
+              { value: String(pitching.SO), label: 'K' },
+            ]} />
 
             <div className="grid grid-cols-2 gap-x-4 text-sm">
               <StatRow label="Games" value={pitching.G} />
@@ -392,7 +401,7 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-gold)] border-t-transparent" />
+        <div className="h-6 w-6 animate-spin border-2 border-[var(--accent-secondary)] border-t-transparent" />
       </div>
     );
   }
@@ -400,7 +409,7 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
   if (error) {
     return (
       <div className="py-8 text-center">
-        <p className="font-headline text-sm text-[var(--color-stitch)]">{error}</p>
+        <p className="font-body text-sm text-[var(--accent-secondary)]">{error}</p>
       </div>
     );
   }
@@ -408,7 +417,7 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
   if (!battingStats && !pitchingStats) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <p className="font-headline text-sm text-[var(--color-muted)]">
+        <p className="font-body text-sm text-[var(--text-secondary)]">
           No season stats recorded yet. Play some games first.
         </p>
       </div>
@@ -416,35 +425,16 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {battingStats && battingStats.G > 0 && (
-        <div className="vintage-card overflow-hidden">
-          <div className="bg-[var(--color-scoreboard)] px-3 py-2">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
-              Season Batting
-            </h4>
-          </div>
-          <div className="p-3">
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
-                  {battingStats.BA.toFixed(3).replace('0.', '.')}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">AVG</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
-                  {battingStats.HR}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">HR</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-leather)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-cream)]">
-                  {battingStats.RBI}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-cream)]/70">RBI</div>
-              </div>
-            </div>
+        <div>
+          <SectionHeading title="Season Batting" />
+          <div className="py-2">
+            <HeadlineStats items={[
+              { value: battingStats.BA.toFixed(3).replace('0.', '.'), label: 'AVG' },
+              { value: String(battingStats.HR), label: 'HR' },
+              { value: String(battingStats.RBI), label: 'RBI' },
+            ]} />
 
             <div className="grid grid-cols-2 gap-x-4 text-sm">
               <StatRow label="Games" value={battingStats.G} />
@@ -458,26 +448,24 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
               <StatRow label="Strikeouts" value={battingStats.SO} />
             </div>
 
-            <div className="mt-3 border-t border-[var(--color-leather)]/20 pt-3">
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="font-stat text-lg font-bold text-[var(--color-gold)]">
-                    {battingStats.OBP.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] uppercase text-[var(--color-muted)]">OBP</div>
+            <div className="mt-3 grid grid-cols-3 gap-4 border-t border-[var(--border-default)] pt-3 text-center">
+              <div>
+                <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                  {battingStats.OBP.toFixed(3)}
                 </div>
-                <div>
-                  <div className="font-stat text-lg font-bold text-[var(--color-gold)]">
-                    {battingStats.SLG.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] uppercase text-[var(--color-muted)]">SLG</div>
+                <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">OBP</div>
+              </div>
+              <div>
+                <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                  {battingStats.SLG.toFixed(3)}
                 </div>
-                <div>
-                  <div className="font-stat text-lg font-bold text-[var(--color-stitch)]">
-                    {battingStats.OPS.toFixed(3)}
-                  </div>
-                  <div className="text-[10px] uppercase text-[var(--color-muted)]">OPS</div>
+                <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">SLG</div>
+              </div>
+              <div>
+                <div className="font-stat text-lg font-bold text-[var(--accent-secondary)]">
+                  {battingStats.OPS.toFixed(3)}
                 </div>
+                <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">OPS</div>
               </div>
             </div>
           </div>
@@ -485,33 +473,14 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
       )}
 
       {pitchingStats && pitchingStats.G > 0 && (
-        <div className="vintage-card overflow-hidden">
-          <div className="bg-[var(--color-stitch)] px-3 py-2">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-white">
-              Season Pitching
-            </h4>
-          </div>
-          <div className="p-3">
-            <div className="mb-4 grid grid-cols-3 gap-2">
-              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-gold)]">
-                  {pitchingStats.ERA.toFixed(2)}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">ERA</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
-                  {pitchingStats.W}-{pitchingStats.L}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">W-L</div>
-              </div>
-              <div className="rounded-lg bg-[var(--color-scoreboard)] p-3 text-center">
-                <div className="font-scoreboard text-2xl font-bold text-[var(--color-scoreboard-text)]">
-                  {pitchingStats.SO}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">K</div>
-              </div>
-            </div>
+        <div>
+          <SectionHeading title="Season Pitching" />
+          <div className="py-2">
+            <HeadlineStats items={[
+              { value: pitchingStats.ERA.toFixed(2), label: 'ERA' },
+              { value: `${pitchingStats.W}-${pitchingStats.L}`, label: 'W-L' },
+              { value: String(pitchingStats.SO), label: 'K' },
+            ]} />
 
             <div className="grid grid-cols-2 gap-x-4 text-sm">
               <StatRow label="Games" value={pitchingStats.G} />
@@ -540,11 +509,9 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
 
   if (!isOpen) return null;
 
-  const positionColorClass = getPositionColor(player.primaryPosition);
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-ink)]/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--text-primary)]/80 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={`${player.nameFirst} ${player.nameLast} profile`}
@@ -554,99 +521,73 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
     >
       <div
         ref={containerRef}
-        className="animate-slide-up w-full max-w-md overflow-hidden rounded-xl shadow-elevated"
-        style={{
-          background: `
-            linear-gradient(145deg, var(--color-parchment) 0%, var(--color-cream-dark) 100%)
-          `,
-          border: '4px solid var(--color-leather)',
-        }}
+        className="animate-slide-up w-full max-w-md overflow-hidden border border-[var(--border-default)] bg-[var(--surface-base)] shadow-elevated"
       >
-        {/* ═══════════════════════════════════════════════════════════════════
-            CARD HEADER - Vintage Baseball Card Style
-            ═══════════════════════════════════════════════════════════════════ */}
-        <div
-          className="relative overflow-hidden"
-          style={{
-            background: `
-              linear-gradient(180deg, var(--color-leather) 0%, var(--color-leather-dark) 100%)
-            `,
-          }}
-        >
-          {/* Decorative top border */}
-          <div className="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r from-[var(--color-gold)] via-[var(--color-gold-light)] to-[var(--color-gold)]" />
-
+        {/* Header -- Editorial encyclopedia style */}
+        <div className="border-b border-[var(--border-default)] px-5 pb-4 pt-5">
           {/* Close button */}
           <button
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-ink)]/30 text-[var(--color-cream)] transition-colors hover:bg-[var(--color-ink)]/50"
+            className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
-          {/* Player info */}
-          <div className="px-5 pb-4 pt-6">
-            <div className="flex items-start gap-4">
-              {/* Position badge - Large */}
-              <div className={`${positionColorClass} flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg shadow-lg`}>
-                <span className="font-scoreboard text-2xl font-bold text-white">
-                  {player.primaryPosition}
-                </span>
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <h3 className="font-headline text-2xl leading-tight tracking-tight text-[var(--color-cream)]">
-                  {player.nameFirst}
-                  <br />
-                  <span className="text-[var(--color-gold)]">{player.nameLast}</span>
-                </h3>
-              </div>
-            </div>
-
-            {/* Season & handedness */}
-            <div className="mt-3 flex items-center gap-3 text-xs">
-              <span className="rounded bg-[var(--color-gold)] px-2 py-1 font-scoreboard font-bold text-[var(--color-ink)]">
-                {player.seasonYear}
-              </span>
-              <span className="text-[var(--color-cream)]/70">
-                Bats: <span className="font-bold text-[var(--color-cream)]">{player.battingHand}</span>
-              </span>
-              <span className="text-[var(--color-cream)]/70">
-                Throws: <span className="font-bold text-[var(--color-cream)]">{player.throwingHand}</span>
-              </span>
-            </div>
+          {/* Position + Year small caps */}
+          <div className="mb-1 flex items-center gap-2">
+            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold ${positionBadgeClass(player.primaryPosition)}`}>
+              {player.primaryPosition}
+            </span>
+            <span className="font-stat text-xs tracking-wider text-[var(--text-tertiary)]">
+              {player.seasonYear}
+            </span>
           </div>
 
-          {/* Tabs */}
-          <div className="flex border-t border-[var(--color-ink)]/20">
-            <TabButton
-              label="Card Ratings"
-              isActive={activeTab === 'card'}
-              onClick={() => setActiveTab('card')}
-            />
-            <TabButton
-              label="MLB Stats"
-              isActive={activeTab === 'mlb'}
-              onClick={() => setActiveTab('mlb')}
-            />
-            {leagueId && (
-              <TabButton
-                label="Season"
-                isActive={activeTab === 'season'}
-                onClick={() => setActiveTab('season')}
-              />
-            )}
+          {/* Player name -- large Playfair Display */}
+          <h3 className="font-headline text-2xl leading-tight tracking-tight text-[var(--text-primary)]">
+            {player.nameFirst}{' '}
+            <span className="text-[var(--accent-secondary)]">{player.nameLast}</span>
+          </h3>
+
+          {/* Batting / Throwing */}
+          <div className="mt-2 flex items-center gap-3 font-stat text-xs text-[var(--text-secondary)]">
+            <span>
+              Bats: <span className="font-bold text-[var(--text-primary)]">{player.battingHand}</span>
+            </span>
+            <span className="text-[var(--border-default)]">|</span>
+            <span>
+              Throws: <span className="font-bold text-[var(--text-primary)]">{player.throwingHand}</span>
+            </span>
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            CARD BODY
-            ═══════════════════════════════════════════════════════════════════ */}
-        <div className="max-h-[60vh] overflow-y-auto p-4">
+        {/* Tabs */}
+        <div className="flex border-b border-[var(--border-default)] bg-[var(--surface-raised)]">
+          <TabButton
+            label="Card Ratings"
+            isActive={activeTab === 'card'}
+            onClick={() => setActiveTab('card')}
+          />
+          <TabButton
+            label="MLB Stats"
+            isActive={activeTab === 'mlb'}
+            onClick={() => setActiveTab('mlb')}
+          />
+          {leagueId && (
+            <TabButton
+              label="Season"
+              isActive={activeTab === 'season'}
+              onClick={() => setActiveTab('season')}
+            />
+          )}
+        </div>
+
+        {/* Body */}
+        <div className="max-h-[60vh] overflow-y-auto p-5">
           {activeTab === 'card' && <CardRatingsTab player={player} />}
           {activeTab === 'mlb' && <MlbStatsTab player={player} />}
           {activeTab === 'season' && leagueId && (
@@ -654,13 +595,11 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
           )}
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            CARD FOOTER - Decorative
-            ═══════════════════════════════════════════════════════════════════ */}
-        <div className="border-t border-[var(--color-leather)]/30 bg-[var(--color-cream-dark)] px-4 py-2">
-          <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-[var(--color-muted)]">
+        {/* Footer -- clean editorial */}
+        <div className="border-t border-[var(--border-default)] px-5 py-2">
+          <div className="flex items-center justify-between font-stat text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
             <span>Baseball Ledger</span>
-            <span className="font-stat">{player.playerId}</span>
+            <span>{player.playerId}</span>
           </div>
         </div>
       </div>

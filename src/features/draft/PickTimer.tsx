@@ -1,8 +1,8 @@
 /**
  * PickTimer
  *
- * Vintage scoreboard-style countdown timer for draft picks.
- * Visual urgency styling at <10 seconds with glow effect.
+ * Heritage Editorial countdown timer for draft picks.
+ * Crimson accent urgency at <10 seconds.
  * Feature-scoped sub-component. No store imports.
  */
 
@@ -25,48 +25,45 @@ export function PickTimer({ timeRemaining, isActive }: PickTimerProps) {
     <div
       role="timer"
       aria-label="Pick timer"
-      className={`scoreboard-panel flex items-center gap-4 ${
-        isUrgent || isExpired ? 'animate-glow' : ''
-      }`}
-      style={{
-        background: isExpired
-          ? 'linear-gradient(180deg, #C03030 0%, #8B2020 100%)'
+      className={`flex items-center gap-3 border px-4 py-2 ${
+        isExpired
+          ? 'border-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10'
           : isUrgent
-            ? 'linear-gradient(180deg, #C49115 0%, #A67A0C 100%)'
-            : undefined,
-      }}
+            ? 'border-[var(--accent-secondary)]'
+            : 'border-[var(--border-default)]'
+      }`}
     >
       {/* Clock icon */}
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-ink)]/30">
-        <svg
-          className={`h-5 w-5 ${isUrgent || isExpired ? 'text-[var(--color-gold)]' : 'text-[var(--color-scoreboard-text)]'}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      </div>
+      <svg
+        className={`h-5 w-5 ${
+          isUrgent || isExpired
+            ? 'text-[var(--accent-secondary)]'
+            : 'text-[var(--text-secondary)]'
+        }`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
 
       {/* Time display */}
       <div className="flex flex-col">
         <div
-          className={`font-scoreboard text-4xl font-bold tracking-wider ${
-            isExpired
-              ? 'text-[var(--color-gold)]'
-              : isUrgent
-                ? 'text-[var(--color-gold)]'
-                : 'text-[var(--color-scoreboard-text)]'
+          className={`font-stat text-3xl font-bold tracking-wider ${
+            isExpired || isUrgent
+              ? 'text-[var(--accent-secondary)]'
+              : 'text-[var(--text-primary)]'
           }`}
         >
           {display}
         </div>
-        <span className="text-xs uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">
+        <span className="text-xs text-[var(--text-secondary)]">
           {isExpired ? 'Time Expired!' : isActive ? 'On the Clock' : 'Waiting...'}
         </span>
       </div>

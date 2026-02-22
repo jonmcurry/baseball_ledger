@@ -1,8 +1,8 @@
 /**
  * SimulationNotification
  *
- * Vintage press box ticker-style notification after simulation.
- * Golden era aesthetic with typewriter animation.
+ * Heritage Editorial press wire notification after simulation.
+ * Clean typographic alert with typewriter animation.
  *
  * REQ-SCH-007: Typewriter-effect notification.
  *
@@ -59,44 +59,22 @@ export function SimulationNotification({
   return (
     <div
       data-testid="simulation-notification"
-      className="relative overflow-hidden rounded border-2 border-[var(--color-gold)] bg-gradient-to-r from-[var(--color-scoreboard-green)] to-[var(--surface-overlay)] px-4 py-3 shadow-lg"
-      style={{
-        boxShadow: '0 0 15px rgba(27,77,62,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
-      }}
+      className="relative overflow-hidden border-t-2 border-[var(--accent-secondary)] bg-[var(--surface-raised)] px-4 py-3"
     >
-      {/* Decorative ticker tape effect */}
-      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[var(--color-gold)] via-[var(--color-gold)]/50 to-[var(--color-gold)]" />
-
-      {/* Content */}
       <div className="flex items-center gap-3">
-        {/* Press box icon */}
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-gold)]/20">
-          <svg
-            className="h-4 w-4 text-[var(--color-gold)]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 12h-2v-2h2v2zm0-4h-2V6h2v4z" />
-          </svg>
-        </div>
-
-        {/* Typewriter message */}
         <div className="flex-1">
-          <p className="font-stat text-[10px] uppercase tracking-widest text-[var(--color-gold)]/60">
+          <p className="font-stat text-[10px] uppercase tracking-widest text-[var(--text-tertiary)]">
             Press Box Update
           </p>
-          <div
-            className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--color-gold)]"
-          >
+          <div className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--accent-secondary)]">
             <TypewriterText text={message} speed={30} onComplete={handleTypewriterComplete} />
           </div>
         </div>
 
-        {/* Dismiss button */}
         <button
           type="button"
           onClick={onDismiss}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--color-gold)]/60 transition-colors hover:bg-[var(--color-gold)]/20 hover:text-[var(--color-gold)]"
+          className="flex h-6 w-6 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:bg-[var(--accent-muted)] hover:text-[var(--text-primary)]"
           aria-label="Dismiss notification"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

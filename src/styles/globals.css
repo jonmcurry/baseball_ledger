@@ -493,6 +493,90 @@
     background: var(--text-primary);
     transform: rotate(-45deg);
   }
+
+  /* ----- DROP CAP -- encyclopedia biographical opener ----- */
+  .drop-cap::first-letter {
+    font-family: var(--font-headline);
+    float: left;
+    font-size: 4.5rem;
+    line-height: 0.8;
+    padding-right: 0.75rem;
+    padding-top: 0.25rem;
+    color: var(--accent-secondary);
+    font-weight: 700;
+  }
+
+  /* ----- LEADER LINE -- table-of-contents index entry ----- */
+  .leader-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: color 0.2s ease;
+  }
+
+  .leader-line:hover {
+    color: var(--accent-secondary);
+  }
+
+  .leader-line-label {
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-size: 1.125rem;
+  }
+
+  .leader-line-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--border-default);
+    min-width: 2rem;
+    margin-bottom: 0.25em;
+  }
+
+  .leader-line-value {
+    white-space: nowrap;
+    font-family: var(--font-stat);
+    font-size: 0.8125rem;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+
+  /* ----- STRIKE-THROUGH DRAFT -- animated crimson line ----- */
+  .strike-through-draft {
+    position: relative;
+    display: inline-block;
+  }
+
+  .strike-through-draft::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 0%;
+    height: 2px;
+    background: var(--accent-secondary);
+    transition: width 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .strike-through-draft.drafted::after {
+    width: 100%;
+  }
+
+  /* ----- BROADSHEET BREAKOUT -- "STOP THE PRESSES" ----- */
+  .broadsheet-breakout {
+    font-family: var(--font-headline);
+    font-size: 2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--accent-secondary);
+    text-align: center;
+    padding: var(--gutter-xl) 0;
+    border-top: 2px solid var(--accent-secondary);
+    border-bottom: 2px solid var(--accent-secondary);
+    margin: var(--gutter-lg) 0;
+  }
 }
 
 /* =====================================================================
@@ -625,6 +709,14 @@
   }
 
   .ticker-content {
+    animation: none;
+  }
+
+  .strike-through-draft::after {
+    transition: none;
+  }
+
+  .broadsheet-breakout {
     animation: none;
   }
 

@@ -1,8 +1,8 @@
 /**
  * DraftTicker
  *
- * Vintage scoreboard-style draft pick feed.
- * Golden era aesthetic with inning-by-inning styling.
+ * Heritage Editorial draft pick feed. Clean typographic list
+ * with crimson accent for latest pick.
  * Feature-scoped sub-component. No store imports.
  */
 
@@ -19,35 +19,24 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
 
   return (
     <div
-      className="scoreboard-panel"
+      className="border-t border-b border-[var(--border-default)] bg-[var(--surface-raised)] py-gutter px-gutter"
       role="log"
       aria-live="polite"
       aria-label="Draft pick feed"
     >
-      {/* Header with pennant styling */}
-      <div className="mb-3 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-ink)]/30">
-          <svg
-            className="h-4 w-4 text-[var(--color-gold)]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5h3V8h4v4h3l-5 5z" />
-          </svg>
-        </div>
-        <div>
-          <h3 className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
-            Draft Ticker
-          </h3>
-          <p className="font-stat text-xs text-[var(--color-scoreboard-text)]/60">
-            {picks.length} pick{picks.length !== 1 ? 's' : ''} made
-          </p>
-        </div>
+      {/* Header */}
+      <div className="mb-3">
+        <h3 className="font-headline text-sm font-bold text-[var(--text-primary)]">
+          Draft Ticker
+        </h3>
+        <p className="font-stat text-xs text-[var(--text-secondary)]">
+          {picks.length} pick{picks.length !== 1 ? 's' : ''} made
+        </p>
       </div>
 
       {picks.length === 0 && (
         <div className="flex items-center justify-center py-6">
-          <p className="font-stat text-xs text-[var(--color-scoreboard-text)]/50">
+          <p className="font-stat text-xs text-[var(--text-tertiary)]">
             Waiting for first pick...
           </p>
         </div>
@@ -62,23 +51,20 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
           return (
             <div
               key={`${pick.round}-${pick.pick}`}
-              className={`group flex items-center gap-2 rounded border px-2 py-1.5 transition-all ${
+              className={`group flex items-center gap-2 border-b border-[var(--border-subtle)] px-2 py-1.5 transition-all ${
                 isLatest
-                  ? 'animate-glow border-[var(--color-gold)]/50 bg-[var(--color-gold)]/10'
+                  ? 'border-l-[3px] border-l-[var(--accent-secondary)]'
                   : isCurrent
-                    ? 'border-[var(--color-scoreboard-text)]/30 bg-[var(--color-scoreboard-green)]/50'
-                    : 'border-[var(--color-ink)]/20 bg-[var(--color-ink)]/10 hover:border-[var(--color-scoreboard-text)]/30'
+                    ? 'bg-[var(--accent-muted)]'
+                    : 'hover:bg-[var(--accent-muted)]'
               }`}
-              style={{
-                animationDelay: isLatest ? '0s' : undefined,
-              }}
             >
               {/* Round.Pick badge */}
               <div
-                className={`flex h-6 min-w-[2.5rem] items-center justify-center rounded font-scoreboard text-xs font-bold ${
+                className={`flex h-6 min-w-[2.5rem] items-center justify-center font-stat text-xs font-bold ${
                   isLatest
-                    ? 'bg-[var(--color-gold)] text-[var(--color-ink)]'
-                    : 'bg-[var(--color-ink)]/30 text-[var(--color-scoreboard-text)]'
+                    ? 'bg-[var(--accent-secondary)] text-[var(--cream-white)]'
+                    : 'bg-[var(--accent-muted)] text-[var(--text-primary)]'
                 }`}
               >
                 {pick.round}.{pick.pick}
@@ -87,25 +73,25 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
               {/* Player info */}
               <div className="min-w-0 flex-1">
                 <p
-                  className={`truncate font-headline text-xs font-bold ${
+                  className={`truncate font-body text-xs font-semibold ${
                     isLatest
-                      ? 'text-[var(--color-gold)]'
-                      : 'text-[var(--color-scoreboard-text)]'
+                      ? 'text-[var(--accent-secondary)]'
+                      : 'text-[var(--text-primary)]'
                   }`}
                 >
                   {pick.playerName}
                 </p>
-                <p className="font-stat text-[10px] text-[var(--color-scoreboard-text)]/60">
+                <p className="font-stat text-[10px] text-[var(--text-tertiary)]">
                   Pick #{pick.pick}
                 </p>
               </div>
 
               {/* Position badge */}
               <div
-                className={`rounded px-1.5 py-0.5 font-stat text-[10px] font-bold uppercase ${
+                className={`px-1.5 py-0.5 font-stat text-[10px] font-bold uppercase ${
                   ['SP', 'RP'].includes(pick.position)
-                    ? 'bg-[var(--color-leather)]/30 text-[var(--color-leather)]'
-                    : 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]'
+                    ? 'position-badge position-badge-pitcher'
+                    : 'position-badge position-badge-infield'
                 }`}
               >
                 {pick.position}
@@ -114,15 +100,6 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
           );
         })}
       </div>
-
-      {/* Decorative footer */}
-      {picks.length > 0 && (
-        <div className="mt-3 border-t border-[var(--color-ink)]/20 pt-2">
-          <p className="text-center font-stat text-[10px] uppercase tracking-widest text-[var(--color-scoreboard-text)]/40">
-            ★ Most Recent Selections ★
-          </p>
-        </div>
-      )}
     </div>
   );
 }

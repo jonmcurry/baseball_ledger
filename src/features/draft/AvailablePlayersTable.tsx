@@ -1,8 +1,8 @@
 /**
  * AvailablePlayersTable
  *
- * Vintage box-score styled player table with sortable headers.
- * Golden era aesthetic with newspaper-style typography.
+ * Heritage Editorial "Registry/Manifest" (Section 3.2). Dense
+ * typographic player list with sortable headers, no bounding boxes.
  * REQ-DFT-005: Stat columns and sortable headers.
  * Feature-scoped sub-component. No store imports.
  */
@@ -77,17 +77,17 @@ function SortableHeader({
 }) {
   const isActive = currentKey === sortKey;
   return (
-    <th className="px-2 py-2 text-left font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
+    <th className="px-2 py-2 text-left font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
       <button
         type="button"
-        className={`flex items-center gap-1 transition-colors hover:text-[var(--color-gold)] ${
-          isActive ? 'text-[var(--color-gold)]' : ''
+        className={`flex items-center gap-1 transition-colors hover:text-[var(--accent-secondary)] ${
+          isActive ? 'text-[var(--accent-secondary)]' : ''
         }`}
         onClick={() => onClick(sortKey)}
       >
         {label}
         {isActive && (
-          <span className="text-[8px]">{currentDir === 'asc' ? '▲' : '▼'}</span>
+          <span className="text-[8px]">{currentDir === 'asc' ? '\u25B2' : '\u25BC'}</span>
         )}
       </button>
     </th>
@@ -174,38 +174,26 @@ export function AvailablePlayersTable({
   const endRow = Math.min(currentPage * pageSize, totalAvailable);
 
   return (
-    <div className="scoreboard-panel">
-      {/* Header section */}
+    <div>
+      {/* Header */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-ink)]/30">
-            <svg
-              className="h-4 w-4 text-[var(--color-gold)]"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
-              Available Players
-            </h3>
-            {totalAvailable > 0 && (
-              <p className="font-stat text-xs text-[var(--color-scoreboard-text)]/60">
-                {startRow.toLocaleString()}-{endRow.toLocaleString()} of{' '}
-                {totalAvailable.toLocaleString()}
-              </p>
-            )}
-          </div>
+        <div>
+          <h3 className="font-body text-sm font-semibold uppercase tracking-wider text-[var(--text-primary)]">
+            Available Players
+          </h3>
+          {totalAvailable > 0 && (
+            <p className="font-stat text-xs text-[var(--text-secondary)]">
+              {startRow.toLocaleString()}-{endRow.toLocaleString()} of{' '}
+              {totalAvailable.toLocaleString()}
+            </p>
+          )}
         </div>
       </div>
 
       {/* Filters */}
       <div className="mb-4 flex gap-3">
-        {/* Search input - vintage style */}
         <div className="flex-1">
-          <label className="mb-1 block font-stat text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">
+          <label className="mb-1 block font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">
             Search Players
           </label>
           <input
@@ -213,19 +201,18 @@ export function AvailablePlayersTable({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Name..."
-            className="w-full rounded border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-1.5 font-stat text-sm text-[var(--text-primary)] placeholder:text-[var(--text-primary)]/40 focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50"
+            className="w-full border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-1.5 font-stat text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-secondary)]/50"
           />
         </div>
 
-        {/* Position filter */}
         <div className="w-40">
-          <label className="mb-1 block font-stat text-[10px] uppercase tracking-wider text-[var(--color-scoreboard-text)]/70">
+          <label className="mb-1 block font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">
             Position
           </label>
           <select
             value={posFilter}
             onChange={(e) => handlePositionChange(e.target.value)}
-            className="w-full rounded border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-1.5 font-stat text-sm text-[var(--text-primary)] focus:border-[var(--color-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--color-gold)]/50 [&>option]:bg-[var(--surface-base)] [&>option]:text-[var(--text-primary)]"
+            className="w-full border border-[var(--border-default)] bg-[var(--surface-base)] px-3 py-1.5 font-stat text-sm text-[var(--text-primary)] focus:border-[var(--accent-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-secondary)]/50 [&>option]:bg-[var(--surface-base)] [&>option]:text-[var(--text-primary)]"
           >
             {POSITION_FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -236,11 +223,11 @@ export function AvailablePlayersTable({
         </div>
       </div>
 
-      {/* Table - vintage box score styling */}
-      <div className="max-h-80 overflow-y-auto rounded border border-[var(--color-ink)]/30">
+      {/* Table */}
+      <div className="max-h-80 overflow-y-auto border-t border-[var(--border-default)]">
         <table className="w-full text-left" role="grid">
-          <thead className="sticky top-0 bg-[var(--color-ink)]/40">
-            <tr>
+          <thead className="sticky top-0 bg-[var(--surface-raised)]">
+            <tr className="border-b-2 border-[var(--text-primary)]">
               <SortableHeader
                 label="Player"
                 sortKey="name"
@@ -262,13 +249,13 @@ export function AvailablePlayersTable({
                 currentDir={sortDir}
                 onClick={handleSort}
               />
-              <th className="px-2 py-2 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
+              <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                 PWR
               </th>
-              <th className="px-2 py-2 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
+              <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                 SPD
               </th>
-              <th className="px-2 py-2 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--color-scoreboard-text)]">
+              <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
                 ERA
               </th>
               <th className="px-2 py-2" />
@@ -279,7 +266,7 @@ export function AvailablePlayersTable({
               <tr>
                 <td
                   colSpan={COL_SPAN}
-                  className="py-8 text-center font-stat text-xs text-[var(--color-scoreboard-text)]/50"
+                  className="py-8 text-center font-stat text-xs text-[var(--text-tertiary)]"
                 >
                   No players match your criteria
                 </td>
@@ -288,21 +275,21 @@ export function AvailablePlayersTable({
             {players.map((p, idx) => (
               <tr
                 key={`${p.playerId}-${p.seasonYear}`}
-                className={`border-b border-[var(--color-ink)]/20 transition-colors hover:bg-[var(--color-gold)]/10 ${
-                  idx % 2 === 0 ? 'bg-[var(--color-ink)]/10' : 'bg-transparent'
+                className={`border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--accent-muted)] ${
+                  idx % 2 === 0 ? 'bg-[rgba(0,0,0,0.015)]' : 'bg-transparent'
                 }`}
               >
                 <td className="px-2 py-1.5">
                   {onPlayerClick ? (
                     <button
                       type="button"
-                      className="text-left font-stat text-sm font-medium text-[var(--color-gold)] transition-colors hover:text-[var(--color-cream)] hover:underline"
+                      className="strike-through-draft text-left font-body text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent-secondary)] hover:underline"
                       onClick={() => onPlayerClick(p)}
                     >
                       {p.nameLast}, {p.nameFirst}
                     </button>
                   ) : (
-                    <span className="font-stat text-sm font-medium text-[var(--color-scoreboard-text)]">
+                    <span className="font-body text-sm font-medium text-[var(--text-primary)]">
                       {p.nameLast}, {p.nameFirst}
                     </span>
                   )}
@@ -312,18 +299,18 @@ export function AvailablePlayersTable({
                     {p.primaryPosition}
                   </span>
                 </td>
-                <td className="px-2 py-1.5 font-scoreboard text-sm text-[var(--color-scoreboard-text)]">
+                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
                   {p.seasonYear}
                 </td>
-                <td className="px-2 py-1.5 font-scoreboard text-sm text-[var(--color-scoreboard-text)]">
+                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
                   {p.playerCard.powerRating ?? '--'}
                 </td>
-                <td className="px-2 py-1.5 font-scoreboard text-sm text-[var(--color-scoreboard-text)]">
+                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
                   {p.playerCard.speed
                     ? (p.playerCard.speed * 100).toFixed(0)
                     : '--'}
                 </td>
-                <td className="px-2 py-1.5 font-scoreboard text-sm text-[var(--color-scoreboard-text)]">
+                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
                   {p.playerCard.pitching
                     ? p.playerCard.pitching.era.toFixed(2)
                     : '--'}
@@ -333,7 +320,7 @@ export function AvailablePlayersTable({
                     type="button"
                     onClick={() => onSelect(p)}
                     disabled={disabled}
-                    className="rounded border border-[var(--color-gold)] bg-gradient-to-b from-[var(--color-gold)] to-[var(--color-gold-dark)] px-3 py-1 font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--surface-raised)] shadow-sm transition-all hover:shadow-md hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="btn-vintage btn-vintage-primary px-3 py-1 font-stat text-[10px] font-bold uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Draft
                   </button>
@@ -344,26 +331,26 @@ export function AvailablePlayersTable({
         </table>
       </div>
 
-      {/* Pagination - vintage styling */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-3">
           <button
             type="button"
             disabled={currentPage <= 1}
             onClick={() => handlePageChange(currentPage - 1)}
-            className="flex items-center gap-1 rounded border border-[var(--color-ink)]/30 bg-[var(--color-ink)]/20 px-3 py-1 font-stat text-xs text-[var(--color-scoreboard-text)] transition-colors hover:border-[var(--color-gold)] hover:bg-[var(--color-gold)]/20 disabled:cursor-not-allowed disabled:opacity-40"
+            className="border border-[var(--border-default)] px-3 py-1 font-stat text-xs text-[var(--text-primary)] transition-colors hover:border-[var(--accent-secondary)] hover:bg-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span>◀</span> Prev
+            Prev
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="font-scoreboard text-lg text-[var(--color-gold)]">
+            <span className="font-stat text-lg text-[var(--text-primary)]">
               {currentPage}
             </span>
-            <span className="font-stat text-xs text-[var(--color-scoreboard-text)]/50">
+            <span className="font-stat text-xs text-[var(--text-tertiary)]">
               of
             </span>
-            <span className="font-scoreboard text-lg text-[var(--color-scoreboard-text)]">
+            <span className="font-stat text-lg text-[var(--text-primary)]">
               {totalPages.toLocaleString()}
             </span>
           </div>
@@ -372,19 +359,12 @@ export function AvailablePlayersTable({
             type="button"
             disabled={currentPage >= totalPages}
             onClick={() => handlePageChange(currentPage + 1)}
-            className="flex items-center gap-1 rounded border border-[var(--color-ink)]/30 bg-[var(--color-ink)]/20 px-3 py-1 font-stat text-xs text-[var(--color-scoreboard-text)] transition-colors hover:border-[var(--color-gold)] hover:bg-[var(--color-gold)]/20 disabled:cursor-not-allowed disabled:opacity-40"
+            className="border border-[var(--border-default)] px-3 py-1 font-stat text-xs text-[var(--text-primary)] transition-colors hover:border-[var(--accent-secondary)] hover:bg-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Next <span>▶</span>
+            Next
           </button>
         </div>
       )}
-
-      {/* Decorative footer */}
-      <div className="mt-4 border-t border-[var(--color-ink)]/20 pt-2">
-        <p className="text-center font-stat text-[10px] uppercase tracking-widest text-[var(--color-scoreboard-text)]/40">
-          ★ Player Pool ★
-        </p>
-      </div>
     </div>
   );
 }

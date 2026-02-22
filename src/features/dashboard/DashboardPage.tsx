@@ -1,8 +1,8 @@
 /**
  * DashboardPage
  *
- * Main league dashboard with vintage ballpark scoreboard aesthetic.
- * Standings, schedule, and simulation controls with golden era styling.
+ * Heritage Editorial league hub styled as a "Table of Contents" with
+ * leader-line navigation for in-season state.
  *
  * REQ-STATE-014: useRealtimeProgress triggers cache invalidation after simulation.
  * REQ-SCH-007: SimulationNotification shows typewriter results after simulation.
@@ -37,6 +37,15 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
   month: 30,
   season: 162,
 };
+
+/** Table of Contents navigation entries for in-season state. */
+const TOC_ENTRIES = [
+  { label: 'Roster', path: '../roster', numeral: 'I' },
+  { label: 'Statistics', path: '../stats', numeral: 'II' },
+  { label: 'Standings', path: '../standings', numeral: 'III' },
+  { label: 'Transactions', path: '../transactions', numeral: 'IV' },
+  { label: 'Archive', path: '../archive', numeral: 'V' },
+] as const;
 
 export function DashboardPage() {
   usePageTitle('Season');
@@ -155,23 +164,44 @@ export function DashboardPage() {
     }
   }
 
+  const isInSeason = leagueStatus === 'regular_season' || leagueStatus === 'playoffs' || leagueStatus === 'completed';
+
   return (
     <div className="space-y-gutter-lg">
       {error && <ErrorBanner severity="error" message={error} />}
 
-      {/* Header with pennant styling */}
-      <div className="flex items-center gap-4">
-        <div>
-          <h2 className="pennant-header">
-            Season
-          </h2>
-          {league && (
-            <p className="mt-1 font-stat text-sm text-[var(--color-muted)]">
-              Day {currentDay} of Season {league.seasonYear} — {league.status.replace('_', ' ')}
-            </p>
-          )}
-        </div>
+      {/* Header */}
+      <div>
+        <h2 className="pennant-header">
+          Season
+        </h2>
+        {league && (
+          <p className="mt-1 font-stat text-sm text-[var(--text-secondary)]">
+            Day {currentDay} of Season {league.seasonYear}
+          </p>
+        )}
       </div>
+
+      {/* Table of Contents navigation -- in-season only */}
+      {isInSeason && (
+        <nav aria-label="Season navigation" className="py-gutter">
+          <ul className="space-y-2 stagger-children">
+            {TOC_ENTRIES.map((entry) => (
+              <li key={entry.path}>
+                <button
+                  type="button"
+                  onClick={() => navigate(entry.path)}
+                  className="leader-line w-full text-left"
+                >
+                  <span className="leader-line-label">{entry.label}</span>
+                  <span className="leader-line-dots" />
+                  <span className="leader-line-value">{entry.numeral}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
 
       {/* Setup phase panels */}
       {league?.status === 'setup' && (
@@ -198,32 +228,14 @@ export function DashboardPage() {
       {league?.status === 'drafting' && (
         <div
           className="vintage-card relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, var(--color-scoreboard-green) 0%, var(--surface-overlay) 100%)',
-            borderColor: 'var(--color-gold)',
-          }}
+          style={{ borderLeft: '3px solid var(--accent-secondary)' }}
         >
           <div className="flex items-center gap-4">
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-full"
-              style={{
-                background: 'linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%)',
-                boxShadow: '0 0 10px rgba(196,145,21,0.3)',
-              }}
-            >
-              <svg
-                className="h-6 w-6 text-[var(--color-ink)]"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5h3V8h4v4h3l-5 5z" />
-              </svg>
-            </div>
             <div className="flex-1">
-              <h3 className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-gold)]">
+              <h3 className="font-headline text-lg font-bold text-[var(--text-primary)]">
                 Draft In Progress
               </h3>
-              <p className="font-stat text-sm text-[var(--color-scoreboard-text)]/80">
+              <p className="font-body text-sm text-[var(--text-secondary)]">
                 The league draft is underway. Head to the Draft Board to make your picks.
               </p>
             </div>

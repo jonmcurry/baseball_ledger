@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-02-21 - Heritage Editorial Phase 2: Component Refactoring
+
+Converted all 13 UI components from the legacy "golden era scoreboard" aesthetic
+(gold gradients, leather textures, rounded badges, star decorations, dark backgrounds)
+to the Heritage Editorial design system (sepia canvas, serif typography, hairline
+borders, extreme negative space, no shadows/gradients/rounded corners).
+
+CSS additions:
+- `.drop-cap` -- Playfair Display first-letter for encyclopedia biography paragraphs
+- `.leader-line` -- TOC-style dotted leader navigation (label...value)
+- `.strike-through-draft` -- Animated crimson line-through for drafted players
+- `.broadsheet-breakout` -- "STOP THE PRESSES" headline typography
+- Reduced-motion media query coverage for new classes
+
+Dashboard components (Section 3.1 + 3.3):
+- `DashboardPage.tsx` -- Added Table of Contents navigation with leader-line entries
+- `ResultsTicker.tsx` -- Horizontal card rail replaced with vertical text stream
+- `SimulationControls.tsx` -- Removed scoreboard panel, gold buttons, star footer
+- `SimulationNotification.tsx` -- Crimson border-top replaces gold gradient
+- `SeasonCompletePanel.tsx` -- Removed leather/gold/trophy/star decorations
+- `NewSeasonPanel.tsx` -- Removed scoreboard-green/gold/star decorations
+
+Draft components (Section 3.2):
+- `AvailablePlayersTable.tsx` -- Full registry/manifest restyle with editorial table
+- `DraftBoardPage.tsx` -- Crimson accent banners replace gold gradient/glow
+- `DraftTicker.tsx` -- Crimson border-left for latest pick, editorial typography
+- `PickTimer.tsx` -- Clean border styling replaces gradient backgrounds
+- `RosterPreviewPanel.tsx` -- Editorial section headings, removed leather header
+
+Player profile (Section 3.4):
+- `PlayerProfileModal.tsx` -- Encyclopedia spread with drop-cap biography, editorial
+  stat tables, position-badge classes, crimson accents throughout
+
+Cleanup:
+- Deleted `LedgerLayout.tsx` (dead code, not imported anywhere)
+
 ## 2026-02-21 - Fix draft AI pitcher valuation (short-season and dead-ball era)
 
 Two fixes to the SP/RP pitcher valuation formula:

@@ -1,7 +1,7 @@
 /**
  * RosterPreviewPanel
  *
- * Vintage lineup card showing team's drafted roster during the draft.
+ * Heritage Editorial lineup card showing team's drafted roster.
  * Position-aware: auto-assigns starters vs bench based on draft order.
  * Groups: Starting Lineup (9), Bench (4), Pitching with SP/RP sub-groups.
  *
@@ -108,17 +108,11 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
   return (
     <div className="vintage-card overflow-hidden">
       {/* Header */}
-      <div
-        className="relative -mx-4 -mt-4 mb-3 bg-gradient-to-br from-[var(--color-leather)] to-[var(--color-leather-dark)] px-4 py-3"
-        style={{ borderBottom: '3px solid var(--color-gold)' }}
-      >
-        <h3
-          className="font-headline text-sm font-bold uppercase tracking-wider"
-          style={{ color: 'var(--color-ink)' }}
-        >
+      <div className="relative -mx-[var(--gutter-lg)] -mt-[var(--gutter-xl)] mb-3 border-b border-[var(--border-default)] px-[var(--gutter-lg)] py-3">
+        <h3 className="font-headline text-sm font-bold text-[var(--text-primary)]">
           {teamName}
         </h3>
-        <p className="font-stat text-xs" style={{ color: 'var(--color-muted)' }}>
+        <p className="font-stat text-xs text-[var(--text-secondary)]">
           {teamPicks.length} / 21 Drafted
         </p>
       </div>
@@ -126,8 +120,7 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
       {teamPicks.length === 0 && (
         <div className="flex flex-col items-center justify-center py-8">
           <svg
-            className="mb-2 h-8 w-8"
-            style={{ color: 'var(--border-default)' }}
+            className="mb-2 h-8 w-8 text-[var(--border-default)]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -139,7 +132,7 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
               d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <p className="font-stat text-xs" style={{ color: 'var(--color-muted)' }}>
+          <p className="font-stat text-xs text-[var(--text-secondary)]">
             No players drafted yet
           </p>
         </div>
@@ -221,50 +214,26 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
           </div>
 
           {/* Composition summary */}
-          <div
-            className="rounded border px-3 py-2"
-            style={{
-              borderColor: 'var(--border-default)',
-              background: 'var(--surface-overlay)',
-            }}
-          >
+          <div className="border border-[var(--border-default)] bg-[var(--surface-overlay)] px-3 py-2">
             <div className="flex items-center justify-between font-stat text-[10px]">
-              <span style={{ color: 'var(--color-muted)' }}>
+              <span className="text-[var(--text-secondary)]">
                 POS {totalPosition}/13
               </span>
-              <span
-                className="mx-2 h-px flex-1"
-                style={{ background: 'var(--border-default)' }}
-              />
-              <span style={{ color: 'var(--color-muted)' }}>
+              <span className="mx-2 h-px flex-1 bg-[var(--border-default)]" />
+              <span className="text-[var(--text-secondary)]">
                 PIT {totalPitchers}/8
               </span>
+              <span className="mx-2 h-px flex-1 bg-[var(--border-default)]" />
               <span
-                className="mx-2 h-px flex-1"
-                style={{ background: 'var(--border-default)' }}
-              />
-              <span
-                style={{
-                  color:
-                    teamPicks.length === 21
-                      ? 'var(--semantic-success)'
-                      : 'var(--color-muted)',
-                  fontWeight: teamPicks.length === 21 ? 700 : 400,
-                }}
+                className={`${
+                  teamPicks.length === 21
+                    ? 'font-bold text-[var(--semantic-success)]'
+                    : 'text-[var(--text-secondary)]'
+                }`}
               >
                 {teamPicks.length}/21
               </span>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="border-t pt-2" style={{ borderColor: 'var(--border-default)' }}>
-            <p
-              className="text-center font-stat text-[10px] uppercase tracking-widest"
-              style={{ color: 'var(--color-muted)' }}
-            >
-              &#9733; Official Roster Card &#9733;
-            </p>
           </div>
         </div>
       )}
@@ -288,15 +257,13 @@ function SectionHeader({
   const isFull = count >= target;
   return (
     <div className="flex items-center justify-between">
-      <h4
-        className="font-headline text-[10px] font-bold uppercase tracking-wider"
-        style={{ color: 'var(--accent-primary)' }}
-      >
+      <h4 className="font-headline text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]">
         {title}
       </h4>
       <span
-        className="font-stat text-[10px]"
-        style={{ color: isFull ? 'var(--semantic-success)' : 'var(--color-muted)' }}
+        className={`font-stat text-[10px] ${
+          isFull ? 'text-[var(--semantic-success)]' : 'text-[var(--text-secondary)]'
+        }`}
       >
         {count}/{target}
       </span>
@@ -306,10 +273,7 @@ function SectionHeader({
 
 function SubLabel({ text }: { text: string }) {
   return (
-    <p
-      className="mb-0.5 font-stat text-[9px] uppercase tracking-wider"
-      style={{ color: 'var(--color-wood)' }}
-    >
+    <p className="mb-0.5 font-stat text-[9px] uppercase tracking-wider text-[var(--text-tertiary)]">
       {text}
     </p>
   );
@@ -329,43 +293,31 @@ function LineupRow({
   if (!pick) return <EmptySlot label={slotLabel} />;
 
   const badgeCss: Record<string, { bg: string; fg: string }> = {
-    position: { bg: 'rgba(27,77,62,0.12)', fg: 'var(--accent-primary)' },
-    bench: { bg: 'rgba(139,127,107,0.15)', fg: 'var(--color-muted)' },
-    pitcher: { bg: 'rgba(178,34,34,0.12)', fg: 'var(--semantic-danger)' },
+    position: { bg: 'rgba(26, 36, 59, 0.08)', fg: 'var(--text-primary)' },
+    bench: { bg: 'rgba(140, 133, 120, 0.12)', fg: 'var(--text-secondary)' },
+    pitcher: { bg: 'rgba(139, 0, 0, 0.08)', fg: 'var(--accent-secondary)' },
   };
   const colors = badgeCss[badgeStyle];
 
   return (
-    <div
-      className="flex items-center gap-2 border-b px-2 py-1.5 transition-colors"
-      style={{ borderColor: 'var(--border-subtle)' }}
-    >
+    <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-2 py-1.5 transition-colors">
       <span
-        className="inline-flex h-5 w-8 shrink-0 items-center justify-center rounded font-stat text-[10px] font-bold"
+        className="inline-flex h-5 w-8 shrink-0 items-center justify-center font-stat text-[10px] font-bold"
         style={{ background: colors.bg, color: colors.fg }}
       >
         {slotLabel}
       </span>
 
-      <span
-        className="min-w-0 flex-1 truncate font-stat text-xs font-medium"
-        style={{ color: 'var(--color-ink)' }}
-      >
+      <span className="min-w-0 flex-1 truncate font-body text-xs font-medium text-[var(--text-primary)]">
         {pick.playerName}
         {showNaturalPosition && (
-          <span
-            className="ml-1 text-[9px] font-normal"
-            style={{ color: 'var(--color-wood)' }}
-          >
+          <span className="ml-1 text-[9px] font-normal text-[var(--text-tertiary)]">
             ({pick.position})
           </span>
         )}
       </span>
 
-      <span
-        className="shrink-0 font-stat text-[10px]"
-        style={{ color: 'var(--color-muted)' }}
-      >
+      <span className="shrink-0 font-stat text-[10px] text-[var(--text-secondary)]">
         R{pick.round}
       </span>
     </div>
@@ -374,20 +326,14 @@ function LineupRow({
 
 function EmptySlot({ label }: { label: string }) {
   return (
-    <div
-      className="flex items-center gap-2 border-b px-2 py-1.5"
-      style={{ borderColor: 'var(--border-subtle)' }}
-    >
+    <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] px-2 py-1.5">
       <span
-        className="inline-flex h-5 w-8 shrink-0 items-center justify-center rounded font-stat text-[10px] font-bold"
+        className="inline-flex h-5 w-8 shrink-0 items-center justify-center font-stat text-[10px] font-bold"
         style={{ background: 'var(--accent-muted)', color: 'var(--text-tertiary)' }}
       >
         {label}
       </span>
-      <span
-        className="flex-1 font-stat text-[10px] italic"
-        style={{ color: 'var(--text-tertiary)' }}
-      >
+      <span className="flex-1 font-stat text-[10px] italic text-[var(--text-tertiary)]">
         ---
       </span>
     </div>

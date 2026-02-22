@@ -1,9 +1,8 @@
 /**
  * DraftBoardPage
  *
- * Live draft board with vintage ballpark scoreboard aesthetic.
- * 3-panel layout: DraftTicker (left), AvailablePlayersTable (center),
- * RosterPreviewPanel (right). PickTimer at top.
+ * Heritage Editorial draft board. 3-panel layout: DraftTicker (left),
+ * AvailablePlayersTable (center), RosterPreviewPanel (right).
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
@@ -143,17 +142,15 @@ export function DraftBoardPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      {/* Header with pennant styling */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h2 className="pennant-header">Draft Board</h2>
-            {isDraftActive && (
-              <p className="font-stat text-sm text-[var(--color-muted)]">
-                Round {draftState.currentRound}, Pick {draftState.currentPick}
-              </p>
-            )}
-          </div>
+        <div>
+          <h2 className="pennant-header">Draft Board</h2>
+          {isDraftActive && (
+            <p className="font-stat text-sm text-[var(--text-secondary)]">
+              Round {draftState.currentRound}, Pick {draftState.currentPick}
+            </p>
+          )}
         </div>
 
         {isDraftActive && (
@@ -163,8 +160,8 @@ export function DraftBoardPage() {
               onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
               className={`vintage-card flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
                 autoDraftEnabled
-                  ? 'border-[var(--color-gold)] bg-[var(--color-gold)]/20 text-[var(--color-gold)]'
-                  : 'border-[var(--border-default)] text-[var(--color-muted)] hover:text-[var(--color-ink)]'
+                  ? 'border-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)]'
+                  : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
               aria-pressed={autoDraftEnabled}
             >
@@ -184,34 +181,24 @@ export function DraftBoardPage() {
       {/* Draft status banners */}
       {isDraftComplete && (
         <div
-          className="vintage-card relative overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, var(--color-leather) 0%, var(--color-leather-dark) 100%)',
-            borderColor: 'var(--color-gold)',
-          }}
+          className="vintage-card"
+          style={{ borderLeft: '3px solid var(--accent-secondary)' }}
         >
-          <div className="absolute right-0 top-0 h-20 w-20 opacity-10">
-            <svg fill="var(--color-gold)" viewBox="0 0 24 24">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-            </svg>
-          </div>
-          <div className="relative">
-            <p className="font-headline text-lg font-bold uppercase tracking-wider text-[var(--color-gold)]">
-              Draft Complete
-            </p>
-            <p className="font-stat text-sm text-[var(--color-cream)]/80">
-              All {draftState.totalRounds} rounds have been completed. The rosters are set!
-            </p>
-          </div>
+          <p className="font-headline text-lg font-bold text-[var(--text-primary)]">
+            Draft Complete
+          </p>
+          <p className="font-body text-sm text-[var(--text-secondary)]">
+            All {draftState.totalRounds} rounds have been completed. The rosters are set!
+          </p>
         </div>
       )}
 
       {isDraftNotStarted && (
-        <div className="vintage-card border-[var(--border-default)]">
-          <p className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--color-ink)]">
+        <div className="vintage-card">
+          <p className="font-headline text-sm font-bold text-[var(--text-primary)]">
             Waiting for Draft
           </p>
-          <p className="font-stat text-xs text-[var(--color-muted)]">
+          <p className="font-body text-xs text-[var(--text-secondary)]">
             The commissioner has not started the draft yet.
           </p>
         </div>
@@ -221,32 +208,21 @@ export function DraftBoardPage() {
         <div
           className={`vintage-card flex items-center gap-3 ${
             isMyPick
-              ? 'animate-glow border-[var(--color-gold)] bg-gradient-to-r from-[var(--color-gold)]/20 to-[var(--color-gold)]/10'
-              : 'border-[var(--border-default)]'
+              ? 'border-l-[3px] border-l-[var(--accent-secondary)]'
+              : ''
           }`}
         >
-          {isMyPick && (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-gold)]">
-              <svg
-                className="h-5 w-5 text-[var(--color-ink)]"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-              </svg>
-            </div>
-          )}
           <div>
             <p
-              className={`font-headline text-sm font-bold uppercase tracking-wider ${
-                isMyPick ? 'text-[var(--color-gold)]' : 'text-[var(--color-ink)]'
+              className={`font-headline text-sm font-bold ${
+                isMyPick ? 'text-[var(--accent-secondary)]' : 'text-[var(--text-primary)]'
               }`}
             >
               {isMyPick
                 ? (autoDraftEnabled ? 'Auto-Drafting...' : "You're On the Clock!")
                 : `Waiting for ${currentTeamName ?? 'next team'}...`}
             </p>
-            <p className="font-stat text-xs text-[var(--color-muted)]">
+            <p className="font-stat text-xs text-[var(--text-secondary)]">
               Round {draftState.currentRound}, Pick {draftState.currentPick}
             </p>
           </div>
