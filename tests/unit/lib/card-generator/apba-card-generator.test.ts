@@ -116,20 +116,20 @@ describe('APBA Card Generator', () => {
       }
     });
 
-    it('maps grade 7-12 to column C (average)', () => {
-      for (let g = 7; g <= 12; g++) {
+    it('maps grade 7-14 to column C (average through #1 starter)', () => {
+      for (let g = 7; g <= 14; g++) {
         expect(gradeToColumn(g)).toBe('C');
       }
     });
 
-    it('maps grade 13-18 to column B (strong)', () => {
-      for (let g = 13; g <= 18; g++) {
+    it('maps grade 15-19 to column B (strong ace, near-elite)', () => {
+      for (let g = 15; g <= 19; g++) {
         expect(gradeToColumn(g)).toBe('B');
       }
     });
 
-    it('maps grade 19-30 to column A (elite)', () => {
-      for (let g = 19; g <= 30; g++) {
+    it('maps grade 20-30 to column A (elite/historic)', () => {
+      for (let g = 20; g <= 30; g++) {
         expect(gradeToColumn(g)).toBe('A');
       }
     });

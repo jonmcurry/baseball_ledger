@@ -54,18 +54,18 @@ describe('SERD Plate Appearance Resolution', () => {
       expect(gradeToColumn(6)).toBe('D');
     });
 
-    it('maps grade 7-12 to C (average)', () => {
+    it('maps grade 7-14 to C (average through #1 starter)', () => {
       expect(gradeToColumn(7)).toBe('C');
-      expect(gradeToColumn(12)).toBe('C');
+      expect(gradeToColumn(14)).toBe('C');
     });
 
-    it('maps grade 13-18 to B (strong)', () => {
-      expect(gradeToColumn(13)).toBe('B');
-      expect(gradeToColumn(18)).toBe('B');
+    it('maps grade 15-19 to B (strong ace, near-elite)', () => {
+      expect(gradeToColumn(15)).toBe('B');
+      expect(gradeToColumn(19)).toBe('B');
     });
 
-    it('maps grade 19-30 to A (elite)', () => {
-      expect(gradeToColumn(19)).toBe('A');
+    it('maps grade 20-30 to A (elite/historic)', () => {
+      expect(gradeToColumn(20)).toBe('A');
       expect(gradeToColumn(30)).toBe('A');
     });
   });

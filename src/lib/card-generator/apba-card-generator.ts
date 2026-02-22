@@ -36,20 +36,26 @@ export interface RateMultipliers {
  * Column multiplier calibration table.
  *
  * These control how pitcher quality shifts batter outcome rates.
- * Column C matches the player's actual MLB rates.
- * Column A suppresses reach-base outcomes (ace pitcher).
- * Column E boosts reach-base outcomes (wild pitcher).
+ * Column C matches the player's actual MLB rates (neutral).
+ * Column A suppresses reach-base outcomes (historic ace pitcher).
+ * Column E boosts reach-base outcomes (wild/fatigued pitcher).
  *
- * The multipliers are symmetric around C so that the weighted average
- * across all columns equals the base rate regardless of pitcher grade
- * distribution.
+ * The multipliers are symmetric around C: for every rate category,
+ * (A + B + C + D + E) / 5 = 1.00. This ensures the weighted average
+ * across all columns equals the base rate when pitcher grade
+ * distribution is uniform.
+ *
+ * B suppresses hits by 15% (was 28%) and D boosts by 15% (was 6%).
+ * A suppresses by 30% (was 45%) and E boosts by 30% (was 15%).
+ * The previous values were falsely documented as symmetric but
+ * averaged 0.896 for singles, causing systematic BA depression.
  */
 export const COLUMN_MULTIPLIERS: Record<ApbaColumn, RateMultipliers> = {
-  A: { single: 0.55, double: 0.60, triple: 0.50, hr: 0.70, walk: 0.70, hbp: 0.70, strikeout: 1.50, error: 0.80, dp: 1.40 },
-  B: { single: 0.72, double: 0.75, triple: 0.70, hr: 0.80, walk: 0.80, hbp: 0.80, strikeout: 1.30, error: 0.88, dp: 1.25 },
+  A: { single: 0.70, double: 0.70, triple: 0.60, hr: 0.75, walk: 0.75, hbp: 0.75, strikeout: 1.40, error: 0.80, dp: 1.30 },
+  B: { single: 0.85, double: 0.85, triple: 0.80, hr: 0.88, walk: 0.88, hbp: 0.88, strikeout: 1.20, error: 0.90, dp: 1.15 },
   C: { single: 1.00, double: 1.00, triple: 1.00, hr: 1.00, walk: 1.00, hbp: 1.00, strikeout: 1.00, error: 1.00, dp: 1.00 },
-  D: { single: 1.06, double: 1.05, triple: 1.05, hr: 1.04, walk: 1.04, hbp: 1.04, strikeout: 0.92, error: 1.03, dp: 0.95 },
-  E: { single: 1.15, double: 1.12, triple: 1.10, hr: 1.10, walk: 1.08, hbp: 1.08, strikeout: 0.80, error: 1.08, dp: 0.88 },
+  D: { single: 1.15, double: 1.15, triple: 1.20, hr: 1.12, walk: 1.12, hbp: 1.12, strikeout: 0.80, error: 1.10, dp: 0.85 },
+  E: { single: 1.30, double: 1.30, triple: 1.40, hr: 1.25, walk: 1.25, hbp: 1.25, strikeout: 0.60, error: 1.20, dp: 0.70 },
 };
 
 /** Total outcomes per column (2d6 = 36 equiprobable results). */
@@ -73,17 +79,22 @@ const OUT_TYPE_WEIGHTS: { outcome: OutcomeCategory; weight: number }[] = [
  * Grade ranges from pitching.ts computeGameGrade() (6-layer):
  *   1-3   = E (terrible, heavily fatigued)
  *   4-6   = D (below average, tired or weak pitcher)
- *   7-12  = C (average, typical starter mid-game)
- *   13-18 = B (strong, fresh starter or closer)
- *   19-30 = A (elite, ace with fresh/platoon bonuses)
+ *   7-14  = C (average through #1 starter)
+ *   15-19 = B (strong ace, near-elite)
+ *   20-30 = A (elite/historic, ace with fresh/platoon bonuses)
  *
  * Typical grade-8 starter with no bonuses = Column C (neutral).
  * Fresh bonus (+5) or platoon (+2) pushes into B or A.
  * Fatigue drops into D/E for late-game degradation.
+ *
+ * Column C extends through grade 14 so that in all-star leagues
+ * (where most pitchers are grade 13-15), a realistic mix of
+ * neutral and suppressed PAs occurs. Only the top ~7% of
+ * all-time pitchers (grade 15+) trigger Column B suppression.
  */
 export function gradeToColumn(grade: number): ApbaColumn {
-  if (grade >= 19) return 'A';
-  if (grade >= 13) return 'B';
+  if (grade >= 20) return 'A';
+  if (grade >= 15) return 'B';
   if (grade >= 7) return 'C';
   if (grade >= 4) return 'D';
   return 'E';

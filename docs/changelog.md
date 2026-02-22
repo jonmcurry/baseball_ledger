@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-02-22 - Fix all-star league hit suppression: widen Column C + symmetric multipliers
+
+Root cause: In all-star leagues where all pitchers are grade 13+, every PA faced
+Column B (0.72x singles) or A (0.55x singles), depressing batting averages by
+~25%. Column multipliers were falsely documented as symmetric but averaged 0.896
+for singles (not 1.0).
+
+Changes:
+- Widen Column C grade range: 7-12 -> 7-14 (grade 13-14 pitchers now neutral)
+- Narrow Column B: 13-18 -> 15-19 (only top ~7% all-time trigger suppression)
+- Narrow Column A: 19-30 -> 20-30 (historic aces only)
+- Make multipliers truly symmetric around C: (A+B+C+D+E)/5 = 1.0 for all rates
+  - B singles: 0.72 -> 0.85 (15% suppression instead of 28%)
+  - A singles: 0.55 -> 0.70 (30% suppression instead of 45%)
+  - D singles: 1.06 -> 1.15 (15% boost instead of 6%)
+  - E singles: 1.15 -> 1.30 (30% boost instead of 15%)
+- Normal leagues (grade 8 average) unaffected -- grade 8 remains Column C
+- New allstar-league-calibration.test.ts validates fix
+
+Impact: Elite .300 hitter vs all-star pitching now produces BA=.308 (was ~.240)
+
 ## 2026-02-22 - Heritage Editorial Phase 3-4: View Redesigns and Motion
 
 Complete view-level redesign implementing the Heritage Editorial "Living Archive"
