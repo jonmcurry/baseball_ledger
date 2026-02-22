@@ -25,7 +25,7 @@ describe('StatsPage', () => {
 
   it('renders page heading', () => {
     render(<StatsPage />);
-    expect(screen.getByText('Statistics')).toBeInTheDocument();
+    expect(screen.getByText('League Leaders')).toBeInTheDocument();
   });
 
   it('renders batting and pitching tabs', () => {

@@ -8,6 +8,7 @@ import { useLeague } from '@hooks/useLeague';
 import { StandingsTable } from '@components/data-display/StandingsTable';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { usePageTitle } from '@hooks/usePageTitle';
 
 export function StandingsPage() {
@@ -20,12 +21,10 @@ export function StandingsPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      {/* Page header */}
-      <div>
-        <h2 className="pennant-header text-2xl md:text-3xl">
-          Standings
-        </h2>
-      </div>
+      <SectionOpener
+        kicker="The Standings"
+        headline="Division Races"
+      />
 
       {error && <ErrorBanner severity="error" message={error} />}
 

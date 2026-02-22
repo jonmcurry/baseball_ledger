@@ -46,12 +46,12 @@ describe('ResultsTicker', () => {
     expect(handleClick).toHaveBeenCalledWith('g1');
   });
 
-  it('has horizontal scroll container', () => {
+  it('has vertical score stream layout', () => {
     const { container } = render(<ResultsTicker results={makeResults()} />);
     const ticker = container.querySelector('[data-testid="results-ticker"]');
     expect(ticker).toBeInTheDocument();
-    // Outer container uses overflow-hidden; inner flex div uses overflow-x-auto
-    const scrollable = ticker?.querySelector('.overflow-x-auto');
-    expect(scrollable).toBeInTheDocument();
+    // Vertical text stream layout with stacked entries
+    const entries = ticker?.querySelectorAll('.ticker-entry');
+    expect(entries?.length).toBe(3);
   });
 });

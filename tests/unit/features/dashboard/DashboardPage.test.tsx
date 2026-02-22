@@ -96,7 +96,7 @@ describe('DashboardPage', () => {
 
   it('displays Season heading', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Season')).toBeInTheDocument();
+    expect(screen.getByText('Season 1')).toBeInTheDocument();
   });
 
   it('displays current day and status', () => {
@@ -535,8 +535,9 @@ describe('DashboardPage', () => {
     });
 
     render(<DashboardPage />);
-    expect(screen.getByTestId('new-season-panel')).toBeInTheDocument();
-    expect(screen.getByText('Season 2')).toBeInTheDocument();
+    const panel = screen.getByTestId('new-season-panel');
+    expect(panel).toBeInTheDocument();
+    expect(panel.textContent).toContain('Season 2');
     expect(screen.getByRole('button', { name: /play ball/i })).toBeInTheDocument();
   });
 

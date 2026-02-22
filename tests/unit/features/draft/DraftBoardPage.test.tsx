@@ -94,7 +94,7 @@ describe('DraftBoardPage', () => {
 
   it('renders page heading', () => {
     render(<DraftBoardPage />);
-    expect(screen.getByText('Draft Board')).toBeInTheDocument();
+    expect(screen.getByText('Player Draft')).toBeInTheDocument();
   });
 
   it('shows loading state', () => {

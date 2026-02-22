@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { Input } from '@components/forms/Input';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import * as leagueService from '@services/league-service';
 import { usePageTitle } from '@hooks/usePageTitle';
@@ -45,10 +46,11 @@ export function JoinLeaguePage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-gutter-lg">
-      <h2 className="font-headline text-2xl font-bold text-ballpark">Join a League</h2>
-      <p className="text-sm text-muted">
-        Enter the invite code provided by your league commissioner.
-      </p>
+      <SectionOpener
+        kicker="League Office"
+        headline="Join a League"
+        deck="Enter the invite code provided by your league commissioner."
+      />
 
       {error && <ErrorBanner severity="error" message={error} />}
 

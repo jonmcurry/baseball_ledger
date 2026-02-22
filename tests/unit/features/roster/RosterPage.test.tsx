@@ -109,7 +109,7 @@ describe('RosterPage', () => {
 
   it('renders page heading', () => {
     render(<RosterPage />);
-    expect(screen.getByText('Roster')).toBeInTheDocument();
+    expect(screen.getByText('Active Roster')).toBeInTheDocument();
   });
 
   it('shows loading state', () => {

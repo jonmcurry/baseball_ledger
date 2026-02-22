@@ -18,6 +18,7 @@ import { useSimulationStore } from '@stores/simulationStore';
 import { useWorkerSimulation } from '@hooks/useWorkerSimulation';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { GameStatePanel } from './GameStatePanel';
 import { PlayByPlayFeed } from './PlayByPlayFeed';
 import { BoxScoreDisplay } from './BoxScoreDisplay';
@@ -377,13 +378,11 @@ export function GameViewerPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      <h2 className="pennant-header">
-        {gameData.awayTeamName} @ {gameData.homeTeamName}
-      </h2>
-
-      <div className="text-center font-scoreboard text-2xl text-[var(--text-primary)]">
-        {gameData.awayScore} - {gameData.homeScore}
-      </div>
+      <SectionOpener
+        kicker="Game Report"
+        headline={`${gameData.awayTeamName} at ${gameData.homeTeamName}`}
+        deck={`Final: ${gameData.awayScore} - ${gameData.homeScore}`}
+      />
 
       {currentGameState && (
         <GameStatePanel

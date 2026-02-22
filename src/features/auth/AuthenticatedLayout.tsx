@@ -1,7 +1,7 @@
 /**
  * AuthenticatedLayout
  *
- * Composes AppShell + Header + Footer for authenticated routes.
+ * Composes BroadsheetShell + Masthead + FolioNav + Colophon for authenticated routes.
  * Renders child routes via Outlet.
  * Loads league data from URL :leagueId param into leagueStore.
  * Shows WARN-severity ErrorBanner when localStorage is unavailable (REQ-STATE-010).
@@ -9,10 +9,11 @@
 
 import { useEffect } from 'react';
 import { Outlet, useParams, useNavigate } from 'react-router-dom';
-import { AppShell } from '@components/layout/AppShell';
-import { Header } from '@components/layout/Header';
-import type { LeagueStatus } from '@components/layout/Header';
-import { Footer } from '@components/layout/Footer';
+import { BroadsheetShell } from '@components/layout/BroadsheetShell';
+import { Masthead } from '@components/layout/Masthead';
+import { FolioNav } from '@components/layout/FolioNav';
+import type { LeagueStatus } from '@components/layout/FolioNav';
+import { Colophon } from '@components/layout/Colophon';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { isMemoryFallback } from '@stores/storage-factory';
@@ -48,6 +49,10 @@ export function AuthenticatedLayout() {
   const userName = user?.displayName ?? user?.email ?? 'Player';
   const isCommissioner = league?.commissionerId === user?.id;
 
+  const seasonInfo = league
+    ? `Season ${league.seasonYear}`
+    : undefined;
+
   const handleNavigate = (route: string) => {
     if (leagueId) {
       navigate(`/leagues/${leagueId}${route}`);
@@ -64,28 +69,35 @@ export function AuthenticatedLayout() {
   }
 
   return (
-    <AppShell>
-      <Header
-        leagueName={leagueName}
-        leagueStatus={leagueStatus}
-        userName={userName}
-        isCommissioner={isCommissioner}
-        onNavigate={handleNavigate}
-        onLogout={handleLogout}
-      />
+    <BroadsheetShell
+      masthead={
+        <Masthead
+          leagueName={leagueName}
+          seasonInfo={seasonInfo}
+          userName={userName}
+          onLogout={handleLogout}
+        />
+      }
+      folio={
+        <FolioNav
+          leagueId={leagueId}
+          leagueStatus={leagueStatus}
+          isCommissioner={isCommissioner}
+          onNavigate={handleNavigate}
+        />
+      }
+      colophon={<Colophon />}
+    >
       {isMemoryFallback() && (
-        <div className="px-gutter pt-gutter">
+        <div className="mb-gutter">
           <ErrorBanner
             severity="warning"
             message="Browser storage unavailable -- data will not persist between sessions."
           />
         </div>
       )}
-      <div className="py-gutter-lg">
-        <Outlet />
-      </div>
-      <Footer />
-    </AppShell>
+      <Outlet />
+    </BroadsheetShell>
   );
 }
 

@@ -14,6 +14,7 @@ import { useDraftTimer } from './hooks/useDraftTimer';
 
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import { DraftTicker } from './DraftTicker';
 import { DraftReasoningPanel } from './DraftReasoningPanel';
@@ -145,14 +146,12 @@ export function DraftBoardPage() {
     <div className="space-y-gutter-lg">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="pennant-header">Draft Board</h2>
-          {isDraftActive && (
-            <p className="font-stat text-sm text-[var(--text-secondary)]">
-              Round {draftState.currentRound}, Pick {draftState.currentPick}
-            </p>
-          )}
-        </div>
+        <SectionOpener
+          kicker="The Pressroom"
+          headline="Player Draft"
+          deck={isDraftActive ? `Round ${draftState.currentRound}, Pick ${draftState.currentPick}` : undefined}
+          className="mb-0"
+        />
 
         <div className="flex items-center gap-4">
           {/* View mode toggle */}

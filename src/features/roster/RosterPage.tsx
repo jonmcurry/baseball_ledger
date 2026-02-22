@@ -13,6 +13,7 @@ import { useLeague } from '@hooks/useLeague';
 import { useRosterStore } from '@stores/rosterStore';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { LineupDiamond } from './LineupDiamond';
 import { BattingOrder } from './BattingOrder';
 import { BenchPanel } from './BenchPanel';
@@ -130,12 +131,12 @@ export function RosterPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="pennant-header text-2xl">Roster</h2>
-          {myTeam && (
-            <p className="mt-2 font-body text-sm text-muted">{myTeam.name}</p>
-          )}
-        </div>
+        <SectionOpener
+          kicker="The Club House"
+          headline="Active Roster"
+          deck={myTeam ? myTeam.name : undefined}
+          className="mb-0"
+        />
         <div className="flex items-center gap-3">
           <button
             type="button"

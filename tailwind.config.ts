@@ -94,9 +94,25 @@ const config: Config = {
         'gutter': 'var(--gutter)',
         'gutter-lg': 'var(--gutter-lg)',
         'gutter-xl': 'var(--gutter-xl)',
+        'masthead': '3.5rem',
       },
       maxWidth: {
         'ledger': 'var(--max-width-ledger)',
+        'broadsheet': 'var(--max-width-broadsheet)',
+      },
+      width: {
+        'folio': 'var(--folio-width)',
+        'marginalia': 'var(--marginalia-width)',
+      },
+      fontSize: {
+        'type-0': 'var(--type-0)',
+        'type-1': 'var(--type-1)',
+        'type-2': 'var(--type-2)',
+        'type-3': 'var(--type-3)',
+        'type-4': 'var(--type-4)',
+        'type-5': 'var(--type-5)',
+        'type-6': 'var(--type-6)',
+        'type-7': 'var(--type-7)',
       },
       borderRadius: {
         'card': 'var(--radius-card)',

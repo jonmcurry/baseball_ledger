@@ -14,6 +14,7 @@ import { useLeague } from '@hooks/useLeague';
 import { useRosterStore } from '@stores/rosterStore';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { AddDropForm } from './AddDropForm';
 import { TradeForm } from './TradeForm';
 import { TradeEvaluationPanel } from './TradeEvaluationPanel';
@@ -219,7 +220,10 @@ export function TransactionsPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      <h2 className="font-headline text-2xl font-bold text-ballpark">Transactions</h2>
+      <SectionOpener
+        kicker="The Wire"
+        headline="Transactions"
+      />
 
       {error && <ErrorBanner severity="error" message={error} />}
 

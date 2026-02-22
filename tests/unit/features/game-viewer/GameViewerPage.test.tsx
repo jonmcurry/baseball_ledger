@@ -77,12 +77,12 @@ describe('GameViewerPage', () => {
 
   it('renders page heading with team names', () => {
     render(<GameViewerPage />);
-    expect(screen.getByText(/Boston Red Sox @ New York Yankees/)).toBeInTheDocument();
+    expect(screen.getByText(/Boston Red Sox at New York Yankees/)).toBeInTheDocument();
   });
 
   it('shows score', () => {
     render(<GameViewerPage />);
-    expect(screen.getByText('3 - 4')).toBeInTheDocument();
+    expect(screen.getByText(/3 - 4/)).toBeInTheDocument();
   });
 
   it('shows error when gameId has no result in store or DB', async () => {

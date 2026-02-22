@@ -51,7 +51,7 @@ describe('StandingsPage', () => {
 
   it('renders page heading', () => {
     render(<StandingsPage />);
-    expect(screen.getByText('Standings')).toBeInTheDocument();
+    expect(screen.getByText('Division Races')).toBeInTheDocument();
   });
 
   it('renders division standings', () => {

@@ -13,6 +13,7 @@ import { useMemo } from 'react';
 import { useLeague } from '@hooks/useLeague';
 import { usePostseasonTheme } from '@hooks/usePostseasonTheme';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { PlayoffBracketView } from './PlayoffBracketView';
 import { SeriesCard } from './SeriesCard';
@@ -41,7 +42,10 @@ export function PlayoffsPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      <h2 className="font-headline text-2xl font-bold text-ballpark">Playoffs</h2>
+      <SectionOpener
+        kicker="October Classic"
+        headline="Playoffs"
+      />
 
       {error && <ErrorBanner severity="error" message={error} />}
 

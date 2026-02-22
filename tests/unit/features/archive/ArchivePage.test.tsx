@@ -43,7 +43,7 @@ describe('ArchivePage', () => {
 
   it('renders page heading', () => {
     render(<ArchivePage />);
-    expect(screen.getByText('Archive')).toBeInTheDocument();
+    expect(screen.getByText('Past Seasons')).toBeInTheDocument();
   });
 
   it('shows archived seasons heading', () => {

@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-02-22 - "The Continuing Record" Broadsheet UI/UX Redesign (Phases 0-8)
+
+Complete layout architecture redesign from generic centered SaaS column to broadsheet
+newspaper / baseball almanac with 3-column CSS Grid, vertical folio navigation,
+marginalia column, and editorial typography system.
+
+Foundation (Phase 0):
+- BroadsheetShell: 3-column CSS Grid layout (folio | content | marginalia)
+- FolioNav: Vertical sidebar with roman numeral section entries (replaces horizontal nav)
+- Masthead: Thin identity bar with logotype, league name, dateline, user controls
+- Colophon: Newspaper-style footer
+- Marginalia: Right-side contextual column (hidden on tablet/mobile)
+- New CSS tokens: broadsheet grid, 8-level modular type scale (type-0 through type-7)
+- New component classes: .section-flag, .kicker, .deck, .dateline, .byline, .pull-quote,
+  .rule-double, .rule-hairline, .folio-nav, .folio-item, .marginalia, .masthead-bar
+- AuthenticatedLayout rewritten to compose BroadsheetShell
+- Responsive breakpoints: desktop (3-col), tablet (2-col, collapsed folio), mobile (1-col)
+
+Typography (Phase 1):
+- SectionOpener: Reusable page header (kicker/headline/deck/dateline/double-rule)
+- PullQuote: Large inset quotation with crimson left border
+- Byline: Small caps attribution line
+
+Splash + Login (Phase 2):
+- SplashPage: Full broadsheet front page with type-7 logotype, dateline, editorial CTAs
+- LoginPage: Classified ad style with "SUBSCRIBER ACCESS" kicker
+
+Dashboard (Phase 3):
+- "The Morning Edition" with above-the-fold / below-the-fold hierarchy
+- ResultsTicker: Vertical text stream replacing horizontal card rail
+- Section flags for Season Calendar, Latest Scores, Sections nav
+
+All Pages (Phases 4-8) -- SectionOpener integration:
+- StatsPage: "The Record Book" / "League Leaders"
+- StandingsPage: "The Standings" / "Division Races"
+- DraftBoardPage: "The Pressroom" / "Player Draft"
+- RosterPage: "The Club House" / "Active Roster"
+- TransactionsPage: "The Wire" / "Transactions"
+- GameViewerPage: "Game Report" / dynamic team matchup headline
+- PlayoffsPage: "October Classic" / "Playoffs"
+- ArchivePage: "The Archive" / "Past Seasons"
+- LeagueConfigPage: "League Office" / dynamic heading
+- JoinLeaguePage: "League Office" / "Join a League"
+
+Test updates: All UI test assertions updated to match new heading text.
+
 ## 2026-02-22 - Fix all-star league hit suppression: widen Column C + symmetric multipliers
 
 Root cause: In all-star leagues where all pitchers are grade 13+, every PA faced

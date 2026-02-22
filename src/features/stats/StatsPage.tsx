@@ -12,6 +12,7 @@ import { StatTable } from '@components/data-display/StatTable';
 import { Pagination } from '@components/data-display/Pagination';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import {
   BATTING_COLUMNS_TRADITIONAL,
   BATTING_COLUMNS_ADVANCED,
@@ -122,7 +123,10 @@ export function StatsPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      <h2 className="font-headline text-2xl font-bold text-ballpark">Statistics</h2>
+      <SectionOpener
+        kicker="The Record Book"
+        headline="League Leaders"
+      />
 
       {error && <ErrorBanner severity="error" message={error} />}
 

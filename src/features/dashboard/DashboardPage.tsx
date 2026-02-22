@@ -1,8 +1,8 @@
 /**
- * DashboardPage
+ * DashboardPage -- "The Morning Edition"
  *
- * Heritage Editorial league hub styled as a "Table of Contents" with
- * leader-line navigation for in-season state.
+ * Broadsheet front page layout with above-the-fold simulation controls
+ * and below-the-fold schedule/navigation.
  *
  * REQ-STATE-014: useRealtimeProgress triggers cache invalidation after simulation.
  * REQ-SCH-007: SimulationNotification shows typewriter results after simulation.
@@ -17,6 +17,7 @@ import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { HeadlineInterrupt } from '@components/feedback/HeadlineInterrupt';
+import { SectionOpener } from '@components/typography/SectionOpener';
 import { SimulationControls } from './SimulationControls';
 import { SeasonScheduleView } from './SeasonScheduleView';
 import { ResultsTicker } from './ResultsTicker';
@@ -41,11 +42,11 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
 
 /** Table of Contents navigation entries for in-season state. */
 const TOC_ENTRIES = [
-  { label: 'Roster', path: '../roster', numeral: 'I' },
-  { label: 'Statistics', path: '../stats', numeral: 'II' },
-  { label: 'Standings', path: '../standings', numeral: 'III' },
-  { label: 'Transactions', path: '../transactions', numeral: 'IV' },
-  { label: 'Archive', path: '../archive', numeral: 'V' },
+  { label: 'Roster', path: '../roster', numeral: 'III' },
+  { label: 'Statistics', path: '../stats', numeral: 'IV' },
+  { label: 'Standings', path: '../standings', numeral: 'V' },
+  { label: 'Transactions', path: '../transactions', numeral: 'VII' },
+  { label: 'Archive', path: '../archive', numeral: 'VIII' },
 ] as const;
 
 export function DashboardPage() {
@@ -178,9 +179,12 @@ export function DashboardPage() {
   }
 
   const isInSeason = leagueStatus === 'regular_season' || leagueStatus === 'playoffs' || leagueStatus === 'completed';
+  const dateline = league
+    ? `Season ${league.seasonYear} -- Day ${currentDay} of 162`
+    : undefined;
 
   return (
-    <div className="space-y-gutter-lg">
+    <div className="space-y-0">
       {error && <ErrorBanner severity="error" message={error} />}
 
       {/* REQ-SCH-009: Championship headline interrupt */}
@@ -191,51 +195,20 @@ export function DashboardPage() {
         onDismiss={() => setShowHeadline(false)}
       />
 
-      {/* Asymmetric 2-column editorial spread (desktop) / stacked (mobile) */}
+      {/* Section opener */}
+      <SectionOpener
+        kicker="The Morning Edition"
+        headline={`Season ${league?.seasonYear ?? ''}`}
+        deck={isInSeason ? `Day ${currentDay} of the ${league?.seasonYear} campaign` : undefined}
+        dateline={dateline}
+      />
+
+      {/* ============================================================
+         ABOVE THE FOLD -- Primary actions + quick scores
+         ============================================================ */}
       <div className="grid gap-gutter-lg md:grid-cols-12">
-        {/* Left column: Editorial masthead + ticker */}
-        <div className="md:col-span-5 space-y-gutter-lg">
-          {/* Large editorial masthead */}
-          <div className="border-b border-[var(--border-default)] pb-gutter-lg">
-            <h2 className="pennant-header font-headline text-5xl md:text-6xl font-black tracking-tight leading-none text-[var(--text-primary)]">
-              Season
-            </h2>
-            {league && (
-              <p className="mt-gutter font-body text-lg italic text-[var(--text-secondary)]">
-                Day {currentDay} of Season {league.seasonYear}
-              </p>
-            )}
-          </div>
-
-          {/* Table of Contents navigation -- in-season only */}
-          {isInSeason && (
-            <nav aria-label="Season navigation" className="py-gutter">
-              <ul className="space-y-2 stagger-children">
-                {TOC_ENTRIES.map((entry) => (
-                  <li key={entry.path}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(entry.path)}
-                      className="leader-line w-full text-left"
-                    >
-                      <span className="leader-line-label">{entry.label}</span>
-                      <span className="leader-line-dots" />
-                      <span className="leader-line-value">{entry.numeral}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          )}
-
-          {/* Results ticker -- left column on desktop */}
-          {recentResults.length > 0 && (
-            <ResultsTicker results={recentResults} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
-          )}
-        </div>
-
-        {/* Right column: Controls + schedule */}
-        <div className="md:col-span-7 space-y-gutter-lg">
+        {/* Lead story: Controls / setup */}
+        <div className="md:col-span-8 space-y-gutter-lg">
           {/* Setup phase panels */}
           {league?.status === 'setup' && (
             league.seasonYear > 1 ? (
@@ -265,10 +238,11 @@ export function DashboardPage() {
             >
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <h3 className="font-headline text-lg font-bold text-[var(--text-primary)]">
+                  <p className="kicker">Breaking</p>
+                  <h3 className="font-headline text-type-4 font-bold text-[var(--text-primary)]">
                     Draft In Progress
                   </h3>
-                  <p className="font-body text-sm text-[var(--text-secondary)]">
+                  <p className="font-body text-type-1 text-[var(--text-secondary)] mt-1">
                     The league draft is underway. Head to the Draft Board to make your picks.
                   </p>
                 </div>
@@ -310,28 +284,71 @@ export function DashboardPage() {
               playoffMessage={playoffMessage}
             />
           )}
+        </div>
 
-          {/* Season schedule -- hidden during setup */}
-          {league?.status !== 'setup' && (
-            <>
-              {leagueStatus === 'playoffs' && playoffBracket ? (
-                <PlayoffStatusPanel
-                  playoffBracket={playoffBracket}
-                  teams={teams}
-                  lastGameResult={lastPlayoffResult}
-                />
-              ) : (
-                <SeasonScheduleView
-                  schedule={schedule}
-                  teams={teams}
-                  currentDay={currentDay}
-                  onGameClick={(gameId) => navigate(`../game/${gameId}`)}
-                />
-              )}
-            </>
+        {/* Sidebar column: Quick scores + TOC */}
+        <div className="md:col-span-4 space-y-gutter-lg">
+          {/* Results as stacked score cards */}
+          {recentResults.length > 0 && (
+            <div>
+              <p className="section-flag mb-2">Latest Scores</p>
+              <ResultsTicker results={recentResults} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
+            </div>
+          )}
+
+          {/* Table of Contents navigation -- in-season only */}
+          {isInSeason && (
+            <nav aria-label="Season navigation">
+              <p className="section-flag mb-2">Sections</p>
+              <ul className="space-y-1 stagger-children">
+                {TOC_ENTRIES.map((entry) => (
+                  <li key={entry.path}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(entry.path)}
+                      className="leader-line w-full text-left"
+                    >
+                      <span className="leader-line-label">{entry.label}</span>
+                      <span className="leader-line-dots" />
+                      <span className="leader-line-value">{entry.numeral}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           )}
         </div>
       </div>
+
+      {/* ============================================================
+         BELOW THE FOLD -- Schedule / Playoffs
+         ============================================================ */}
+      {league?.status !== 'setup' && (
+        <>
+          <hr className="rule-double" />
+
+          {leagueStatus === 'playoffs' && playoffBracket ? (
+            <div>
+              <p className="kicker mb-2">Special Report</p>
+              <PlayoffStatusPanel
+                playoffBracket={playoffBracket}
+                teams={teams}
+                lastGameResult={lastPlayoffResult}
+              />
+            </div>
+          ) : (
+            <div>
+              <p className="section-flag mb-2">Season Calendar</p>
+              <SeasonScheduleView
+                schedule={schedule}
+                teams={teams}
+                currentDay={currentDay}
+                onGameClick={(gameId) => navigate(`../game/${gameId}`)}
+              />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
