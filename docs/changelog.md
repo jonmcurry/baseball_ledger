@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-02-21 - Fix draft AI pitcher valuation (short-season and dead-ball era)
+
+Two fixes to the SP/RP pitcher valuation formula:
+
+1. **ERA floor at 1.50**: Prevents dead-ball era pitchers (sub-1.00 ERA) from
+   getting outsized ERA benefit. Dutch Leonard 1914 (0.96 ERA) no longer
+   scores higher than a modern ace with equivalent strikeout dominance.
+
+2. **IP scaling**: Pitcher value is multiplied by `min(1.0, IP / 150)` for SP
+   and `min(1.0, IP / 50)` for RP/CL. Short-season outliers like Shane Bieber
+   2020 (77 IP, 1.63 ERA) and Trevor Bauer 2020 (73 IP) drop from first-round
+   scores (~165, ~146) to mid-tier (~85, ~71). Full-season aces are unaffected.
+
+Files modified:
+- `src/lib/draft/ai-valuation.ts` - ERA floor, IP scaling, computeIpScaleFactor()
+- `tests/unit/lib/draft/ai-valuation.test.ts` - Regression + unit tests
+
 ## 2026-02-21 - Fix draft AI batter valuation (SB overweight)
 
 Reduced stolen base multiplier in AI draft batter valuation from 0.5 to 0.1.

@@ -4,6 +4,7 @@ import {
   getPositionBonus,
   calculatePlayerValue,
   selectBestSeason,
+  computeIpScaleFactor,
 } from '@lib/draft/ai-valuation';
 import type { PlayerCard, PitcherAttributes } from '@lib/types/player';
 
@@ -223,6 +224,57 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
 });
 
 // ---------------------------------------------------------------------------
+// computeIpScaleFactor
+// ---------------------------------------------------------------------------
+describe('computeIpScaleFactor', () => {
+  it('returns 1.0 for SP with 150+ IP', () => {
+    expect(computeIpScaleFactor(200, 'SP')).toBe(1.0);
+    expect(computeIpScaleFactor(150, 'SP')).toBe(1.0);
+  });
+
+  it('returns proportional factor for SP under 150 IP', () => {
+    expect(computeIpScaleFactor(75, 'SP')).toBeCloseTo(0.5, 4);
+    expect(computeIpScaleFactor(100, 'SP')).toBeCloseTo(0.667, 2);
+  });
+
+  it('returns 1.0 for RP with 50+ IP', () => {
+    expect(computeIpScaleFactor(60, 'RP')).toBe(1.0);
+    expect(computeIpScaleFactor(50, 'CL')).toBe(1.0);
+  });
+
+  it('returns proportional factor for RP under 50 IP', () => {
+    expect(computeIpScaleFactor(25, 'RP')).toBeCloseTo(0.5, 4);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ERA floor in calculatePitcherValue
+// ---------------------------------------------------------------------------
+describe('ERA floor', () => {
+  it('floors ERA at 1.50 for SP (dead-ball era protection)', () => {
+    const subFloor: PitcherAttributes = {
+      role: 'SP', grade: 12, stamina: 7, era: 0.96, whip: 0.96,
+      k9: 5.0, bb9: 2.0, hr9: 0.1, usageFlags: [], isReliever: false,
+    };
+    const atFloor: PitcherAttributes = {
+      ...subFloor, era: 1.50,
+    };
+    // Both should produce the same value since 0.96 is floored to 1.50
+    expect(calculatePitcherValue(subFloor)).toBeCloseTo(calculatePitcherValue(atFloor), 4);
+  });
+
+  it('does not affect ERA above 1.50', () => {
+    const normal: PitcherAttributes = {
+      role: 'SP', grade: 10, stamina: 6.5, era: 3.20, whip: 1.15,
+      k9: 8.5, bb9: 2.5, hr9: 0.9, usageFlags: [], isReliever: false,
+    };
+    // Formula should use actual ERA, not the floor
+    const expected = ((4.50 - 3.20) * 30) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
+    expect(calculatePitcherValue(normal)).toBeCloseTo(expected, 4);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Regression: speed player must not outscore all-time great (SB overweight bug)
 // ---------------------------------------------------------------------------
 describe('SB overweight regression', () => {
@@ -240,6 +292,90 @@ describe('SB overweight regression', () => {
     const withSB = calculateBatterValue('CF', 0.800, 50, 0.98);
     const withoutSB = calculateBatterValue('CF', 0.800, 0, 0.98);
     expect(withSB - withoutSB).toBeLessThan(10);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: short-season and dead-ball era pitcher overvaluation
+// ---------------------------------------------------------------------------
+describe('pitcher overvaluation regression', () => {
+  it('full-season ace (200+ IP) outscores short-season outlier (77 IP) with better rate stats', () => {
+    // Shane Bieber 2020: 1.63 ERA, 14.2 K/9, 1.42 BB/9, 77 IP
+    const shortSeason = makePitcherCard({
+      pitching: {
+        role: 'SP', grade: 14, stamina: 6.4, era: 1.63, whip: 0.87,
+        k9: 14.2, bb9: 1.42, hr9: 0.5, usageFlags: [], isReliever: false,
+      },
+      mlbPitchingStats: {
+        G: 12, GS: 12, W: 8, L: 1, SV: 0, IP: 77,
+        H: 46, ER: 14, HR: 6, BB: 12, SO: 122, ERA: 1.63, WHIP: 0.87,
+      },
+    });
+    // Pedro Martinez 2000: 1.74 ERA, 11.78 K/9, 1.33 BB/9, 217 IP
+    const fullSeason = makePitcherCard({
+      pitching: {
+        role: 'SP', grade: 14, stamina: 7.0, era: 1.74, whip: 0.74,
+        k9: 11.78, bb9: 1.33, hr9: 0.6, usageFlags: [], isReliever: false,
+      },
+      mlbPitchingStats: {
+        G: 29, GS: 29, W: 18, L: 6, SV: 0, IP: 217,
+        H: 128, ER: 42, HR: 17, BB: 32, SO: 284, ERA: 1.74, WHIP: 0.74,
+      },
+    });
+    expect(calculatePlayerValue(fullSeason)).toBeGreaterThan(calculatePlayerValue(shortSeason));
+  });
+
+  it('dead-ball era pitcher (sub-1.00 ERA) does not outscore modern ace', () => {
+    // Dutch Leonard 1914: 0.96 ERA, low K/9, high IP
+    const deadBall = makePitcherCard({
+      pitching: {
+        role: 'SP', grade: 12, stamina: 7.5, era: 0.96, whip: 0.96,
+        k9: 3.6, bb9: 2.0, hr9: 0.1, usageFlags: [], isReliever: false,
+      },
+      mlbPitchingStats: {
+        G: 36, GS: 36, W: 19, L: 5, SV: 0, IP: 295,
+        H: 221, ER: 31, HR: 1, BB: 60, SO: 176, ERA: 0.96, WHIP: 0.96,
+      },
+    });
+    // Pedro Martinez 2000
+    const modernAce = makePitcherCard({
+      pitching: {
+        role: 'SP', grade: 14, stamina: 7.0, era: 1.74, whip: 0.74,
+        k9: 11.78, bb9: 1.33, hr9: 0.6, usageFlags: [], isReliever: false,
+      },
+      mlbPitchingStats: {
+        G: 29, GS: 29, W: 18, L: 6, SV: 0, IP: 217,
+        H: 128, ER: 42, HR: 17, BB: 32, SO: 284, ERA: 1.74, WHIP: 0.74,
+      },
+    });
+    expect(calculatePlayerValue(modernAce)).toBeGreaterThan(calculatePlayerValue(deadBall));
+  });
+
+  it('SP with under 100 IP gets significantly penalized', () => {
+    // Same pitcher stats, different IP
+    const fullIP = makePitcherCard({
+      pitching: {
+        role: 'SP', grade: 12, stamina: 7.0, era: 2.50, whip: 1.05,
+        k9: 10.0, bb9: 2.0, hr9: 0.8, usageFlags: [], isReliever: false,
+      },
+      mlbPitchingStats: {
+        G: 30, GS: 30, W: 16, L: 8, SV: 0, IP: 200,
+        H: 150, ER: 55, HR: 18, BB: 44, SO: 222, ERA: 2.50, WHIP: 1.05,
+      },
+    });
+    const lowIP = makePitcherCard({
+      pitching: {
+        role: 'SP', grade: 12, stamina: 7.0, era: 2.50, whip: 1.05,
+        k9: 10.0, bb9: 2.0, hr9: 0.8, usageFlags: [], isReliever: false,
+      },
+      mlbPitchingStats: {
+        G: 10, GS: 10, W: 6, L: 2, SV: 0, IP: 65,
+        H: 45, ER: 18, HR: 6, BB: 14, SO: 72, ERA: 2.50, WHIP: 1.05,
+      },
+    });
+    const fullValue = calculatePlayerValue(fullIP);
+    const lowValue = calculatePlayerValue(lowIP);
+    expect(fullValue).toBeGreaterThan(lowValue * 1.5);
   });
 });
 
