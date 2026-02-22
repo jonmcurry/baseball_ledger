@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-02-22 - Masthead + FolioNav visual overhaul
+
+- Masthead: shrunk to thin utility bar (13px uppercase logotype with letter-spacing, left-aligned flexbox layout)
+- Removed desktop media query that inflated logotype to 56px (type-7)
+- FolioNav: removed single-letter icon prefixes, label-only entries with uppercase styling
+- Folio width narrowed from 160px to 120px
+- Main content padding reduced (px-gutter from px-gutter-lg)
+- Masthead spacing token 2.5rem -> 1.75rem
+
 ## 2026-02-22 - UI tightening: reduce whitespace, compact masthead, remove roman numerals
 
 - Reduced spacing tokens: gutter 1.25->0.875rem, gutter-lg 2->1.25rem, gutter-xl 3->2rem

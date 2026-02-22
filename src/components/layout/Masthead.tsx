@@ -22,42 +22,41 @@ export function Masthead({
   onLogout,
 }: MastheadProps) {
   return (
-    <header role="banner" className="relative z-20 bg-[var(--surface-base)]">
-      <div className="masthead-bar">
-        {/* User controls -- top-right */}
-        <div className="absolute top-2 right-gutter-lg flex items-center gap-3 z-10">
-          <span className="font-body text-[11px] text-[var(--text-tertiary)] max-md:hidden">
+    <header role="banner" className="z-20 bg-[var(--surface-base)]">
+      <div className="masthead-bar flex items-center justify-between">
+        {/* Left: logotype + league info */}
+        <div className="flex items-baseline gap-2">
+          <h1 className="masthead-logotype">Baseball Ledger</h1>
+          {leagueName && (
+            <>
+              <span className="text-[var(--border-default)] text-[10px]" aria-hidden="true">/</span>
+              <span className="masthead-subtitle">{leagueName}</span>
+            </>
+          )}
+          {seasonInfo && (
+            <>
+              <span className="text-[var(--border-default)] text-[10px]" aria-hidden="true">/</span>
+              <span className="dateline text-[10px]">{seasonInfo}</span>
+            </>
+          )}
+        </div>
+
+        {/* Right: user controls */}
+        <div className="flex items-center gap-3">
+          <span className="font-body text-[10px] text-[var(--text-tertiary)] max-md:hidden">
             {userName}
           </span>
           <button
             type="button"
             onClick={onLogout}
             aria-label="Log out"
-            className="font-body text-[11px] tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent-secondary)] transition-colors"
+            className="font-body text-[10px] tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent-secondary)] transition-colors"
           >
             Log Out
           </button>
         </div>
-
-        {/* Single-line masthead: logotype + separator + league info */}
-        <div className="flex items-baseline justify-center gap-3">
-          <h1 className="masthead-logotype">Baseball Ledger</h1>
-          {leagueName && (
-            <>
-              <span className="text-[var(--border-default)] text-sm" aria-hidden="true">/</span>
-              <span className="masthead-subtitle">{leagueName}</span>
-            </>
-          )}
-          {seasonInfo && (
-            <>
-              <span className="text-[var(--border-default)] text-sm" aria-hidden="true">/</span>
-              <span className="dateline">{seasonInfo}</span>
-            </>
-          )}
-        </div>
       </div>
 
-      {/* Thin rule bottom border */}
       <hr className="rule-hairline" style={{ margin: 0 }} />
     </header>
   );

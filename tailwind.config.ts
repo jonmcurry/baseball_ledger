@@ -94,7 +94,7 @@ const config: Config = {
         'gutter': 'var(--gutter)',
         'gutter-lg': 'var(--gutter-lg)',
         'gutter-xl': 'var(--gutter-xl)',
-        'masthead': '2.5rem',
+        'masthead': '1.75rem',
       },
       maxWidth: {
         'ledger': 'var(--max-width-ledger)',
