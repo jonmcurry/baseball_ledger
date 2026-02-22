@@ -153,7 +153,61 @@ describe('PlayerProfileModal', () => {
     render(
       <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
     );
-    const closeButton = screen.getByRole('button', { name: /close/i });
-    expect(document.activeElement).toBe(closeButton);
+    // Expand button is now first in DOM order, so it receives initial focus
+    const expandButton = screen.getByRole('button', { name: /expand/i });
+    expect(document.activeElement).toBe(expandButton);
+  });
+
+  describe('expanded view', () => {
+    it('renders expand button', () => {
+      render(
+        <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
+      );
+      expect(screen.getByRole('button', { name: /expand/i })).toBeInTheDocument();
+    });
+
+    it('starts in collapsed mode with max-w-md', () => {
+      render(
+        <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
+      );
+      const dialog = screen.getByRole('dialog');
+      const container = dialog.firstElementChild as HTMLElement;
+      expect(container.className).toContain('max-w-md');
+      expect(container.className).not.toContain('max-w-3xl');
+    });
+
+    it('expands to max-w-3xl when expand button is clicked', () => {
+      render(
+        <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /expand/i }));
+      const dialog = screen.getByRole('dialog');
+      const container = dialog.firstElementChild as HTMLElement;
+      expect(container.className).toContain('max-w-3xl');
+      expect(container.className).not.toContain('max-w-md');
+    });
+
+    it('collapses back to max-w-md when collapse button is clicked', () => {
+      render(
+        <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
+      );
+      // Expand first
+      fireEvent.click(screen.getByRole('button', { name: /expand/i }));
+      // Then collapse
+      fireEvent.click(screen.getByRole('button', { name: /collapse/i }));
+      const dialog = screen.getByRole('dialog');
+      const container = dialog.firstElementChild as HTMLElement;
+      expect(container.className).toContain('max-w-md');
+    });
+
+    it('shows biography drop-cap in expanded 2-column layout', () => {
+      render(
+        <PlayerProfileModal player={makeBatterCard()} isOpen={true} onClose={vi.fn()} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: /expand/i }));
+      // Expanded view renders biography separately from CardRatingsTab in a grid
+      const dropCap = screen.getByRole('dialog').querySelector('.drop-cap');
+      expect(dropCap).not.toBeNull();
+    });
   });
 });

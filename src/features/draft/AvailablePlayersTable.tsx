@@ -19,6 +19,8 @@ export interface PlayerTableFilters {
   pageSize?: number;
 }
 
+export type DraftViewMode = 'registry' | 'classifieds';
+
 export interface AvailablePlayersTableProps {
   players: readonly AvailablePlayer[];
   totalAvailable: number;
@@ -28,6 +30,7 @@ export interface AvailablePlayersTableProps {
   onPlayerClick?: (player: AvailablePlayer) => void;
   onFilterChange: (filters: PlayerTableFilters) => void;
   disabled?: boolean;
+  viewMode?: DraftViewMode;
 }
 
 type SortKey = 'name' | 'pos' | 'year';
@@ -103,12 +106,25 @@ export function AvailablePlayersTable({
   onPlayerClick,
   onFilterChange,
   disabled = false,
+  viewMode = 'registry',
 }: AvailablePlayersTableProps) {
   const [search, setSearch] = useState('');
   const [posFilter, setPosFilter] = useState('all');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const isFirstRender = useRef(true);
+  // Track which player was just drafted for strike-through animation
+  const [draftedPlayerId, setDraftedPlayerId] = useState<string | null>(null);
+
+  function handleDraft(player: AvailablePlayer) {
+    const key = `${player.playerId}-${player.seasonYear}`;
+    setDraftedPlayerId(key);
+    // Delay actual draft to let the strike-through animation play
+    setTimeout(() => {
+      onSelect(player);
+      setDraftedPlayerId(null);
+    }, 600);
+  }
 
   const totalPages = Math.max(1, Math.ceil(totalAvailable / pageSize));
 
@@ -223,113 +239,182 @@ export function AvailablePlayersTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="max-h-80 overflow-y-auto border-t border-[var(--border-default)]">
-        <table className="w-full text-left" role="grid">
-          <thead className="sticky top-0 bg-[var(--surface-raised)]">
-            <tr className="border-b-2 border-[var(--text-primary)]">
-              <SortableHeader
-                label="Player"
-                sortKey="name"
-                currentKey={sortKey}
-                currentDir={sortDir}
-                onClick={handleSort}
-              />
-              <SortableHeader
-                label="Pos"
-                sortKey="pos"
-                currentKey={sortKey}
-                currentDir={sortDir}
-                onClick={handleSort}
-              />
-              <SortableHeader
-                label="Year"
-                sortKey="year"
-                currentKey={sortKey}
-                currentDir={sortDir}
-                onClick={handleSort}
-              />
-              <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                PWR
-              </th>
-              <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                SPD
-              </th>
-              <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                ERA
-              </th>
-              <th className="px-2 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {players.length === 0 && (
-              <tr>
-                <td
-                  colSpan={COL_SPAN}
-                  className="py-8 text-center font-stat text-xs text-[var(--text-tertiary)]"
-                >
-                  No players match your criteria
-                </td>
+      {/* Registry view (data table) */}
+      {viewMode === 'registry' && (
+        <div className="max-h-80 overflow-y-auto border-t border-[var(--border-default)]">
+          <table className="w-full text-left" role="grid">
+            <thead className="sticky top-0 bg-[var(--surface-raised)]">
+              <tr className="border-b-2 border-[var(--text-primary)]">
+                <SortableHeader
+                  label="Player"
+                  sortKey="name"
+                  currentKey={sortKey}
+                  currentDir={sortDir}
+                  onClick={handleSort}
+                />
+                <SortableHeader
+                  label="Pos"
+                  sortKey="pos"
+                  currentKey={sortKey}
+                  currentDir={sortDir}
+                  onClick={handleSort}
+                />
+                <SortableHeader
+                  label="Year"
+                  sortKey="year"
+                  currentKey={sortKey}
+                  currentDir={sortDir}
+                  onClick={handleSort}
+                />
+                <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                  PWR
+                </th>
+                <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                  SPD
+                </th>
+                <th className="px-2 py-2 font-body text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                  ERA
+                </th>
+                <th className="px-2 py-2" />
               </tr>
-            )}
-            {players.map((p, idx) => (
-              <tr
-                key={`${p.playerId}-${p.seasonYear}`}
-                className={`border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--accent-muted)] ${
-                  idx % 2 === 0 ? 'bg-[rgba(0,0,0,0.015)]' : 'bg-transparent'
-                }`}
-              >
-                <td className="px-2 py-1.5">
-                  {onPlayerClick ? (
+            </thead>
+            <tbody>
+              {players.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={COL_SPAN}
+                    className="py-8 text-center font-stat text-xs text-[var(--text-tertiary)]"
+                  >
+                    No players match your criteria
+                  </td>
+                </tr>
+              )}
+              {players.map((p, idx) => {
+                const playerKey = `${p.playerId}-${p.seasonYear}`;
+                const isDrafted = draftedPlayerId === playerKey;
+                return (
+                <tr
+                  key={playerKey}
+                  className={`border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--accent-muted)] ${
+                    idx % 2 === 0 ? 'bg-[rgba(0,0,0,0.015)]' : 'bg-transparent'
+                  }`}
+                >
+                  <td className="px-2 py-1.5">
+                    {onPlayerClick ? (
+                      <button
+                        type="button"
+                        className={`strike-through-draft text-left font-body text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent-secondary)] hover:underline${isDrafted ? ' drafted' : ''}`}
+                        onClick={() => onPlayerClick(p)}
+                      >
+                        {p.nameLast}, {p.nameFirst}
+                      </button>
+                    ) : (
+                      <span className={`strike-through-draft font-body text-sm font-medium text-[var(--text-primary)]${isDrafted ? ' drafted' : ''}`}>
+                        {p.nameLast}, {p.nameFirst}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-2 py-1.5">
+                    <span className={`inline-block text-[10px] ${positionBadgeClass(p.primaryPosition)}`}>
+                      {p.primaryPosition}
+                    </span>
+                  </td>
+                  <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
+                    {p.seasonYear}
+                  </td>
+                  <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
+                    {p.playerCard.powerRating ?? '--'}
+                  </td>
+                  <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
+                    {p.playerCard.speed
+                      ? (p.playerCard.speed * 100).toFixed(0)
+                      : '--'}
+                  </td>
+                  <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
+                    {p.playerCard.pitching
+                      ? p.playerCard.pitching.era.toFixed(2)
+                      : '--'}
+                  </td>
+                  <td className="px-2 py-1.5">
                     <button
                       type="button"
-                      className="strike-through-draft text-left font-body text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent-secondary)] hover:underline"
-                      onClick={() => onPlayerClick(p)}
+                      onClick={() => handleDraft(p)}
+                      disabled={disabled || isDrafted}
+                      className="btn-vintage btn-vintage-primary px-3 py-1 font-stat text-[10px] font-bold uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      {p.nameLast}, {p.nameFirst}
+                      Draft
                     </button>
-                  ) : (
-                    <span className="font-body text-sm font-medium text-[var(--text-primary)]">
-                      {p.nameLast}, {p.nameFirst}
+                  </td>
+                </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Classifieds view (newspaper columns) */}
+      {viewMode === 'classifieds' && (
+        <div
+          className="classifieds-column columns-2 md:columns-3 max-h-80 overflow-y-auto border-t border-[var(--border-default)] pt-3"
+          data-testid="classifieds-view"
+        >
+          {players.length === 0 && (
+            <p className="py-8 text-center font-stat text-xs text-[var(--text-tertiary)]">
+              No players match your criteria
+            </p>
+          )}
+          {players.map((p) => {
+            const classifiedKey = `${p.playerId}-${p.seasonYear}`;
+            const isClassifiedDrafted = draftedPlayerId === classifiedKey;
+            return (
+            <div
+              key={classifiedKey}
+              className="group mb-2 break-inside-avoid"
+            >
+              <div className="flex items-baseline gap-2">
+                <button
+                  type="button"
+                  className={`strike-through-draft text-left font-body text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent-secondary)]${isClassifiedDrafted ? ' drafted' : ''}`}
+                  onClick={() => onPlayerClick?.(p)}
+                >
+                  {p.nameLast}, {p.nameFirst}
+                </button>
+                <span className="font-stat text-[10px] text-[var(--text-tertiary)]">
+                  {p.primaryPosition}, {p.seasonYear}
+                </span>
+              </div>
+              {/* Expandable footnote on hover/focus */}
+              <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-300 group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr]">
+                <div className="overflow-hidden">
+                  <div className="flex items-center gap-3 pt-1 pb-1">
+                    <span className="font-stat text-[10px] text-[var(--text-secondary)]">
+                      PWR: {p.playerCard.powerRating ?? '--'}
                     </span>
-                  )}
-                </td>
-                <td className="px-2 py-1.5">
-                  <span className={`inline-block text-[10px] ${positionBadgeClass(p.primaryPosition)}`}>
-                    {p.primaryPosition}
-                  </span>
-                </td>
-                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
-                  {p.seasonYear}
-                </td>
-                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
-                  {p.playerCard.powerRating ?? '--'}
-                </td>
-                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
-                  {p.playerCard.speed
-                    ? (p.playerCard.speed * 100).toFixed(0)
-                    : '--'}
-                </td>
-                <td className="px-2 py-1.5 font-stat text-sm text-[var(--text-primary)]">
-                  {p.playerCard.pitching
-                    ? p.playerCard.pitching.era.toFixed(2)
-                    : '--'}
-                </td>
-                <td className="px-2 py-1.5">
-                  <button
-                    type="button"
-                    onClick={() => onSelect(p)}
-                    disabled={disabled}
-                    className="btn-vintage btn-vintage-primary px-3 py-1 font-stat text-[10px] font-bold uppercase tracking-wider disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Draft
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                    <span className="font-stat text-[10px] text-[var(--text-secondary)]">
+                      SPD: {p.playerCard.speed ? (p.playerCard.speed * 100).toFixed(0) : '--'}
+                    </span>
+                    {p.playerCard.pitching && (
+                      <span className="font-stat text-[10px] text-[var(--text-secondary)]">
+                        ERA: {p.playerCard.pitching.era.toFixed(2)}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDraft(p)}
+                      disabled={disabled || isClassifiedDrafted}
+                      className="font-stat text-[10px] font-bold uppercase tracking-wider text-[var(--accent-secondary)] hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Draft
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

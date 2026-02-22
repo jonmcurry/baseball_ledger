@@ -3,7 +3,7 @@
  * Tests for AvailablePlayersTable
  */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AvailablePlayersTable } from '@features/draft/AvailablePlayersTable';
 import { createMockAvailablePlayer } from '../../../fixtures/mock-draft';
@@ -49,13 +49,15 @@ describe('AvailablePlayersTable', () => {
     expect(screen.getByText('Aaron, Hank')).toBeInTheDocument();
   });
 
-  it('calls onSelect when draft button is clicked', async () => {
+  it('calls onSelect when draft button is clicked (after animation delay)', async () => {
     const user = userEvent.setup();
     render(<AvailablePlayersTable players={players} onSelect={mockOnSelect} {...defaultProps} />);
     const buttons = screen.getAllByText('Draft');
     await user.click(buttons[0]);
-    // Server-side sorted: players render in prop order
-    expect(mockOnSelect).toHaveBeenCalledWith(players[0]);
+    // handleDraft delays onSelect by 600ms for strike-through animation
+    await waitFor(() => {
+      expect(mockOnSelect).toHaveBeenCalledWith(players[0]);
+    }, { timeout: 1000 });
   });
 
   it('disables draft buttons when disabled prop is true', () => {

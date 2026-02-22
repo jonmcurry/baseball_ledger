@@ -5,7 +5,7 @@
  * Feature-scoped sub-component. No store imports.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import type { PlayByPlayEntry } from '@lib/types/game';
 
 export interface PlayByPlayFeedProps {
@@ -16,9 +16,13 @@ export interface PlayByPlayFeedProps {
 export function PlayByPlayFeed({ plays }: PlayByPlayFeedProps) {
   const feedRef = useRef<HTMLDivElement>(null);
 
+  // Reverse order: newest plays first
+  const reversedPlays = useMemo(() => [...plays].reverse(), [plays]);
+
+  // Scroll to top when new plays arrive (newest is at top)
   useEffect(() => {
     if (feedRef.current) {
-      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+      feedRef.current.scrollTop = 0;
     }
   }, [plays.length]);
 
@@ -29,10 +33,10 @@ export function PlayByPlayFeed({ plays }: PlayByPlayFeedProps) {
         <p className="text-xs text-muted">No plays recorded</p>
       )}
       <div ref={feedRef} className="max-h-96 space-y-1 overflow-y-auto" role="log" aria-label="Play-by-play feed">
-        {plays.map((play, idx) => (
+        {reversedPlays.map((play, idx) => (
           <div
-            key={idx}
-            className="rounded-card border border-sandstone/50 px-2 py-1 text-xs"
+            key={plays.length - 1 - idx}
+            className={`border border-[var(--border-subtle)] px-2 py-1 text-xs${idx === 0 ? ' ticker-entry' : ''}`}
           >
             <div className="flex items-center gap-2 text-muted">
               <span className="font-stat">

@@ -16,6 +16,7 @@ import { useSimulation } from '@hooks/useSimulation';
 import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
+import { HeadlineInterrupt } from '@components/feedback/HeadlineInterrupt';
 import { SimulationControls } from './SimulationControls';
 import { SeasonScheduleView } from './SeasonScheduleView';
 import { ResultsTicker } from './ResultsTicker';
@@ -62,6 +63,10 @@ export function DashboardPage() {
   const [isStartingSeason, setIsStartingSeason] = useState(false);
   const [isStartingDraft, setIsStartingDraft] = useState(false);
 
+  // HeadlineInterrupt: "STOP THE PRESSES" for championship events
+  const [showHeadline, setShowHeadline] = useState(false);
+  const [headlineText, setHeadlineText] = useState('');
+
   const championName = useMemo(() => {
     if (!playoffBracket?.worldSeriesChampionId) return 'Unknown';
     const team = teams.find((t) => t.id === playoffBracket.worldSeriesChampionId);
@@ -83,6 +88,14 @@ export function DashboardPage() {
       isPlayoffsComplete: lastPlayoffResult.isPlayoffsComplete,
     });
   }, [lastPlayoffResult, teams]);
+
+  // Trigger HeadlineInterrupt when playoffs complete with a champion
+  useEffect(() => {
+    if (lastPlayoffResult?.isPlayoffsComplete && playoffBracket?.worldSeriesChampionId) {
+      setHeadlineText(`${championName} Win the World Series!`);
+      setShowHeadline(true);
+    }
+  }, [lastPlayoffResult?.isPlayoffsComplete, playoffBracket?.worldSeriesChampionId, championName]);
 
   const handleArchive = async () => {
     if (!league) return;
@@ -170,138 +183,155 @@ export function DashboardPage() {
     <div className="space-y-gutter-lg">
       {error && <ErrorBanner severity="error" message={error} />}
 
-      {/* Header */}
-      <div>
-        <h2 className="pennant-header">
-          Season
-        </h2>
-        {league && (
-          <p className="mt-1 font-stat text-sm text-[var(--text-secondary)]">
-            Day {currentDay} of Season {league.seasonYear}
-          </p>
-        )}
-      </div>
+      {/* REQ-SCH-009: Championship headline interrupt */}
+      <HeadlineInterrupt
+        headline={headlineText}
+        subheadline="A new champion is crowned"
+        isVisible={showHeadline}
+        onDismiss={() => setShowHeadline(false)}
+      />
 
-      {/* Table of Contents navigation -- in-season only */}
-      {isInSeason && (
-        <nav aria-label="Season navigation" className="py-gutter">
-          <ul className="space-y-2 stagger-children">
-            {TOC_ENTRIES.map((entry) => (
-              <li key={entry.path}>
+      {/* Asymmetric 2-column editorial spread (desktop) / stacked (mobile) */}
+      <div className="grid gap-gutter-lg md:grid-cols-12">
+        {/* Left column: Editorial masthead + ticker */}
+        <div className="md:col-span-5 space-y-gutter-lg">
+          {/* Large editorial masthead */}
+          <div className="border-b border-[var(--border-default)] pb-gutter-lg">
+            <h2 className="pennant-header font-headline text-5xl md:text-6xl font-black tracking-tight leading-none text-[var(--text-primary)]">
+              Season
+            </h2>
+            {league && (
+              <p className="mt-gutter font-body text-lg italic text-[var(--text-secondary)]">
+                Day {currentDay} of Season {league.seasonYear}
+              </p>
+            )}
+          </div>
+
+          {/* Table of Contents navigation -- in-season only */}
+          {isInSeason && (
+            <nav aria-label="Season navigation" className="py-gutter">
+              <ul className="space-y-2 stagger-children">
+                {TOC_ENTRIES.map((entry) => (
+                  <li key={entry.path}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(entry.path)}
+                      className="leader-line w-full text-left"
+                    >
+                      <span className="leader-line-label">{entry.label}</span>
+                      <span className="leader-line-dots" />
+                      <span className="leader-line-value">{entry.numeral}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+
+          {/* Results ticker -- left column on desktop */}
+          {recentResults.length > 0 && (
+            <ResultsTicker results={recentResults} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
+          )}
+        </div>
+
+        {/* Right column: Controls + schedule */}
+        <div className="md:col-span-7 space-y-gutter-lg">
+          {/* Setup phase panels */}
+          {league?.status === 'setup' && (
+            league.seasonYear > 1 ? (
+              <NewSeasonPanel
+                seasonYear={league.seasonYear}
+                isCommissioner={isCommissioner}
+                onStartSeason={handleStartSeason}
+                isStarting={isStartingSeason}
+              />
+            ) : (
+              <TeamSetupPanel
+                teams={teams}
+                isCommissioner={isCommissioner}
+                userId={user?.id ?? null}
+                onStartDraft={handleStartDraft}
+                isStartingDraft={isStartingDraft}
+                inviteKey={league.inviteKey}
+              />
+            )
+          )}
+
+          {/* Drafting banner */}
+          {league?.status === 'drafting' && (
+            <div
+              className="vintage-card relative overflow-hidden"
+              style={{ borderLeft: '3px solid var(--accent-secondary)' }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <h3 className="font-headline text-lg font-bold text-[var(--text-primary)]">
+                    Draft In Progress
+                  </h3>
+                  <p className="font-body text-sm text-[var(--text-secondary)]">
+                    The league draft is underway. Head to the Draft Board to make your picks.
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => navigate(entry.path)}
-                  className="leader-line w-full text-left"
+                  onClick={() => navigate('../draft')}
+                  className="btn-vintage-primary"
                 >
-                  <span className="leader-line-label">{entry.label}</span>
-                  <span className="leader-line-dots" />
-                  <span className="leader-line-value">{entry.numeral}</span>
+                  Go to Draft Board
                 </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
-
-      {/* Setup phase panels */}
-      {league?.status === 'setup' && (
-        league.seasonYear > 1 ? (
-          <NewSeasonPanel
-            seasonYear={league.seasonYear}
-            isCommissioner={isCommissioner}
-            onStartSeason={handleStartSeason}
-            isStarting={isStartingSeason}
-          />
-        ) : (
-          <TeamSetupPanel
-            teams={teams}
-            isCommissioner={isCommissioner}
-            userId={user?.id ?? null}
-            onStartDraft={handleStartDraft}
-            isStartingDraft={isStartingDraft}
-            inviteKey={league.inviteKey}
-          />
-        )
-      )}
-
-      {/* Drafting banner */}
-      {league?.status === 'drafting' && (
-        <div
-          className="vintage-card relative overflow-hidden"
-          style={{ borderLeft: '3px solid var(--accent-secondary)' }}
-        >
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <h3 className="font-headline text-lg font-bold text-[var(--text-primary)]">
-                Draft In Progress
-              </h3>
-              <p className="font-body text-sm text-[var(--text-secondary)]">
-                The league draft is underway. Head to the Draft Board to make your picks.
-              </p>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate('../draft')}
-              className="btn-vintage-primary"
-            >
-              Go to Draft Board
-            </button>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Results ticker */}
-      {recentResults.length > 0 && (
-        <ResultsTicker results={recentResults} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
-      )}
-
-      {/* Simulation controls or season complete */}
-      {leagueStatus === 'completed' ? (
-        <SeasonCompletePanel
-          championName={championName}
-          isCommissioner={isCommissioner}
-          onArchive={handleArchive}
-          isArchiving={isArchiving}
-        />
-      ) : (leagueStatus === 'regular_season' || leagueStatus === 'playoffs') ? (
-        <SimulationControls
-          isRunning={isRunning}
-          progressPct={progressPct}
-          onSimulate={handleSimulate}
-          leagueStatus={leagueStatus}
-        />
-      ) : null}
-
-      {/* Simulation notification */}
-      {showNotification && (
-        <SimulationNotification
-          daysSimulated={totalDays}
-          gamesCompleted={completedGames}
-          isVisible={showNotification}
-          onDismiss={() => setShowNotification(false)}
-          playoffMessage={playoffMessage}
-        />
-      )}
-
-      {/* Season schedule -- hidden during setup */}
-      {league?.status !== 'setup' && (
-        <>
-          {leagueStatus === 'playoffs' && playoffBracket ? (
-            <PlayoffStatusPanel
-              playoffBracket={playoffBracket}
-              teams={teams}
-              lastGameResult={lastPlayoffResult}
+          {/* Simulation controls or season complete */}
+          {leagueStatus === 'completed' ? (
+            <SeasonCompletePanel
+              championName={championName}
+              isCommissioner={isCommissioner}
+              onArchive={handleArchive}
+              isArchiving={isArchiving}
             />
-          ) : (
-            <SeasonScheduleView
-              schedule={schedule}
-              teams={teams}
-              currentDay={currentDay}
-              onGameClick={(gameId) => navigate(`../game/${gameId}`)}
+          ) : (leagueStatus === 'regular_season' || leagueStatus === 'playoffs') ? (
+            <SimulationControls
+              isRunning={isRunning}
+              progressPct={progressPct}
+              onSimulate={handleSimulate}
+              leagueStatus={leagueStatus}
+            />
+          ) : null}
+
+          {/* Simulation notification */}
+          {showNotification && (
+            <SimulationNotification
+              daysSimulated={totalDays}
+              gamesCompleted={completedGames}
+              isVisible={showNotification}
+              onDismiss={() => setShowNotification(false)}
+              playoffMessage={playoffMessage}
             />
           )}
-        </>
-      )}
+
+          {/* Season schedule -- hidden during setup */}
+          {league?.status !== 'setup' && (
+            <>
+              {leagueStatus === 'playoffs' && playoffBracket ? (
+                <PlayoffStatusPanel
+                  playoffBracket={playoffBracket}
+                  teams={teams}
+                  lastGameResult={lastPlayoffResult}
+                />
+              ) : (
+                <SeasonScheduleView
+                  schedule={schedule}
+                  teams={teams}
+                  currentDay={currentDay}
+                  onGameClick={(gameId) => navigate(`../game/${gameId}`)}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -17,10 +17,13 @@ import { LineupDiamond } from './LineupDiamond';
 import { BattingOrder } from './BattingOrder';
 import { BenchPanel } from './BenchPanel';
 import { PitchingRotation } from './PitchingRotation';
+import { LedgerView } from './LedgerView';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import type { RosterEntry } from '@lib/types/roster';
 import type { PlayerCard } from '@lib/types/player';
 import { usePageTitle } from '@hooks/usePageTitle';
+
+type RosterViewMode = 'diamond' | 'ledger';
 
 export function RosterPage() {
   usePageTitle('Roster');
@@ -34,6 +37,7 @@ export function RosterPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
   const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
+  const [rosterView, setRosterView] = useState<RosterViewMode>('diamond');
 
   useEffect(() => {
     if (league?.id && myTeam?.id) {
@@ -132,14 +136,24 @@ export function RosterPage() {
             <p className="mt-2 font-body text-sm text-muted">{myTeam.name}</p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleSaveLineup}
-          disabled={isSaving}
-          className="btn-vintage btn-vintage-primary"
-        >
-          {isSaving ? 'Saving...' : 'Save Lineup'}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setRosterView((v) => v === 'diamond' ? 'ledger' : 'diamond')}
+            className="border border-[var(--border-default)] px-3 py-1.5 font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-secondary)] hover:text-[var(--text-primary)]"
+            aria-label={`Switch to ${rosterView === 'diamond' ? 'ledger' : 'diamond'} view`}
+          >
+            {rosterView === 'diamond' ? 'Ledger View' : 'Diamond View'}
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveLineup}
+            disabled={isSaving}
+            className="btn-vintage btn-vintage-primary"
+          >
+            {isSaving ? 'Saving...' : 'Save Lineup'}
+          </button>
+        </div>
       </div>
 
       {rosterError && <ErrorBanner severity="error" message={rosterError} />}
@@ -163,7 +177,7 @@ export function RosterPage() {
         </div>
       )}
 
-      {roster.length > 0 && (
+      {roster.length > 0 && rosterView === 'diamond' && (
         <>
           {/* Diamond + Batting Order side by side */}
           <div className="grid items-start gap-6 lg:grid-cols-2">
@@ -199,6 +213,16 @@ export function RosterPage() {
             />
           </div>
         </>
+      )}
+
+      {roster.length > 0 && rosterView === 'ledger' && (
+        <LedgerView
+          starters={starters}
+          rotation={rotation}
+          bullpen={bullpen}
+          bench={bench}
+          onPlayerClick={handlePlayerClick}
+        />
       )}
 
       {profilePlayer && (

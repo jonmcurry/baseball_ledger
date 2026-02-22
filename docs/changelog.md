@@ -1,5 +1,56 @@
 # Changelog
 
+## 2026-02-22 - Heritage Editorial Phase 3-4: View Redesigns and Motion
+
+Complete view-level redesign implementing the Heritage Editorial "Living Archive"
+UX architecture. All changes add editorial presentation modes alongside existing
+functional views (toggle pattern), preserving usability while adding editorial flair.
+
+Phase 2A - Typography Components:
+- DropCap, Headline, TabularData, LeaderLine reusable components
+- 30 tests covering all variants and accessibility
+
+Phase 2B - Page Transitions:
+- View Transitions API CSS (progressive enhancement, degrades gracefully)
+- Extended stagger-children to 12 items, ticker-entry and classifieds-column classes
+
+Phase 3A - Dashboard Asymmetric 2-Column Spread:
+- Left column (md:col-span-5): Large "Season" masthead, leader-line TOC, ResultsTicker
+- Right column (md:col-span-7): Simulation controls, schedule, playoff panels
+- Mobile stacks naturally via CSS grid
+
+Phase 3B - Draft Room Classifieds Toggle:
+- "Classifieds" newspaper-column view (columns-2 md:columns-3) alongside data table
+- Hover-expandable player footnotes with grid-rows-[0fr] -> [1fr] transition
+- Registry (sortable data table) remains the default
+
+Phase 3C - Roster Ledger View Toggle:
+- Monospace "Ledger View" table with sections (Starting Lineup, Pitching Staff, Bench)
+- Diamond + Batting Order remains the default
+
+Phase 3D - HeadlineInterrupt Component:
+- Full-viewport "STOP THE PRESSES" overlay for championship events
+- Auto-hide timer (4s default), click-to-dismiss, role="alert"
+- Integrated into Dashboard for World Series completion
+
+Phase 3E - Player Profile Expanded Layout:
+- Expand/collapse toggle transforms modal from max-w-md to max-w-3xl
+- Expanded: 2-column editorial spread (biography + fielding | tab content)
+- Collapsed: unchanged from existing behavior
+
+Phase 3F - Archive Era-Based Theming:
+- data-era attribute set on container based on season year
+- CSS variable overrides for deadball, liveball, golden, expansion eras
+- Era mapping: deadball (<=1919), liveball (<=1941), golden (<=1960), etc.
+
+Phase 4 - Motion Enhancement:
+- PlayByPlayFeed: reversed order (newest first), ticker-entry animation on latest
+- AvailablePlayersTable: strike-through-draft.drafted animation on draft action (600ms)
+
+New files: 7 components, 7 test files
+Modified files: 6 components, 3 test files, globals.css
+All 3220 tests pass (7 pre-existing failures unrelated to these changes)
+
 ## 2026-02-21 - Rebalance draft AI valuation and strategy
 
 630-pick draft analysis revealed structural problems: SP monopoly (rounds 4-7),

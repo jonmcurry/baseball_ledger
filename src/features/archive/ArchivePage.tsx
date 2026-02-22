@@ -10,6 +10,7 @@
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
+import { useMemo } from 'react';
 import { useLeague } from '@hooks/useLeague';
 import { useArchive } from '@hooks/useArchive';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
@@ -18,6 +19,17 @@ import { StampAnimation } from '@components/feedback/StampAnimation';
 import { SeasonList } from './SeasonList';
 import { SeasonDetail } from './SeasonDetail';
 import { usePageTitle } from '@hooks/usePageTitle';
+
+/** Map a season year to its baseball era for thematic CSS variable scoping. */
+export function getBaseballEra(year: number): string {
+  if (year <= 1919) return 'deadball';
+  if (year <= 1941) return 'liveball';
+  if (year <= 1960) return 'golden';
+  if (year <= 1976) return 'expansion';
+  if (year <= 1993) return 'freeagent';
+  if (year <= 2005) return 'steroid';
+  return 'modern';
+}
 
 export function ArchivePage() {
   usePageTitle('Season Archive');
@@ -47,6 +59,12 @@ export function ArchivePage() {
     runnerUp: '',
   }));
 
+  // Compute era for thematic CSS variable scoping when viewing detail
+  const era = useMemo(() => {
+    if (!detail) return undefined;
+    return getBaseballEra(detail.seasonNumber);
+  }, [detail]);
+
   const handleSelect = (seasonId: string) => {
     fetchDetail(seasonId);
   };
@@ -56,7 +74,7 @@ export function ArchivePage() {
   };
 
   return (
-    <div className="space-y-gutter-lg">
+    <div className="space-y-gutter-lg" data-era={era}>
       <h2 className="font-headline text-2xl font-bold text-ballpark">Archive</h2>
 
       <StampAnimation isVisible={seasonJustCompleted} />

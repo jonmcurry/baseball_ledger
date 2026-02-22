@@ -18,7 +18,7 @@ import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import { DraftTicker } from './DraftTicker';
 import { DraftReasoningPanel } from './DraftReasoningPanel';
 import { AvailablePlayersTable } from './AvailablePlayersTable';
-import type { PlayerTableFilters } from './AvailablePlayersTable';
+import type { PlayerTableFilters, DraftViewMode } from './AvailablePlayersTable';
 import { PickTimer } from './PickTimer';
 import { RosterPreviewPanel } from './RosterPreviewPanel';
 import type { AvailablePlayer } from '@stores/draftStore';
@@ -90,6 +90,7 @@ export function DraftBoardPage() {
   }, [league?.id, fetchAvailablePlayers]);
 
   const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
+  const [draftViewMode, setDraftViewMode] = useState<DraftViewMode>('registry');
 
   // Build reasoning request from the last completed pick
   const lastPickRequest = useMemo((): DraftReasoningRequest | null => {
@@ -153,8 +154,19 @@ export function DraftBoardPage() {
           )}
         </div>
 
+        <div className="flex items-center gap-4">
+          {/* View mode toggle */}
+          <button
+            type="button"
+            onClick={() => setDraftViewMode((v) => v === 'registry' ? 'classifieds' : 'registry')}
+            className="border border-[var(--border-default)] px-3 py-1.5 font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-secondary)] hover:text-[var(--text-primary)]"
+            aria-label={`Switch to ${draftViewMode === 'registry' ? 'classifieds' : 'registry'} view`}
+          >
+            {draftViewMode === 'registry' ? 'Classifieds' : 'Registry'}
+          </button>
+
         {isDraftActive && (
-          <div className="flex items-center gap-4">
+          <>
             <button
               type="button"
               onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
@@ -172,8 +184,9 @@ export function DraftBoardPage() {
               Auto-Draft {autoDraftEnabled ? 'ON' : 'OFF'}
             </button>
             <PickTimer timeRemaining={timeRemaining} isActive={isMyPick && !autoDraftEnabled} />
-          </div>
+          </>
         )}
+        </div>
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
@@ -251,6 +264,7 @@ export function DraftBoardPage() {
             onPlayerClick={handlePlayerClick}
             onFilterChange={handleFilterChange}
             disabled={!isMyPick || autoDraftEnabled}
+            viewMode={draftViewMode}
           />
         </div>
 

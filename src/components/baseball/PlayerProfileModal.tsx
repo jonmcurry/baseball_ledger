@@ -505,9 +505,14 @@ function SeasonStatsTab({ player, leagueId }: { player: PlayerCard; leagueId: st
 export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: PlayerProfileModalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<TabId>('card');
+  const [expanded, setExpanded] = useState(false);
   useFocusTrap(containerRef, isOpen, onClose);
 
   if (!isOpen) return null;
+
+  const containerClass = expanded
+    ? 'animate-slide-up w-full max-w-3xl max-h-[90vh] overflow-hidden border border-[var(--border-default)] bg-[var(--surface-base)] shadow-elevated flex flex-col'
+    : 'animate-slide-up w-full max-w-md overflow-hidden border border-[var(--border-default)] bg-[var(--surface-base)] shadow-elevated';
 
   return (
     <div
@@ -521,21 +526,37 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
     >
       <div
         ref={containerRef}
-        className="animate-slide-up w-full max-w-md overflow-hidden border border-[var(--border-default)] bg-[var(--surface-base)] shadow-elevated"
+        className={containerClass}
       >
         {/* Header -- Editorial encyclopedia style */}
         <div className="border-b border-[var(--border-default)] px-5 pb-4 pt-5">
-          {/* Close button */}
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          {/* Close + Expand buttons */}
+          <div className="absolute right-3 top-3 flex items-center gap-1">
+            <button
+              type="button"
+              aria-label={expanded ? 'Collapse' : 'Expand'}
+              onClick={() => setExpanded((prev) => !prev)}
+              className="flex h-6 w-6 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {expanded ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9L4 4m0 0v4m0-4h4m6 6l5 5m0 0v-4m0 4h-4" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                )}
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={onClose}
+              className="flex h-6 w-6 items-center justify-center text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
           {/* Position + Year small caps */}
           <div className="mb-1 flex items-center gap-2">
@@ -547,8 +568,8 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
             </span>
           </div>
 
-          {/* Player name -- large Playfair Display */}
-          <h3 className="font-headline text-2xl leading-tight tracking-tight text-[var(--text-primary)]">
+          {/* Player name -- large Playfair Display, larger when expanded */}
+          <h3 className={`font-headline leading-tight tracking-tight text-[var(--text-primary)] ${expanded ? 'text-3xl md:text-4xl' : 'text-2xl'}`}>
             {player.nameFirst}{' '}
             <span className="text-[var(--accent-secondary)]">{player.nameLast}</span>
           </h3>
@@ -586,12 +607,69 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
           )}
         </div>
 
-        {/* Body */}
-        <div className="max-h-[60vh] overflow-y-auto p-5">
-          {activeTab === 'card' && <CardRatingsTab player={player} />}
-          {activeTab === 'mlb' && <MlbStatsTab player={player} />}
-          {activeTab === 'season' && leagueId && (
-            <SeasonStatsTab player={player} leagueId={leagueId} />
+        {/* Body -- expanded uses 2-column editorial spread */}
+        <div className={expanded ? 'flex-1 overflow-y-auto p-5 md:p-8' : 'max-h-[60vh] overflow-y-auto p-5'}>
+          {expanded ? (
+            <div className="grid gap-8 md:grid-cols-2">
+              {/* Left: biography with larger drop-cap */}
+              <div className="space-y-4">
+                <p className="drop-cap font-body text-base leading-relaxed text-[var(--text-primary)]">
+                  {buildBiography(player)}
+                </p>
+                {/* Fielding section inline in expanded left column */}
+                <div>
+                  <SectionHeading title="Fielding" />
+                  <div className="py-2">
+                    <div className="mb-3 flex flex-wrap gap-1">
+                      {player.eligiblePositions.map((pos) => (
+                        <span
+                          key={pos}
+                          className={`inline-block px-2 py-0.5 text-[10px] font-bold ${positionBadgeClass(pos)}`}
+                        >
+                          {pos}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                          {player.fieldingPct.toFixed(3)}
+                        </div>
+                        <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">FLD%</div>
+                      </div>
+                      <div>
+                        <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                          {pctLabel(player.range)}
+                        </div>
+                        <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">Range</div>
+                      </div>
+                      <div>
+                        <div className="font-stat text-lg font-bold text-[var(--text-primary)]">
+                          {pctLabel(player.arm)}
+                        </div>
+                        <div className="font-stat text-[10px] uppercase text-[var(--text-tertiary)]">Arm</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Right: active tab content at full width */}
+              <div>
+                {activeTab === 'card' && <CardRatingsTab player={player} />}
+                {activeTab === 'mlb' && <MlbStatsTab player={player} />}
+                {activeTab === 'season' && leagueId && (
+                  <SeasonStatsTab player={player} leagueId={leagueId} />
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'card' && <CardRatingsTab player={player} />}
+              {activeTab === 'mlb' && <MlbStatsTab player={player} />}
+              {activeTab === 'season' && leagueId && (
+                <SeasonStatsTab player={player} leagueId={leagueId} />
+              )}
+            </>
           )}
         </div>
 
