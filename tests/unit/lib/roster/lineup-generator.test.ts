@@ -238,6 +238,27 @@ describe('generateLineup', () => {
     }
   });
 
+  it('assigns two-way pitcher (SP with DH eligibility) to DH, not SP', () => {
+    const starters = makeStartingNine();
+    // Replace the DH player with a two-way pitcher (like Ohtani)
+    const ohtani = makeStarter('ohtani01', 'SP' as Position, { ops: 0.900, obp: 0.370, slg: 0.530 });
+    ohtani.card.isPitcher = true;
+    ohtani.card.eligiblePositions = ['SP', 'DH'] as Position[];
+    ohtani.card.pitching = {
+      role: 'SP', grade: 12, stamina: 7, era: 3.14, whip: 1.09,
+      k9: 10.8, bb9: 2.5, hr9: 1.0, usageFlags: [], isReliever: false,
+    };
+    starters[starters.length - 1] = ohtani;
+
+    const lineup = generateLineup(starters);
+    const ohtaniSlot = lineup.find((s) => s.playerId === 'ohtani01');
+    expect(ohtaniSlot).toBeDefined();
+    expect(ohtaniSlot!.position).toBe('DH');
+    // Lineup should still be valid (no SP in defensive positions)
+    const result = validateLineup(lineup);
+    expect(result.valid).toBe(true);
+  });
+
   it('distributes OF players across LF, CF, RF slots', () => {
     const starters = [
       makeStarter('of1_____', 'OF' as Position, { ops: 0.950, obp: 0.400, slg: 0.550, speed: 0.80, contactRate: 0.85 }),

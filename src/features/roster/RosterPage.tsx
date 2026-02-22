@@ -62,6 +62,11 @@ export function RosterPage() {
   const handleBenchPlayerSelect = useCallback((entry: RosterEntry) => {
     let targetPosition = selectedPosition ?? entry.playerCard.primaryPosition;
 
+    // Two-way players: resolve pitcher position to DH when no specific position selected
+    if (['SP', 'RP', 'CL'].includes(targetPosition) && entry.playerCard.eligiblePositions.includes('DH')) {
+      targetPosition = 'DH';
+    }
+
     // Resolve generic 'OF' to first available outfield slot
     if (targetPosition === 'OF') {
       const occupiedSlots = new Set(starters.map((s) => s.lineupPosition));

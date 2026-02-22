@@ -24,8 +24,8 @@ function canFillPosition(entry: RosterEntry, position: string | null): boolean {
   if (primary === position) return true;
   // OF can fill LF/CF/RF
   if (primary === 'OF' && ['LF', 'CF', 'RF'].includes(position)) return true;
-  // Any position player can DH
-  if (position === 'DH' && !entry.playerCard.isPitcher) return true;
+  // Any position player can DH; two-way pitchers with DH eligibility can too
+  if (position === 'DH' && (!entry.playerCard.isPitcher || entry.playerCard.eligiblePositions.includes('DH'))) return true;
   return false;
 }
 

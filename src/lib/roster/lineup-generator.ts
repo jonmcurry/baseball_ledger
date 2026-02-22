@@ -50,10 +50,13 @@ function assignDefensivePositions(order: LineupInput[]): Position[] {
   const usedPositions = new Set<Position>();
   const assignments = new Map<number, Position>();
 
-  // Pass 1: Assign players with specific non-OF, non-DH positions
+  // Pitcher positions are not defensive positions; two-way players get DH in Pass 3
+  const PITCHER_POS = new Set<string>(['SP', 'RP', 'CL']);
+
+  // Pass 1: Assign players with specific defensive positions (skip OF, DH, and pitchers)
   for (let i = 0; i < order.length; i++) {
     const pos = order[i].card.primaryPosition;
-    if (pos !== 'OF' && pos !== 'DH' && !usedPositions.has(pos)) {
+    if (pos !== 'OF' && pos !== 'DH' && !PITCHER_POS.has(pos) && !usedPositions.has(pos)) {
       assignments.set(i, pos);
       usedPositions.add(pos);
     }
