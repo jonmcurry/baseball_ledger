@@ -87,9 +87,6 @@ export function SimulationNotification({
           </p>
           <div
             className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--color-gold)]"
-            style={{
-              textShadow: '0 0 10px var(--color-gold)',
-            }}
           >
             <TypewriterText text={message} speed={30} onComplete={handleTypewriterComplete} />
           </div>

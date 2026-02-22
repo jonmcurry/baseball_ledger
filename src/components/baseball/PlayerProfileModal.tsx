@@ -599,7 +599,7 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-2xl uppercase leading-tight tracking-wide text-[var(--color-cream)]">
+                <h3 className="font-headline text-2xl leading-tight tracking-tight text-[var(--color-cream)]">
                   {player.nameFirst}
                   <br />
                   <span className="text-[var(--color-gold)]">{player.nameLast}</span>

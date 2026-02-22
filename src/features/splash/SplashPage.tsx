@@ -1,7 +1,8 @@
-﻿/**
+/**
  * SplashPage
  *
- * Landing page with "Create a League" and "Join a League" options.
+ * Heritage Editorial landing page with dramatic serif typography
+ * and generous whitespace.
  */
 
 import { Link } from 'react-router-dom';
@@ -12,18 +13,31 @@ export function SplashPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-base p-gutter-xl">
-      <h1 className="font-headline text-4xl font-bold text-ballpark">Baseball Ledger</h1>
-      <p className="mt-gutter text-lg text-ink">Tabletop Baseball Simulation</p>
+      <h1 className="font-headline text-5xl md:text-7xl font-black tracking-tight text-[var(--text-primary)]">
+        Baseball Ledger
+      </h1>
+
+      {/* Thin decorative rule */}
+      <div className="flex items-center gap-4 mt-4" aria-hidden="true">
+        <div className="h-px w-16 bg-[var(--border-default)]" />
+        <div className="w-1.5 h-1.5 bg-[var(--accent-secondary)]" />
+        <div className="h-px w-16 bg-[var(--border-default)]" />
+      </div>
+
+      <p className="mt-4 font-body text-lg italic text-[var(--text-secondary)]">
+        Tabletop Baseball Simulation
+      </p>
+
       <div className="mt-gutter-xl flex gap-gutter-lg">
         <Link
           to="/leagues/new"
-          className="rounded-button bg-ballpark px-6 py-3 font-medium text-old-lace shadow-card hover:opacity-90"
+          className="btn-vintage btn-vintage-primary"
         >
           Create a League
         </Link>
         <Link
           to="/leagues/join"
-          className="rounded-button border-2 border-ballpark px-6 py-3 font-medium text-ballpark shadow-card hover:bg-ballpark/10"
+          className="btn-vintage btn-vintage-gold"
         >
           Join a League
         </Link>

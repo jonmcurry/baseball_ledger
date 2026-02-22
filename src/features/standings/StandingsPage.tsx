@@ -22,15 +22,9 @@ export function StandingsPage() {
     <div className="space-y-gutter-lg">
       {/* Page header */}
       <div>
-        <h2
-          className="font-display text-2xl tracking-[0.2em] uppercase text-[var(--accent-primary)] md:text-3xl"
-          style={{
-            textShadow: '1px 1px 0 rgba(255,255,255,0.6), -0.5px -0.5px 0 rgba(0,0,0,0.06)',
-          }}
-        >
+        <h2 className="pennant-header text-2xl md:text-3xl">
           Standings
         </h2>
-        <div className="mt-1 h-[3px] w-12 bg-[var(--accent-secondary)]" aria-hidden="true" />
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}

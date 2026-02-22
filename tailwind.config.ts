@@ -6,7 +6,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        /* New design tokens */
+        /* Heritage Editorial design tokens */
         surface: {
           base: 'var(--surface-base)',
           raised: 'var(--surface-raised)',
@@ -74,10 +74,10 @@ const config: Config = {
         'stitch-red': 'var(--semantic-danger)',
       },
       fontFamily: {
-        headline: ['var(--font-headline)', 'sans-serif'],
-        display: ['var(--font-display)', 'sans-serif'],
+        headline: ['var(--font-headline)', 'serif'],
+        display: ['var(--font-display)', 'serif'],
         stat: ['var(--font-stat)', 'monospace'],
-        body: ['var(--font-body)', 'sans-serif'],
+        body: ['var(--font-body)', 'serif'],
         scoreboard: ['var(--font-stat)', 'monospace'],
       },
       backgroundImage: {
@@ -107,6 +107,7 @@ const config: Config = {
       },
       animation: {
         'spin-slow': 'spin 3s linear infinite',
+        'editorial-in': 'editorial-fade-in 600ms ease-out forwards',
       },
     },
   },

@@ -67,9 +67,6 @@ export function SeasonCompletePanel({
         </p>
         <p
           className="font-headline text-2xl font-bold uppercase tracking-wider text-[var(--color-gold)]"
-          style={{
-            textShadow: '0 1px 2px rgba(0,0,0,0.15)',
-          }}
         >
           {championName}
         </p>

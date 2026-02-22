@@ -63,7 +63,7 @@ function PitcherRow({
           </span>
         )}
         {isNext && (
-          <span className="rounded-full bg-accent px-1.5 py-0.5 font-display text-[10px] font-bold uppercase text-[var(--surface-base)]">
+          <span className="bg-accent px-1.5 py-0.5 font-stat text-[10px] font-bold uppercase text-[var(--surface-base)]">
             Next
           </span>
         )}
@@ -86,7 +86,7 @@ export function PitchingRotation({
 
       {/* Rotation */}
       <div className="space-y-1">
-        <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
+        <p className="font-body text-xs font-semibold uppercase tracking-widest text-muted">
           Rotation
         </p>
         {rotation.length === 0 && (
@@ -104,7 +104,7 @@ export function PitchingRotation({
                 <button
                   type="button"
                   onClick={() => onRoleChange(entry, 'bullpen')}
-                  className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
+                  className="rounded px-1.5 py-0.5 font-body text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
                   title="Move to bullpen"
                 >
                   BP
@@ -117,7 +117,7 @@ export function PitchingRotation({
 
       {/* Bullpen (RP and CL unified) */}
       <div className="space-y-1">
-        <p className="font-display text-xs font-bold uppercase tracking-wide text-muted">
+        <p className="font-body text-xs font-semibold uppercase tracking-widest text-muted">
           Bullpen
         </p>
         {bullpen.length === 0 && (
@@ -134,7 +134,7 @@ export function PitchingRotation({
                 <button
                   type="button"
                   onClick={() => onRoleChange(entry, 'rotation')}
-                  className="rounded px-1.5 py-0.5 font-display text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
+                  className="rounded px-1.5 py-0.5 font-body text-[10px] uppercase text-muted hover:bg-[var(--surface-highlight)] hover:text-[var(--text-primary)]"
                   title="Move to rotation"
                 >
                   SP

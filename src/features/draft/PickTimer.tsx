@@ -63,11 +63,6 @@ export function PickTimer({ timeRemaining, isActive }: PickTimerProps) {
                 ? 'text-[var(--color-gold)]'
                 : 'text-[var(--color-scoreboard-text)]'
           }`}
-          style={{
-            textShadow: isUrgent || isExpired
-              ? '0 0 20px var(--color-gold), 0 0 40px var(--color-gold)'
-              : '0 0 10px var(--color-scoreboard-glow)',
-          }}
         >
           {display}
         </div>

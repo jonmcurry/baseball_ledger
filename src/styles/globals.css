@@ -4,154 +4,148 @@
 
 /**
  * Baseball Ledger Design System
- * "Pennant Race" -- Bold Red/White/Blue Americana
+ * "Heritage Editorial" -- A premium 1920s newspaper sports section
  *
- * Clean off-white surfaces, patriot blue headers, stitch red accent
- * stripes. Teko tall condensed headlines recall scoreboard lettering.
- * Nunito Sans rounded body text for friendly readability.
+ * Quiet, elegant, relying on dramatic typography and extreme negative
+ * space rather than noisy graphics. Warm sepia canvas, faded navy ink,
+ * subdued crimson accent. Playfair Display serifs carry the visual weight.
  */
 
 @layer base {
   :root {
     /* ===================================================================
-       COLOR PALETTE - "Pennant Race"
+       COLOR PALETTE - "Heritage Editorial"
+       Tinted, physical colors evoking high-end print
        =================================================================== */
 
-    /* Surfaces -- clean off-white (crisp program pages) */
-    --surface-base: #FAFAF5;
-    --surface-raised: #FFFFFF;
-    --surface-overlay: #F0EDE5;
-    --surface-highlight: #E5E0D5;
+    /* Surfaces -- warm sepia canvas (aged program pages) */
+    --surface-base: #f4f1eb;
+    --surface-raised: #faf8f3;
+    --surface-overlay: #ece8df;
+    --surface-highlight: #e2ddd3;
 
-    /* Text -- neutral dark (sharp print) */
-    --text-primary: #1C1C1C;
-    --text-secondary: #4A4A4A;
-    --text-tertiary: #888888;
+    /* Text -- faded navy ink (aged print) */
+    --text-primary: #1a243b;
+    --text-secondary: #4e5668;
+    --text-tertiary: #8c8578;
 
-    /* Accent -- patriot blue (primary) + stitch red (secondary) */
-    --accent-primary: #1B3A6B;
-    --accent-hover: #2B5090;
-    --accent-muted: rgba(27, 58, 107, 0.08);
-    --accent-secondary: #BF2B2B;
-    --accent-secondary-dark: #8B1A1A;
-    --cream-white: #FFF8EE;
+    /* Accent -- deep navy (primary) + subdued crimson (secondary, sparingly) */
+    --accent-primary: #1a243b;
+    --accent-hover: #2a3650;
+    --accent-muted: rgba(26, 36, 59, 0.06);
+    --accent-secondary: #8b0000;
+    --accent-secondary-dark: #6b0000;
+    --cream-white: #faf8f3;
 
     /* Semantic */
-    --semantic-success: #2D7A3A;
-    --semantic-danger: #BF2B2B;
-    --semantic-warning: #C49115;
-    --semantic-info: #2B5797;
+    --semantic-success: #2d5a3a;
+    --semantic-danger: #8b0000;
+    --semantic-warning: #9a7b2c;
+    --semantic-info: #2a3650;
 
-    /* Borders */
-    --border-default: #D0C8B8;
-    --border-subtle: #E0D8CC;
-    --border-accent: #1B3A6B;
+    /* Borders -- warm taupes */
+    --border-default: #d4ccc0;
+    --border-subtle: #e4ddd3;
+    --border-accent: #8b0000;
 
     /* ===================================================================
        LEGACY TOKEN ALIASES
        Map old CSS variable names to new values so existing var() refs work
        =================================================================== */
-    --color-scoreboard: #F0EDE5;
-    --color-scoreboard-green: #1B3A6B;
-    --color-scoreboard-light: #FFFFFF;
-    --color-scoreboard-dark: #E5E0D5;
-    --color-scoreboard-text: #1C1C1C;
-    --color-scoreboard-glow: rgba(27, 58, 107, 0.1);
+    --color-scoreboard: #ece8df;
+    --color-scoreboard-green: #1a243b;
+    --color-scoreboard-light: #faf8f3;
+    --color-scoreboard-dark: #e2ddd3;
+    --color-scoreboard-text: #1a243b;
+    --color-scoreboard-glow: rgba(26, 36, 59, 0.08);
 
-    --color-cream: #FFF8EE;
-    --color-cream-dark: #F0EDE5;
-    --color-parchment: #E5E0D5;
+    --color-cream: #faf8f3;
+    --color-cream-dark: #ece8df;
+    --color-parchment: #e2ddd3;
 
-    --color-stitch: #BF2B2B;
-    --color-stitch-light: #D94444;
-    --color-leather: #8B6F47;
-    --color-leather-dark: #6B5535;
+    --color-stitch: #8b0000;
+    --color-stitch-light: #a52a2a;
+    --color-leather: #8b7355;
+    --color-leather-dark: #6b5535;
 
-    --color-gold: #C49115;
-    --color-gold-light: #D9A52A;
-    --color-gold-dark: #A67A0C;
+    --color-gold: #9a7b2c;
+    --color-gold-light: #b8943a;
+    --color-gold-dark: #7d6320;
 
-    --color-ink: #1C1C1C;
-    --color-ink-light: #333333;
-    --color-wood: #888888;
-    --color-wood-light: #A0A0A0;
-    --color-muted: #4A4A4A;
-    --color-muted-light: #6A6A6A;
+    --color-ink: #1a243b;
+    --color-ink-light: #2a3650;
+    --color-wood: #8c8578;
+    --color-wood-light: #a09888;
+    --color-muted: #4e5668;
+    --color-muted-light: #6a6e78;
 
-    --color-grass: #2D7A3A;
-    --color-dirt: #A67B5B;
-    --color-chalk: #FFF8EE;
+    --color-grass: #2d5a3a;
+    --color-dirt: #9a8068;
+    --color-chalk: #faf8f3;
 
     /* ===================================================================
-       TYPOGRAPHY
+       TYPOGRAPHY - Heritage Editorial
+       Dramatic serifs + refined Garamond + clean mono
        =================================================================== */
-    --font-display: 'Teko', 'Impact', sans-serif;
-    --font-headline: 'Teko', 'Impact', sans-serif;
-    --font-scoreboard: 'IBM Plex Mono', 'Consolas', monospace;
-    --font-stat: 'IBM Plex Mono', 'Consolas', monospace;
-    --font-body: 'Nunito Sans', system-ui, sans-serif;
+    --font-display: 'Playfair Display', 'Georgia', serif;
+    --font-headline: 'Playfair Display', 'Georgia', serif;
+    --font-scoreboard: 'Space Mono', 'Consolas', monospace;
+    --font-stat: 'Space Mono', 'Consolas', monospace;
+    --font-body: 'Cormorant Garamond', 'Georgia', serif;
 
     /* ===================================================================
-       SPACING & LAYOUT
+       SPACING & LAYOUT - Generous editorial breathing room
        =================================================================== */
-    --max-width-ledger: 1400px;
-    --gutter: 1rem;
-    --gutter-lg: 1.5rem;
-    --gutter-xl: 2rem;
+    --max-width-ledger: 1200px;
+    --gutter: 1.25rem;
+    --gutter-lg: 2rem;
+    --gutter-xl: 3rem;
 
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-card: 0.75rem;
+    /* Editorial = sharp edges, no rounded corners */
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-card: 0;
 
     /* ===================================================================
-       SHADOWS & EFFECTS (subtle for light backgrounds)
+       SHADOWS & EFFECTS - Minimal, almost absent
        =================================================================== */
-    --shadow-card:
-      0 1px 3px rgba(0, 0, 0, 0.06),
-      0 4px 12px rgba(0, 0, 0, 0.04);
-
-    --shadow-elevated:
-      0 4px 8px rgba(0, 0, 0, 0.08),
-      0 12px 24px rgba(0, 0, 0, 0.06);
-
-    --shadow-scoreboard:
-      0 1px 3px rgba(0, 0, 0, 0.06),
-      0 4px 12px rgba(0, 0, 0, 0.04);
-
-    --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-card: none;
+    --shadow-elevated: 0 1px 4px rgba(0, 0, 0, 0.06);
+    --shadow-scoreboard: none;
+    --shadow-inset: none;
 
     /* ===================================================================
-       BORDERS
+       BORDERS - Thin editorial rules
        =================================================================== */
     --border-card: 1px solid var(--border-default);
     --border-scoreboard: 1px solid var(--border-default);
     --border-stitch: 1px solid var(--accent-secondary);
 
-    /* Textures -- subtle paper grain */
-    --pattern-paper: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+    /* Textures -- subtle paper grain via CSS noise */
+    --pattern-paper: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
     --pattern-stitch: none;
     --pattern-wood: none;
   }
 
   /* ===================================================================
-     POSTSEASON THEME (Championship Red + Gold)
+     POSTSEASON THEME (Championship Crimson + Gold)
      =================================================================== */
   [data-theme="postseason"] {
-    --accent-primary: #8B1A1A;
-    --accent-hover: #A52020;
-    --accent-muted: rgba(139, 26, 26, 0.10);
-    --accent-secondary: #D4A843;
-    --accent-secondary-dark: #B08930;
-    --border-accent: #8B1A1A;
+    --accent-primary: #6b0000;
+    --accent-hover: #8b0000;
+    --accent-muted: rgba(107, 0, 0, 0.08);
+    --accent-secondary: #9a7b2c;
+    --accent-secondary-dark: #7d6320;
+    --border-accent: #6b0000;
 
-    --color-gold: #D4A843;
-    --color-gold-light: #E4BC5A;
-    --color-gold-dark: #B08930;
-    --color-scoreboard: #8B1A1A;
-    --color-scoreboard-green: #6B1414;
-    --color-scoreboard-light: #A52020;
-    --color-scoreboard-dark: #5C1010;
+    --color-gold: #9a7b2c;
+    --color-gold-light: #b8943a;
+    --color-gold-dark: #7d6320;
+    --color-scoreboard: #6b0000;
+    --color-scoreboard-green: #520000;
+    --color-scoreboard-light: #8b0000;
+    --color-scoreboard-dark: #420000;
   }
 
   /* ===================================================================
@@ -161,6 +155,8 @@
     background-color: var(--surface-base);
     color: var(--text-primary);
     font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -169,6 +165,19 @@
     background: var(--surface-base);
     background-image: var(--pattern-paper);
     min-height: 100vh;
+    position: relative;
+  }
+
+  /* CSS-only noise/grain overlay for digital paper texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    opacity: 0.018;
+    mix-blend-mode: multiply;
+    z-index: 9999;
   }
 
   ::selection {
@@ -177,24 +186,35 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent-primary);
+    outline: 2px solid var(--accent-secondary);
     outline-offset: 2px;
+  }
+
+  /* Editorial heading defaults */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headline);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
   }
 }
 
 /* =====================================================================
-   COMPONENT CLASSES
+   COMPONENT CLASSES -- Heritage Editorial
    ===================================================================== */
 
 @layer components {
 
-  /* ----- CARD -- clean white card with border ----- */
+  /* ----- EDITORIAL PANEL -- clean surface with thin rule dividers ----- */
   .vintage-card {
     background: var(--surface-raised);
-    border: var(--border-card);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-    padding: var(--gutter-lg);
+    border-top: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--gutter-xl) var(--gutter-lg);
     position: relative;
   }
 
@@ -203,72 +223,78 @@
   }
 
   .vintage-card-header {
-    background: var(--surface-overlay);
+    background: transparent;
     color: var(--text-primary);
-    padding: var(--gutter) var(--gutter-lg);
+    padding: 0 0 var(--gutter) 0;
     border-bottom: 1px solid var(--border-default);
+    margin-bottom: var(--gutter-lg);
   }
 
   .vintage-card-header::after {
     display: none;
   }
 
-  /* ----- SCOREBOARD PANEL ----- */
+  /* ----- EDITORIAL PANEL (scoreboard variant) ----- */
   .scoreboard-panel {
     background: var(--surface-raised);
-    border: 1px solid var(--border-default);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
+    border-top: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    box-shadow: none;
     color: var(--text-primary);
-    padding: var(--gutter-lg);
+    padding: var(--gutter-xl) var(--gutter-lg);
   }
 
   .scoreboard-number {
     font-family: var(--font-stat);
-    font-weight: 600;
-    color: var(--accent-primary);
-    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
   }
 
   .scoreboard-cell {
-    background: var(--surface-overlay);
+    background: transparent;
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 0.25rem 0.5rem;
+    border-radius: 0;
+    padding: 0.375rem 0.625rem;
     text-align: center;
+    font-family: var(--font-stat);
   }
 
-  /* ----- PENNANT HEADER -- bold condensed with accent underline ----- */
+  /* ----- EDITORIAL SECTION HEADING ----- */
   .pennant-header {
-    font-family: var(--font-display);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--accent-primary);
+    font-family: var(--font-headline);
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
     position: relative;
     display: inline-block;
+    padding-bottom: 0.5rem;
   }
 
   .pennant-header::after {
     content: '';
     position: absolute;
-    bottom: -4px;
+    bottom: 0;
     left: 0;
-    width: 48px;
-    height: 3px;
+    width: 3rem;
+    height: 2px;
     background: var(--accent-secondary);
-    border-radius: 2px;
   }
 
-  /* ----- BUTTONS ----- */
+  /* ----- BUTTONS -- refined editorial ----- */
   .btn-vintage {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    padding: 0.625rem 1.5rem;
-    border-radius: var(--radius-sm);
-    transition: all 0.15s ease;
+    font-size: 0.9375rem;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    padding: 0.625rem 1.75rem;
+    border-radius: 0;
+    transition: all 0.2s ease;
     cursor: pointer;
   }
 
@@ -276,22 +302,23 @@
     background: var(--accent-primary);
     color: var(--cream-white);
     border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+    box-shadow: none;
   }
 
   .btn-vintage-primary:hover {
     background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: none;
+    box-shadow: none;
   }
 
   .btn-vintage-primary:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transform: none;
+    box-shadow: none;
+    opacity: 0.9;
   }
 
   .btn-vintage-primary:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
     transform: none;
   }
@@ -299,12 +326,12 @@
   .btn-vintage-gold {
     background: transparent;
     color: var(--accent-primary);
-    border: 2px solid var(--accent-primary);
+    border: 1px solid var(--accent-primary);
   }
 
   .btn-vintage-gold:hover {
     background: var(--accent-muted);
-    transform: translateY(-1px);
+    transform: none;
   }
 
   .btn-vintage-secondary {
@@ -319,72 +346,73 @@
     background: var(--surface-overlay);
   }
 
-  /* ----- STAT TABLE ----- */
+  /* ----- STAT TABLE -- editorial typographic table ----- */
   .stat-table {
     font-family: var(--font-stat);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     width: 100%;
-    border-collapse: separate;
+    border-collapse: collapse;
     border-spacing: 0;
   }
 
   .stat-table thead th {
-    background: var(--accent-primary);
-    color: var(--cream-white);
-    font-family: var(--font-display);
-    font-weight: 500;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    padding: 0.625rem 0.75rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    padding: 0.75rem 0.75rem;
     text-align: left;
-    border-bottom: 2px solid var(--accent-secondary);
+    border-bottom: 2px solid var(--text-primary);
   }
 
   .stat-table thead th:first-child {
-    border-top-left-radius: var(--radius-sm);
+    border-top-left-radius: 0;
   }
 
   .stat-table thead th:last-child {
-    border-top-right-radius: var(--radius-sm);
+    border-top-right-radius: 0;
   }
 
   .stat-table tbody td {
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border-subtle);
-    background: var(--surface-raised);
+    background: transparent;
   }
 
   .stat-table tbody tr:nth-child(even) td {
-    background: var(--surface-overlay);
+    background: rgba(0, 0, 0, 0.015);
   }
 
   .stat-table tbody tr:hover td {
     background: var(--accent-muted);
   }
 
-  /* ----- TICKER ----- */
+  /* ----- TICKER -- editorial news strip ----- */
   .ticker-strip {
-    background: var(--cream-white);
-    border-top: 2px solid var(--accent-secondary);
-    border-bottom: 2px solid var(--accent-secondary);
+    background: var(--surface-raised);
+    border-top: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-default);
     overflow: hidden;
     position: relative;
   }
 
   .ticker-content {
     display: flex;
-    animation: ticker-scroll 30s linear infinite;
+    animation: ticker-scroll 35s linear infinite;
     white-space: nowrap;
     font-family: var(--font-stat);
+    font-size: 0.8125rem;
     color: var(--text-primary);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 0.5rem 0;
+    letter-spacing: 0.06em;
+    padding: 0.625rem 0;
   }
 
   .ticker-item {
-    padding: 0 2rem;
+    padding: 0 2.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -392,43 +420,43 @@
 
   .ticker-separator {
     color: var(--accent-secondary);
-    font-size: 1.25rem;
+    font-size: 0.75rem;
   }
 
-  /* ----- POSITION BADGES ----- */
+  /* ----- POSITION BADGES -- muted editorial tags ----- */
   .position-badge {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 0.75rem;
+    font-family: var(--font-stat);
+    font-weight: 700;
+    font-size: 0.6875rem;
     padding: 0.125rem 0.5rem;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
   }
 
   .position-badge-pitcher {
-    background: rgba(191, 43, 43, 0.10);
-    color: #BF2B2B;
+    background: rgba(139, 0, 0, 0.08);
+    color: #8b0000;
   }
 
   .position-badge-catcher {
-    background: rgba(196, 145, 21, 0.10);
-    color: #A67A0C;
+    background: rgba(154, 123, 44, 0.08);
+    color: #7d6320;
   }
 
   .position-badge-infield {
-    background: rgba(27, 58, 107, 0.10);
-    color: #1B3A6B;
+    background: rgba(26, 36, 59, 0.08);
+    color: #1a243b;
   }
 
   .position-badge-outfield {
-    background: rgba(45, 122, 58, 0.10);
-    color: #2D7A3A;
+    background: rgba(45, 90, 58, 0.08);
+    color: #2d5a3a;
   }
 
   .position-badge-dh {
-    background: rgba(196, 145, 21, 0.10);
-    color: #A67A0C;
+    background: rgba(154, 123, 44, 0.08);
+    color: #7d6320;
   }
 
   /* ----- DIAMOND GRAPHIC ----- */
@@ -444,8 +472,8 @@
     position: absolute;
     inset: 0;
     background: var(--semantic-success);
-    border: 2px solid var(--text-tertiary);
-    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-default);
+    border-radius: 0;
   }
 
   .diamond-infield {
@@ -455,7 +483,7 @@
     width: 40%;
     height: 40%;
     background: var(--color-dirt);
-    border: 1px solid var(--text-tertiary);
+    border: 1px solid var(--border-default);
   }
 
   .diamond-base {
@@ -468,12 +496,17 @@
 }
 
 /* =====================================================================
-   ANIMATIONS
+   ANIMATIONS -- Slow, staggered editorial transitions
    ===================================================================== */
 
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+@keyframes editorial-fade-in {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes stamp-slam {
@@ -494,8 +527,8 @@
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 5px var(--accent-primary); }
-  50% { box-shadow: 0 0 15px var(--accent-primary), 0 0 25px var(--accent-hover); }
+  0%, 100% { box-shadow: 0 0 4px var(--accent-secondary); }
+  50% { box-shadow: 0 0 12px var(--accent-secondary); }
 }
 
 @keyframes typewriter-cursor {
@@ -513,31 +546,31 @@
 }
 
 .animate-slide-up {
-  animation: slide-up 400ms ease-out forwards;
+  animation: editorial-fade-in 600ms ease-out forwards;
 }
 
 .animate-glow {
-  animation: glow-pulse 2s ease-in-out infinite;
+  animation: glow-pulse 3s ease-in-out infinite;
 }
 
 .animate-ticker {
-  animation: ticker-scroll 30s linear infinite;
+  animation: ticker-scroll 35s linear infinite;
 }
 
-/* Stagger children animations */
+/* Stagger children -- smooth editorial cascade */
 .stagger-children > * {
   opacity: 0;
-  animation: slide-up 400ms ease-out forwards;
+  animation: editorial-fade-in 600ms ease-out forwards;
 }
 
 .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 480ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 560ms; }
 
 /* =====================================================================
    UTILITY CLASSES
@@ -552,7 +585,7 @@
 
   .text-scoreboard { color: var(--surface-base); }
   .text-stitch { color: var(--accent-secondary); }
-  .text-gold { color: var(--accent-primary); }
+  .text-gold { color: var(--color-gold); }
   .text-leather { color: var(--border-default); }
   .text-cream { color: var(--text-primary); }
   .text-muted { color: var(--text-secondary); }
@@ -561,13 +594,13 @@
   .bg-cream { background-color: var(--surface-raised); }
   .bg-parchment { background-color: var(--surface-overlay); }
   .bg-leather { background-color: var(--border-default); }
-  .bg-gold { background-color: var(--accent-primary); }
+  .bg-gold { background-color: var(--color-gold); }
   .bg-grass { background-color: var(--semantic-success); }
   .bg-dirt { background-color: var(--color-dirt); }
 
   .border-scoreboard { border-color: var(--surface-base); }
   .border-leather { border-color: var(--border-default); }
-  .border-gold { border-color: var(--accent-primary); }
+  .border-gold { border-color: var(--color-gold); }
   .border-stitch { border-color: var(--accent-secondary); }
 
   .shadow-card { box-shadow: var(--shadow-card); }
@@ -594,6 +627,11 @@
   .ticker-content {
     animation: none;
   }
+
+  /* Disable noise overlay for reduced motion */
+  body::after {
+    display: none;
+  }
 }
 
 /* =====================================================================
@@ -601,8 +639,8 @@
    ===================================================================== */
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -610,8 +648,8 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-highlight);
-  border-radius: 5px;
+  background: var(--border-default);
+  border-radius: 0;
   border: 2px solid var(--surface-base);
 }
 
@@ -622,5 +660,5 @@
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--surface-highlight) var(--surface-base);
+  scrollbar-color: var(--border-default) var(--surface-base);
 }

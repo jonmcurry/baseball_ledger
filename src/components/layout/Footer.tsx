@@ -1,7 +1,7 @@
-﻿/**
+/**
  * Footer
  *
- * Simple footer with app name and role="contentinfo".
+ * Minimal editorial footer with thin rule divider.
  *
  * Layer 6: Presentational component. No store or hook imports.
  */
@@ -10,9 +10,11 @@ export function Footer() {
   return (
     <footer
       role="contentinfo"
-      className="border-t border-[var(--border-subtle)] px-gutter py-3 text-center text-xs text-[var(--text-tertiary)]"
+      className="border-t border-[var(--border-default)] px-gutter py-6 text-center"
     >
-      Copyright 2026 - Ledger Baseball
+      <span className="font-body text-xs tracking-widest uppercase text-[var(--text-tertiary)]">
+        Copyright 2026 &mdash; Ledger Baseball
+      </span>
     </footer>
   );
 }

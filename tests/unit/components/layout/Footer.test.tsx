@@ -14,12 +14,14 @@ describe('Footer', () => {
 
   it('renders copyright or app name text', () => {
     render(<Footer />);
-    expect(screen.getByText(/baseball ledger/i)).toBeInTheDocument();
+    expect(screen.getByText(/ledger baseball/i)).toBeInTheDocument();
   });
 
   it('uses muted text color', () => {
     render(<Footer />);
     const footer = screen.getByRole('contentinfo');
-    expect(footer.className).toContain('text-[var(--text-tertiary)]');
+    // Muted color applied to child span, not the footer element itself
+    const span = footer.querySelector('span');
+    expect(span?.className).toContain('text-[var(--text-tertiary)]');
   });
 });

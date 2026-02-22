@@ -141,8 +141,8 @@ export function RosterPage() {
 
       {/* Position selection indicator */}
       {selectedPosition && (
-        <div className="rounded-card border border-accent/40 bg-accent/5 px-gutter py-2">
-          <p className="font-display text-sm uppercase tracking-wide text-accent">
+        <div className="border border-accent/40 bg-accent/5 px-gutter py-2">
+          <p className="font-body text-sm font-semibold text-accent">
             Assigning: {selectedPosition}
             <span className="ml-2 text-xs normal-case tracking-normal text-muted">
               -- Select a bench player below

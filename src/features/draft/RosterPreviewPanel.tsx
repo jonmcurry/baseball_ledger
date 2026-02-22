@@ -380,7 +380,7 @@ function EmptySlot({ label }: { label: string }) {
     >
       <span
         className="inline-flex h-5 w-8 shrink-0 items-center justify-center rounded font-stat text-[10px] font-bold"
-        style={{ background: 'rgba(139,127,107,0.15)', color: 'var(--text-tertiary)' }}
+        style={{ background: 'var(--accent-muted)', color: 'var(--text-tertiary)' }}
       >
         {label}
       </span>

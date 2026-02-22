@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-02-21 - Heritage Editorial UI/UX Redesign
+
+Complete design system overhaul from "Pennant Race" (Bold Red/White/Blue Americana)
+to "Heritage Editorial" (premium 1920s newspaper sports section aesthetic). Quiet,
+elegant design relying on dramatic typography and extreme negative space.
+
+Typography:
+- **Display/Headlines**: Playfair Display (dramatic serifs) replaces Teko (condensed)
+- **Body/Narrative**: Cormorant Garamond (refined newspaper feel) replaces Nunito Sans
+- **Data/Stats**: Space Mono (clean tabular alignment) replaces IBM Plex Mono
+
+Color palette:
+- **Canvas**: #f4f1eb (warm sepia off-white, aged paper)
+- **Ink**: #1a243b (deep faded navy/charcoal, aged print)
+- **Accent**: #8b0000 (subdued crimson, used sparingly for rules and key highlights)
+- **Secondary tones**: warm taupes and faded grays
+
+Design changes:
+- Removed all border-radius (editorial = sharp edges, no rounded corners)
+- Removed card box-shadows (flat surfaces with thin rule dividers)
+- Added CSS noise/grain overlay (mix-blend-mode: multiply) for paper texture
+- Increased spacing/gutters for editorial breathing room (1rem->1.25rem, 1.5rem->2rem)
+- Slowed animations (600ms editorial fade-ins with 80ms stagger increments)
+- Stat table headers: transparent background with 2px bottom rule (replaces solid blue)
+
+Files modified:
+- `index.html` - Google Fonts import (Playfair Display, Cormorant Garamond, Space Mono)
+- `src/styles/fonts.css` - Font-face declarations for new typefaces
+- `src/styles/globals.css` - Full design system overhaul (palette, typography, components)
+- `tailwind.config.ts` - Font families, serif fallbacks, editorial-in animation
+- `src/components/layout/Header.tsx` - Editorial masthead with serif title
+- `src/components/layout/Footer.tsx` - Minimal editorial footer
+- `src/features/splash/SplashPage.tsx` - Editorial landing page
+- `src/features/auth/LoginPage.tsx` - Editorial sign-in form
+- `src/components/data-display/StandingsTable.tsx` - Typographic table design
+- `src/features/standings/StandingsPage.tsx` - Editorial heading, removed textShadow
+- `src/features/dashboard/ResultsTicker.tsx` - Clean editorial score cards
+- `src/features/roster/PitchingRotation.tsx` - Editorial label typography
+- `src/features/roster/RosterPage.tsx` - Editorial position selector
+- `src/features/draft/RosterPreviewPanel.tsx` - Updated badge colors
+- `src/components/baseball/PlayerProfileModal.tsx` - Serif player name
+- `src/features/dashboard/NewSeasonPanel.tsx` - Removed textShadow
+- `src/features/dashboard/SeasonCompletePanel.tsx` - Removed textShadow
+- `src/features/dashboard/SimulationNotification.tsx` - Removed textShadow
+- `src/features/draft/PickTimer.tsx` - Removed textShadow
+
+Tests updated:
+- Header.test.tsx, Footer.test.tsx, StandingsTable.test.tsx
+
 ## 2026-02-17 - SERD Single-Algorithm PA Resolution
 
 Replaced the 35-byte abstract card system with 3-path PA resolution (IDT table,

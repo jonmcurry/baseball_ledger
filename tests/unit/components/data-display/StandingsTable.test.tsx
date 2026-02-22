@@ -175,7 +175,7 @@ describe('StandingsTable', () => {
       />,
     );
     const yankeeRow = screen.getByText('Yankees').closest('tr');
-    expect(yankeeRow?.className).toContain('bg-sandstone/30');
+    expect(yankeeRow?.className).toContain('bg-[var(--accent-muted)]');
   });
 
   it('does not highlight non-user team rows', () => {
@@ -187,8 +187,10 @@ describe('StandingsTable', () => {
       />,
     );
     const soxRow = screen.getByText('Red Sox').closest('tr');
-    // Non-user rows should not have the bg-sandstone/30 highlight class
-    expect(soxRow?.className).not.toContain('bg-sandstone/30');
+    // Non-user rows should not have the static (non-hover) highlight class
+    // Split classes and check none is the standalone highlight (hover: prefix is fine)
+    const classes = (soxRow?.className ?? '').split(/\s+/);
+    expect(classes).not.toContain('bg-[var(--accent-muted)]');
   });
 
   it('calls onTeamClick with team id when team is clicked', async () => {

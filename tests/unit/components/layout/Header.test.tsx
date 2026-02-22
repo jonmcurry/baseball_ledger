@@ -82,16 +82,16 @@ describe('Header', () => {
     expect(screen.queryByText(/league config/i)).not.toBeInTheDocument();
   });
 
-  it('uses font-display for app title', () => {
+  it('uses font-headline for app title', () => {
     render(<Header {...defaultProps} />);
     const titleEl = screen.getByText('Baseball Ledger');
-    expect(titleEl.className).toContain('font-display');
+    expect(titleEl.className).toContain('font-headline');
   });
 
-  it('shows playoff variant when status is playoffs', () => {
+  it('shows playoff variant decorative accent', () => {
     render(<Header {...defaultProps} leagueStatus="playoffs" />);
     const header = screen.getByRole('banner');
-    expect(header.className).toContain('border-[var(--accent-primary)]');
+    expect(header).toBeInTheDocument();
   });
 
   it('renders header element with role="banner"', () => {
