@@ -4,10 +4,10 @@
  * REQ-DFT-007: AI player valuation score for ranking "best available"
  * during the draft.
  *
- * Batter formula:  (OPS * 100) + (SB * 0.1) + (fieldingPct * 20) + positionBonus
- * SP formula:      ((4.50 - max(ERA,1.50)) * 30) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
+ * Batter formula:  (OPS * 115) + (SB * 0.1) + (fieldingPct * 20) + positionBonus
+ * SP formula:      ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
  *                  then scaled by min(1.0, IP / 150) when IP is available
- * RP/CL formula:   ((3.50 - max(ERA,1.50)) * 25) + (K9 * 6) - (BB9 * 10)
+ * RP/CL formula:   ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
  *                  then scaled by min(1.0, IP / 50) when IP is available
  *
  * Layer 1: Pure logic, no I/O, deterministic.
@@ -44,7 +44,7 @@ export function calculateBatterValue(
   sb: number,
   fieldingPct: number,
 ): number {
-  return (ops * 100) + (sb * 0.1) + (fieldingPct * 20) + getPositionBonus(position);
+  return (ops * 115) + (sb * 0.1) + (fieldingPct * 20) + getPositionBonus(position);
 }
 
 /** ERA floor: prevents dead-ball era sub-1.50 ERAs from dominating valuation. */
@@ -57,23 +57,23 @@ const RP_IP_THRESHOLD = 50;
 /**
  * Calculate pitcher value from pitching attributes.
  *
- * SP:     ((4.50 - max(ERA,1.50)) * 30) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
- * RP/CL:  ((3.50 - max(ERA,1.50)) * 25) + (K9 * 6) - (BB9 * 10)
+ * SP:     ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
+ * RP/CL:  ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
  *
  * ERA is floored at 1.50 to prevent dead-ball era distortion.
  */
 export function calculatePitcherValue(pitching: PitcherAttributes): number {
   const era = Math.max(ERA_FLOOR, pitching.era);
   if (pitching.role === 'SP') {
-    return ((4.50 - era) * 30)
+    return ((4.50 - era) * 25)
       + (pitching.k9 * 5)
       - (pitching.bb9 * 8)
       + (pitching.stamina * 3);
   }
   // RP and CL use the same formula
-  return ((3.50 - era) * 25)
-    + (pitching.k9 * 6)
-    - (pitching.bb9 * 10);
+  return ((3.50 - era) * 18)
+    + (pitching.k9 * 5)
+    - (pitching.bb9 * 8);
 }
 
 /**

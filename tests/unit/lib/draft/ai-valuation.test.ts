@@ -81,10 +81,10 @@ describe('getPositionBonus (REQ-DFT-007)', () => {
 // calculateBatterValue (REQ-DFT-007)
 // ---------------------------------------------------------------------------
 describe('calculateBatterValue (REQ-DFT-007)', () => {
-  it('applies formula: OPS*100 + SB*0.1 + fieldingPct*20 + positionBonus', () => {
+  it('applies formula: OPS*115 + SB*0.1 + fieldingPct*20 + positionBonus', () => {
     // C with .850 OPS, 10 SB, .995 fielding
     const value = calculateBatterValue('C', 0.850, 10, 0.995);
-    const expected = (0.850 * 100) + (10 * 0.1) + (0.995 * 20) + 15;
+    const expected = (0.850 * 115) + (10 * 0.1) + (0.995 * 20) + 15;
     expect(value).toBeCloseTo(expected, 4);
   });
 
@@ -111,22 +111,22 @@ describe('calculateBatterValue (REQ-DFT-007)', () => {
 // calculatePitcherValue (REQ-DFT-007)
 // ---------------------------------------------------------------------------
 describe('calculatePitcherValue (REQ-DFT-007)', () => {
-  it('SP formula: (4.50-ERA)*30 + K9*5 - BB9*8 + stamina*3', () => {
+  it('SP formula: (4.50-ERA)*25 + K9*5 - BB9*8 + stamina*3', () => {
     const pitching: PitcherAttributes = {
       role: 'SP', grade: 10, stamina: 6.5, era: 3.20, whip: 1.15,
       k9: 8.5, bb9: 2.5, hr9: 0.9, usageFlags: [], isReliever: false,
     };
-    const expected = ((4.50 - 3.20) * 30) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
+    const expected = ((4.50 - 3.20) * 25) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
     const value = calculatePitcherValue(pitching);
     expect(value).toBeCloseTo(expected, 4);
   });
 
-  it('RP formula: (3.50-ERA)*25 + K9*6 - BB9*10', () => {
+  it('RP formula: (3.50-ERA)*18 + K9*5 - BB9*8', () => {
     const pitching: PitcherAttributes = {
       role: 'RP', grade: 8, stamina: 2, era: 2.80, whip: 1.05,
       k9: 10.0, bb9: 3.0, hr9: 0.7, usageFlags: [], isReliever: true,
     };
-    const expected = ((3.50 - 2.80) * 25) + (10.0 * 6) - (3.0 * 10);
+    const expected = ((3.50 - 2.80) * 18) + (10.0 * 5) - (3.0 * 8);
     const value = calculatePitcherValue(pitching);
     expect(value).toBeCloseTo(expected, 4);
   });
@@ -136,7 +136,7 @@ describe('calculatePitcherValue (REQ-DFT-007)', () => {
       role: 'CL', grade: 9, stamina: 1.5, era: 2.50, whip: 1.00,
       k9: 11.0, bb9: 2.5, hr9: 0.6, usageFlags: [], isReliever: true,
     };
-    const expected = ((3.50 - 2.50) * 25) + (11.0 * 6) - (2.5 * 10);
+    const expected = ((3.50 - 2.50) * 18) + (11.0 * 5) - (2.5 * 8);
     const value = calculatePitcherValue(pitching);
     expect(value).toBeCloseTo(expected, 4);
   });
@@ -163,7 +163,7 @@ describe('calculatePlayerValue', () => {
     const value = calculatePlayerValue(card, { ops: 0.800, sb: 15 });
     expect(value).toBeGreaterThan(0);
     // Should include SS bonus (12)
-    const expected = (0.800 * 100) + (15 * 0.1) + (0.97 * 20) + 12;
+    const expected = (0.800 * 115) + (15 * 0.1) + (0.97 * 20) + 12;
     expect(value).toBeCloseTo(expected, 4);
   });
 
@@ -196,8 +196,8 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
       },
     });
     const value = calculatePlayerValue(card);
-    // (1.300 * 100) + (6 * 0.1) + (0.98 * 20) + 2 = 130 + 0.6 + 19.6 + 2 = 152.2
-    expect(value).toBeCloseTo(152.2, 0);
+    // (1.300 * 115) + (6 * 0.1) + (0.98 * 20) + 2 = 149.5 + 0.6 + 19.6 + 2 = 171.7
+    expect(value).toBeCloseTo(171.7, 0);
   });
 
   it('elite batter (1.300 OPS) outvalues average batter (0.700 OPS)', () => {
@@ -269,7 +269,7 @@ describe('ERA floor', () => {
       k9: 8.5, bb9: 2.5, hr9: 0.9, usageFlags: [], isReliever: false,
     };
     // Formula should use actual ERA, not the floor
-    const expected = ((4.50 - 3.20) * 30) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
+    const expected = ((4.50 - 3.20) * 25) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
     expect(calculatePitcherValue(normal)).toBeCloseTo(expected, 4);
   });
 });
@@ -376,6 +376,43 @@ describe('pitcher overvaluation regression', () => {
     const fullValue = calculatePlayerValue(fullIP);
     const lowValue = calculatePlayerValue(lowIP);
     expect(fullValue).toBeGreaterThan(lowValue * 1.5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-position valuation regression: batters vs pitchers
+// ---------------------------------------------------------------------------
+describe('cross-position valuation regression', () => {
+  it('HOF batter outscores average SP by 50+ points', () => {
+    const hofBatter = calculateBatterValue('LF', 1.200, 5, 0.97);
+    const avgSP = calculatePitcherValue({
+      role: 'SP', grade: 10, stamina: 6.5, era: 3.50,
+      whip: 1.20, k9: 8.0, bb9: 3.0, hr9: 1.0,
+      usageFlags: [], isReliever: false,
+    });
+    expect(hofBatter).toBeGreaterThan(avgSP);
+    expect(hofBatter - avgSP).toBeGreaterThan(50);
+  });
+
+  it('good batter outscores elite closer', () => {
+    const goodBatter = calculateBatterValue('SS', 0.850, 10, 0.975);
+    const eliteCL = calculatePitcherValue({
+      role: 'CL', grade: 12, stamina: 1.5, era: 2.00,
+      whip: 0.90, k9: 12.0, bb9: 2.0, hr9: 0.4,
+      usageFlags: [], isReliever: true,
+    });
+    expect(goodBatter).toBeGreaterThan(eliteCL);
+  });
+
+  it('average batter outscores average reliever', () => {
+    const avgBatter = calculateBatterValue('3B', 0.750, 5, 0.96);
+    const avgRP = calculatePitcherValue({
+      role: 'RP', grade: 8, stamina: 2, era: 3.20,
+      whip: 1.20, k9: 8.5, bb9: 2.5, hr9: 0.9,
+      usageFlags: [], isReliever: true,
+    });
+    expect(avgBatter).toBeGreaterThan(avgRP);
+    expect(avgBatter - avgRP).toBeGreaterThan(50);
   });
 });
 

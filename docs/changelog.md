@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-02-21 - Rebalance draft AI valuation and strategy
+
+630-pick draft analysis revealed structural problems: SP monopoly (rounds 4-7),
+HOF batters falling to round 13+, RP dominance (rounds 9-12). Root causes were
+position-forced strategy ignoring cross-position value and overvalued relievers.
+
+Valuation formula changes (ai-valuation.ts):
+- Batter OPS multiplier: 100 -> 115 (elite batters clearly outscore average pitchers)
+- SP ERA multiplier: 30 -> 25 (modest reduction)
+- RP/CL: ERA 25 -> 18, K9 6 -> 5, BB9 10 -> 8 (significant reduction so relievers
+  no longer compete with position players)
+
+Strategy changes (ai-strategy.ts):
+- Mid rounds (4-8): Value-gap override -- if best available batter outscores best SP
+  by 30+ points, take the batter instead of forcing rotation fill
+- Late rounds (9+): Reordered priorities -- unfilled starters first (was RP first),
+  then bullpen, then SP, then bench depth
+
+New regression tests:
+- Cross-position: HOF batter > average SP by 50+ pts, good batter > elite CL,
+  average batter > average RP by 50+ pts
+- Value-gap override: HOF batter over mediocre SP, SP taken when gap is small
+- 50-seed composition test still passes (hard guard guarantees valid rosters)
+
 ## 2026-02-21 - Heritage Editorial Phase 2: Component Refactoring
 
 Converted all 13 UI components from the legacy "golden era scoreboard" aesthetic

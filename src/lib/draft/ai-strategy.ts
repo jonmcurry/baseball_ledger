@@ -3,12 +3,20 @@
  *
  * REQ-DFT-006: CPU-controlled teams draft using a round-aware priority
  * system. Early rounds favor elite players, mid rounds fill rotation and
- * premium positions, late rounds grab relievers and bench depth.
+ * premium positions, late rounds fill remaining starters and bullpen.
  *
  * Strategy:
  *  - Early (1-3): Best available SP or elite position player. No CL/RP.
- *  - Mid (4-8): Fill rotation to 4 SP. Premium positions (C, SS).
- *  - Late (9+): Bullpen (RP/CL), bench, defensive specialists.
+ *  - Mid (4-8): Fill rotation to 4 SP, but with value-gap override --
+ *    if best available batter significantly outvalues best SP, take the batter.
+ *    Premium positions (C, SS) next.
+ *  - Late (9+): Any unfilled starters first, then bullpen (RP/CL),
+ *    then bench depth.
+ *
+ * Value-gap override: When the best available position player exceeds the
+ * best positional-need pitcher by VALUE_GAP_THRESHOLD points, the AI takes
+ * the batter instead of forcing a pitcher pick. The hard guard still ensures
+ * valid composition by forcing mandatory picks when remaining rounds are tight.
  *
  * Roster composition: 1C, 1 1B, 1 2B, 1 SS, 1 3B, 3 OF, 1 DH, 4 bench,
  * 4 SP, 4 RP (RP and CL interchangeable). Total = 21.
@@ -56,6 +64,8 @@ const MID_ROUND_END = 8;
 const PREMIUM_POSITIONS: Position[] = ['C', 'SS'];
 /** Number of top candidates to consider for weighted random selection. */
 const TOP_CANDIDATE_COUNT = 3;
+/** When best-available exceeds best-at-need by this margin, take best-available. */
+const VALUE_GAP_THRESHOLD = 30;
 
 /** Outfield positions that count toward the generic OF starter pool. */
 const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
@@ -247,6 +257,19 @@ function bestAtPositions(
 }
 
 /**
+ * Get the best available non-pitcher (position player) by value.
+ */
+function bestAvailablePosition(
+  available: DraftablePlayer[],
+  rng: SeededRNG,
+): DraftablePlayer | null {
+  const posPlayers = available.filter((p) => !p.card.isPitcher);
+  if (posPlayers.length === 0) return null;
+  const sorted = sortByValue(posPlayers, rng);
+  return pickFromTop(sorted, rng);
+}
+
+/**
  * Select the AI's draft pick for a given round.
  *
  * @param round - Current draft round (1-based)
@@ -298,14 +321,24 @@ export function selectAIPick(
   }
 
   // -----------------------------------------------------------------------
-  // Mid rounds (4-8): Fill rotation, then premium positions, then best
+  // Mid rounds (4-8): Fill rotation (with value-gap override), then
+  // premium positions, then best available
   // -----------------------------------------------------------------------
   if (round <= MID_ROUND_END) {
-    // Priority 1: Fill SP rotation if needed
+    // Priority 1: Fill SP rotation if needed (value-gap override applies)
     const spNeeds = needs.filter((n) => n.position === 'SP');
     if (spNeeds.length > 0) {
-      const sp = bestAtPositions(available, ['SP'], rng);
-      if (sp) return sp;
+      const bestSP = bestAtPositions(available, ['SP'], rng);
+      const bestPos = bestAvailablePosition(available, rng);
+      if (bestSP && bestPos) {
+        const spVal = getPlayerValue(bestSP);
+        const posVal = getPlayerValue(bestPos);
+        if (posVal > spVal + VALUE_GAP_THRESHOLD) {
+          return bestPos; // elite batter > mediocre SP
+        }
+        return bestSP; // SP is competitive, fill rotation
+      }
+      if (bestSP) return bestSP;
     }
 
     // Priority 2: Premium position gaps (C, SS)
@@ -332,22 +365,23 @@ export function selectAIPick(
   }
 
   // -----------------------------------------------------------------------
-  // Late rounds (9+): Bullpen, bench, defensive specialists
+  // Late rounds (9+): Starters first, then bullpen (value-gap override),
+  // then SP, then bench depth
   // -----------------------------------------------------------------------
 
-  // Priority 1: Bullpen (RP and CL both qualify) if needed
-  const bullpenNeeds = needs.filter((n) => n.position === 'RP');
-  if (bullpenNeeds.length > 0) {
-    const rp = bestAtPositions(available, ['RP'], rng);
-    if (rp) return rp;
-  }
-
-  // Priority 2: Any remaining starter positions
+  // Priority 1: Any remaining unfilled starter positions
   const starterNeeds = needs.filter((n) => n.slot === 'starter');
   if (starterNeeds.length > 0) {
     const positions = starterNeeds.map((n) => n.position);
     const starter = bestAtPositions(available, positions, rng);
     if (starter) return starter;
+  }
+
+  // Priority 2: Bullpen (RP and CL both qualify) if needed
+  const bullpenNeeds = needs.filter((n) => n.position === 'RP');
+  if (bullpenNeeds.length > 0) {
+    const rp = bestAtPositions(available, ['RP'], rng);
+    if (rp) return rp;
   }
 
   // Priority 3: SP if still needed
