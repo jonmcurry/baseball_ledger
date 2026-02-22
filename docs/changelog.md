@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-02-22 - UI tightening: reduce whitespace, compact masthead, remove roman numerals
+
+- Reduced spacing tokens: gutter 1.25->0.875rem, gutter-lg 2->1.25rem, gutter-xl 3->2rem
+- FolioNav: removed roman numerals, replaced with single-letter icons, added hover/active states
+- Masthead: collapsed to single-line layout (logotype / league / season), reduced from type-6 to type-5
+- SectionOpener: smaller headlines (type-4/5 from type-5/6), hairline rule replaces double rule
+- Tightened vintage-card, stat-table, button padding throughout
+- Folio width 220->160px, marginalia 260->220px
+- Buttons: uppercase + smaller font for editorial feel
+
 ## 2026-02-22 - "The Continuing Record" Broadsheet UI/UX Redesign (Phases 0-8)
 
 Complete layout architecture redesign from generic centered SaaS column to broadsheet

@@ -52,7 +52,7 @@ export function BroadsheetShell({
         <ErrorBoundary>
           <main
             id="main-content"
-            className="min-h-[calc(100vh-8rem)] px-gutter-lg py-gutter-lg max-md:pb-24"
+            className="min-h-[calc(100vh-6rem)] px-gutter-lg py-gutter max-md:pb-24"
           >
             {children}
           </main>

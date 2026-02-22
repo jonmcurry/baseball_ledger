@@ -34,11 +34,11 @@ export function SectionOpener({
 }: SectionOpenerProps) {
   const Tag = size === 'page' ? 'h2' : 'h3';
   const headlineSize = size === 'page'
-    ? 'text-type-5 md:text-type-6'
-    : 'text-type-4 md:text-type-5';
+    ? 'text-type-4 md:text-type-5'
+    : 'text-type-3 md:text-type-4';
 
   return (
-    <div className={`mb-gutter-lg ${className}`.trim()}>
+    <div className={`mb-gutter ${className}`.trim()}>
       {kicker && (
         <p className="kicker">{kicker}</p>
       )}
@@ -52,10 +52,10 @@ export function SectionOpener({
       )}
 
       {dateline && (
-        <p className="dateline mt-2">{dateline}</p>
+        <p className="dateline mt-1">{dateline}</p>
       )}
 
-      <hr className="rule-double" />
+      <hr className="rule-hairline mt-2" />
     </div>
   );
 }

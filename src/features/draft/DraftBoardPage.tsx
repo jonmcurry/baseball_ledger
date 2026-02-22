@@ -143,14 +143,14 @@ export function DraftBoardPage() {
   const isDraftActive = draftState?.status === 'in_progress';
 
   return (
-    <div className="space-y-gutter-lg">
+    <div className="space-y-gutter">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <SectionOpener
           kicker="The Pressroom"
           headline="Player Draft"
           deck={isDraftActive ? `Round ${draftState.currentRound}, Pick ${draftState.currentPick}` : undefined}
-          className="mb-0"
+          className="mb-0 flex-1"
         />
 
         <div className="flex items-center gap-4">

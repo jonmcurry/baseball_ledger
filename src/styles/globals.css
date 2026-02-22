@@ -97,16 +97,16 @@
        SPACING & LAYOUT - Generous editorial breathing room
        =================================================================== */
     --max-width-ledger: 1200px;
-    --gutter: 1.25rem;
-    --gutter-lg: 2rem;
-    --gutter-xl: 3rem;
+    --gutter: 0.875rem;
+    --gutter-lg: 1.25rem;
+    --gutter-xl: 2rem;
 
     /* ===================================================================
        BROADSHEET LAYOUT - 3-column newspaper grid
        =================================================================== */
     --max-width-broadsheet: 1440px;
-    --folio-width: 220px;
-    --marginalia-width: 260px;
+    --folio-width: 160px;
+    --marginalia-width: 220px;
     --content-gap: var(--gutter-lg);
 
     /* ===================================================================
@@ -228,13 +228,12 @@
   /* ----- EDITORIAL PANEL -- clean surface with thin rule dividers ----- */
   .vintage-card {
     background: var(--surface-raised);
-    border-top: 1px solid var(--border-default);
-    border-bottom: 1px solid var(--border-default);
+    border: 1px solid var(--border-default);
     border-left: none;
     border-right: none;
     border-radius: 0;
     box-shadow: none;
-    padding: var(--gutter-xl) var(--gutter-lg);
+    padding: var(--gutter) var(--gutter-lg);
     position: relative;
   }
 
@@ -264,7 +263,7 @@
     border-radius: 0;
     box-shadow: none;
     color: var(--text-primary);
-    padding: var(--gutter-xl) var(--gutter-lg);
+    padding: var(--gutter) var(--gutter-lg);
   }
 
   .scoreboard-number {
@@ -309,12 +308,12 @@
   .btn-vintage {
     font-family: var(--font-body);
     font-weight: 600;
-    font-size: 0.9375rem;
-    text-transform: none;
-    letter-spacing: 0.02em;
-    padding: 0.625rem 1.75rem;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 1.25rem;
     border-radius: 0;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     cursor: pointer;
   }
 
@@ -381,11 +380,11 @@
     font-family: var(--font-body);
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.6875rem;
-    letter-spacing: 0.1em;
-    padding: 0.75rem 0.75rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.12em;
+    padding: 0.375rem 0.5rem;
     text-align: left;
-    border-bottom: 2px solid var(--text-primary);
+    border-bottom: 1.5px solid var(--text-primary);
   }
 
   .stat-table thead th:first-child {
@@ -397,9 +396,10 @@
   }
 
   .stat-table tbody td {
-    padding: 0.5rem 0.75rem;
+    padding: 0.3rem 0.5rem;
     border-bottom: 1px solid var(--border-subtle);
     background: transparent;
+    font-size: 0.75rem;
   }
 
   .stat-table tbody tr:nth-child(even) td {
@@ -585,17 +585,17 @@
   /* ----- BROADSHEET BREAKOUT -- "STOP THE PRESSES" ----- */
   .broadsheet-breakout {
     font-family: var(--font-headline);
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: -0.02em;
     line-height: 1.1;
     color: var(--accent-secondary);
     text-align: center;
-    padding: var(--gutter-xl) 0;
+    padding: var(--gutter) 0;
     border-top: 2px solid var(--accent-secondary);
     border-bottom: 2px solid var(--accent-secondary);
-    margin: var(--gutter-lg) 0;
+    margin: var(--gutter) 0;
   }
 
   /* ===================================================================
@@ -631,20 +631,20 @@
     height: 100vh;
     overflow-y: auto;
     border-right: 1px solid var(--border-default);
-    padding: var(--gutter-lg) 0;
+    padding: var(--gutter) 0;
     background: var(--surface-base);
   }
 
   .folio-item {
     display: flex;
-    align-items: baseline;
-    gap: 0.625rem;
-    padding: 0.5rem var(--gutter);
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
     font-family: var(--font-body);
     font-size: var(--type-1);
     color: var(--text-secondary);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.15s ease, background 0.15s ease;
     border-left: 2px solid transparent;
     cursor: pointer;
     background: none;
@@ -657,20 +657,28 @@
 
   .folio-item:hover {
     color: var(--text-primary);
+    background: var(--surface-overlay);
   }
 
   .folio-item--active {
     color: var(--text-primary);
-    font-weight: 600;
+    font-weight: 700;
     border-left-color: var(--accent-secondary);
+    background: var(--accent-muted);
   }
 
-  .folio-numeral {
-    font-family: var(--font-stat);
+  .folio-icon {
+    font-family: var(--font-headline);
     font-size: var(--type-0);
+    font-weight: 700;
     color: var(--text-tertiary);
-    min-width: 1.5rem;
-    letter-spacing: 0.05em;
+    width: 1.25rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .folio-item--active .folio-icon {
+    color: var(--accent-secondary);
   }
 
   @media (max-width: 1024px) {
@@ -680,16 +688,11 @@
 
     .folio-item {
       justify-content: center;
-      padding: 0.75rem 0.25rem;
+      padding: 0.5rem 0.25rem;
     }
 
     .folio-item .folio-label {
       display: none;
-    }
-
-    .folio-numeral {
-      min-width: auto;
-      font-size: var(--type-1);
     }
   }
 
@@ -715,7 +718,7 @@
       flex-direction: column;
       align-items: center;
       gap: 0.125rem;
-      padding: 0.5rem 0.75rem;
+      padding: 0.375rem 0.5rem;
       border-left: none;
       border-top: 2px solid transparent;
       white-space: nowrap;
@@ -731,7 +734,7 @@
       display: block;
     }
 
-    .folio-numeral {
+    .folio-icon {
       display: none;
     }
   }
@@ -743,7 +746,8 @@
     height: 100vh;
     overflow-y: auto;
     border-left: 1px solid var(--border-default);
-    padding: var(--gutter-lg) var(--gutter);
+    padding: var(--gutter) 0.75rem;
+    font-size: var(--type-1);
   }
 
   .marginalia-card {
@@ -785,22 +789,22 @@
   /* ----- KICKER -- small label above headline ----- */
   .kicker {
     font-family: var(--font-body);
-    font-size: var(--type-0);
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.15em;
     color: var(--accent-secondary);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
   }
 
   /* ----- DECK -- subhead below headline ----- */
   .deck {
     font-family: var(--font-body);
-    font-size: var(--type-3);
+    font-size: var(--type-1);
     font-style: italic;
     color: var(--text-secondary);
-    line-height: 1.5;
-    margin-top: 0.5rem;
+    line-height: 1.4;
+    margin-top: 0.25rem;
   }
 
   /* ----- DATELINE -- editorial date/location label ----- */
@@ -825,13 +829,13 @@
   /* ----- PULL QUOTE -- editorial inset quotation ----- */
   .pull-quote {
     font-family: var(--font-body);
-    font-size: var(--type-4);
+    font-size: var(--type-3);
     font-style: italic;
     line-height: 1.4;
     color: var(--text-primary);
-    border-left: 3px solid var(--accent-secondary);
+    border-left: 2px solid var(--accent-secondary);
     padding-left: var(--gutter);
-    margin: var(--gutter-lg) 0;
+    margin: var(--gutter) 0;
   }
 
   .pull-quote-attribution {
@@ -847,28 +851,28 @@
   /* ----- RULES -- editorial dividers ----- */
   .rule-double {
     border: none;
-    border-top: 3px double var(--border-default);
-    margin: var(--gutter-lg) 0;
+    border-top: 2px double var(--border-default);
+    margin: var(--gutter) 0;
   }
 
   .rule-hairline {
     border: none;
     border-top: 0.5px solid var(--border-subtle);
-    margin: var(--gutter) 0;
+    margin: 0.5rem 0;
   }
 
   /* ----- MASTHEAD -- top identity bar ----- */
   .masthead-bar {
     max-width: var(--max-width-broadsheet);
     margin: 0 auto;
-    padding: var(--gutter) var(--gutter-lg);
+    padding: 0.5rem var(--gutter-lg);
     text-align: center;
     position: relative;
   }
 
   .masthead-logotype {
     font-family: var(--font-headline);
-    font-size: var(--type-6);
+    font-size: var(--type-5);
     font-weight: 900;
     letter-spacing: -0.02em;
     line-height: 1;
@@ -894,11 +898,11 @@
   .colophon {
     max-width: var(--max-width-broadsheet);
     margin: 0 auto;
-    padding: var(--gutter) var(--gutter-lg);
+    padding: 0.5rem var(--gutter-lg);
     border-top: 1px solid var(--border-default);
     text-align: center;
     font-family: var(--font-body);
-    font-size: var(--type-0);
+    font-size: 10px;
     font-variant: small-caps;
     letter-spacing: 0.06em;
     color: var(--text-tertiary);

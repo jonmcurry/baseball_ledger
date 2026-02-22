@@ -25,46 +25,40 @@ export function Masthead({
     <header role="banner" className="relative z-20 bg-[var(--surface-base)]">
       <div className="masthead-bar">
         {/* User controls -- top-right */}
-        <div className="absolute top-3 right-gutter-lg flex items-center gap-gutter z-10">
-          <span className="font-body text-[var(--type-0)] text-[var(--text-tertiary)] max-md:hidden">
+        <div className="absolute top-2 right-gutter-lg flex items-center gap-3 z-10">
+          <span className="font-body text-[11px] text-[var(--text-tertiary)] max-md:hidden">
             {userName}
           </span>
           <button
             type="button"
             onClick={onLogout}
             aria-label="Log out"
-            className="font-body text-[var(--type-0)] tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent-secondary)] transition-colors"
+            className="font-body text-[11px] tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent-secondary)] transition-colors"
           >
             Log Out
           </button>
         </div>
 
-        {/* Logotype */}
-        <h1 className="masthead-logotype">
-          Baseball Ledger
-        </h1>
-
-        {/* Decorative rule */}
-        <div className="flex items-center justify-center gap-4 mt-2" aria-hidden="true">
-          <div className="h-px w-12 md:w-20 bg-[var(--border-default)]" />
-          <div className="w-1.5 h-1.5 bg-[var(--accent-secondary)]" />
-          <div className="h-px w-12 md:w-20 bg-[var(--border-default)]" />
-        </div>
-
-        {/* League name + season dateline */}
-        <div className="mt-1.5 flex items-center justify-center gap-3">
-          <span className="masthead-subtitle">{leagueName}</span>
+        {/* Single-line masthead: logotype + separator + league info */}
+        <div className="flex items-baseline justify-center gap-3">
+          <h1 className="masthead-logotype">Baseball Ledger</h1>
+          {leagueName && (
+            <>
+              <span className="text-[var(--border-default)] text-sm" aria-hidden="true">/</span>
+              <span className="masthead-subtitle">{leagueName}</span>
+            </>
+          )}
           {seasonInfo && (
             <>
-              <span className="text-[var(--border-default)]" aria-hidden="true">|</span>
+              <span className="text-[var(--border-default)] text-sm" aria-hidden="true">/</span>
               <span className="dateline">{seasonInfo}</span>
             </>
           )}
         </div>
       </div>
 
-      {/* Double rule bottom border */}
-      <hr className="rule-double mt-0 mb-0" style={{ margin: 0 }} />
+      {/* Thin rule bottom border */}
+      <hr className="rule-hairline" style={{ margin: 0 }} />
     </header>
   );
 }
