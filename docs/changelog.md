@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-21 - Fix draft AI batter valuation (SB overweight)
+
+Reduced stolen base multiplier in AI draft batter valuation from 0.5 to 0.1.
+The old weight caused speed players like Eric Davis (50 SB, .992 OPS) to score
+higher than all-time greats like Ted Williams (2 SB, 1.287 OPS) and Babe Ruth
+(7 SB, 1.258 OPS), resulting in Davis being incorrectly drafted in round 1.
+
+With the fix, OPS properly dominates the formula and SB adds flavor without
+distorting the rankings. Davis drops from ~154 to ~134 (round 3-4 range).
+
+Files modified:
+- `src/lib/draft/ai-valuation.ts` - SB multiplier 0.5 -> 0.1
+- `tests/unit/lib/draft/ai-valuation.test.ts` - Updated expected values
+
 ## 2026-02-21 - Heritage Editorial UI/UX Redesign
 
 Complete design system overhaul from "Pennant Race" (Bold Red/White/Blue Americana)

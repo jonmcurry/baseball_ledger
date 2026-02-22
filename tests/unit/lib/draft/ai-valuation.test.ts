@@ -80,10 +80,10 @@ describe('getPositionBonus (REQ-DFT-007)', () => {
 // calculateBatterValue (REQ-DFT-007)
 // ---------------------------------------------------------------------------
 describe('calculateBatterValue (REQ-DFT-007)', () => {
-  it('applies formula: OPS*100 + SB*0.5 + fieldingPct*20 + positionBonus', () => {
+  it('applies formula: OPS*100 + SB*0.1 + fieldingPct*20 + positionBonus', () => {
     // C with .850 OPS, 10 SB, .995 fielding
     const value = calculateBatterValue('C', 0.850, 10, 0.995);
-    const expected = (0.850 * 100) + (10 * 0.5) + (0.995 * 20) + 15;
+    const expected = (0.850 * 100) + (10 * 0.1) + (0.995 * 20) + 15;
     expect(value).toBeCloseTo(expected, 4);
   });
 
@@ -162,7 +162,7 @@ describe('calculatePlayerValue', () => {
     const value = calculatePlayerValue(card, { ops: 0.800, sb: 15 });
     expect(value).toBeGreaterThan(0);
     // Should include SS bonus (12)
-    const expected = (0.800 * 100) + (15 * 0.5) + (0.97 * 20) + 12;
+    const expected = (0.800 * 100) + (15 * 0.1) + (0.97 * 20) + 12;
     expect(value).toBeCloseTo(expected, 4);
   });
 
@@ -195,8 +195,8 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
       },
     });
     const value = calculatePlayerValue(card);
-    // (1.300 * 100) + (6 * 0.5) + (0.98 * 20) + 2 = 130 + 3 + 19.6 + 2 = 154.6
-    expect(value).toBeCloseTo(154.6, 0);
+    // (1.300 * 100) + (6 * 0.1) + (0.98 * 20) + 2 = 130 + 0.6 + 19.6 + 2 = 152.2
+    expect(value).toBeCloseTo(152.2, 0);
   });
 
   it('elite batter (1.300 OPS) outvalues average batter (0.700 OPS)', () => {
@@ -219,6 +219,27 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
     const diff = calculatePlayerValue(elite) - calculatePlayerValue(average);
     // 60+ point difference ensures sorting will not be ambiguous
     expect(diff).toBeGreaterThan(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: speed player must not outscore all-time great (SB overweight bug)
+// ---------------------------------------------------------------------------
+describe('SB overweight regression', () => {
+  it('all-time great (1.250+ OPS, low SB) outscores speed player (.992 OPS, 50 SB)', () => {
+    // Eric Davis 1987: .992 OPS, 50 SB, CF
+    const speedPlayer = calculateBatterValue('CF', 0.992, 50, 0.98);
+    // Ted Williams 1941: 1.287 OPS, 2 SB, LF
+    const allTimeGreat = calculateBatterValue('LF', 1.287, 2, 0.97);
+    expect(allTimeGreat).toBeGreaterThan(speedPlayer);
+    // At least 10 points of separation
+    expect(allTimeGreat - speedPlayer).toBeGreaterThan(10);
+  });
+
+  it('SB bonus for 50 steals is modest (under 10 points)', () => {
+    const withSB = calculateBatterValue('CF', 0.800, 50, 0.98);
+    const withoutSB = calculateBatterValue('CF', 0.800, 0, 0.98);
+    expect(withSB - withoutSB).toBeLessThan(10);
   });
 });
 

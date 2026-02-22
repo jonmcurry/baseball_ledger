@@ -4,7 +4,7 @@
  * REQ-DFT-007: AI player valuation score for ranking "best available"
  * during the draft.
  *
- * Batter formula:  (OPS * 100) + (SB * 0.5) + (fieldingPct * 20) + positionBonus
+ * Batter formula:  (OPS * 100) + (SB * 0.1) + (fieldingPct * 20) + positionBonus
  * SP formula:      ((4.50 - ERA) * 30) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
  * RP/CL formula:   ((3.50 - ERA) * 25) + (K9 * 6) - (BB9 * 10)
  *
@@ -42,7 +42,7 @@ export function calculateBatterValue(
   sb: number,
   fieldingPct: number,
 ): number {
-  return (ops * 100) + (sb * 0.5) + (fieldingPct * 20) + getPositionBonus(position);
+  return (ops * 100) + (sb * 0.1) + (fieldingPct * 20) + getPositionBonus(position);
 }
 
 /**
