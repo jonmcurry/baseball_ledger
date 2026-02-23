@@ -497,6 +497,7 @@ export function GameViewerPage() {
           pitchingLines={gameData.pitchingLines}
           homeTeam={gameData.homeTeamName}
           awayTeam={gameData.awayTeamName}
+          playByPlay={gameData.playByPlay}
         />
       )}
 

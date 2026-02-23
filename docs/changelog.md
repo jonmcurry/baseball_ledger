@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-02-22 - Add ESPN-style box score detail sections
+
+Added BATTING, BASERUNNING, and FIELDING summary sections below each team's
+batting/pitching tables in the box score, matching ESPN's format.
+
+- BATTING: 2B, 3B, HR, RBI, HBP, SF, 2-Out RBI, Team LOB, Team RISP
+- BASERUNNING: SB, CS
+- FIELDING: DP (double plays turned)
+
+Stats from BattingLine (2B, 3B, HR, RBI, HBP, SF, SB, CS) are formatted as
+"Name (count)". Play-by-play derived stats (LOB, RISP, 2-Out RBI, DP) are
+computed from PlayByPlayEntry data. Sections only render when non-empty.
+
+Files: BoxScoreDisplay.tsx (helpers + TeamDetailSection), GameViewerPage.tsx
+(pass playByPlay prop). TypeScript clean, 226 component tests passed.
+
 ## 2026-02-22 - Fix Roster page layout: remove split-layout min-height, 50/50 grid
 
 Root cause: `.split-layout` had `min-height: calc(100vh - 14rem)` forcing each
