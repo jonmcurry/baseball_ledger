@@ -184,55 +184,37 @@ export function RosterPage() {
       {roster.length > 0 && rosterView === 'diamond' && (
         <>
           {/* Split: Diamond + Batting Order */}
-          <div className="split-layout mt-gutter" style={{ '--split-ratio': '50 50' } as React.CSSProperties}>
-            <div>
-              <LineupDiamond
-                starters={starters}
-                selectedPosition={selectedPosition}
-                onPositionClick={handlePositionClick}
-                onPlayerClick={handlePlayerClick}
-              />
-            </div>
-            <div>
-              <BattingOrder
-                starters={starters}
-                onMoveUp={handleMoveUp}
-                onMoveDown={handleMoveDown}
-                onRemove={handleRemoveFromLineup}
-                onPlayerClick={handlePlayerClick}
-              />
-            </div>
+          <div className="split-layout split-layout--even mt-gutter items-start">
+            <LineupDiamond
+              starters={starters}
+              selectedPosition={selectedPosition}
+              onPositionClick={handlePositionClick}
+              onPlayerClick={handlePlayerClick}
+            />
+            <BattingOrder
+              starters={starters}
+              onMoveUp={handleMoveUp}
+              onMoveDown={handleMoveDown}
+              onRemove={handleRemoveFromLineup}
+              onPlayerClick={handlePlayerClick}
+            />
           </div>
 
           {/* Bench + Pitching panels */}
-          <div className="split-layout mt-gutter" style={{ '--split-ratio': '50 50' } as React.CSSProperties}>
-            <div className="panel">
-              <div className="panel-header">
-                <span>Bench</span>
-              </div>
-              <div className="panel-body">
-                <BenchPanel
-                  bench={bench}
-                  selectedPosition={selectedPosition}
-                  onPlayerSelect={handleBenchPlayerSelect}
-                  onPlayerClick={handlePlayerClick}
-                />
-              </div>
-            </div>
-            <div className="panel">
-              <div className="panel-header">
-                <span>Pitching Staff</span>
-              </div>
-              <div className="panel-body">
-                <PitchingRotation
-                  rotation={rotation}
-                  bullpen={bullpen}
-                  nextStarterIdx={0}
-                  onRoleChange={handlePitcherRoleChange}
-                  onPlayerClick={handlePlayerClick}
-                />
-              </div>
-            </div>
+          <div className="split-layout split-layout--even mt-gutter items-start">
+            <BenchPanel
+              bench={bench}
+              selectedPosition={selectedPosition}
+              onPlayerSelect={handleBenchPlayerSelect}
+              onPlayerClick={handlePlayerClick}
+            />
+            <PitchingRotation
+              rotation={rotation}
+              bullpen={bullpen}
+              nextStarterIdx={0}
+              onRoleChange={handlePitcherRoleChange}
+              onPlayerClick={handlePlayerClick}
+            />
           </div>
         </>
       )}

@@ -256,7 +256,7 @@ export function DraftBoardPage() {
       </div>
 
       {/* 4. Split Layout: 70% player table | 30% tabbed sidebar */}
-      <div className="split-layout mt-gutter">
+      <div className="split-layout mt-gutter" style={{ minHeight: 'calc(100vh - 14rem)' }}>
         {/* Main panel: Player Pool */}
         <div>
           <AvailablePlayersTable

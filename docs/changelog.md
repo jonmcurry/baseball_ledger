@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-02-22 - Fix Roster page layout: remove split-layout min-height, 50/50 grid
+
+Root cause: `.split-layout` had `min-height: calc(100vh - 14rem)` forcing each
+grid to fill the viewport. Roster page stacks two split-layouts, creating a
+massive gap between the diamond/batting-order row and the bench/pitching row.
+
+- Removed `min-height` from `.split-layout` base class (DraftBoardPage gets it
+  via inline style instead)
+- Replaced non-functional `--split-ratio` inline style with `split-layout--even`
+  class for proper 50/50 columns
+- Removed double panel wrappers around Bench and Pitching Staff (components
+  already have their own vintage-card containers)
+- Added `items-start` for top-aligned grid items
+
+Tests: 251 component/roster tests passed. TypeScript clean.
+
 ## 2026-02-22 - Fix draft AI position hoarding and value-gap instability
 
 Three root causes of catcher-hoarding (4 catchers in 7 rounds) and SP avoidance:
