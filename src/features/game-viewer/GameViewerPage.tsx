@@ -27,6 +27,7 @@ import { CommentarySection } from './CommentarySection';
 import { GameSummaryPanel } from './GameSummaryPanel';
 import { ManagerDecisionsPanel } from './ManagerDecisionsPanel';
 import { ReplayControls, type ReplaySpeed } from './ReplayControls';
+import { TeamLogo } from '@components/baseball/TeamLogo';
 import { detectDecisions } from '@lib/ai/decision-detector';
 import type { GameSummaryRequest } from '@lib/types/ai';
 import type { BoxScore, BattingLine, PitchingLine, PlayByPlayEntry } from '@lib/types/game';
@@ -434,19 +435,24 @@ export function GameViewerPage() {
     <div>
       {/* Broadcast scoreboard header -- dark navy */}
       <div className="hero-score">
-        <div className="hero-score-team">
-          <span className="hero-score-team-name">{gameData.awayTeamName}</span>
+        <div className="hero-score-team hero-score-team--away">
+          <div className="hero-score-team-info">
+            <span className="hero-score-team-name">{gameData.awayTeamName}</span>
+          </div>
+          <TeamLogo teamName={gameData.awayTeamName} size={48} />
           <span className="hero-score-number">{gameData.awayScore}</span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="hero-score-separator">-</span>
-          <span className="broadcast-badge mt-1">
-            {replayActive ? `${currentGameState?.halfInning === 'top' ? 'Top' : 'Bot'} ${currentGameState?.inning ?? ''}` : 'Final'}
+          <span className="broadcast-badge">
+            {replayActive ? `${currentGameState?.halfInning === 'top' ? 'Top' : 'Bot'} ${currentGameState?.inning ?? ''}` : 'FINAL'}
           </span>
         </div>
-        <div className="hero-score-team">
+        <div className="hero-score-team hero-score-team--home">
+          <div className="hero-score-team-info">
+            <span className="hero-score-team-name">{gameData.homeTeamName}</span>
+          </div>
+          <TeamLogo teamName={gameData.homeTeamName} size={48} />
           <span className="hero-score-number">{gameData.homeScore}</span>
-          <span className="hero-score-team-name">{gameData.homeTeamName}</span>
         </div>
       </div>
       {!replayActive && gameData.innings !== 9 && (

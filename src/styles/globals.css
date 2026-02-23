@@ -1136,8 +1136,33 @@
   }
 
   .hero-score-team {
-    text-align: center;
-    min-width: 120px;
+    display: flex;
+    align-items: center;
+    gap: var(--gutter);
+    min-width: 160px;
+  }
+
+  .hero-score-team--away {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .hero-score-team--home {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  .hero-score-team-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-score-team--away .hero-score-team-info {
+    align-items: flex-end;
+  }
+
+  .hero-score-team--home .hero-score-team-info {
+    align-items: flex-start;
   }
 
   .hero-score-team-name {
@@ -1145,6 +1170,7 @@
     font-size: var(--type-3);
     font-weight: 700;
     color: var(--text-on-dark);
+    white-space: nowrap;
   }
 
   .hero-score-number {
@@ -1180,7 +1206,8 @@
     }
 
     .hero-score-team {
-      min-width: 80px;
+      min-width: auto;
+      gap: 0.5rem;
     }
 
     .hero-score-team-name {

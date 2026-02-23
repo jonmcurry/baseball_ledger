@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-02-22 - Game viewer hero-score spacing and auto-generated team logos
+
+Fixed cramped scoreboard header layout. Team name and score were inline spans
+with no separation. Reworked to flex layout: away team (name | logo | score),
+center badge, home team (score | logo | name) with proper spacing.
+
+Added TeamLogo component that auto-generates SVG monogram logos from team names.
+Uses last word (mascot) initial inside a colored circle. Color is deterministic
+from a 16-color palette hashed from the team name.
+
+Files: globals.css (hero-score layout), TeamLogo.tsx (new), GameViewerPage.tsx
+(import + markup). TypeScript clean, 51 game-viewer tests passed.
+
 ## 2026-02-22 - ESPN-style box score tables with season stats
 
 Reformatted batting and pitching box score tables to match ESPN's game summary
