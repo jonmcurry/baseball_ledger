@@ -28,10 +28,13 @@ Dashboard:
 - Season status toolbar (inline sim controls, day progress)
 - 3-column data grid: Schedule, Standings, League panels
 
-Draft Board:
-- Broadcast bar with round/pick info, centered timer, auto-draft toggle
-- 70/30 split layout (player table | sidebar)
-- Sidebar reordered: On The Clock > My Roster > Draft Feed > Analysis (collapsible)
+Draft Board (ESPN "Command Center" pattern):
+- Broadcast bar with round/pick info, inline timer, auto-draft toggle
+- Horizontal draft ticker strip (ESPN "Draft Train") with compact pick chips
+- 70/30 split layout (player table | tabbed sidebar)
+- Tabbed sidebar: Roster | Feed | Analysis (switchable tabs, scrollable content)
+- Removed redundant "On The Clock" panel (broadcast bar covers this)
+- New .draft-ticker-chip CSS class for horizontal ticker entries
 
 Game Viewer:
 - Dark broadcast scoreboard header with large scores

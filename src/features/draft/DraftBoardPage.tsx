@@ -1,8 +1,10 @@
 /**
  * DraftBoardPage
  *
- * ESPN-style draft war room: broadcast bar with timer, 70/30 split layout.
- * "On the Clock" panel at top of sidebar, draft feed prominent.
+ * ESPN "Command Center" draft war room:
+ * - Broadcast bar (round/pick, timer, status, auto-draft)
+ * - Horizontal draft ticker strip (ESPN "Draft Train")
+ * - 70/30 split: player table | tabbed sidebar (Roster / Feed / Analysis)
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
@@ -24,6 +26,8 @@ import type { AvailablePlayer } from '@stores/draftStore';
 import type { PlayerCard } from '@lib/types/player';
 import type { DraftReasoningRequest } from '@lib/types/ai';
 import { usePageTitle } from '@hooks/usePageTitle';
+
+type SidebarTab = 'roster' | 'feed' | 'analysis';
 
 export function DraftBoardPage() {
   usePageTitle('Draft Board');
@@ -90,7 +94,7 @@ export function DraftBoardPage() {
 
   const [profilePlayer, setProfilePlayer] = useState<PlayerCard | null>(null);
   const [draftViewMode, setDraftViewMode] = useState<DraftViewMode>('registry');
-  const [analysisExpanded, setAnalysisExpanded] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>('roster');
 
   // Build reasoning request from the last completed pick
   const lastPickRequest = useMemo((): DraftReasoningRequest | null => {
@@ -141,20 +145,24 @@ export function DraftBoardPage() {
   const isDraftNotStarted = !draftState || draftState.status === 'not_started';
   const isDraftActive = draftState?.status === 'in_progress';
 
+  const SIDEBAR_TABS: { key: SidebarTab; label: string }[] = [
+    { key: 'roster', label: 'Roster' },
+    { key: 'feed', label: 'Feed' },
+    { key: 'analysis', label: 'Analysis' },
+  ];
+
   return (
     <div>
-      {/* Draft Broadcast Bar -- dark navy strip with draft status */}
+      {/* 1. Broadcast Bar -- dark navy strip with draft status */}
       {isDraftActive && (
         <div className="broadcast-bar">
           <div className="flex items-center gap-6">
-            {/* Left: round/pick info */}
             <div className="flex-shrink-0">
               <span className="broadcast-label">Round {draftState.currentRound}</span>
               <span className="broadcast-label mx-2">--</span>
               <span className="broadcast-label">Pick {draftState.currentPick}</span>
             </div>
 
-            {/* Center: timer (broadcast-themed inline) */}
             <div className="flex-shrink-0 font-stat text-2xl font-bold text-[var(--text-on-dark)] tabular-nums">
               {isMyPick && !autoDraftEnabled
                 ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`
@@ -163,7 +171,6 @@ export function DraftBoardPage() {
 
             <div className="flex-1" />
 
-            {/* Right: status + auto-draft toggle */}
             <span className="broadcast-label font-bold flex-shrink-0">
               {isMyPick
                 ? (autoDraftEnabled ? 'Auto-Drafting...' : "You're On the Clock!")
@@ -183,6 +190,15 @@ export function DraftBoardPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 2. Draft Ticker -- horizontal scrolling strip of recent picks */}
+      {isDraftActive && (
+        <DraftTicker
+          picks={draftState?.picks ?? []}
+          currentPick={draftState?.currentPick ?? 0}
+          variant="horizontal"
+        />
       )}
 
       {/* Fallback header for non-active states */}
@@ -225,7 +241,7 @@ export function DraftBoardPage() {
         </div>
       )}
 
-      {/* Toolbar: view toggle + controls */}
+      {/* 3. Toolbar: view toggle */}
       <div className="toolbar mt-gutter">
         <div className="toolbar-group">
           <button
@@ -239,7 +255,7 @@ export function DraftBoardPage() {
         </div>
       </div>
 
-      {/* Split Layout: 70% player table | 30% sidebar */}
+      {/* 4. Split Layout: 70% player table | 30% tabbed sidebar */}
       <div className="split-layout mt-gutter">
         {/* Main panel: Player Pool */}
         <div>
@@ -256,28 +272,26 @@ export function DraftBoardPage() {
           />
         </div>
 
-        {/* Sidebar: On the Clock + Roster + Draft Feed + Analysis -- scrollable */}
-        <div className="split-layout-sidebar" style={{ maxHeight: 'calc(100vh - 12rem)', overflowY: 'auto' }}>
-          {/* Panel 1: On the Clock (action panel) */}
-          {isDraftActive && isMyPick && !autoDraftEnabled && (
-            <div className="panel">
-              <div className="panel-header" style={{ background: 'var(--accent-secondary)' }}>
-                <span>On The Clock</span>
-              </div>
-              <div className="panel-body text-center">
-                <p className="font-stat text-xs text-[var(--text-secondary)]">
-                  Select a player from the table to draft
-                </p>
-              </div>
-            </div>
-          )}
+        {/* Tabbed Sidebar */}
+        <div className="split-layout-sidebar">
+          {/* Tab strip */}
+          <div className="tab-strip">
+            {SIDEBAR_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setSidebarTab(tab.key)}
+                className={`tab-strip-item${sidebarTab === tab.key ? ' tab-strip-item--active' : ''}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          {/* Panel 2: My Roster */}
-          {myTeam && (
-            <div className="panel">
-              <div className="panel-header">
-                <span>My Roster</span>
-              </div>
+          {/* Tab content -- scrollable */}
+          <div style={{ maxHeight: 'calc(100vh - 16rem)', overflowY: 'auto' }}>
+            {/* Roster tab */}
+            {sidebarTab === 'roster' && myTeam && (
               <div className="panel-body">
                 <RosterPreviewPanel
                   picks={draftState?.picks ?? []}
@@ -285,35 +299,26 @@ export function DraftBoardPage() {
                   teamId={myTeam.id}
                 />
               </div>
-            </div>
-          )}
+            )}
+            {sidebarTab === 'roster' && !myTeam && (
+              <div className="panel-body">
+                <p className="font-stat text-xs text-[var(--text-tertiary)]">
+                  No team assigned yet.
+                </p>
+              </div>
+            )}
 
-          {/* Panel 3: Draft Feed */}
-          <div className="panel">
-            <div className="panel-header">
-              <span>Draft Feed</span>
-            </div>
-            <div className="panel-body p-0">
+            {/* Feed tab -- full vertical draft history */}
+            {sidebarTab === 'feed' && (
               <DraftTicker
                 picks={draftState?.picks ?? []}
                 currentPick={draftState?.currentPick ?? 0}
+                variant="vertical"
               />
-            </div>
-          </div>
+            )}
 
-          {/* Panel 4: Analysis (collapsible) */}
-          <div className="panel">
-            <div className="panel-header">
-              <span>Analysis</span>
-              <button
-                type="button"
-                className="panel-header-action"
-                onClick={() => setAnalysisExpanded((v) => !v)}
-              >
-                {analysisExpanded ? 'Collapse' : 'Expand'}
-              </button>
-            </div>
-            {analysisExpanded && (
+            {/* Analysis tab */}
+            {sidebarTab === 'analysis' && (
               <div className="panel-body">
                 <DraftReasoningPanel request={lastPickRequest} />
               </div>

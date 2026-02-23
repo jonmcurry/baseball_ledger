@@ -1,20 +1,63 @@
 /**
  * DraftTicker
  *
- * Heritage Editorial draft pick feed. Clean typographic list
- * with crimson accent for latest pick.
+ * Draft pick feed with two display modes:
+ * - "vertical" (default): Full scrollable list for sidebar tab
+ * - "horizontal": Compact chip strip for top ticker (ESPN Draft Train)
+ *
  * Feature-scoped sub-component. No store imports.
  */
 
+import { useEffect, useRef } from 'react';
 import type { DraftPickResult } from '@lib/types/draft';
 
 export interface DraftTickerProps {
   picks: readonly DraftPickResult[];
   currentPick: number;
+  variant?: 'vertical' | 'horizontal';
 }
 
-export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
-  // Group picks by round for display
+export function DraftTicker({ picks, currentPick, variant = 'vertical' }: DraftTickerProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll horizontal ticker to the latest pick
+  useEffect(() => {
+    if (variant === 'horizontal' && scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
+  }, [picks.length, variant]);
+
+  if (variant === 'horizontal') {
+    return (
+      <div
+        ref={scrollRef}
+        className="scoreboard-strip"
+        role="log"
+        aria-live="polite"
+        aria-label="Draft pick ticker"
+      >
+        {picks.length === 0 && (
+          <span className="font-stat text-xs text-[var(--text-on-dark-muted)]">
+            Waiting for first pick...
+          </span>
+        )}
+        {picks.map((pick) => (
+          <div
+            key={`${pick.round}-${pick.pick}`}
+            className="draft-ticker-chip ticker-entry"
+          >
+            <span className="font-bold text-[var(--text-on-dark-muted)]">
+              R{pick.round}.{pick.pick}
+            </span>
+            <span>{pick.playerName}</span>
+            <span className="text-[var(--text-on-dark-muted)]">{pick.position}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Vertical variant: full list for sidebar
   const reversedPicks = [...picks].reverse();
 
   return (
