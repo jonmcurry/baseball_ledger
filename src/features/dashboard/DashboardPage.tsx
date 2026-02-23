@@ -263,72 +263,31 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Main content grid */}
+      {/* Schedule / Playoffs */}
       {isInSeason && (
-        <div className="data-grid mt-gutter-lg">
-          {/* Schedule / Playoffs -- main column */}
-          <div className="panel">
-            <div className="panel-header">
-              {leagueStatus === 'playoffs' && playoffBracket ? (
-                <span>Playoffs</span>
-              ) : (
-                <span>Schedule</span>
-              )}
-            </div>
-            <div className="panel-body">
-              {leagueStatus === 'playoffs' && playoffBracket ? (
-                <PlayoffStatusPanel
-                  playoffBracket={playoffBracket}
-                  teams={teams}
-                  lastGameResult={lastPlayoffResult}
-                />
-              ) : (
-                <SeasonScheduleView
-                  schedule={schedule}
-                  teams={teams}
-                  currentDay={currentDay}
-                  onGameClick={(gameId) => navigate(`../game/${gameId}`)}
-                />
-              )}
-            </div>
+        <div className="panel mt-gutter-lg">
+          <div className="panel-header">
+            {leagueStatus === 'playoffs' && playoffBracket ? (
+              <span>Playoffs</span>
+            ) : (
+              <span>Schedule</span>
+            )}
           </div>
-
-          {/* Standings snapshot */}
-          <div className="panel">
-            <div className="panel-header">
-              <span>Standings</span>
-              <button
-                type="button"
-                className="panel-header-action"
-                onClick={() => navigate('../standings')}
-              >
-                View All
-              </button>
-            </div>
-            <div className="panel-body">
-              <p className="font-stat text-xs text-[var(--text-tertiary)]">
-                Day {currentDay} of 162
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate('../standings')}
-                className="mt-2 font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors"
-              >
-                Full Standings
-              </button>
-            </div>
-          </div>
-
-          {/* League quick links */}
-          <div className="panel">
-            <div className="panel-header">
-              <span>League</span>
-            </div>
-            <div className="panel-body space-y-1.5">
-              <button type="button" onClick={() => navigate('../standings')} className="block w-full text-left font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors">Standings</button>
-              <button type="button" onClick={() => navigate('../stats')} className="block w-full text-left font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors">Leaders</button>
-              <button type="button" onClick={() => navigate('../roster')} className="block w-full text-left font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors">Roster</button>
-            </div>
+          <div className="panel-body">
+            {leagueStatus === 'playoffs' && playoffBracket ? (
+              <PlayoffStatusPanel
+                playoffBracket={playoffBracket}
+                teams={teams}
+                lastGameResult={lastPlayoffResult}
+              />
+            ) : (
+              <SeasonScheduleView
+                schedule={schedule}
+                teams={teams}
+                currentDay={currentDay}
+                onGameClick={(gameId) => navigate(`../game/${gameId}`)}
+              />
+            )}
           </div>
         </div>
       )}
