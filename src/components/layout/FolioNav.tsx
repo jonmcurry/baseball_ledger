@@ -59,7 +59,7 @@ export function FolioNav({
   };
 
   return (
-    <div className="top-nav-links">
+    <>
       {visibleEntries.map((entry) => {
         const active = isActive(entry.route);
         return (
@@ -67,14 +67,14 @@ export function FolioNav({
             key={entry.route}
             type="button"
             onClick={() => onNavigate(entry.route)}
-            className={`top-nav-item${active ? ' top-nav-item--active' : ''}`}
+            className={`app-nav-tab${active ? ' app-nav-tab--active' : ''}`}
             aria-current={active ? 'page' : undefined}
           >
             {entry.label}
           </button>
         );
       })}
-    </div>
+    </>
   );
 }
 

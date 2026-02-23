@@ -75,8 +75,8 @@ export function ArchivePage() {
 
   return (
     <div data-era={era}>
-      <div className="page-header">
-        <h2 className="page-header-title">Past Seasons</h2>
+      <div className="toolbar">
+        <h2 className="toolbar-label">Past Seasons</h2>
       </div>
 
       <StampAnimation isVisible={seasonJustCompleted} />
@@ -93,11 +93,11 @@ export function ArchivePage() {
       {detailLoading && <LoadingLedger message="Loading season detail..." />}
 
       {detail && !detailLoading && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-gutter">
           <button
             type="button"
             onClick={handleBack}
-            className="text-xs text-ballpark hover:underline"
+            className="toolbar-btn"
           >
             Back to Archive
           </button>

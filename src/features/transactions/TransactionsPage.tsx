@@ -2,7 +2,7 @@
  * TransactionsPage
  *
  * Player transactions, trades, and waiver wire.
- * Tab layout: Add/Drop, Trade, History.
+ * Toolbar with heading + inline tab buttons.
  * REQ-RST-005: Trade between two teams with player selection.
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
@@ -219,24 +219,25 @@ export function TransactionsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-header-title">Transactions</h2>
+      {/* Toolbar: heading + inline tabs */}
+      <div className="toolbar">
+        <h2 className="toolbar-label">Transactions</h2>
+        <div className="toolbar-spacer" />
+        <div className="toolbar-group">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`toolbar-btn${activeTab === tab.key ? ' toolbar-btn--active' : ''}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
-
-      <div className="tab-strip mb-gutter-lg">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`tab-strip-item${activeTab === tab.key ? ' tab-strip-item--active' : ''}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
 
       {activeTab === 'add-drop' && (
         <AddDropForm

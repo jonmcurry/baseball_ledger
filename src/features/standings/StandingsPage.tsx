@@ -1,7 +1,8 @@
 /**
  * StandingsPage
  *
- * Full standings view with division standings.
+ * Full standings view with division groupings.
+ * Toolbar header with title, full-width standings table.
  */
 
 import { useLeague } from '@hooks/useLeague';
@@ -20,8 +21,8 @@ export function StandingsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-header-title">Division Races</h2>
+      <div className="toolbar">
+        <h2 className="toolbar-label">Division Races</h2>
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}

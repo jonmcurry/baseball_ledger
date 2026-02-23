@@ -1,8 +1,9 @@
 /**
  * GameViewerPage
  *
- * Play-by-play game viewer with line score and box score.
- * Parses gameId from route params. Shows game result.
+ * ESPN Broadcast-style game viewer: dark scoreboard header,
+ * replay controls toolbar, tabbed content (Box Score, Play-by-Play,
+ * Commentary, Decisions).
  *
  * Data sources (priority order):
  * 1. In-memory simulation store (current session results)
@@ -31,7 +32,7 @@ import type { BoxScore, BattingLine, PitchingLine, PlayByPlayEntry } from '@lib/
 import { apiGet } from '@services/api-client';
 import { usePageTitle } from '@hooks/usePageTitle';
 
-type ViewTab = 'play-by-play' | 'box-score';
+type ViewTab = 'box-score' | 'play-by-play' | 'commentary' | 'decisions';
 
 /** Milliseconds between plays at each speed. */
 const SPEED_MS: Record<ReplaySpeed, number> = {
@@ -192,8 +193,6 @@ export function GameViewerPage() {
         ? `${dbGame.awayTeam.city} ${dbGame.awayTeam.name}`
         : teamNameMap.get(dbGame.awayTeamId) ?? 'Away';
 
-      // Build playerNames from stored batting/pitching lines (available when
-      // lines include playerName field from simulation)
       const names: Record<string, string> = {};
       for (const bl of dbGame.battingLines ?? []) {
         if (bl.playerName) names[bl.playerId] = bl.playerName;
@@ -288,7 +287,6 @@ export function GameViewerPage() {
   const togglePlayPause = useCallback(() => {
     if (!replayActive) return;
     if (replayIndex >= (gameData?.playByPlay.length ?? 0)) {
-      // Restart if at end
       setReplayIndex(0);
       setIsPlaying(true);
     } else {
@@ -343,8 +341,8 @@ export function GameViewerPage() {
 
   if (!gameId) {
     return (
-      <div className="space-y-gutter-lg">
-        <h2 className="pennant-header">Game Viewer</h2>
+      <div>
+        <h2 className="toolbar-label mb-gutter">Game Viewer</h2>
         <ErrorBanner severity="warning" message="No game ID provided." />
       </div>
     );
@@ -356,14 +354,18 @@ export function GameViewerPage() {
 
   if (!gameData) {
     return (
-      <div className="space-y-gutter-lg">
-        <h2 className="pennant-header">Game Viewer</h2>
+      <div>
+        <h2 className="toolbar-label mb-gutter">Game Viewer</h2>
         {dbError ? (
           <ErrorBanner severity="error" message={dbError} />
         ) : (
-          <div className="vintage-card">
-            <p className="font-headline text-sm font-bold uppercase text-[var(--accent-primary)]">Game Not Found</p>
-            <p className="font-stat text-xs text-[var(--color-muted)]">Game {gameId} is not available.</p>
+          <div className="panel">
+            <div className="panel-header">
+              <span>Game Not Found</span>
+            </div>
+            <div className="panel-body">
+              <p className="font-stat text-xs text-[var(--text-tertiary)]">Game {gameId} is not available.</p>
+            </div>
           </div>
         )}
       </div>
@@ -375,36 +377,66 @@ export function GameViewerPage() {
     || gameData.battingLines.length > 0
     || gameData.pitchingLines.length > 0;
 
+  // Available tabs based on data
+  const tabs: { key: ViewTab; label: string; available: boolean }[] = [
+    { key: 'box-score', label: 'Box Score', available: hasDetailedData },
+    { key: 'play-by-play', label: 'Play-by-Play', available: hasDetailedData && gameData.playByPlay.length > 0 },
+    { key: 'commentary', label: 'Commentary', available: gameData.playByPlay.length > 0 },
+    { key: 'decisions', label: 'Decisions', available: detectedDecisions.length > 0 },
+  ];
+
   return (
-    <div className="space-y-gutter-lg">
-      {/* Hero score display */}
+    <div>
+      {/* Broadcast scoreboard header -- dark navy */}
       <div className="hero-score">
         <div className="hero-score-team">
           <span className="hero-score-team-name">{gameData.awayTeamName}</span>
           <span className="hero-score-number">{gameData.awayScore}</span>
         </div>
-        <span className="hero-score-separator">-</span>
+        <div className="flex flex-col items-center">
+          <span className="hero-score-separator">-</span>
+          <span className="broadcast-badge mt-1">
+            {replayActive ? `${currentGameState?.halfInning === 'top' ? 'Top' : 'Bot'} ${currentGameState?.inning ?? ''}` : 'Final'}
+          </span>
+        </div>
         <div className="hero-score-team">
           <span className="hero-score-number">{gameData.homeScore}</span>
           <span className="hero-score-team-name">{gameData.homeTeamName}</span>
         </div>
       </div>
-      <p className="hero-score-detail">Final{gameData.innings !== 9 ? ` (${gameData.innings})` : ''}</p>
+      {!replayActive && gameData.innings !== 9 && (
+        <p className="hero-score-detail">({gameData.innings} innings)</p>
+      )}
 
-      {currentGameState && (
+      {/* Game state: visible during replay or as final summary */}
+      {currentGameState && replayActive ? (
         <GameStatePanel
           gameState={currentGameState}
           homeTeam={gameData.homeTeamName}
           awayTeam={gameData.awayTeamName}
         />
+      ) : !replayActive && (
+        <GameStatePanel
+          gameState={{
+            inning: gameData.innings || 9,
+            halfInning: 'bottom',
+            outs: 3,
+            bases: { first: null, second: null, third: null },
+            homeScore: gameData.homeScore,
+            awayScore: gameData.awayScore,
+            isComplete: true,
+          }}
+          homeTeam={gameData.homeTeamName}
+          awayTeam={gameData.awayTeamName}
+        />
       )}
 
-      {/* Worker simulation status (only when using in-memory store result) */}
+      {/* Worker simulation status */}
       {storeResult && workerSim.status === 'running' && (
-        <div className="vintage-card">
-          <p className="font-stat text-xs text-[var(--color-muted)]">Simulating replay...</p>
-          <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-[var(--border-default)]">
-            <div className="h-full w-1/2 animate-pulse rounded bg-[var(--accent-primary)]" />
+        <div className="toolbar justify-center">
+          <span className="font-stat text-xs text-[var(--text-tertiary)]">Simulating replay...</span>
+          <div className="h-1 w-32 overflow-hidden bg-[var(--surface-overlay)]">
+            <div className="h-full w-1/2 animate-pulse bg-[var(--accent-primary)]" />
           </div>
         </div>
       )}
@@ -413,12 +445,12 @@ export function GameViewerPage() {
         <ErrorBanner severity="error" message={workerSim.error} />
       )}
 
-      {/* Replay button */}
+      {/* Replay controls toolbar */}
       {hasDetailedData && gameData.playByPlay.length > 0 && !replayActive && (
-        <div className="text-center">
+        <div className="toolbar justify-center">
           <button
             type="button"
-            className="rounded-card border border-sandstone bg-old-lace px-4 py-2 font-headline text-sm uppercase tracking-wider text-ballpark shadow-card hover:bg-sandstone/30 transition-colors"
+            className="toolbar-btn"
             onClick={startReplay}
           >
             Watch Replay
@@ -426,7 +458,6 @@ export function GameViewerPage() {
         </div>
       )}
 
-      {/* Replay controls */}
       {replayActive && (
         <ReplayControls
           currentPlay={replayIndex}
@@ -442,60 +473,41 @@ export function GameViewerPage() {
 
       {/* Tab navigation */}
       {hasDetailedData && (
-        <>
-          <div className="tab-strip" role="tablist">
+        <div className="tab-strip" role="tablist">
+          {tabs.filter((t) => t.available).map((tab) => (
             <button
+              key={tab.key}
               type="button"
               role="tab"
-              aria-selected={activeTab === 'box-score'}
-              className={`tab-strip-item${activeTab === 'box-score' ? ' tab-strip-item--active' : ''}`}
-              onClick={() => setActiveTab('box-score')}
+              aria-selected={activeTab === tab.key}
+              className={`tab-strip-item${activeTab === tab.key ? ' tab-strip-item--active' : ''}`}
+              onClick={() => setActiveTab(tab.key)}
             >
-              Box Score
+              {tab.label}
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'play-by-play'}
-              className={`tab-strip-item${activeTab === 'play-by-play' ? ' tab-strip-item--active' : ''}`}
-              onClick={() => setActiveTab('play-by-play')}
-            >
-              Play-by-Play
-            </button>
-          </div>
-
-          {activeTab === 'box-score' && (
-            <BoxScoreDisplay
-              boxScore={gameData.boxScore}
-              battingLines={gameData.battingLines}
-              pitchingLines={gameData.pitchingLines}
-              homeTeam={gameData.homeTeamName}
-              awayTeam={gameData.awayTeamName}
-            />
-          )}
-
-          {activeTab === 'play-by-play' && (
-            <PlayByPlayFeed
-              plays={visiblePlays}
-              teams={teamNameMap}
-            />
-          )}
-        </>
-      )}
-
-      {!hasDetailedData && (
-        <div className="vintage-card text-center">
-          <p className="font-stat text-sm text-[var(--color-muted)]">
-            Detailed game data is not yet available.
-          </p>
+          ))}
         </div>
       )}
 
-      {/* Game Summary */}
-      <GameSummaryPanel request={gameSummaryRequest} />
+      {/* Tab content */}
+      {hasDetailedData && activeTab === 'box-score' && (
+        <BoxScoreDisplay
+          boxScore={gameData.boxScore}
+          battingLines={gameData.battingLines}
+          pitchingLines={gameData.pitchingLines}
+          homeTeam={gameData.homeTeamName}
+          awayTeam={gameData.awayTeamName}
+        />
+      )}
 
-      {/* AI Commentary */}
-      {gameData.playByPlay.length > 0 && (
+      {hasDetailedData && activeTab === 'play-by-play' && (
+        <PlayByPlayFeed
+          plays={visiblePlays}
+          teams={teamNameMap}
+        />
+      )}
+
+      {activeTab === 'commentary' && gameData.playByPlay.length > 0 && (
         <CommentarySection
           plays={gameData.playByPlay.slice(-10)}
           playerNames={gameData.playerNames}
@@ -503,14 +515,30 @@ export function GameViewerPage() {
         />
       )}
 
-      {/* Manager Decisions */}
-      {detectedDecisions.length > 0 && (
+      {activeTab === 'decisions' && detectedDecisions.length > 0 && (
         <ManagerDecisionsPanel
           decisions={detectedDecisions}
           managerStyle="balanced"
           homeTeamName={gameData.homeTeamName}
           awayTeamName={gameData.awayTeamName}
         />
+      )}
+
+      {!hasDetailedData && (
+        <div className="panel mt-gutter">
+          <div className="panel-body text-center">
+            <p className="font-stat text-sm text-[var(--text-tertiary)]">
+              Detailed game data is not yet available.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Game Summary */}
+      {gameSummaryRequest && (
+        <div className="mt-gutter">
+          <GameSummaryPanel request={gameSummaryRequest} />
+        </div>
       )}
     </div>
   );

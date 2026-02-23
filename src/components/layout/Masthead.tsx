@@ -1,8 +1,9 @@
 /**
  * Masthead
  *
- * Top navigation bar integrating identity + navigation + user controls.
- * Single sticky bar on desktop; nav drops below on mobile.
+ * Two-row navigation: dark navy identity bar + light sepia tab row.
+ * Row 1 (app-nav): Logo, league name, season info, user controls.
+ * Row 2 (app-nav-tabs): Contextual page tabs from FolioNav.
  *
  * Layer 6: Presentational component. No store or hook imports.
  */
@@ -24,50 +25,50 @@ export function Masthead({
   onLogout,
   navigation,
 }: MastheadProps) {
+  const initial = userName.charAt(0).toUpperCase();
+
   return (
-    <header role="banner" className="z-30 bg-[var(--surface-base)] sticky top-0">
-      <div className="top-nav-bar">
-        {/* Left: logotype + league name */}
+    <header role="banner" className="z-30 sticky top-0">
+      {/* Row 1: Dark navy identity bar */}
+      <div className="app-nav">
+        {/* Left: logotype + league */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <h1 className="masthead-logotype whitespace-nowrap">Baseball Ledger</h1>
+          <h1 className="app-nav-logo whitespace-nowrap">Baseball Ledger</h1>
           {leagueName && (
             <>
-              <span className="text-[var(--border-default)] text-[10px]" aria-hidden="true">/</span>
-              <span className="masthead-subtitle max-md:hidden">{leagueName}</span>
+              <span className="text-[var(--text-on-dark-muted)] text-[10px]" aria-hidden="true">/</span>
+              <span className="app-nav-context max-md:hidden">{leagueName}</span>
             </>
           )}
         </div>
 
-        {/* Center: Navigation links (hidden on mobile, shown below) */}
-        <nav aria-label="Main navigation" className="flex-1 flex justify-center max-md:hidden">
-          {navigation}
-        </nav>
-
-        {/* Right: season info + user controls */}
+        {/* Right: season info + user avatar + logout */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {seasonInfo && (
-            <span className="dateline text-[10px] max-lg:hidden">{seasonInfo}</span>
+            <span className="app-nav-context max-lg:hidden">{seasonInfo}</span>
           )}
-          <span className="font-body text-[10px] text-[var(--text-tertiary)] max-md:hidden">
-            {userName}
-          </span>
+          <div
+            className="flex items-center justify-center w-6 h-6 bg-[var(--surface-dark-hover)] text-[var(--text-on-dark)] font-stat text-[10px] font-bold max-md:hidden"
+            title={userName}
+            aria-hidden="true"
+          >
+            {initial}
+          </div>
           <button
             type="button"
             onClick={onLogout}
             aria-label="Log out"
-            className="font-body text-[10px] tracking-wider text-[var(--text-tertiary)] hover:text-[var(--accent-secondary)] transition-colors"
+            className="app-nav-user"
           >
             Log Out
           </button>
         </div>
       </div>
 
-      {/* Mobile: nav links drop below identity bar */}
-      <div className="md:hidden overflow-x-auto border-b border-[var(--border-default)] bg-[var(--surface-base)]">
-        <nav aria-label="Main navigation" className="flex px-gutter">
-          {navigation}
-        </nav>
-      </div>
+      {/* Row 2: Light sepia tab navigation */}
+      <nav aria-label="Main navigation" className="app-nav-tabs">
+        {navigation}
+      </nav>
     </header>
   );
 }

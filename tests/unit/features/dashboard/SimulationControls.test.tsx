@@ -101,20 +101,19 @@ describe('SimulationControls', () => {
     expect(screen.queryByText('Sim Season')).not.toBeInTheDocument();
   });
 
-  it('shows playoff mode message during playoffs', () => {
+  it('shows only Sim Day during playoffs', () => {
     render(
       <SimulationControls isRunning={false} progressPct={0} onSimulate={vi.fn()} leagueStatus="playoffs" />,
     );
-    expect(screen.getByText(/Playoff mode/)).toBeInTheDocument();
+    expect(screen.getByText('Sim Day')).toBeInTheDocument();
+    expect(screen.queryByText('Full Season')).not.toBeInTheDocument();
   });
 
-  it('button container has grid grid-cols-2 for 2x2 mobile layout (REQ-COMP-010)', () => {
+  it('button container uses toolbar-group layout (REQ-COMP-010)', () => {
     render(
       <SimulationControls isRunning={false} progressPct={0} onSimulate={vi.fn()} />,
     );
-    // getByText returns the label span; parent is the button; grandparent is the grid container
     const buttonContainer = screen.getByText('Sim Day').closest('button')?.parentElement;
-    expect(buttonContainer?.className).toContain('grid');
-    expect(buttonContainer?.className).toContain('grid-cols-2');
+    expect(buttonContainer?.className).toContain('toolbar-group');
   });
 });

@@ -40,60 +40,79 @@ export function PlayoffsPage() {
   const hasBracket = playoffBracket !== null;
 
   return (
-    <div className="space-y-gutter-lg">
-      <div className="page-header">
-        <h2 className="page-header-title">Playoffs</h2>
+    <div>
+      <div className="broadcast-bar">
+        <h2 className="broadcast-team">Playoffs</h2>
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
 
       {!isPlayoffActive && (
-        <div className="rounded-card border border-sandstone bg-old-lace px-gutter py-3">
-          <p className="font-headline text-sm font-bold text-ink">Playoffs Not Started</p>
-          <p className="text-xs text-muted">The regular season must be completed first.</p>
+        <div className="panel mt-gutter">
+          <div className="panel-header">
+            <span>Playoff Status</span>
+          </div>
+          <div className="panel-body">
+            <p className="font-headline text-sm font-bold text-[var(--text-primary)]">Playoffs Not Started</p>
+            <p className="text-xs text-[var(--text-secondary)]">The regular season must be completed first.</p>
+          </div>
         </div>
       )}
 
       {isPlayoffActive && playoffBracket?.worldSeriesChampionId && (
-        <div className="rounded-card border-2 border-ballpark bg-ballpark/10 px-gutter py-4 text-center">
-          <p className="text-xs font-medium text-muted">World Series Champion</p>
-          <p className="font-headline text-xl font-bold text-ballpark">
-            {getTeamName(playoffBracket.worldSeriesChampionId)}
-          </p>
+        <div className="broadcast-bar mt-gutter" style={{ background: 'var(--accent-secondary)' }}>
+          <div className="text-center">
+            <p className="broadcast-label">World Series Champion</p>
+            <p className="broadcast-team text-type-5">
+              {getTeamName(playoffBracket.worldSeriesChampionId)}
+            </p>
+          </div>
         </div>
       )}
 
       {isPlayoffActive && hasBracket && (
-        <div className="grid gap-gutter lg:grid-cols-12">
+        <div className="grid gap-gutter lg:grid-cols-12 mt-gutter">
           <div className="lg:col-span-5">
-            <h3 className="mb-2 font-headline text-sm font-bold text-ballpark">
-              American League
-            </h3>
-            <PlayoffBracketView bracket={playoffBracket.al} teams={teamNameMap} />
+            <div className="panel">
+              <div className="panel-header">
+                <span>American League</span>
+              </div>
+              <div className="panel-body">
+                <PlayoffBracketView bracket={playoffBracket.al} teams={teamNameMap} />
+              </div>
+            </div>
           </div>
 
           <div className="lg:col-span-2">
-            <h3 className="mb-2 font-headline text-sm font-bold text-ballpark">
-              World Series
-            </h3>
-            <SeriesCard
-              series={playoffBracket.worldSeries}
-              homeTeam={getTeamName(playoffBracket.worldSeries.higherSeed?.teamId)}
-              awayTeam={getTeamName(playoffBracket.worldSeries.lowerSeed?.teamId)}
-            />
+            <div className="panel">
+              <div className="panel-header">
+                <span>World Series</span>
+              </div>
+              <div className="panel-body">
+                <SeriesCard
+                  series={playoffBracket.worldSeries}
+                  homeTeam={getTeamName(playoffBracket.worldSeries.higherSeed?.teamId)}
+                  awayTeam={getTeamName(playoffBracket.worldSeries.lowerSeed?.teamId)}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="lg:col-span-5">
-            <h3 className="mb-2 font-headline text-sm font-bold text-ballpark">
-              National League
-            </h3>
-            <PlayoffBracketView bracket={playoffBracket.nl} teams={teamNameMap} />
+            <div className="panel">
+              <div className="panel-header">
+                <span>National League</span>
+              </div>
+              <div className="panel-body">
+                <PlayoffBracketView bracket={playoffBracket.nl} teams={teamNameMap} />
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {isPlayoffActive && !hasBracket && (
-        <p className="text-xs text-muted">Playoff bracket has not been set.</p>
+        <p className="text-xs text-[var(--text-secondary)] mt-gutter">Playoff bracket has not been set.</p>
       )}
     </div>
   );

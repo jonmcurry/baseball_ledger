@@ -104,19 +104,21 @@ export function LeagueConfigPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-gutter-lg">
-      <div className="page-header">
-        <h2 className="page-header-title">{isExistingLeague ? 'League Settings' : 'Create a League'}</h2>
+    <div className="mx-auto max-w-lg">
+      <div className="toolbar">
+        <h2 className="toolbar-label">{isExistingLeague ? 'League Settings' : 'Create a League'}</h2>
       </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
 
       {(createdInviteKey || (isExistingLeague && league.inviteKey)) && (
-        <InviteKeyDisplay inviteKey={(createdInviteKey ?? league!.inviteKey)!} />
+        <div className="mt-gutter">
+          <InviteKeyDisplay inviteKey={(createdInviteKey ?? league!.inviteKey)!} />
+        </div>
       )}
 
       {isSubmitting ? (
-        <div className="space-y-6 py-8" role="status" aria-live="polite">
+        <div className="space-y-6 py-8 mt-gutter" role="status" aria-live="polite">
           {/* Status label */}
           <p className="text-center font-stat text-sm text-[var(--text-secondary)]">
             {getStageLabel(progress)}
@@ -124,9 +126,9 @@ export function LeagueConfigPage() {
 
           {/* Progress bar */}
           <div className="mx-auto max-w-sm">
-            <div className="h-3 overflow-hidden rounded-full bg-[var(--surface-overlay)] shadow-inner">
+            <div className="h-3 overflow-hidden bg-[var(--surface-overlay)] shadow-inner">
               <div
-                className="h-full rounded-full bg-[var(--accent-primary)] transition-all duration-500 ease-out"
+                className="h-full bg-[var(--accent-primary)] transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
                 role="progressbar"
                 aria-valuenow={progress}
@@ -157,7 +159,9 @@ export function LeagueConfigPage() {
           </div>
         </div>
       ) : (
-        <LeagueConfigForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+        <div className="mt-gutter">
+          <LeagueConfigForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+        </div>
       )}
 
       {/* Danger zone: delete league (REQ-LGE-010) -- commissioner only */}
