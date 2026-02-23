@@ -74,6 +74,7 @@ export interface GamePitcherStats {
 export interface BattingLine {
   playerId: string;
   playerName?: string;
+  position?: Position;
   teamSide?: 'home' | 'away';
   AB: number;
   R: number;

@@ -239,10 +239,11 @@ function getOrCreateBattingLine(
   playerId: string,
   playerName?: string,
   teamSide?: 'home' | 'away',
+  position?: Position,
 ): BattingLine {
   let line = tracker.battingLines.get(playerId);
   if (!line) {
-    line = buildEmptyBattingLine(playerId, playerName, teamSide);
+    line = buildEmptyBattingLine(playerId, playerName, teamSide, position);
     tracker.battingLines.set(playerId, line);
   }
   return line;
@@ -490,7 +491,7 @@ export function runGame(config: RunGameConfig): GameResult {
 
       // 3. Intentional walk check
       if (evaluateIntentionalWalkDecision(fieldingProfile, situation, rng)) {
-        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide);
+        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide, batterSlot.position);
         battingLine.BB++;
         const pitchingLine = getOrCreatePitchingLine(tracker, currentPitcher.playerId, false, fieldingSide);
         pitchingLine.BB++;
@@ -534,7 +535,7 @@ export function runGame(config: RunGameConfig): GameResult {
       // 4. Bunt check (batting team manager)
       if (evaluateBuntDecision(battingProfile, situation, rng)) {
         const buntResult = resolveBunt(rng, batterCard.speed, 0);
-        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide);
+        const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide, batterSlot.position);
         const pitchingLine = getOrCreatePitchingLine(tracker, currentPitcher.playerId, false, fieldingSide);
         pitchingLine.BF++;
 
@@ -689,7 +690,7 @@ export function runGame(config: RunGameConfig): GameResult {
       const resolution = resolveOutcome(outcome, state.bases, state.outs, batterSlot.playerId);
 
       // Update batting line
-      const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide);
+      const battingLine = getOrCreateBattingLine(tracker, batterSlot.playerId, batterSlot.playerName, battingSide, batterSlot.position);
       if (!resolution.isNoPA) {
         if (!isWalkOutcome(outcome) && !resolution.sacrificeFly) {
           battingLine.AB++;

@@ -334,12 +334,53 @@ async function handlePlayer(req: VercelRequest, res: VercelResponse, requestId: 
   ok(res, result, requestId);
 }
 
+async function handlePlayers(req: VercelRequest, res: VercelResponse, requestId: string) {
+  const leagueId = req.query.id as string;
+  const playerIdsRaw = req.query.playerIds as string | undefined;
+
+  if (!playerIdsRaw) {
+    res.status(400).json({
+      error: {
+        code: 'MISSING_PLAYER_IDS',
+        message: 'playerIds query parameter is required for type=players',
+      },
+    });
+    return;
+  }
+
+  const playerIds = playerIdsRaw.split(',').filter(Boolean);
+  if (playerIds.length === 0 || playerIds.length > 50) {
+    res.status(400).json({
+      error: {
+        code: 'INVALID_PLAYER_IDS',
+        message: 'playerIds must contain 1-50 comma-separated player IDs',
+      },
+    });
+    return;
+  }
+
+  const supabase = createServerClient();
+
+  const { data, error } = await supabase
+    .from('season_stats')
+    .select('player_id, team_id, season_year, batting_stats, pitching_stats')
+    .eq('league_id', leagueId)
+    .in('player_id', playerIds);
+
+  if (error) {
+    throw { category: 'DATA', code: 'QUERY_FAILED', message: error.message };
+  }
+
+  ok(res, snakeToCamel(data ?? []), requestId);
+}
+
 const typeHandlers: Record<string, (req: VercelRequest, res: VercelResponse, requestId: string) => Promise<void>> = {
   batting: handleBatting,
   pitching: handlePitching,
   team: handleTeam,
   standings: handleStandings,
   player: handlePlayer,
+  players: handlePlayers,
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

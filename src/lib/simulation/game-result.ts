@@ -12,6 +12,7 @@
  */
 
 import type { BoxScore, BattingLine, PitchingLine } from '../types/game';
+import type { Position } from '../types/player';
 
 /** Minimum innings pitched for a starter to qualify for a win */
 const STARTER_WIN_MIN_IP = 5;
@@ -159,10 +160,12 @@ export function buildEmptyBattingLine(
   playerId: string,
   playerName?: string,
   teamSide?: 'home' | 'away',
+  position?: Position,
 ): BattingLine {
   return {
     playerId,
     playerName,
+    position,
     teamSide,
     AB: 0,
     R: 0,

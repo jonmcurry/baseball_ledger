@@ -22,6 +22,7 @@ import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { GameStatePanel } from './GameStatePanel';
 import { PlayByPlayFeed } from './PlayByPlayFeed';
 import { BoxScoreDisplay } from './BoxScoreDisplay';
+import type { SeasonStatsMap } from './BoxScoreDisplay';
 import { CommentarySection } from './CommentarySection';
 import { GameSummaryPanel } from './GameSummaryPanel';
 import { ManagerDecisionsPanel } from './ManagerDecisionsPanel';
@@ -30,6 +31,7 @@ import { detectDecisions } from '@lib/ai/decision-detector';
 import type { GameSummaryRequest } from '@lib/types/ai';
 import type { BoxScore, BattingLine, PitchingLine, PlayByPlayEntry } from '@lib/types/game';
 import { apiGet } from '@services/api-client';
+import { fetchBatchPlayerSeasonStats } from '@services/stats-service';
 import { usePageTitle } from '@hooks/usePageTitle';
 
 type ViewTab = 'box-score' | 'play-by-play' | 'commentary' | 'decisions';
@@ -222,6 +224,49 @@ export function GameViewerPage() {
 
     return null;
   }, [storeResult, workerSim.result, dbGame, teamNameMap]);
+
+  // --- Season stats for AVG/OBP/SLG columns ---
+  const [seasonStats, setSeasonStats] = useState<SeasonStatsMap>({});
+
+  useEffect(() => {
+    if (!leagueId || !gameData) return;
+
+    const playerIds = [
+      ...gameData.battingLines.map((l) => l.playerId),
+      ...gameData.pitchingLines.map((l) => l.playerId),
+    ];
+    const uniqueIds = [...new Set(playerIds)];
+    if (uniqueIds.length === 0) return;
+
+    let cancelled = false;
+    fetchBatchPlayerSeasonStats(leagueId, uniqueIds)
+      .then((stats) => {
+        if (cancelled) return;
+        const map: SeasonStatsMap = {};
+        for (const s of stats) {
+          if (s.battingStats) {
+            map[s.playerId] = {
+              batting: {
+                AB: s.battingStats.AB,
+                H: s.battingStats.H,
+                doubles: s.battingStats.doubles,
+                triples: s.battingStats.triples,
+                HR: s.battingStats.HR,
+                BB: s.battingStats.BB,
+                HBP: s.battingStats.HBP,
+                SF: s.battingStats.SF,
+              },
+            };
+          }
+        }
+        setSeasonStats(map);
+      })
+      .catch(() => {
+        // Season stats are optional; box score still renders with per-game rates
+      });
+
+    return () => { cancelled = true; };
+  }, [leagueId, gameData]);
 
   // --- Replay auto-advance timer ---
   useEffect(() => {
@@ -498,6 +543,7 @@ export function GameViewerPage() {
           homeTeam={gameData.homeTeamName}
           awayTeam={gameData.awayTeamName}
           playByPlay={gameData.playByPlay}
+          seasonStats={seasonStats}
         />
       )}
 

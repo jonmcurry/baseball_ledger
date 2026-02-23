@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-22 - ESPN-style box score tables with season stats
+
+Reformatted batting and pitching box score tables to match ESPN's game summary
+layout. Added batch season stats API for cumulative rate stats.
+
+Batting table: Hitters (name + position) | AB | R | H | RBI | HR | BB | K | AVG | OBP | SLG
+Pitching table: Pitchers (name + inline decision) | IP | H | R | ER | BB | K | HR | ERA
+Both tables include TEAM totals row. Tables now stack vertically for width.
+
+- Added `position?: Position` to BattingLine type, threaded through game engine
+- Added `type=players` batch handler to stats API (comma-separated playerIds, max 50)
+- Added `fetchBatchPlayerSeasonStats` to stats-service
+- AVG/OBP/SLG are season cumulative (including current game); counting stats per-game
+- ERA computed per-game; decisions shown inline with pitcher name
+- Graceful degradation: box score renders without season stats if fetch fails
+
+Files: game.ts, game-result.ts, game-runner.ts, api/leagues/[id]/stats.ts,
+stats-service.ts, BoxScoreDisplay.tsx, GameViewerPage.tsx.
+TypeScript clean, 828 tests passed (551 simulation + 226 component + 51 game-viewer).
+
 ## 2026-02-22 - Add ESPN-style box score detail sections
 
 Added BATTING, BASERUNNING, and FIELDING summary sections below each team's

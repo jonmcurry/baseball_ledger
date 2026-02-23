@@ -4,7 +4,7 @@
  * Full box score with line score, batting lines, and pitching lines.
  * Splits batting and pitching by team (away/home) when teamSide data
  * is available. Falls back to combined view for legacy game data.
- * Includes ESPN-style detail sections (BATTING, BASERUNNING, FIELDING).
+ * ESPN-style column layout with TEAM totals rows and detail sections.
  * Composes LineScore component.
  * Feature-scoped sub-component. No store imports.
  */
@@ -14,6 +14,24 @@ import { LineScore } from '@components/baseball/LineScore';
 import type { InningScore, LineScoreTotals } from '@components/baseball/LineScore';
 import type { BoxScore, BattingLine, PitchingLine, PlayByPlayEntry, BaseState } from '@lib/types/game';
 import { OutcomeCategory } from '@lib/types/game';
+import { computeBA, computeOBP, computeSLG, computeERA, addIP } from '@lib/stats/derived';
+
+// ---- Season stats types ----
+
+export interface SeasonBattingSnapshot {
+  AB: number;
+  H: number;
+  doubles: number;
+  triples: number;
+  HR: number;
+  BB: number;
+  HBP: number;
+  SF: number;
+}
+
+export interface SeasonStatsMap {
+  [playerId: string]: { batting?: SeasonBattingSnapshot };
+}
 
 export interface BoxScoreDisplayProps {
   readonly boxScore: BoxScore | null;
@@ -22,74 +40,201 @@ export interface BoxScoreDisplayProps {
   readonly homeTeam: string;
   readonly awayTeam: string;
   readonly playByPlay?: readonly PlayByPlayEntry[];
+  readonly seasonStats?: SeasonStatsMap;
 }
 
-function BattingTable({ lines, label }: { lines: readonly BattingLine[]; label: string }) {
+// ---- Rate stat formatting ----
+
+/** Format a rate stat as .XXX (strip leading zero when < 1). */
+function formatRate(value: number): string {
+  const str = value.toFixed(3);
+  return value < 1 && value >= 0 ? str.replace(/^0/, '') : str;
+}
+
+/** Compute cumulative AVG/OBP/SLG from season snapshot + this game's line. */
+function cumulativeRates(
+  game: BattingLine,
+  season?: SeasonBattingSnapshot,
+) {
+  const ab = (season?.AB ?? 0) + game.AB;
+  const h = (season?.H ?? 0) + game.H;
+  const doubles = (season?.doubles ?? 0) + game.doubles;
+  const triples = (season?.triples ?? 0) + game.triples;
+  const hr = (season?.HR ?? 0) + game.HR;
+  const bb = (season?.BB ?? 0) + game.BB;
+  const hbp = (season?.HBP ?? 0) + game.HBP;
+  const sf = (season?.SF ?? 0) + game.SF;
+  return {
+    avg: computeBA(h, ab),
+    obp: computeOBP(h, bb, hbp, ab, sf),
+    slg: computeSLG(h, doubles, triples, hr, ab),
+  };
+}
+
+// ---- Table sub-components ----
+
+const TH = 'py-0.5 text-center font-medium';
+const TD = 'py-0.5 text-center';
+
+function BattingTable({
+  lines,
+  label,
+  seasonStats,
+}: {
+  lines: readonly BattingLine[];
+  label: string;
+  seasonStats?: SeasonStatsMap;
+}) {
+  const teamTotals = useMemo(() => ({
+    AB: lines.reduce((s, l) => s + l.AB, 0),
+    R: lines.reduce((s, l) => s + l.R, 0),
+    H: lines.reduce((s, l) => s + l.H, 0),
+    RBI: lines.reduce((s, l) => s + l.RBI, 0),
+    HR: lines.reduce((s, l) => s + l.HR, 0),
+    BB: lines.reduce((s, l) => s + l.BB, 0),
+    K: lines.reduce((s, l) => s + l.SO, 0),
+  }), [lines]);
+
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <table className="w-full font-stat text-xs" role="table">
-        <thead>
-          <tr className="border-b border-sandstone text-muted">
-            <th className="py-0.5 text-left font-medium">Player</th>
-            <th className="py-0.5 text-center font-medium">AB</th>
-            <th className="py-0.5 text-center font-medium">R</th>
-            <th className="py-0.5 text-center font-medium">H</th>
-            <th className="py-0.5 text-center font-medium">RBI</th>
-            <th className="py-0.5 text-center font-medium">BB</th>
-            <th className="py-0.5 text-center font-medium">SO</th>
-          </tr>
-        </thead>
-        <tbody>
-          {lines.map((line) => (
-            <tr key={line.playerId} className="border-b border-sandstone/30">
-              <td className="py-0.5 text-ink">{line.playerName ?? line.playerId}</td>
-              <td className="py-0.5 text-center">{line.AB}</td>
-              <td className="py-0.5 text-center">{line.R}</td>
-              <td className="py-0.5 text-center">{line.H}</td>
-              <td className="py-0.5 text-center">{line.RBI}</td>
-              <td className="py-0.5 text-center">{line.BB}</td>
-              <td className="py-0.5 text-center">{line.SO}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full font-stat text-xs" role="table">
+          <thead>
+            <tr className="border-b border-sandstone text-muted">
+              <th className="py-0.5 text-left font-medium">Hitters</th>
+              <th className={TH}>AB</th>
+              <th className={TH}>R</th>
+              <th className={TH}>H</th>
+              <th className={TH}>RBI</th>
+              <th className={TH}>HR</th>
+              <th className={TH}>BB</th>
+              <th className={TH}>K</th>
+              <th className={TH}>AVG</th>
+              <th className={TH}>OBP</th>
+              <th className={TH}>SLG</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {lines.map((line) => {
+              const rates = cumulativeRates(line, seasonStats?.[line.playerId]?.batting);
+              const name = line.playerName ?? line.playerId;
+              const pos = line.position;
+              return (
+                <tr key={line.playerId} className="border-b border-sandstone/30">
+                  <td className="py-0.5 text-ink">
+                    {name}{pos ? <span className="ml-1 text-muted">{pos}</span> : null}
+                  </td>
+                  <td className={TD}>{line.AB}</td>
+                  <td className={TD}>{line.R}</td>
+                  <td className={TD}>{line.H}</td>
+                  <td className={TD}>{line.RBI}</td>
+                  <td className={TD}>{line.HR}</td>
+                  <td className={TD}>{line.BB}</td>
+                  <td className={TD}>{line.SO}</td>
+                  <td className={TD}>{formatRate(rates.avg)}</td>
+                  <td className={TD}>{formatRate(rates.obp)}</td>
+                  <td className={TD}>{formatRate(rates.slg)}</td>
+                </tr>
+              );
+            })}
+            {lines.length > 0 && (
+              <tr className="border-t border-sandstone font-bold">
+                <td className="py-0.5 text-ink">TEAM</td>
+                <td className={TD}>{teamTotals.AB}</td>
+                <td className={TD}>{teamTotals.R}</td>
+                <td className={TD}>{teamTotals.H}</td>
+                <td className={TD}>{teamTotals.RBI}</td>
+                <td className={TD}>{teamTotals.HR}</td>
+                <td className={TD}>{teamTotals.BB}</td>
+                <td className={TD}>{teamTotals.K}</td>
+                <td className={TD} />
+                <td className={TD} />
+                <td className={TD} />
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
 function PitchingTable({ lines, label }: { lines: readonly PitchingLine[]; label: string }) {
+  const teamTotals = useMemo(() => {
+    let totalIP = 0;
+    for (const l of lines) {
+      totalIP = addIP(totalIP, l.IP);
+    }
+    return {
+      IP: totalIP,
+      H: lines.reduce((s, l) => s + l.H, 0),
+      R: lines.reduce((s, l) => s + l.R, 0),
+      ER: lines.reduce((s, l) => s + l.ER, 0),
+      BB: lines.reduce((s, l) => s + l.BB, 0),
+      K: lines.reduce((s, l) => s + l.SO, 0),
+      HR: lines.reduce((s, l) => s + l.HR, 0),
+    };
+  }, [lines]);
+
   return (
     <div className="space-y-1">
       <p className="text-xs font-medium text-muted">{label}</p>
-      <table className="w-full font-stat text-xs" role="table">
-        <thead>
-          <tr className="border-b border-sandstone text-muted">
-            <th className="py-0.5 text-left font-medium">Pitcher</th>
-            <th className="py-0.5 text-center font-medium">IP</th>
-            <th className="py-0.5 text-center font-medium">H</th>
-            <th className="py-0.5 text-center font-medium">ER</th>
-            <th className="py-0.5 text-center font-medium">BB</th>
-            <th className="py-0.5 text-center font-medium">SO</th>
-            <th className="py-0.5 text-center font-medium">Dec</th>
-          </tr>
-        </thead>
-        <tbody>
-          {lines.map((line) => (
-            <tr key={line.playerId} className="border-b border-sandstone/30">
-              <td className="py-0.5 text-ink">{line.playerName ?? line.playerId}</td>
-              <td className="py-0.5 text-center">{line.IP}</td>
-              <td className="py-0.5 text-center">{line.H}</td>
-              <td className="py-0.5 text-center">{line.ER}</td>
-              <td className="py-0.5 text-center">{line.BB}</td>
-              <td className="py-0.5 text-center">{line.SO}</td>
-              <td className="py-0.5 text-center font-bold">
-                {line.decision ?? '-'}
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full font-stat text-xs" role="table">
+          <thead>
+            <tr className="border-b border-sandstone text-muted">
+              <th className="py-0.5 text-left font-medium">Pitchers</th>
+              <th className={TH}>IP</th>
+              <th className={TH}>H</th>
+              <th className={TH}>R</th>
+              <th className={TH}>ER</th>
+              <th className={TH}>BB</th>
+              <th className={TH}>K</th>
+              <th className={TH}>HR</th>
+              <th className={TH}>ERA</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {lines.map((line) => {
+              const name = line.playerName ?? line.playerId;
+              const era = line.IP > 0 ? computeERA(line.ER, line.IP).toFixed(2) : '-';
+              return (
+                <tr key={line.playerId} className="border-b border-sandstone/30">
+                  <td className="py-0.5 text-ink">
+                    {line.decision
+                      ? <>{name} <span className="font-bold">({line.decision})</span></>
+                      : name}
+                  </td>
+                  <td className={TD}>{line.IP}</td>
+                  <td className={TD}>{line.H}</td>
+                  <td className={TD}>{line.R}</td>
+                  <td className={TD}>{line.ER}</td>
+                  <td className={TD}>{line.BB}</td>
+                  <td className={TD}>{line.SO}</td>
+                  <td className={TD}>{line.HR}</td>
+                  <td className={TD}>{era}</td>
+                </tr>
+              );
+            })}
+            {lines.length > 0 && (
+              <tr className="border-t border-sandstone font-bold">
+                <td className="py-0.5 text-ink">TEAM</td>
+                <td className={TD}>{teamTotals.IP}</td>
+                <td className={TD}>{teamTotals.H}</td>
+                <td className={TD}>{teamTotals.R}</td>
+                <td className={TD}>{teamTotals.ER}</td>
+                <td className={TD}>{teamTotals.BB}</td>
+                <td className={TD}>{teamTotals.K}</td>
+                <td className={TD}>{teamTotals.HR}</td>
+                <td className={TD}>
+                  {teamTotals.IP > 0 ? computeERA(teamTotals.ER, teamTotals.IP).toFixed(2) : '-'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -321,6 +466,7 @@ export function BoxScoreDisplay({
   homeTeam,
   awayTeam,
   playByPlay,
+  seasonStats,
 }: BoxScoreDisplayProps) {
   // Split lines by team when teamSide data is available
   const hasTeamSide = battingLines.length > 0 && battingLines[0].teamSide !== undefined;
@@ -380,8 +526,8 @@ export function BoxScoreDisplay({
             <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
               {awayTeam}
             </h4>
-            <div className="grid gap-gutter lg:grid-cols-2">
-              <BattingTable lines={awayBatting} label="Batting" />
+            <div className="space-y-3">
+              <BattingTable lines={awayBatting} label="Batting" seasonStats={seasonStats} />
               <PitchingTable lines={awayPitching} label="Pitching" />
             </div>
             {playByPlay && playByPlay.length > 0 && (
@@ -397,8 +543,8 @@ export function BoxScoreDisplay({
             <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
               {homeTeam}
             </h4>
-            <div className="grid gap-gutter lg:grid-cols-2">
-              <BattingTable lines={homeBatting} label="Batting" />
+            <div className="space-y-3">
+              <BattingTable lines={homeBatting} label="Batting" seasonStats={seasonStats} />
               <PitchingTable lines={homePitching} label="Pitching" />
             </div>
             {playByPlay && playByPlay.length > 0 && (
@@ -412,8 +558,8 @@ export function BoxScoreDisplay({
         </>
       ) : (
         /* Legacy fallback: combined view when teamSide is unavailable */
-        <div className="grid gap-gutter lg:grid-cols-2">
-          <BattingTable lines={awayBatting} label="Batting" />
+        <div className="space-y-3">
+          <BattingTable lines={awayBatting} label="Batting" seasonStats={seasonStats} />
           <PitchingTable lines={awayPitching} label="Pitching" />
         </div>
       )}

@@ -57,3 +57,15 @@ export async function fetchPlayerSeasonStats(
   );
   return response.data;
 }
+
+export async function fetchBatchPlayerSeasonStats(
+  leagueId: string,
+  playerIds: string[],
+): Promise<PlayerSeasonStats[]> {
+  if (playerIds.length === 0) return [];
+  const idsParam = playerIds.map(encodeURIComponent).join(',');
+  const response = await apiGet<PlayerSeasonStats[]>(
+    `/api/leagues/${leagueId}/stats?type=players&playerIds=${idsParam}`,
+  );
+  return response.data;
+}
