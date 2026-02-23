@@ -225,7 +225,7 @@ describe('selectAIPick (REQ-DFT-006)', () => {
   });
 
   describe('mid rounds (4-8)', () => {
-    it('fills rotation when needed (picks SP at least sometimes with value-gap override)', () => {
+    it('fills rotation when needed (picks SP when value gap is under threshold)', () => {
       // Roster with no SP
       const roster: DraftablePlayer[] = [
         makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
@@ -237,9 +237,9 @@ describe('selectAIPick (REQ-DFT-006)', () => {
         const pick = selectAIPick(5, roster, pool, new SeededRNG(seed));
         if (pick.card.isPitcher && pick.card.pitching?.role === 'SP') spPicks++;
       }
-      // With value-gap override, AI may take elite batters over mediocre SP.
-      // SP still picked sometimes; hard guard ensures rotation always completes.
-      expect(spPicks).toBeGreaterThanOrEqual(0);
+      // Value gap between best unfilled-position batter (~123) and best SP (~75) is ~48,
+      // under the 60-point threshold, so SP should be picked most of the time.
+      expect(spPicks).toBeGreaterThan(10);
     });
 
     it('prefers premium positions (C, SS) and SP when roster has gaps', () => {
@@ -253,7 +253,9 @@ describe('selectAIPick (REQ-DFT-006)', () => {
         // Still expect C/SS/SP at least sometimes.
         if (['C', 'SS', 'SP'].includes(pos)) targetPicks++;
       }
-      expect(targetPicks).toBeGreaterThanOrEqual(0);
+      // With VALUE_GAP_THRESHOLD=60 and empty roster, SP gap is under 60 so
+      // the AI picks SP in mid rounds. C/SS may appear via premium path too.
+      expect(targetPicks).toBeGreaterThanOrEqual(15);
     });
   });
 
@@ -315,7 +317,7 @@ describe('selectAIPick (REQ-DFT-006)', () => {
         const pick = selectAIPick(5, roster, hofPool, new SeededRNG(seed));
         if (pick.card.playerId === 'hof01') hofPicks++;
       }
-      // With value gap > 30, AI should prefer HOF batter over mediocre SP
+      // With value gap > 60, AI should prefer HOF batter over mediocre SP
       expect(hofPicks).toBeGreaterThan(10);
     });
 
@@ -344,7 +346,7 @@ describe('selectAIPick (REQ-DFT-006)', () => {
         const pick = selectAIPick(5, roster, balancedPool, new SeededRNG(seed));
         if (pick.card.isPitcher && pick.card.pitching?.role === 'SP') spPicks++;
       }
-      // Gap is ~25 (under threshold of 30), so SP should be picked most of the time
+      // Gap is ~16 (under threshold of 60), so SP should be picked most of the time
       expect(spPicks).toBeGreaterThan(10);
     });
   });

@@ -65,7 +65,7 @@ const PREMIUM_POSITIONS: Position[] = ['C', 'SS'];
 /** Number of top candidates to consider for weighted random selection. */
 const TOP_CANDIDATE_COUNT = 3;
 /** When best-available exceeds best-at-need by this margin, take best-available. */
-const VALUE_GAP_THRESHOLD = 30;
+const VALUE_GAP_THRESHOLD = 60;
 
 /** Outfield positions that count toward the generic OF starter pool. */
 const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
@@ -257,14 +257,33 @@ function bestAtPositions(
 }
 
 /**
- * Get the best available non-pitcher (position player) by value.
+ * Get the best available non-pitcher at an unfilled starter position.
+ * Prevents position hoarding: if C is already filled, catchers are excluded
+ * from the comparison so the AI doesn't draft 4 catchers. Falls back to any
+ * position player if no unfilled-position candidates remain.
  */
 function bestAvailablePosition(
   available: DraftablePlayer[],
+  needs: PositionNeed[],
   rng: SeededRNG,
 ): DraftablePlayer | null {
   const posPlayers = available.filter((p) => !p.card.isPitcher);
   if (posPlayers.length === 0) return null;
+
+  // Prefer players at unfilled starter positions
+  const starterNeeds = needs.filter((n) => n.slot === 'starter');
+  if (starterNeeds.length > 0) {
+    const neededPositions = expandPositions(starterNeeds.map((n) => n.position));
+    const neededPlayers = posPlayers.filter((p) =>
+      neededPositions.includes(p.card.primaryPosition as Position),
+    );
+    if (neededPlayers.length > 0) {
+      const sorted = sortByValue(neededPlayers, rng);
+      return pickFromTop(sorted, rng);
+    }
+  }
+
+  // Fallback: any position player (bench candidate)
   const sorted = sortByValue(posPlayers, rng);
   return pickFromTop(sorted, rng);
 }
@@ -307,7 +326,8 @@ export function selectAIPick(
   }
 
   // -----------------------------------------------------------------------
-  // Early rounds (1-3): Best SP or elite position player, no CL/RP
+  // Early rounds (1-3): Best SP or elite position player, no CL/RP.
+  // Prefer players at unfilled starter positions to avoid position hoarding.
   // -----------------------------------------------------------------------
   if (round <= EARLY_ROUND_END) {
     const eligible = excludeFullPitching(
@@ -317,7 +337,23 @@ export function selectAIPick(
       }),
       needs,
     );
-    return eligible.length > 0 ? pickFromTop(eligible, rng) : pickFromTop(sorted, rng);
+    if (eligible.length === 0) {
+      return pickFromTop(sorted, rng);
+    }
+
+    // Prefer players at unfilled starter positions (prevents drafting 4 catchers)
+    const starterNeeds = needs.filter((n) => n.slot === 'starter' || n.slot === 'rotation');
+    if (starterNeeds.length > 0) {
+      const neededPositions = expandPositions(starterNeeds.map((n) => n.position));
+      const neededCandidates = eligible.filter((p) =>
+        neededPositions.includes(getPlayerPosition(p) as Position),
+      );
+      if (neededCandidates.length > 0) {
+        return pickFromTop(sortByValue(neededCandidates, rng), rng);
+      }
+    }
+
+    return pickFromTop(eligible, rng);
   }
 
   // -----------------------------------------------------------------------
@@ -328,17 +364,22 @@ export function selectAIPick(
     // Priority 1: Fill SP rotation if needed (value-gap override applies)
     const spNeeds = needs.filter((n) => n.position === 'SP');
     if (spNeeds.length > 0) {
-      const bestSP = bestAtPositions(available, ['SP'], rng);
-      const bestPos = bestAvailablePosition(available, rng);
-      if (bestSP && bestPos) {
-        const spVal = getPlayerValue(bestSP);
-        const posVal = getPlayerValue(bestPos);
-        if (posVal > spVal + VALUE_GAP_THRESHOLD) {
-          return bestPos; // elite batter > mediocre SP
+      const spCandidates = available.filter((p) => getPlayerPosition(p) === 'SP');
+      if (spCandidates.length > 0) {
+        // Use deterministic max values for gap comparison (not weighted random)
+        const topSpVal = Math.max(...spCandidates.map((p) => getPlayerValue(p)));
+        const posPlayers = available.filter((p) => !p.card.isPitcher);
+        const topPosVal = posPlayers.length > 0
+          ? Math.max(...posPlayers.map((p) => getPlayerValue(p)))
+          : 0;
+        if (topPosVal > topSpVal + VALUE_GAP_THRESHOLD) {
+          // Elite batter significantly outvalues best SP -- take the batter
+          const bestPos = bestAvailablePosition(available, needs, rng);
+          if (bestPos) return bestPos;
         }
-        return bestSP; // SP is competitive, fill rotation
+        // SP is competitive -- fill rotation (weighted random for which SP)
+        return bestAtPositions(available, ['SP'], rng)!;
       }
-      if (bestSP) return bestSP;
     }
 
     // Priority 2: Premium position gaps (C, SS)
@@ -365,8 +406,7 @@ export function selectAIPick(
   }
 
   // -----------------------------------------------------------------------
-  // Late rounds (9+): Starters first, then bullpen (value-gap override),
-  // then SP, then bench depth
+  // Late rounds (9+): Starters first, then bullpen, then SP, then bench
   // -----------------------------------------------------------------------
 
   // Priority 1: Any remaining unfilled starter positions

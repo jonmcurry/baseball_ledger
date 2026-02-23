@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-22 - Fix draft AI position hoarding and value-gap instability
+
+Three root causes of catcher-hoarding (4 catchers in 7 rounds) and SP avoidance:
+
+1. VALUE_GAP_THRESHOLD too low (30 -> 60): Every batter exceeded every SP by
+   30+ points, so SP was never selected in mid rounds.
+
+2. No position awareness in early/mid rounds: bestAvailablePosition now filters
+   to unfilled starter positions, preventing drafting multiple players at the
+   same filled position (e.g., 4 catchers when C is already filled).
+
+3. Value-gap comparison was non-deterministic: pickFromTop weighted random
+   selection chose which SP to compare against, so mediocre SPs inflated the
+   apparent gap. Fixed to use deterministic max values for the threshold check.
+
+Additional: Early rounds (1-3) now prefer players at unfilled starter/rotation
+positions, preventing position-monopoly drafts.
+
+Tests: 168/168 passed. TypeScript clean.
+
 ## 2026-02-22 - Complete UI/UX redesign: ESPN Broadcast + Fantasy Sports Pro
 
 Ground-up redesign of every page and component. Two design modes:
