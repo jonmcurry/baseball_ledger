@@ -19,7 +19,6 @@ import { DraftTicker } from './DraftTicker';
 import { DraftReasoningPanel } from './DraftReasoningPanel';
 import { AvailablePlayersTable } from './AvailablePlayersTable';
 import type { PlayerTableFilters, DraftViewMode } from './AvailablePlayersTable';
-import { PickTimer } from './PickTimer';
 import { RosterPreviewPanel } from './RosterPreviewPanel';
 import type { AvailablePlayer } from '@stores/draftStore';
 import type { PlayerCard } from '@lib/types/player';
@@ -146,37 +145,42 @@ export function DraftBoardPage() {
     <div>
       {/* Draft Broadcast Bar -- dark navy strip with draft status */}
       {isDraftActive && (
-        <div className="broadcast-bar flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div>
+        <div className="broadcast-bar">
+          <div className="flex items-center gap-6">
+            {/* Left: round/pick info */}
+            <div className="flex-shrink-0">
               <span className="broadcast-label">Round {draftState.currentRound}</span>
               <span className="broadcast-label mx-2">--</span>
               <span className="broadcast-label">Pick {draftState.currentPick}</span>
             </div>
-          </div>
-          <div className="flex-shrink-0">
-            <PickTimer timeRemaining={timeRemaining} isActive={isMyPick && !autoDraftEnabled} />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="broadcast-team text-type-2">
+
+            {/* Center: timer (broadcast-themed inline) */}
+            <div className="flex-shrink-0 font-stat text-2xl font-bold text-[var(--text-on-dark)] tabular-nums">
+              {isMyPick && !autoDraftEnabled
+                ? `${Math.floor(timeRemaining / 60)}:${(timeRemaining % 60).toString().padStart(2, '0')}`
+                : '--:--'}
+            </div>
+
+            <div className="flex-1" />
+
+            {/* Right: status + auto-draft toggle */}
+            <span className="broadcast-label font-bold flex-shrink-0">
               {isMyPick
                 ? (autoDraftEnabled ? 'Auto-Drafting...' : "You're On the Clock!")
                 : `${currentTeamName ?? 'Team'} On The Clock`}
             </span>
-            {isDraftActive && (
-              <button
-                type="button"
-                onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
-                className={`flex items-center gap-1.5 px-3 py-1 font-stat text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                  autoDraftEnabled
-                    ? 'bg-[var(--accent-secondary)] text-[var(--text-on-dark)]'
-                    : 'border border-[rgba(255,255,255,0.2)] text-[var(--text-on-dark-muted)] hover:text-[var(--text-on-dark)]'
-                }`}
-                aria-pressed={autoDraftEnabled}
-              >
-                Auto-Draft {autoDraftEnabled ? 'ON' : 'OFF'}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 font-stat text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                autoDraftEnabled
+                  ? 'bg-[var(--accent-secondary)] text-[var(--text-on-dark)]'
+                  : 'border border-[rgba(255,255,255,0.2)] text-[var(--text-on-dark-muted)] hover:text-[var(--text-on-dark)]'
+              }`}
+              aria-pressed={autoDraftEnabled}
+            >
+              Auto-Draft {autoDraftEnabled ? 'ON' : 'OFF'}
+            </button>
           </div>
         </div>
       )}
@@ -252,8 +256,8 @@ export function DraftBoardPage() {
           />
         </div>
 
-        {/* Sidebar: On the Clock + Roster + Draft Feed + Analysis */}
-        <div className="split-layout-sidebar">
+        {/* Sidebar: On the Clock + Roster + Draft Feed + Analysis -- scrollable */}
+        <div className="split-layout-sidebar" style={{ maxHeight: 'calc(100vh - 12rem)', overflowY: 'auto' }}>
           {/* Panel 1: On the Clock (action panel) */}
           {isDraftActive && isMyPick && !autoDraftEnabled && (
             <div className="panel">
