@@ -70,20 +70,20 @@ export function AuthenticatedLayout() {
 
   return (
     <BroadsheetShell
-      masthead={
+      topNav={
         <Masthead
           leagueName={leagueName}
           seasonInfo={seasonInfo}
           userName={userName}
           onLogout={handleLogout}
-        />
-      }
-      folio={
-        <FolioNav
-          leagueId={leagueId}
-          leagueStatus={leagueStatus}
-          isCommissioner={isCommissioner}
-          onNavigate={handleNavigate}
+          navigation={
+            <FolioNav
+              leagueId={leagueId}
+              leagueStatus={leagueStatus}
+              isCommissioner={isCommissioner}
+              onNavigate={handleNavigate}
+            />
+          }
         />
       }
       colophon={<Colophon />}

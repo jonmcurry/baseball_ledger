@@ -60,11 +60,11 @@ export function StandingsTable({
   ].filter((g) => g.divisions.length > 0);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       {leagueGroups.map((league) => (
         <div key={league.abbr}>
           {/* League header -- editorial serif with thin rule */}
-          <div className="mb-8">
+          <div className="mb-4">
             <div className="flex items-center gap-4">
               <h3 className="font-headline text-xl md:text-2xl font-bold text-[var(--text-primary)]">
                 {league.label}

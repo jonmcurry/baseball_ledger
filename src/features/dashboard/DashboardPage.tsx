@@ -1,8 +1,7 @@
 /**
- * DashboardPage -- "The Morning Edition"
+ * DashboardPage
  *
- * Broadsheet front page layout with above-the-fold simulation controls
- * and below-the-fold schedule/navigation.
+ * Bento-grid dashboard with simulation controls, scores, and schedule.
  *
  * REQ-STATE-014: useRealtimeProgress triggers cache invalidation after simulation.
  * REQ-SCH-007: SimulationNotification shows typewriter results after simulation.
@@ -17,7 +16,6 @@ import { useRealtimeProgress } from '@hooks/useRealtimeProgress';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { HeadlineInterrupt } from '@components/feedback/HeadlineInterrupt';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { SimulationControls } from './SimulationControls';
 import { SeasonScheduleView } from './SeasonScheduleView';
 import { ResultsTicker } from './ResultsTicker';
@@ -39,15 +37,6 @@ const SCOPE_TO_DAYS: Record<string, number | 'season'> = {
   month: 30,
   season: 162,
 };
-
-/** Table of Contents navigation entries for in-season state. */
-const TOC_ENTRIES = [
-  { label: 'Roster', path: '../roster', numeral: 'III' },
-  { label: 'Statistics', path: '../stats', numeral: 'IV' },
-  { label: 'Standings', path: '../standings', numeral: 'V' },
-  { label: 'Transactions', path: '../transactions', numeral: 'VII' },
-  { label: 'Archive', path: '../archive', numeral: 'VIII' },
-] as const;
 
 export function DashboardPage() {
   usePageTitle('Season');
@@ -179,12 +168,9 @@ export function DashboardPage() {
   }
 
   const isInSeason = leagueStatus === 'regular_season' || leagueStatus === 'playoffs' || leagueStatus === 'completed';
-  const dateline = league
-    ? `Season ${league.seasonYear} -- Day ${currentDay} of 162`
-    : undefined;
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-gutter-lg">
       {error && <ErrorBanner severity="error" message={error} />}
 
       {/* REQ-SCH-009: Championship headline interrupt */}
@@ -195,159 +181,146 @@ export function DashboardPage() {
         onDismiss={() => setShowHeadline(false)}
       />
 
-      {/* Section opener */}
-      <SectionOpener
-        kicker="The Morning Edition"
-        headline={`Season ${league?.seasonYear ?? ''}`}
-        deck={isInSeason ? `Day ${currentDay} of the ${league?.seasonYear} campaign` : undefined}
-        dateline={dateline}
-      />
+      {/* Page header */}
+      <div className="page-header">
+        <h2 className="page-header-title">Season {league?.seasonYear ?? ''}</h2>
+        {isInSeason && (
+          <span className="page-header-context">Day {currentDay} of 162</span>
+        )}
+      </div>
 
-      {/* ============================================================
-         ABOVE THE FOLD -- Primary actions + quick scores
-         ============================================================ */}
-      <div className="grid gap-gutter-lg md:grid-cols-12">
-        {/* Lead story: Controls / setup */}
-        <div className="md:col-span-8 space-y-gutter-lg">
-          {/* Setup phase panels */}
-          {league?.status === 'setup' && (
-            league.seasonYear > 1 ? (
-              <NewSeasonPanel
-                seasonYear={league.seasonYear}
+      {/* Setup phase panels (full-width, above bento grid) */}
+      {league?.status === 'setup' && (
+        league.seasonYear > 1 ? (
+          <NewSeasonPanel
+            seasonYear={league.seasonYear}
+            isCommissioner={isCommissioner}
+            onStartSeason={handleStartSeason}
+            isStarting={isStartingSeason}
+          />
+        ) : (
+          <TeamSetupPanel
+            teams={teams}
+            isCommissioner={isCommissioner}
+            userId={user?.id ?? null}
+            onStartDraft={handleStartDraft}
+            isStartingDraft={isStartingDraft}
+            inviteKey={league.inviteKey}
+          />
+        )
+      )}
+
+      {/* Drafting banner */}
+      {league?.status === 'drafting' && (
+        <div
+          className="vintage-card relative overflow-hidden"
+          style={{ borderLeft: '3px solid var(--accent-secondary)' }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <p className="kicker">Breaking</p>
+              <h3 className="font-headline text-type-4 font-bold text-[var(--text-primary)]">
+                Draft In Progress
+              </h3>
+              <p className="font-body text-type-1 text-[var(--text-secondary)] mt-1">
+                The league draft is underway. Head to the Draft Board to make your picks.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('../draft')}
+              className="btn-vintage-primary"
+            >
+              Go to Draft Board
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bento grid for in-season content */}
+      {isInSeason && (
+        <div className="bento-grid">
+          {/* Simulation controls (2-col wide) */}
+          <div className="bento-card bento-card--2x1">
+            {leagueStatus === 'completed' ? (
+              <SeasonCompletePanel
+                championName={championName}
                 isCommissioner={isCommissioner}
-                onStartSeason={handleStartSeason}
-                isStarting={isStartingSeason}
+                onArchive={handleArchive}
+                isArchiving={isArchiving}
               />
             ) : (
-              <TeamSetupPanel
-                teams={teams}
-                isCommissioner={isCommissioner}
-                userId={user?.id ?? null}
-                onStartDraft={handleStartDraft}
-                isStartingDraft={isStartingDraft}
-                inviteKey={league.inviteKey}
+              <SimulationControls
+                isRunning={isRunning}
+                progressPct={progressPct}
+                onSimulate={handleSimulate}
+                leagueStatus={leagueStatus}
               />
-            )
-          )}
+            )}
+          </div>
 
-          {/* Drafting banner */}
-          {league?.status === 'drafting' && (
-            <div
-              className="vintage-card relative overflow-hidden"
-              style={{ borderLeft: '3px solid var(--accent-secondary)' }}
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="kicker">Breaking</p>
-                  <h3 className="font-headline text-type-4 font-bold text-[var(--text-primary)]">
-                    Draft In Progress
-                  </h3>
-                  <p className="font-body text-type-1 text-[var(--text-secondary)] mt-1">
-                    The league draft is underway. Head to the Draft Board to make your picks.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('../draft')}
-                  className="btn-vintage-primary"
-                >
-                  Go to Draft Board
-                </button>
-              </div>
+          {/* Season progress (1x1) */}
+          <div className="bento-card">
+            <p className="bento-card-label">Season</p>
+            <p className="font-stat text-3xl font-bold text-[var(--text-primary)] leading-none">
+              Day {currentDay}
+            </p>
+            <p className="font-stat text-xs text-[var(--text-tertiary)] mt-1">of 162</p>
+          </div>
+
+          {/* Quick nav (1x1) */}
+          <div className="bento-card">
+            <p className="bento-card-label">League</p>
+            <div className="space-y-1.5 mt-1">
+              <button type="button" onClick={() => navigate('../standings')} className="block w-full text-left font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors">Standings</button>
+              <button type="button" onClick={() => navigate('../stats')} className="block w-full text-left font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors">Leaders</button>
+              <button type="button" onClick={() => navigate('../roster')} className="block w-full text-left font-body text-sm text-[var(--text-secondary)] hover:text-[var(--accent-secondary)] transition-colors">Roster</button>
             </div>
-          )}
+          </div>
 
-          {/* Simulation controls or season complete */}
-          {leagueStatus === 'completed' ? (
-            <SeasonCompletePanel
-              championName={championName}
-              isCommissioner={isCommissioner}
-              onArchive={handleArchive}
-              isArchiving={isArchiving}
-            />
-          ) : (leagueStatus === 'regular_season' || leagueStatus === 'playoffs') ? (
-            <SimulationControls
-              isRunning={isRunning}
-              progressPct={progressPct}
-              onSimulate={handleSimulate}
-              leagueStatus={leagueStatus}
-            />
-          ) : null}
-
-          {/* Simulation notification */}
-          {showNotification && (
-            <SimulationNotification
-              daysSimulated={totalDays}
-              gamesCompleted={completedGames}
-              isVisible={showNotification}
-              onDismiss={() => setShowNotification(false)}
-              playoffMessage={playoffMessage}
-            />
-          )}
-        </div>
-
-        {/* Sidebar column: Quick scores + TOC */}
-        <div className="md:col-span-4 space-y-gutter-lg">
-          {/* Results as stacked score cards */}
+          {/* Latest scores (2-col wide) */}
           {recentResults.length > 0 && (
-            <div>
-              <p className="section-flag mb-2">Latest Scores</p>
+            <div className="bento-card bento-card--2x1">
+              <p className="bento-card-label">Latest Scores</p>
               <ResultsTicker results={recentResults} onGameClick={(gameId) => navigate(`../game/${gameId}`)} />
             </div>
           )}
 
-          {/* Table of Contents navigation -- in-season only */}
-          {isInSeason && (
-            <nav aria-label="Season navigation">
-              <p className="section-flag mb-2">Sections</p>
-              <ul className="space-y-1 stagger-children">
-                {TOC_ENTRIES.map((entry) => (
-                  <li key={entry.path}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(entry.path)}
-                      className="leader-line w-full text-left"
-                    >
-                      <span className="leader-line-label">{entry.label}</span>
-                      <span className="leader-line-dots" />
-                      <span className="leader-line-value">{entry.numeral}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          )}
+          {/* Schedule or Playoffs (full width) */}
+          <div className="bento-card bento-card--full">
+            {leagueStatus === 'playoffs' && playoffBracket ? (
+              <>
+                <p className="bento-card-label">Playoffs</p>
+                <PlayoffStatusPanel
+                  playoffBracket={playoffBracket}
+                  teams={teams}
+                  lastGameResult={lastPlayoffResult}
+                />
+              </>
+            ) : (
+              <>
+                <p className="bento-card-label">Season Schedule</p>
+                <SeasonScheduleView
+                  schedule={schedule}
+                  teams={teams}
+                  currentDay={currentDay}
+                  onGameClick={(gameId) => navigate(`../game/${gameId}`)}
+                />
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ============================================================
-         BELOW THE FOLD -- Schedule / Playoffs
-         ============================================================ */}
-      {league?.status !== 'setup' && (
-        <>
-          <hr className="rule-double" />
-
-          {leagueStatus === 'playoffs' && playoffBracket ? (
-            <div>
-              <p className="kicker mb-2">Special Report</p>
-              <PlayoffStatusPanel
-                playoffBracket={playoffBracket}
-                teams={teams}
-                lastGameResult={lastPlayoffResult}
-              />
-            </div>
-          ) : (
-            <div>
-              <p className="section-flag mb-2">Season Calendar</p>
-              <SeasonScheduleView
-                schedule={schedule}
-                teams={teams}
-                currentDay={currentDay}
-                onGameClick={(gameId) => navigate(`../game/${gameId}`)}
-              />
-            </div>
-          )}
-        </>
+      {/* Simulation notification */}
+      {showNotification && (
+        <SimulationNotification
+          daysSimulated={totalDays}
+          gamesCompleted={completedGames}
+          isVisible={showNotification}
+          onDismiss={() => setShowNotification(false)}
+          playoffMessage={playoffMessage}
+        />
       )}
     </div>
   );

@@ -14,7 +14,6 @@ import { useDraftTimer } from './hooks/useDraftTimer';
 
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { PlayerProfileModal } from '@components/baseball/PlayerProfileModal';
 import { DraftTicker } from './DraftTicker';
 import { DraftReasoningPanel } from './DraftReasoningPanel';
@@ -143,48 +142,46 @@ export function DraftBoardPage() {
   const isDraftActive = draftState?.status === 'in_progress';
 
   return (
-    <div className="space-y-gutter">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <SectionOpener
-          kicker="The Pressroom"
-          headline="Player Draft"
-          deck={isDraftActive ? `Round ${draftState.currentRound}, Pick ${draftState.currentPick}` : undefined}
-          className="mb-0 flex-1"
-        />
-
-        <div className="flex items-center gap-4">
-          {/* View mode toggle */}
+    <div>
+      {/* Header -- horizontal status bar */}
+      <div className="page-header">
+        <h2 className="page-header-title">Player Draft</h2>
+        {isDraftActive && (
+          <span className="page-header-context">
+            Round {draftState.currentRound}, Pick {draftState.currentPick}
+          </span>
+        )}
+        <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
             onClick={() => setDraftViewMode((v) => v === 'registry' ? 'classifieds' : 'registry')}
-            className="border border-[var(--border-default)] px-3 py-1.5 font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-secondary)] hover:text-[var(--text-primary)]"
+            className="tab-strip-item border border-[var(--border-default)] px-3"
             aria-label={`Switch to ${draftViewMode === 'registry' ? 'classifieds' : 'registry'} view`}
           >
             {draftViewMode === 'registry' ? 'Classifieds' : 'Registry'}
           </button>
 
-        {isDraftActive && (
-          <>
-            <button
-              type="button"
-              onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
-              className={`vintage-card flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                autoDraftEnabled
-                  ? 'border-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)]'
-                  : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-              aria-pressed={autoDraftEnabled}
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Auto-Draft {autoDraftEnabled ? 'ON' : 'OFF'}
-            </button>
-            <PickTimer timeRemaining={timeRemaining} isActive={isMyPick && !autoDraftEnabled} />
-          </>
-        )}
+          {isDraftActive && (
+            <>
+              <button
+                type="button"
+                onClick={() => setAutoDraftEnabled(!autoDraftEnabled)}
+                className={`flex items-center gap-2 border px-3 py-1.5 font-stat text-xs font-bold uppercase tracking-wider transition-colors ${
+                  autoDraftEnabled
+                    ? 'border-[var(--accent-secondary)] bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)]'
+                    : 'border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+                aria-pressed={autoDraftEnabled}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Auto-Draft {autoDraftEnabled ? 'ON' : 'OFF'}
+              </button>
+              <PickTimer timeRemaining={timeRemaining} isActive={isMyPick && !autoDraftEnabled} />
+            </>
+          )}
         </div>
       </div>
 
@@ -241,19 +238,10 @@ export function DraftBoardPage() {
         </div>
       )}
 
-      {/* Main 3-column layout */}
-      <div className="grid gap-gutter md:grid-cols-12">
-        {/* Left column: Draft Ticker + Reasoning */}
-        <div className="space-y-gutter md:col-span-3">
-          <DraftTicker
-            picks={draftState?.picks ?? []}
-            currentPick={draftState?.currentPick ?? 0}
-          />
-          <DraftReasoningPanel request={lastPickRequest} />
-        </div>
-
-        {/* Center column: Player Pool */}
-        <div className="md:col-span-6">
+      {/* War room: 2-panel layout (65% player table | 35% sidebar) */}
+      <div className="war-room">
+        {/* Main panel: Player Pool */}
+        <div>
           <AvailablePlayersTable
             players={availablePlayers}
             totalAvailable={totalAvailablePlayers}
@@ -267,8 +255,8 @@ export function DraftBoardPage() {
           />
         </div>
 
-        {/* Right column: Roster Preview */}
-        <div className="md:col-span-3">
+        {/* Sidebar: Roster + Ticker + Reasoning stacked */}
+        <div className="war-room-sidebar space-y-gutter">
           {myTeam && (
             <RosterPreviewPanel
               picks={draftState?.picks ?? []}
@@ -276,6 +264,11 @@ export function DraftBoardPage() {
               teamId={myTeam.id}
             />
           )}
+          <DraftTicker
+            picks={draftState?.picks ?? []}
+            currentPick={draftState?.currentPick ?? 0}
+          />
+          <DraftReasoningPanel request={lastPickRequest} />
         </div>
       </div>
 

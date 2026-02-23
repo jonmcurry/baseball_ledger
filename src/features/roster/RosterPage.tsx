@@ -13,7 +13,6 @@ import { useLeague } from '@hooks/useLeague';
 import { useRosterStore } from '@stores/rosterStore';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { LineupDiamond } from './LineupDiamond';
 import { BattingOrder } from './BattingOrder';
 import { BenchPanel } from './BenchPanel';
@@ -130,18 +129,14 @@ export function RosterPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <SectionOpener
-          kicker="The Club House"
-          headline="Active Roster"
-          deck={myTeam ? myTeam.name : undefined}
-          className="mb-0"
-        />
-        <div className="flex items-center gap-3">
+      <div className="page-header">
+        <h2 className="page-header-title">Active Roster</h2>
+        {myTeam && <span className="page-header-context">{myTeam.name}</span>}
+        <div className="ml-auto flex items-center gap-3">
           <button
             type="button"
             onClick={() => setRosterView((v) => v === 'diamond' ? 'ledger' : 'diamond')}
-            className="border border-[var(--border-default)] px-3 py-1.5 font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors hover:border-[var(--accent-secondary)] hover:text-[var(--text-primary)]"
+            className="tab-strip-item border border-[var(--border-default)] px-3"
             aria-label={`Switch to ${rosterView === 'diamond' ? 'ledger' : 'diamond'} view`}
           >
             {rosterView === 'diamond' ? 'Ledger View' : 'Diamond View'}

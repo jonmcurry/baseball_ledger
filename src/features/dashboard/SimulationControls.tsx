@@ -29,9 +29,9 @@ export function SimulationControls({
   const availableScopes = isPlayoffs ? SCOPES.filter((s) => s.scope === 'day') : SCOPES;
 
   return (
-    <div className="vintage-card">
+    <div>
       {/* Header */}
-      <div className="mb-4">
+      <div className="mb-3">
         <h3 className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
           Simulation Controls
         </h3>

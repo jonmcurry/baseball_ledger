@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-02-22 - Complete visual redesign: top nav, bento dashboard, war room draft
+
+Replaced 3-column sidebar layout with horizontal top-nav single-column architecture.
+All color tokens and fonts preserved. All functionality unchanged.
+
+Layout (Phase A):
+- BroadsheetShell: removed 3-column broadsheet-grid, folio sidebar, marginalia column
+- New sticky horizontal top-nav-bar with integrated FolioNav links
+- Masthead: single bar with logotype, navigation, and user controls
+- Full-width main-content wrapper replacing constrained center column
+- New CSS classes: top-nav-bar, top-nav-links, top-nav-item, main-content,
+  bento-grid, bento-card, page-header, tab-strip, war-room, hero-score
+
+Dashboard (Phase B):
+- Bento card grid replaces 12-column newspaper layout
+- SimulationControls in 2x1 card, season progress 1x1, quick nav 1x1
+- ResultsTicker: horizontal scrollable score strip (from vertical list)
+- Schedule/Playoffs in full-width card at bottom
+- Removed TOC section (redundant with top nav)
+
+Data pages (Phase C):
+- StatsPage: page-header + tab-strip replacing SectionOpener + pill buttons
+- StandingsPage: page-header replacing SectionOpener
+- StandingsTable: tighter vertical spacing (space-y-12 to space-y-8)
+
+Draft war room (Phase D):
+- DraftBoardPage: 2-panel war-room layout (65% player table, 35% sidebar)
+  replaces cramped 3-column 12-grid
+- Page header with round/pick context and controls inline
+- DraftTicker scroll area reduced (max-h-80 to max-h-60)
+
+Remaining pages (Phase E):
+- RosterPage, GameViewerPage, ArchivePage, TransactionsPage,
+  LeagueConfigPage, PlayoffsPage: all replaced SectionOpener with page-header
+- GameViewerPage: hero-score display with large score numbers
+- TransactionsPage: tab-strip for Add/Drop, Trade, History tabs
+- GameViewerPage: tab-strip for Box Score, Play-by-Play tabs
+
+Auth pages (Phase F):
+- SplashPage: entrance animation (animate-editorial-in)
+- LoginPage: bottom-border-only inputs for cleaner editorial look
+
+Components (Phase G):
+- SectionOpener: smaller headlines (type-3/type-4), removed bottom rule
+
+Tests: 262 passed (up from 260), 5 pre-existing failures unchanged
+
 ## 2026-02-22 - Masthead + FolioNav visual overhaul
 
 - Masthead: shrunk to thin utility bar (13px uppercase logotype with letter-spacing, left-aligned flexbox layout)

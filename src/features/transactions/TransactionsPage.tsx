@@ -14,7 +14,6 @@ import { useLeague } from '@hooks/useLeague';
 import { useRosterStore } from '@stores/rosterStore';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { AddDropForm } from './AddDropForm';
 import { TradeForm } from './TradeForm';
 import { TradeEvaluationPanel } from './TradeEvaluationPanel';
@@ -219,25 +218,20 @@ export function TransactionsPage() {
   }));
 
   return (
-    <div className="space-y-gutter-lg">
-      <SectionOpener
-        kicker="The Wire"
-        headline="Transactions"
-      />
+    <div>
+      <div className="page-header">
+        <h2 className="page-header-title">Transactions</h2>
+      </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
 
-      <div className="flex gap-1 border-b border-sandstone">
+      <div className="tab-strip mb-gutter-lg">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`px-3 py-1.5 text-sm font-medium ${
-              activeTab === tab.key
-                ? 'border-b-2 border-ballpark text-ballpark'
-                : 'text-muted hover:text-ink'
-            }`}
+            className={`tab-strip-item${activeTab === tab.key ? ' tab-strip-item--active' : ''}`}
           >
             {tab.label}
           </button>

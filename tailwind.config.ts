@@ -101,8 +101,7 @@ const config: Config = {
         'broadsheet': 'var(--max-width-broadsheet)',
       },
       width: {
-        'folio': 'var(--folio-width)',
-        'marginalia': 'var(--marginalia-width)',
+        'nav': 'var(--nav-height)',
       },
       fontSize: {
         'type-0': 'var(--type-0)',

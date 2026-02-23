@@ -18,7 +18,6 @@ import { useSimulationStore } from '@stores/simulationStore';
 import { useWorkerSimulation } from '@hooks/useWorkerSimulation';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { GameStatePanel } from './GameStatePanel';
 import { PlayByPlayFeed } from './PlayByPlayFeed';
 import { BoxScoreDisplay } from './BoxScoreDisplay';
@@ -378,11 +377,19 @@ export function GameViewerPage() {
 
   return (
     <div className="space-y-gutter-lg">
-      <SectionOpener
-        kicker="Game Report"
-        headline={`${gameData.awayTeamName} at ${gameData.homeTeamName}`}
-        deck={`Final: ${gameData.awayScore} - ${gameData.homeScore}`}
-      />
+      {/* Hero score display */}
+      <div className="hero-score">
+        <div className="hero-score-team">
+          <span className="hero-score-team-name">{gameData.awayTeamName}</span>
+          <span className="hero-score-number">{gameData.awayScore}</span>
+        </div>
+        <span className="hero-score-separator">-</span>
+        <div className="hero-score-team">
+          <span className="hero-score-number">{gameData.homeScore}</span>
+          <span className="hero-score-team-name">{gameData.homeTeamName}</span>
+        </div>
+      </div>
+      <p className="hero-score-detail">Final{gameData.innings !== 9 ? ` (${gameData.innings})` : ''}</p>
 
       {currentGameState && (
         <GameStatePanel
@@ -436,16 +443,12 @@ export function GameViewerPage() {
       {/* Tab navigation */}
       {hasDetailedData && (
         <>
-          <div className="flex border-b border-[var(--border-default)]" role="tablist">
+          <div className="tab-strip" role="tablist">
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === 'box-score'}
-              className={`px-4 py-2 font-headline text-sm uppercase tracking-wider ${
-                activeTab === 'box-score'
-                  ? 'border-b-2 border-[var(--accent-primary)] text-[var(--accent-primary)]'
-                  : 'text-[var(--color-muted)] hover:text-[var(--text-primary)]'
-              }`}
+              className={`tab-strip-item${activeTab === 'box-score' ? ' tab-strip-item--active' : ''}`}
               onClick={() => setActiveTab('box-score')}
             >
               Box Score
@@ -454,11 +457,7 @@ export function GameViewerPage() {
               type="button"
               role="tab"
               aria-selected={activeTab === 'play-by-play'}
-              className={`px-4 py-2 font-headline text-sm uppercase tracking-wider ${
-                activeTab === 'play-by-play'
-                  ? 'border-b-2 border-[var(--accent-primary)] text-[var(--accent-primary)]'
-                  : 'text-[var(--color-muted)] hover:text-[var(--text-primary)]'
-              }`}
+              className={`tab-strip-item${activeTab === 'play-by-play' ? ' tab-strip-item--active' : ''}`}
               onClick={() => setActiveTab('play-by-play')}
             >
               Play-by-Play

@@ -12,7 +12,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { LeagueConfigForm } from './LeagueConfigForm';
 import { DeleteLeagueButton } from './DeleteLeagueButton';
 import { InviteKeyDisplay } from '@components/data-display/InviteKeyDisplay';
@@ -106,10 +105,9 @@ export function LeagueConfigPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-gutter-lg">
-      <SectionOpener
-        kicker="League Office"
-        headline={isExistingLeague ? 'League Settings' : 'Create a League'}
-      />
+      <div className="page-header">
+        <h2 className="page-header-title">{isExistingLeague ? 'League Settings' : 'Create a League'}</h2>
+      </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
 

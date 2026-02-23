@@ -43,7 +43,7 @@ export function DraftTicker({ picks, currentPick }: DraftTickerProps) {
       )}
 
       {/* Pick list - scrollable */}
-      <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+      <div className="max-h-60 space-y-1 overflow-y-auto pr-1">
         {reversedPicks.map((pick, idx) => {
           const isLatest = idx === 0;
           const isCurrent = pick.pick === currentPick;

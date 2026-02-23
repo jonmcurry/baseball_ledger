@@ -105,8 +105,7 @@
        BROADSHEET LAYOUT - 3-column newspaper grid
        =================================================================== */
     --max-width-broadsheet: 1440px;
-    --folio-width: 120px;
-    --marginalia-width: 220px;
+    --nav-height: 44px;
     --content-gap: var(--gutter-lg);
 
     /* ===================================================================
@@ -599,139 +598,150 @@
   }
 
   /* ===================================================================
-     BROADSHEET LAYOUT SYSTEM -- 3-column newspaper grid
+     LAYOUT SYSTEM -- Top nav + full-width content
      =================================================================== */
 
-  /* ----- BROADSHEET GRID -- folio | content | marginalia ----- */
-  .broadsheet-grid {
-    display: grid;
-    grid-template-columns: var(--folio-width) 1fr var(--marginalia-width);
-    gap: 0;
+  /* ----- TOP NAV BAR -- horizontal navigation strip ----- */
+  .top-nav-bar {
     max-width: var(--max-width-broadsheet);
     margin: 0 auto;
-    min-height: calc(100vh - 8rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--gutter-lg);
+    height: var(--nav-height);
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-base);
+    position: sticky;
+    top: 0;
+    z-index: 30;
   }
 
-  @media (max-width: 1024px) {
-    .broadsheet-grid {
-      grid-template-columns: 56px 1fr;
-    }
+  .top-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 100%;
+  }
+
+  .top-nav-item {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 0.75rem;
+    font-family: var(--font-body);
+    font-size: var(--type-0);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .top-nav-item:hover {
+    color: var(--text-primary);
+  }
+
+  .top-nav-item--active {
+    color: var(--text-primary);
+    font-weight: 700;
+    border-bottom-color: var(--accent-secondary);
   }
 
   @media (max-width: 768px) {
-    .broadsheet-grid {
+    .top-nav-bar {
+      padding: 0 var(--gutter);
+    }
+
+    .top-nav-item {
+      font-size: 0.625rem;
+      padding: 0 0.5rem;
+      flex-shrink: 0;
+    }
+  }
+
+  /* ----- MAIN CONTENT -- full-width with max constraint ----- */
+  .main-content {
+    max-width: var(--max-width-broadsheet);
+    margin: 0 auto;
+    padding: var(--gutter-lg);
+    min-height: calc(100vh - 8rem);
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      padding: var(--gutter);
+    }
+  }
+
+  /* ----- BENTO GRID -- dashboard card layout ----- */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gutter-lg);
+  }
+
+  @media (max-width: 1024px) {
+    .bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bento-grid {
       grid-template-columns: 1fr;
     }
   }
 
-  /* ----- FOLIO NAV -- vertical sidebar ----- */
-  .folio-nav {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    border-right: 1px solid var(--border-default);
-    padding: var(--gutter) 0;
-    background: var(--surface-base);
+  .bento-card {
+    background: var(--surface-raised);
+    border: 1px solid var(--border-default);
+    padding: var(--gutter-lg);
+    position: relative;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
 
-  .folio-item {
-    display: block;
-    padding: 0.3rem 0.625rem;
-    font-family: var(--font-body);
-    font-size: var(--type-0);
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--text-tertiary);
-    text-decoration: none;
-    transition: color 0.15s ease, background 0.15s ease;
-    border-left: 2px solid transparent;
-    cursor: pointer;
-    background: none;
-    border-top: none;
-    border-bottom: none;
-    border-right: none;
-    width: 100%;
-    text-align: left;
-    white-space: nowrap;
+  .bento-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
   }
 
-  .folio-item:hover {
-    color: var(--text-primary);
-    background: var(--surface-overlay);
+  .bento-card--2x1 {
+    grid-column: span 2;
   }
 
-  .folio-item--active {
-    color: var(--text-primary);
-    font-weight: 700;
-    border-left-color: var(--accent-secondary);
+  .bento-card--1x2 {
+    grid-row: span 2;
   }
 
-  @media (max-width: 1024px) {
-    .folio-nav {
-      padding: var(--gutter) 0;
+  .bento-card--2x2 {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .bento-card--full {
+    grid-column: 1 / -1;
+  }
+
+  @media (max-width: 640px) {
+    .bento-card--2x1,
+    .bento-card--2x2 {
+      grid-column: span 1;
     }
 
-    .folio-item {
-      padding: 0.3rem 0.5rem;
-      font-size: 0.625rem;
+    .bento-card--1x2,
+    .bento-card--2x2 {
+      grid-row: span 1;
     }
   }
 
-  @media (max-width: 768px) {
-    .folio-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      top: auto;
-      height: auto;
-      border-right: none;
-      border-top: 1px solid var(--border-default);
-      display: flex;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 0;
-      z-index: 40;
-      background: var(--surface-raised);
-    }
-
-    .folio-item {
-      text-align: center;
-      padding: 0.375rem 0.625rem;
-      border-left: none;
-      border-top: 2px solid transparent;
-    }
-
-    .folio-item--active {
-      border-left-color: transparent;
-      border-top-color: var(--accent-secondary);
-    }
-  }
-
-  /* ----- MARGINALIA -- right contextual column ----- */
-  .marginalia {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    border-left: 1px solid var(--border-default);
-    padding: var(--gutter) 0.75rem;
-    font-size: var(--type-1);
-  }
-
-  .marginalia-card {
-    border-bottom: 1px solid var(--border-subtle);
-    padding-bottom: var(--gutter);
-    margin-bottom: var(--gutter);
-  }
-
-  .marginalia-card:last-child {
-    border-bottom: none;
-  }
-
-  .marginalia-heading {
+  .bento-card-label {
     font-family: var(--font-body);
     font-size: var(--type-0);
     font-weight: 600;
@@ -741,9 +751,160 @@
     margin-bottom: 0.5rem;
   }
 
+  /* ----- PAGE HEADER -- compact inline header ----- */
+  .page-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--gutter);
+    margin-bottom: var(--gutter-lg);
+    border-bottom: 1px solid var(--border-default);
+    padding-bottom: 0.5rem;
+  }
+
+  .page-header-title {
+    font-family: var(--font-headline);
+    font-weight: 900;
+    font-size: var(--type-4);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    color: var(--text-primary);
+  }
+
+  .page-header-context {
+    font-family: var(--font-stat);
+    font-size: var(--type-0);
+    color: var(--text-tertiary);
+    letter-spacing: 0.04em;
+  }
+
+  /* ----- TAB STRIP -- horizontal tab bar ----- */
+  .tab-strip {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .tab-strip-item {
+    padding: 0.5rem 1rem;
+    font-family: var(--font-body);
+    font-size: var(--type-1);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .tab-strip-item:hover {
+    color: var(--text-primary);
+  }
+
+  .tab-strip-item--active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-primary);
+  }
+
+  /* ----- STAT TABLE DENSE MODE ----- */
+  .stat-table--dense thead th {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.5625rem;
+  }
+
+  .stat-table--dense tbody td {
+    padding: 0.2rem 0.375rem;
+    font-size: 0.6875rem;
+  }
+
+  /* ----- WAR ROOM -- draft two-panel layout ----- */
+  .war-room {
+    display: grid;
+    grid-template-columns: 65fr 35fr;
+    gap: var(--gutter-lg);
+    min-height: calc(100vh - 12rem);
+  }
+
   @media (max-width: 1024px) {
-    .marginalia {
-      display: none;
+    .war-room {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+  }
+
+  .war-room-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gutter);
+  }
+
+  /* ----- HERO SCORE -- game viewer large score display ----- */
+  .hero-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gutter-xl);
+    padding: var(--gutter-xl) var(--gutter-lg);
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-raised);
+  }
+
+  .hero-score-team {
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .hero-score-team-name {
+    font-family: var(--font-headline);
+    font-size: var(--type-3);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .hero-score-number {
+    font-family: var(--font-stat);
+    font-size: var(--type-7);
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .hero-score-separator {
+    font-family: var(--font-stat);
+    font-size: var(--type-5);
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+
+  .hero-score-detail {
+    font-family: var(--font-stat);
+    font-size: var(--type-0);
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+    margin-top: 0.25rem;
+  }
+
+  @media (max-width: 640px) {
+    .hero-score {
+      gap: var(--gutter);
+      padding: var(--gutter-lg) var(--gutter);
+    }
+
+    .hero-score-team {
+      min-width: 80px;
+    }
+
+    .hero-score-team-name {
+      font-size: var(--type-1);
+    }
+
+    .hero-score-number {
+      font-size: var(--type-5);
     }
   }
 

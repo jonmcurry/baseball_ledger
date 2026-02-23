@@ -1,11 +1,8 @@
 /**
  * FolioNav
  *
- * Vertical sidebar navigation for the broadsheet layout.
- * Label-only entries with active page indicated by crimson left rule.
- *
- * Desktop: full sidebar with labels.
- * Mobile: horizontal bottom bar (via CSS).
+ * Horizontal navigation links for the top nav bar.
+ * Filters entries by league state and commissioner access.
  *
  * Layer 6: Presentational component. No store or hook imports.
  */
@@ -62,7 +59,7 @@ export function FolioNav({
   };
 
   return (
-    <div className="folio-nav">
+    <div className="top-nav-links">
       {visibleEntries.map((entry) => {
         const active = isActive(entry.route);
         return (
@@ -70,7 +67,7 @@ export function FolioNav({
             key={entry.route}
             type="button"
             onClick={() => onNavigate(entry.route)}
-            className={`folio-item${active ? ' folio-item--active' : ''}`}
+            className={`top-nav-item${active ? ' top-nav-item--active' : ''}`}
             aria-current={active ? 'page' : undefined}
           >
             {entry.label}

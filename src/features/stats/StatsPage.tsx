@@ -12,7 +12,6 @@ import { StatTable } from '@components/data-display/StatTable';
 import { Pagination } from '@components/data-display/Pagination';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import {
   BATTING_COLUMNS_TRADITIONAL,
   BATTING_COLUMNS_ADVANCED,
@@ -122,26 +121,21 @@ export function StatsPage() {
   }
 
   return (
-    <div className="space-y-gutter-lg">
-      <SectionOpener
-        kicker="The Record Book"
-        headline="League Leaders"
-      />
+    <div>
+      <div className="page-header">
+        <h2 className="page-header-title">League Leaders</h2>
+      </div>
 
       {error && <ErrorBanner severity="error" message={error} />}
 
-      <div className="flex items-center gap-gutter">
-        <div className="flex gap-1" role="tablist">
+      <div className="flex flex-wrap items-center gap-3 mb-gutter-lg">
+        <div className="tab-strip" role="tablist">
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'batting'}
             onClick={() => setActiveTab('batting')}
-            className={`rounded-button px-4 py-1.5 text-sm font-medium ${
-              activeTab === 'batting'
-                ? 'bg-ballpark text-old-lace'
-                : 'border border-sandstone text-ink hover:bg-sandstone/20'
-            }`}
+            className={`tab-strip-item${activeTab === 'batting' ? ' tab-strip-item--active' : ''}`}
           >
             Batting
           </button>
@@ -150,26 +144,20 @@ export function StatsPage() {
             role="tab"
             aria-selected={activeTab === 'pitching'}
             onClick={() => setActiveTab('pitching')}
-            className={`rounded-button px-4 py-1.5 text-sm font-medium ${
-              activeTab === 'pitching'
-                ? 'bg-ballpark text-old-lace'
-                : 'border border-sandstone text-ink hover:bg-sandstone/20'
-            }`}
+            className={`tab-strip-item${activeTab === 'pitching' ? ' tab-strip-item--active' : ''}`}
           >
             Pitching
           </button>
         </div>
 
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setStatView(statView === 'traditional' ? 'advanced' : 'traditional')}
-            className="rounded-button border border-sandstone px-3 py-1 text-xs font-medium text-ink hover:bg-sandstone/20"
-            aria-label="Toggle stat view"
-          >
-            {statView === 'traditional' ? 'Advanced' : 'Traditional'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setStatView(statView === 'traditional' ? 'advanced' : 'traditional')}
+          className="tab-strip-item border border-[var(--border-default)] px-3"
+          aria-label="Toggle stat view"
+        >
+          {statView === 'traditional' ? 'Advanced' : 'Traditional'}
+        </button>
 
         <div className="ml-auto flex gap-1">
           {LEAGUE_FILTERS.map((f) => (
@@ -177,11 +165,7 @@ export function StatsPage() {
               key={f}
               type="button"
               onClick={() => setLeagueFilter(f)}
-              className={`rounded-button px-3 py-1 text-xs font-medium ${
-                leagueFilter === f
-                  ? 'bg-ballpark text-old-lace'
-                  : 'border border-sandstone text-ink hover:bg-sandstone/20'
-              }`}
+              className={`tab-strip-item${leagueFilter === f ? ' tab-strip-item--active' : ''}`}
             >
               {f === 'combined' ? 'All' : f}
             </button>

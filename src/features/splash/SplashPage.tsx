@@ -23,7 +23,7 @@ export function SplashPage() {
   usePageTitle('Home');
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-base px-gutter-lg py-gutter-xl relative">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-surface-base px-gutter-lg py-gutter-xl relative animate-editorial-in">
       {/* Dateline */}
       <p className="dateline mb-gutter">{formatDateline()}</p>
 

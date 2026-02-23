@@ -13,7 +13,6 @@
 import { useMemo } from 'react';
 import { useLeague } from '@hooks/useLeague';
 import { useArchive } from '@hooks/useArchive';
-import { SectionOpener } from '@components/typography/SectionOpener';
 import { LoadingLedger } from '@components/feedback/LoadingLedger';
 import { ErrorBanner } from '@components/feedback/ErrorBanner';
 import { StampAnimation } from '@components/feedback/StampAnimation';
@@ -75,11 +74,10 @@ export function ArchivePage() {
   };
 
   return (
-    <div className="space-y-gutter-lg" data-era={era}>
-      <SectionOpener
-        kicker="The Archive"
-        headline="Past Seasons"
-      />
+    <div data-era={era}>
+      <div className="page-header">
+        <h2 className="page-header-title">Past Seasons</h2>
+      </div>
 
       <StampAnimation isVisible={seasonJustCompleted} />
 

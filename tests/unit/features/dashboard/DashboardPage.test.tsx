@@ -131,7 +131,7 @@ describe('DashboardPage', () => {
 
   it('renders season schedule section', () => {
     render(<DashboardPage />);
-    expect(screen.getByText('Season Schedule')).toBeInTheDocument();
+    expect(screen.getAllByText('Season Schedule').length).toBeGreaterThanOrEqual(1);
   });
 
   it('displays error banner when error exists', () => {
@@ -178,7 +178,7 @@ describe('DashboardPage', () => {
     });
 
     render(<DashboardPage />);
-    expect(screen.getByText('Day 42')).toBeInTheDocument();
+    expect(screen.getAllByText(/Day 42/).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows "No schedule available" when schedule is empty', () => {
@@ -424,7 +424,7 @@ describe('DashboardPage', () => {
   it('renders SeasonScheduleView during regular_season, not PlayoffStatusPanel', () => {
     render(<DashboardPage />);
     expect(screen.queryByTestId('playoff-status-panel')).not.toBeInTheDocument();
-    expect(screen.getByText('Season Schedule')).toBeInTheDocument();
+    expect(screen.getAllByText('Season Schedule').length).toBeGreaterThanOrEqual(1);
   });
 
   it('passes playoffMessage to SimulationNotification from lastPlayoffResult', () => {

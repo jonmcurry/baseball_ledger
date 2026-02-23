@@ -34,8 +34,8 @@ export function SectionOpener({
 }: SectionOpenerProps) {
   const Tag = size === 'page' ? 'h2' : 'h3';
   const headlineSize = size === 'page'
-    ? 'text-type-4 md:text-type-5'
-    : 'text-type-3 md:text-type-4';
+    ? 'text-type-3 md:text-type-4'
+    : 'text-type-2 md:text-type-3';
 
   return (
     <div className={`mb-gutter ${className}`.trim()}>
@@ -55,7 +55,6 @@ export function SectionOpener({
         <p className="dateline mt-1">{dateline}</p>
       )}
 
-      <hr className="rule-hairline mt-2" />
     </div>
   );
 }

@@ -1,12 +1,8 @@
 /**
  * BroadsheetShell
  *
- * Root layout wrapper for the broadsheet newspaper grid.
- * 3-column CSS Grid: folio (left nav) | content | marginalia (right context).
- *
- * Desktop: full 3-column broadsheet (1440px max).
- * Tablet: collapsed folio (icon-only) + content.
- * Mobile: single column with bottom folio nav.
+ * Root layout wrapper. Single-column layout with sticky top nav,
+ * full-width content area, and colophon footer.
  *
  * Layer 6: Presentational component. No store or hook imports.
  */
@@ -15,17 +11,13 @@ import type { ReactNode } from 'react';
 import { ErrorBoundary } from '../feedback/ErrorBoundary';
 
 export interface BroadsheetShellProps {
-  masthead: ReactNode;
-  folio: ReactNode;
-  marginalia?: ReactNode;
+  topNav: ReactNode;
   colophon: ReactNode;
   children: ReactNode;
 }
 
 export function BroadsheetShell({
-  masthead,
-  folio,
-  marginalia,
+  topNav,
   colophon,
   children,
 }: BroadsheetShellProps) {
@@ -38,35 +30,17 @@ export function BroadsheetShell({
         Skip to content
       </a>
 
-      {/* Masthead spans full width above the grid */}
-      {masthead}
+      {/* Sticky top navigation */}
+      {topNav}
 
-      {/* 3-column broadsheet grid */}
-      <div className="broadsheet-grid">
-        {/* Left: Folio navigation */}
-        <nav aria-label="Main navigation">
-          {folio}
-        </nav>
+      {/* Full-width main content */}
+      <ErrorBoundary>
+        <main id="main-content" className="main-content">
+          {children}
+        </main>
+      </ErrorBoundary>
 
-        {/* Center: Main content */}
-        <ErrorBoundary>
-          <main
-            id="main-content"
-            className="min-h-[calc(100vh-3rem)] px-gutter py-gutter max-md:pb-24"
-          >
-            {children}
-          </main>
-        </ErrorBoundary>
-
-        {/* Right: Marginalia (desktop only, hidden via CSS) */}
-        {marginalia && (
-          <aside aria-label="Contextual information" className="marginalia">
-            {marginalia}
-          </aside>
-        )}
-      </div>
-
-      {/* Colophon spans full width below the grid */}
+      {/* Colophon footer */}
       {colophon}
     </div>
   );
