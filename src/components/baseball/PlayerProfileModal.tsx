@@ -73,8 +73,8 @@ function TabButton({
       onClick={onClick}
       className={`relative px-4 py-2 font-headline text-xs font-bold uppercase tracking-wider transition-colors ${
         isActive
-          ? 'text-[var(--text-primary)]'
-          : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'
+          ? 'text-[var(--text-on-dark)]'
+          : 'text-[var(--text-on-dark-muted)] hover:text-[var(--text-on-dark)]'
       }`}
     >
       {label}
@@ -586,8 +586,8 @@ export function PlayerProfileModal({ player, isOpen, onClose, leagueId }: Player
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-[var(--border-default)] bg-[var(--surface-raised)]">
+        {/* Tabs -- panel-header style */}
+        <div className="flex bg-[var(--surface-dark)]">
           <TabButton
             label="Card Ratings"
             isActive={activeTab === 'card'}

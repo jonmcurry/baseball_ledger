@@ -1,8 +1,8 @@
 /**
  * HeadlineInterrupt
  *
- * Full-viewport "STOP THE PRESSES" overlay for championship events
- * and record-breaking moments. Uses .broadsheet-breakout styling.
+ * Full-viewport broadcast-style overlay for championship events
+ * and record-breaking moments. Uses dark broadcast background.
  * Auto-hides after a configurable delay.
  *
  * Layer 6: Presentational component.
@@ -40,26 +40,26 @@ export function HeadlineInterrupt({
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center animate-slide-up"
-      style={{ backgroundColor: 'rgba(244, 241, 235, 0.95)' }}
+      style={{ backgroundColor: 'rgba(26, 36, 59, 0.96)' }}
       role="alert"
       aria-live="assertive"
       onClick={stableDismiss}
     >
       <div className="max-w-3xl px-gutter-xl text-center">
-        <p className="font-stat text-xs uppercase tracking-widest text-[var(--text-tertiary)] mb-gutter">
+        <p className="font-stat text-xs uppercase tracking-widest text-[var(--text-on-dark-muted)] mb-gutter">
           Stop the Presses
         </p>
         <div className="border-y-2 border-[var(--accent-secondary)] py-gutter-lg">
-          <h2 className="font-headline text-4xl md:text-6xl font-black text-[var(--accent-secondary)] leading-tight">
+          <h2 className="font-headline text-4xl md:text-6xl font-black text-[var(--text-on-dark)] leading-tight">
             {headline}
           </h2>
           {subheadline && (
-            <p className="mt-gutter font-body text-lg italic text-[var(--text-secondary)]">
+            <p className="mt-gutter font-body text-lg italic text-[var(--text-on-dark-muted)]">
               {subheadline}
             </p>
           )}
         </div>
-        <p className="mt-gutter font-body text-xs text-[var(--text-tertiary)]">
+        <p className="mt-gutter font-body text-xs text-[var(--text-on-dark-muted)]">
           Click anywhere to dismiss
         </p>
       </div>

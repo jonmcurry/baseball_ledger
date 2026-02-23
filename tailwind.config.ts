@@ -12,6 +12,8 @@ const config: Config = {
           raised: 'var(--surface-raised)',
           overlay: 'var(--surface-overlay)',
           highlight: 'var(--surface-highlight)',
+          dark: 'var(--surface-dark)',
+          'dark-hover': 'var(--surface-dark-hover)',
         },
         accent: {
           DEFAULT: 'var(--accent-primary)',
@@ -95,6 +97,8 @@ const config: Config = {
         'gutter-lg': 'var(--gutter-lg)',
         'gutter-xl': 'var(--gutter-xl)',
         'masthead': '1.75rem',
+        'toolbar': 'var(--toolbar-height)',
+        'panel-header': 'var(--panel-header-height)',
       },
       maxWidth: {
         'ledger': 'var(--max-width-ledger)',

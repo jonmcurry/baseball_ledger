@@ -1,5 +1,66 @@
 # Changelog
 
+## 2026-02-22 - Complete UI/UX redesign: ESPN Broadcast + Fantasy Sports Pro
+
+Ground-up redesign of every page and component. Two design modes:
+- **Broadcast Mode** (dark navy headers): Game viewer, dashboard scores, playoffs
+- **Fantasy Sports Pro** (dense toolbars, panels): Draft, roster, stats, standings
+
+All color tokens, fonts, and functionality preserved.
+
+CSS Design System:
+- New component classes: .app-nav (dark nav), .app-nav-tabs (sepia tab row),
+  .panel/.panel-header/.panel-body (content containers with dark headers),
+  .broadcast-bar/.broadcast-score/.broadcast-team/.broadcast-label/.broadcast-badge,
+  .toolbar/.toolbar-group/.toolbar-btn/.toolbar-label/.toolbar-context/.toolbar-spacer,
+  .score-chip/.scoreboard-strip, .status-dot, .data-grid, .split-layout
+- New CSS variables: --surface-dark, --surface-dark-hover, --text-on-dark,
+  --text-on-dark-muted, --toolbar-height, --panel-header-height
+- Sticky headers on stat tables, dark hero-score background
+
+Navigation:
+- Two-row nav: dark navy identity bar (BASEBALL LEDGER + league + user controls)
+  + light sepia tab row (contextual page links)
+- FolioNav renders as .app-nav-tab items with crimson active border
+
+Dashboard:
+- Scoreboard strip (dark broadcast bar with horizontal scrollable score chips)
+- Season status toolbar (inline sim controls, day progress)
+- 3-column data grid: Schedule, Standings, League panels
+
+Draft Board:
+- Broadcast bar with round/pick info, centered timer, auto-draft toggle
+- 70/30 split layout (player table | sidebar)
+- Sidebar reordered: On The Clock > My Roster > Draft Feed > Analysis (collapsible)
+
+Game Viewer:
+- Dark broadcast scoreboard header with large scores
+- Broadcast badge for game status (Final/inning)
+- Toolbar for replay controls
+- 4-tab content: Box Score, Play-by-Play, Commentary, Decisions
+- GameStatePanel always visible (final state or live replay)
+
+Stats & Standings:
+- Single toolbar with all controls (tabs, view toggle, league filters)
+- Full-width stat table with sticky headers
+
+Roster:
+- Toolbar with heading, team name, view toggle, save button
+- 50/50 split layout for Diamond + Batting Order
+- Panel-wrapped Bench and Pitching Staff sections
+
+Remaining Pages:
+- Archive: toolbar header, era-themed detail
+- Transactions: toolbar with inline tab buttons
+- League Config: toolbar header, progress indicator
+- Playoffs: broadcast-bar header, panel-wrapped bracket sections
+
+Shared Components:
+- HeadlineInterrupt: dark broadcast overlay (navy bg instead of cream)
+- PlayerProfileModal: dark panel-header tabs, tighter spacing
+
+Tests: 262 passed, 5 pre-existing failures unchanged
+
 ## 2026-02-22 - Complete visual redesign: top nav, bento dashboard, war room draft
 
 Replaced 3-column sidebar layout with horizontal top-nav single-column architecture.

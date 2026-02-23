@@ -1,8 +1,10 @@
 /**
  * RosterPage
  *
- * Team roster management with lineup configuration.
- * Composes LineupDiamond, BattingOrder, BenchPanel, and PitchingRotation.
+ * Command center for team roster management.
+ * Toolbar with heading + view toggle + save button.
+ * Split layout: Diamond/Ledger on left, Batting Order on right.
+ * Below: Bench + Pitching panels side by side.
  *
  * Layer 7: Feature page. Composes hooks + sub-components.
  */
@@ -127,16 +129,17 @@ export function RosterPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="page-header">
-        <h2 className="page-header-title">Active Roster</h2>
-        {myTeam && <span className="page-header-context">{myTeam.name}</span>}
-        <div className="ml-auto flex items-center gap-3">
+    <div>
+      {/* Toolbar: heading + view toggle + save */}
+      <div className="toolbar">
+        <h2 className="toolbar-label">Active Roster</h2>
+        {myTeam && <span className="toolbar-context">{myTeam.name}</span>}
+        <div className="toolbar-spacer" />
+        <div className="toolbar-group">
           <button
             type="button"
             onClick={() => setRosterView((v) => v === 'diamond' ? 'ledger' : 'diamond')}
-            className="tab-strip-item border border-[var(--border-default)] px-3"
+            className="toolbar-btn"
             aria-label={`Switch to ${rosterView === 'diamond' ? 'ledger' : 'diamond'} view`}
           >
             {rosterView === 'diamond' ? 'Ledger View' : 'Diamond View'}
@@ -156,69 +159,94 @@ export function RosterPage() {
 
       {/* Position selection indicator */}
       {selectedPosition && (
-        <div className="border border-accent/40 bg-accent/5 px-gutter py-2">
-          <p className="font-body text-sm font-semibold text-accent">
+        <div className="broadcast-bar mt-gutter" style={{ background: 'var(--accent-secondary)' }}>
+          <span className="broadcast-label">
             Assigning: {selectedPosition}
-            <span className="ml-2 text-xs normal-case tracking-normal text-muted">
-              -- Select a bench player below
-            </span>
-          </p>
+          </span>
+          <span className="text-[var(--text-on-dark-muted)] text-xs ml-2">
+            -- Select a bench player below
+          </span>
         </div>
       )}
 
       {roster.length === 0 && !isRosterLoading && (
-        <div className="vintage-card text-center">
-          <p className="pennant-header text-lg">No Roster</p>
-          <p className="mt-2 text-sm text-muted">Complete the draft to populate your roster.</p>
+        <div className="panel mt-gutter text-center">
+          <div className="panel-header">
+            <span>Roster</span>
+          </div>
+          <div className="panel-body">
+            <p className="font-headline text-lg font-bold text-[var(--text-primary)]">No Roster</p>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">Complete the draft to populate your roster.</p>
+          </div>
         </div>
       )}
 
       {roster.length > 0 && rosterView === 'diamond' && (
         <>
-          {/* Diamond + Batting Order side by side */}
-          <div className="grid items-start gap-6 lg:grid-cols-2">
-            <LineupDiamond
-              starters={starters}
-              selectedPosition={selectedPosition}
-              onPositionClick={handlePositionClick}
-              onPlayerClick={handlePlayerClick}
-            />
-            <BattingOrder
-              starters={starters}
-              onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
-              onRemove={handleRemoveFromLineup}
-              onPlayerClick={handlePlayerClick}
-            />
+          {/* Split: Diamond + Batting Order */}
+          <div className="split-layout mt-gutter" style={{ '--split-ratio': '50 50' } as React.CSSProperties}>
+            <div>
+              <LineupDiamond
+                starters={starters}
+                selectedPosition={selectedPosition}
+                onPositionClick={handlePositionClick}
+                onPlayerClick={handlePlayerClick}
+              />
+            </div>
+            <div>
+              <BattingOrder
+                starters={starters}
+                onMoveUp={handleMoveUp}
+                onMoveDown={handleMoveDown}
+                onRemove={handleRemoveFromLineup}
+                onPlayerClick={handlePlayerClick}
+              />
+            </div>
           </div>
 
-          {/* Bench + Pitching side by side */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <BenchPanel
-              bench={bench}
-              selectedPosition={selectedPosition}
-              onPlayerSelect={handleBenchPlayerSelect}
-              onPlayerClick={handlePlayerClick}
-            />
-            <PitchingRotation
-              rotation={rotation}
-              bullpen={bullpen}
-              nextStarterIdx={0}
-              onRoleChange={handlePitcherRoleChange}
-              onPlayerClick={handlePlayerClick}
-            />
+          {/* Bench + Pitching panels */}
+          <div className="split-layout mt-gutter" style={{ '--split-ratio': '50 50' } as React.CSSProperties}>
+            <div className="panel">
+              <div className="panel-header">
+                <span>Bench</span>
+              </div>
+              <div className="panel-body">
+                <BenchPanel
+                  bench={bench}
+                  selectedPosition={selectedPosition}
+                  onPlayerSelect={handleBenchPlayerSelect}
+                  onPlayerClick={handlePlayerClick}
+                />
+              </div>
+            </div>
+            <div className="panel">
+              <div className="panel-header">
+                <span>Pitching Staff</span>
+              </div>
+              <div className="panel-body">
+                <PitchingRotation
+                  rotation={rotation}
+                  bullpen={bullpen}
+                  nextStarterIdx={0}
+                  onRoleChange={handlePitcherRoleChange}
+                  onPlayerClick={handlePlayerClick}
+                />
+              </div>
+            </div>
           </div>
         </>
       )}
 
       {roster.length > 0 && rosterView === 'ledger' && (
-        <LedgerView
-          starters={starters}
-          rotation={rotation}
-          bullpen={bullpen}
-          bench={bench}
-          onPlayerClick={handlePlayerClick}
-        />
+        <div className="mt-gutter">
+          <LedgerView
+            starters={starters}
+            rotation={rotation}
+            bullpen={bullpen}
+            bench={bench}
+            onPlayerClick={handlePlayerClick}
+          />
+        </div>
       )}
 
       {profilePlayer && (

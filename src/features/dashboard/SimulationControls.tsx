@@ -1,8 +1,8 @@
 /**
  * SimulationControls
  *
- * Heritage Editorial control panel for advancing simulation.
- * Clean typographic buttons with crimson progress indicator.
+ * Inline toolbar for advancing the simulation. Compact button row
+ * with progress bar that appears during simulation.
  */
 
 export interface SimulationControlsProps {
@@ -30,58 +30,40 @@ export function SimulationControls({
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-3">
-        <h3 className="font-headline text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
-          Simulation Controls
-        </h3>
-        <p className="font-stat text-xs text-[var(--text-secondary)]">
-          {isPlayoffs ? 'Playoff mode: single game' : 'Advance the season'}
-        </p>
-      </div>
-
-      {/* Control buttons */}
-      <div className="grid grid-cols-2 gap-2 md:flex md:gap-3">
-        {availableScopes.map(({ scope, label, days }) => (
+      {/* Compact button row */}
+      <div className="toolbar-group">
+        {availableScopes.map(({ scope, label }) => (
           <button
             key={scope}
             type="button"
             disabled={isRunning}
             onClick={() => onSimulate(scope)}
-            className="group flex flex-col items-center gap-1 border border-[var(--border-default)] px-4 py-3 transition-all hover:border-[var(--accent-secondary)] hover:bg-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+            className="toolbar-btn"
           >
-            <span className="font-stat text-2xl font-bold text-[var(--text-primary)] transition-transform group-hover:scale-110">
-              {days}
-            </span>
-            <span className="font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">
-              {label}
-            </span>
+            {label}
           </button>
         ))}
       </div>
 
-      {/* Progress bar */}
+      {/* Progress bar (shown during simulation) */}
       {isRunning && (
-        <div className="mt-4">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="font-stat text-[10px] uppercase tracking-wider text-[var(--text-secondary)]">
-              Simulating...
-            </span>
-            <span className="font-stat text-sm text-[var(--accent-secondary)]">
+        <div className="mt-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="h-1.5 flex-1 overflow-hidden bg-[var(--surface-overlay)]"
+              role="progressbar"
+              aria-valuenow={progressPct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full bg-[var(--accent-secondary)] transition-all duration-300"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <span className="font-stat text-[10px] text-[var(--accent-secondary)] tabular-nums">
               {progressPct}%
             </span>
-          </div>
-          <div
-            className="h-2 overflow-hidden border border-[var(--border-default)] bg-[var(--surface-overlay)]"
-            role="progressbar"
-            aria-valuenow={progressPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <div
-              className="h-full bg-[var(--accent-secondary)] transition-all duration-300"
-              style={{ width: `${progressPct}%` }}
-            />
           </div>
         </div>
       )}

@@ -1,8 +1,10 @@
 /**
  * StatsPage
  *
- * League statistics with batting/pitching leader boards.
- * Tabs for batting/pitching, league filter, pagination.
+ * Fantasy Sports Pro command center: dense toolbar with all controls,
+ * full-width stat table with sticky headers, pagination.
+ *
+ * Layer 7: Feature page. Composes hooks + sub-components.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -122,20 +124,17 @@ export function StatsPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <h2 className="page-header-title">League Leaders</h2>
-      </div>
+      {/* Toolbar: all controls in one dense row */}
+      <div className="toolbar">
+        <h2 className="toolbar-label">League Leaders</h2>
 
-      {error && <ErrorBanner severity="error" message={error} />}
-
-      <div className="flex flex-wrap items-center gap-3 mb-gutter-lg">
-        <div className="tab-strip" role="tablist">
+        <div className="toolbar-group" role="tablist">
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'batting'}
             onClick={() => setActiveTab('batting')}
-            className={`tab-strip-item${activeTab === 'batting' ? ' tab-strip-item--active' : ''}`}
+            className={`toolbar-btn${activeTab === 'batting' ? ' toolbar-btn--active' : ''}`}
           >
             Batting
           </button>
@@ -144,7 +143,7 @@ export function StatsPage() {
             role="tab"
             aria-selected={activeTab === 'pitching'}
             onClick={() => setActiveTab('pitching')}
-            className={`tab-strip-item${activeTab === 'pitching' ? ' tab-strip-item--active' : ''}`}
+            className={`toolbar-btn${activeTab === 'pitching' ? ' toolbar-btn--active' : ''}`}
           >
             Pitching
           </button>
@@ -153,25 +152,29 @@ export function StatsPage() {
         <button
           type="button"
           onClick={() => setStatView(statView === 'traditional' ? 'advanced' : 'traditional')}
-          className="tab-strip-item border border-[var(--border-default)] px-3"
+          className="toolbar-btn"
           aria-label="Toggle stat view"
         >
           {statView === 'traditional' ? 'Advanced' : 'Traditional'}
         </button>
 
-        <div className="ml-auto flex gap-1">
+        <div className="toolbar-spacer" />
+
+        <div className="toolbar-group">
           {LEAGUE_FILTERS.map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setLeagueFilter(f)}
-              className={`tab-strip-item${leagueFilter === f ? ' tab-strip-item--active' : ''}`}
+              className={`toolbar-btn${leagueFilter === f ? ' toolbar-btn--active' : ''}`}
             >
               {f === 'combined' ? 'All' : f}
             </button>
           ))}
         </div>
       </div>
+
+      {error && <ErrorBanner severity="error" message={error} />}
 
       {activeTab === 'batting' ? (
         <StatTable
