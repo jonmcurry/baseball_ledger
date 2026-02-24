@@ -160,7 +160,18 @@ export function LeagueConfigPage() {
         </div>
       ) : (
         <div className="mt-gutter">
-          <LeagueConfigForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+          <LeagueConfigForm
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            initialValues={isExistingLeague ? {
+              name: league.name,
+              teamCount: league.teamCount,
+              yearRangeStart: league.yearRangeStart,
+              yearRangeEnd: league.yearRangeEnd,
+              injuriesEnabled: league.injuriesEnabled,
+              negroLeaguesEnabled: league.negroLeaguesEnabled,
+            } : undefined}
+          />
         </div>
       )}
 

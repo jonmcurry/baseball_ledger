@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-02-22 - Fix league config page and toggle contrast
+
+Two fixes:
+
+1. Config page now shows existing league settings instead of blank "create new"
+   defaults. Added `initialValues` prop to LeagueConfigForm, populated from
+   league store (name, teamCount, yearRange, injuriesEnabled, negroLeaguesEnabled).
+
+2. Toggle knob was dark on dark navy background when checked, making it nearly
+   invisible. Knob now uses `bg-old-lace` (cream/white) when checked for clear
+   contrast against the `bg-ballpark` track.
+
+Files: LeagueConfigForm.tsx, LeagueConfigPage.tsx, Toggle.tsx.
+TypeScript clean, 29 tests passed (toggle + league).
+
 ## 2026-02-22 - ESPN side-by-side box score layout with team logo headers
 
 Restructured box score to match ESPN game summary layout. Away and home batting

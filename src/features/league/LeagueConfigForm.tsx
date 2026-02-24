@@ -15,6 +15,7 @@ import { Toggle } from '@components/forms/Toggle';
 export interface LeagueConfigFormProps {
   onSubmit: (config: LeagueFormData) => void;
   isSubmitting: boolean;
+  initialValues?: Partial<LeagueFormData>;
 }
 
 export interface LeagueFormData {
@@ -32,13 +33,13 @@ const TEAM_COUNT_OPTIONS = [
   { value: '30', label: '30 Teams' },
 ] as const;
 
-export function LeagueConfigForm({ onSubmit, isSubmitting }: LeagueConfigFormProps) {
-  const [name, setName] = useState('');
-  const [teamCount, setTeamCount] = useState('18');
-  const [yearStart, setYearStart] = useState('1901');
-  const [yearEnd, setYearEnd] = useState('2025');
-  const [injuriesEnabled, setInjuriesEnabled] = useState(false);
-  const [negroLeaguesEnabled, setNegroLeaguesEnabled] = useState(true);
+export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues }: LeagueConfigFormProps) {
+  const [name, setName] = useState(initialValues?.name ?? '');
+  const [teamCount, setTeamCount] = useState(String(initialValues?.teamCount ?? 18));
+  const [yearStart, setYearStart] = useState(String(initialValues?.yearRangeStart ?? 1901));
+  const [yearEnd, setYearEnd] = useState(String(initialValues?.yearRangeEnd ?? 2025));
+  const [injuriesEnabled, setInjuriesEnabled] = useState(initialValues?.injuriesEnabled ?? false);
+  const [negroLeaguesEnabled, setNegroLeaguesEnabled] = useState(initialValues?.negroLeaguesEnabled ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {

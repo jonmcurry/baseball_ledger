@@ -40,8 +40,8 @@ export function Toggle({
       >
         <span
           aria-hidden="true"
-          className={`inline-block h-4 w-4 transform rounded-full bg-[var(--text-primary)] shadow-sm transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
+          className={`inline-block h-4 w-4 transform rounded-full shadow-sm transition-transform ${
+            checked ? 'translate-x-6 bg-old-lace' : 'translate-x-1 bg-[var(--text-primary)]'
           }`}
         />
       </button>
