@@ -310,8 +310,8 @@ describe('GameViewerPage', () => {
     });
 
     render(<GameViewerPage />);
-    // Box score tab is active by default
-    expect(screen.getByText('Batting')).toBeInTheDocument();
-    expect(screen.getByText('Pitching')).toBeInTheDocument();
+    // Box score tab is active by default -- tables render column headers
+    expect(screen.getByText('HITTERS')).toBeInTheDocument();
+    expect(screen.getByText('PITCHERS')).toBeInTheDocument();
   });
 });

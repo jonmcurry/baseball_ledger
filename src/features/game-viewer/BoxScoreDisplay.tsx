@@ -11,6 +11,7 @@
 
 import { useMemo } from 'react';
 import { LineScore } from '@components/baseball/LineScore';
+import { TeamLogo } from '@components/baseball/TeamLogo';
 import type { InningScore, LineScoreTotals } from '@components/baseball/LineScore';
 import type { BoxScore, BattingLine, PitchingLine, PlayByPlayEntry, BaseState } from '@lib/types/game';
 import { OutcomeCategory } from '@lib/types/game';
@@ -78,11 +79,9 @@ const TD = 'py-0.5 text-center';
 
 function BattingTable({
   lines,
-  label,
   seasonStats,
 }: {
   lines: readonly BattingLine[];
-  label: string;
   seasonStats?: SeasonStatsMap;
 }) {
   const teamTotals = useMemo(() => ({
@@ -96,71 +95,68 @@ function BattingTable({
   }), [lines]);
 
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-medium text-muted">{label}</p>
-      <div className="overflow-x-auto">
-        <table className="w-full font-stat text-xs" role="table">
-          <thead>
-            <tr className="border-b border-sandstone text-muted">
-              <th className="py-0.5 text-left font-medium">Hitters</th>
-              <th className={TH}>AB</th>
-              <th className={TH}>R</th>
-              <th className={TH}>H</th>
-              <th className={TH}>RBI</th>
-              <th className={TH}>HR</th>
-              <th className={TH}>BB</th>
-              <th className={TH}>K</th>
-              <th className={TH}>AVG</th>
-              <th className={TH}>OBP</th>
-              <th className={TH}>SLG</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((line) => {
-              const rates = cumulativeRates(line, seasonStats?.[line.playerId]?.batting);
-              const name = line.playerName ?? line.playerId;
-              const pos = line.position;
-              return (
-                <tr key={line.playerId} className="border-b border-sandstone/30">
-                  <td className="py-0.5 text-ink">
-                    {name}{pos ? <span className="ml-1 text-muted">{pos}</span> : null}
-                  </td>
-                  <td className={TD}>{line.AB}</td>
-                  <td className={TD}>{line.R}</td>
-                  <td className={TD}>{line.H}</td>
-                  <td className={TD}>{line.RBI}</td>
-                  <td className={TD}>{line.HR}</td>
-                  <td className={TD}>{line.BB}</td>
-                  <td className={TD}>{line.SO}</td>
-                  <td className={TD}>{formatRate(rates.avg)}</td>
-                  <td className={TD}>{formatRate(rates.obp)}</td>
-                  <td className={TD}>{formatRate(rates.slg)}</td>
-                </tr>
-              );
-            })}
-            {lines.length > 0 && (
-              <tr className="border-t border-sandstone font-bold">
-                <td className="py-0.5 text-ink">TEAM</td>
-                <td className={TD}>{teamTotals.AB}</td>
-                <td className={TD}>{teamTotals.R}</td>
-                <td className={TD}>{teamTotals.H}</td>
-                <td className={TD}>{teamTotals.RBI}</td>
-                <td className={TD}>{teamTotals.HR}</td>
-                <td className={TD}>{teamTotals.BB}</td>
-                <td className={TD}>{teamTotals.K}</td>
-                <td className={TD} />
-                <td className={TD} />
-                <td className={TD} />
+    <div className="overflow-x-auto">
+      <table className="w-full font-stat text-xs" role="table">
+        <thead>
+          <tr className="border-b border-sandstone text-muted">
+            <th className="py-0.5 text-left font-medium">HITTERS</th>
+            <th className={TH}>AB</th>
+            <th className={TH}>R</th>
+            <th className={TH}>H</th>
+            <th className={TH}>RBI</th>
+            <th className={TH}>HR</th>
+            <th className={TH}>BB</th>
+            <th className={TH}>K</th>
+            <th className={TH}>AVG</th>
+            <th className={TH}>OBP</th>
+            <th className={TH}>SLG</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((line) => {
+            const rates = cumulativeRates(line, seasonStats?.[line.playerId]?.batting);
+            const name = line.playerName ?? line.playerId;
+            const pos = line.position;
+            return (
+              <tr key={line.playerId} className="border-b border-sandstone/30">
+                <td className="py-0.5 text-ink whitespace-nowrap">
+                  {name}{pos ? <span className="ml-1 text-muted">{pos}</span> : null}
+                </td>
+                <td className={TD}>{line.AB}</td>
+                <td className={TD}>{line.R}</td>
+                <td className={TD}>{line.H}</td>
+                <td className={TD}>{line.RBI}</td>
+                <td className={TD}>{line.HR}</td>
+                <td className={TD}>{line.BB}</td>
+                <td className={TD}>{line.SO}</td>
+                <td className={TD}>{formatRate(rates.avg)}</td>
+                <td className={TD}>{formatRate(rates.obp)}</td>
+                <td className={TD}>{formatRate(rates.slg)}</td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+          {lines.length > 0 && (
+            <tr className="border-t border-sandstone font-bold">
+              <td className="py-0.5 text-ink">TEAM</td>
+              <td className={TD}>{teamTotals.AB}</td>
+              <td className={TD}>{teamTotals.R}</td>
+              <td className={TD}>{teamTotals.H}</td>
+              <td className={TD}>{teamTotals.RBI}</td>
+              <td className={TD}>{teamTotals.HR}</td>
+              <td className={TD}>{teamTotals.BB}</td>
+              <td className={TD}>{teamTotals.K}</td>
+              <td className={TD} />
+              <td className={TD} />
+              <td className={TD} />
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
 
-function PitchingTable({ lines, label }: { lines: readonly PitchingLine[]; label: string }) {
+function PitchingTable({ lines }: { lines: readonly PitchingLine[] }) {
   const teamTotals = useMemo(() => {
     let totalIP = 0;
     for (const l of lines) {
@@ -178,63 +174,58 @@ function PitchingTable({ lines, label }: { lines: readonly PitchingLine[]; label
   }, [lines]);
 
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-medium text-muted">{label}</p>
-      <div className="overflow-x-auto">
-        <table className="w-full font-stat text-xs" role="table">
-          <thead>
-            <tr className="border-b border-sandstone text-muted">
-              <th className="py-0.5 text-left font-medium">Pitchers</th>
-              <th className={TH}>IP</th>
-              <th className={TH}>H</th>
-              <th className={TH}>R</th>
-              <th className={TH}>ER</th>
-              <th className={TH}>BB</th>
-              <th className={TH}>K</th>
-              <th className={TH}>HR</th>
-              <th className={TH}>ERA</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((line) => {
-              const name = line.playerName ?? line.playerId;
-              const era = line.IP > 0 ? computeERA(line.ER, line.IP).toFixed(2) : '-';
-              return (
-                <tr key={line.playerId} className="border-b border-sandstone/30">
-                  <td className="py-0.5 text-ink">
-                    {line.decision
-                      ? <>{name} <span className="font-bold">({line.decision})</span></>
-                      : name}
-                  </td>
-                  <td className={TD}>{line.IP}</td>
-                  <td className={TD}>{line.H}</td>
-                  <td className={TD}>{line.R}</td>
-                  <td className={TD}>{line.ER}</td>
-                  <td className={TD}>{line.BB}</td>
-                  <td className={TD}>{line.SO}</td>
-                  <td className={TD}>{line.HR}</td>
-                  <td className={TD}>{era}</td>
-                </tr>
-              );
-            })}
-            {lines.length > 0 && (
-              <tr className="border-t border-sandstone font-bold">
-                <td className="py-0.5 text-ink">TEAM</td>
-                <td className={TD}>{teamTotals.IP}</td>
-                <td className={TD}>{teamTotals.H}</td>
-                <td className={TD}>{teamTotals.R}</td>
-                <td className={TD}>{teamTotals.ER}</td>
-                <td className={TD}>{teamTotals.BB}</td>
-                <td className={TD}>{teamTotals.K}</td>
-                <td className={TD}>{teamTotals.HR}</td>
-                <td className={TD}>
-                  {teamTotals.IP > 0 ? computeERA(teamTotals.ER, teamTotals.IP).toFixed(2) : '-'}
+    <div className="overflow-x-auto">
+      <table className="w-full font-stat text-xs" role="table">
+        <thead>
+          <tr className="border-b border-sandstone text-muted">
+            <th className="py-0.5 text-left font-medium">PITCHERS</th>
+            <th className={TH}>IP</th>
+            <th className={TH}>H</th>
+            <th className={TH}>R</th>
+            <th className={TH}>ER</th>
+            <th className={TH}>BB</th>
+            <th className={TH}>K</th>
+            <th className={TH}>HR</th>
+            <th className={TH}>ERA</th>
+          </tr>
+        </thead>
+        <tbody>
+          {lines.map((line) => {
+            const name = line.playerName ?? line.playerId;
+            const era = line.IP > 0 ? computeERA(line.ER, line.IP).toFixed(2) : '---';
+            return (
+              <tr key={line.playerId} className="border-b border-sandstone/30">
+                <td className="py-0.5 text-ink whitespace-nowrap">
+                  {line.decision
+                    ? <>{name} <span className="font-bold">({line.decision})</span></>
+                    : name}
                 </td>
+                <td className={TD}>{line.IP}</td>
+                <td className={TD}>{line.H}</td>
+                <td className={TD}>{line.R}</td>
+                <td className={TD}>{line.ER}</td>
+                <td className={TD}>{line.BB}</td>
+                <td className={TD}>{line.SO}</td>
+                <td className={TD}>{line.HR}</td>
+                <td className={TD}>{era}</td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            );
+          })}
+          {lines.length > 0 && (
+            <tr className="border-t border-sandstone font-bold">
+              <td className="py-0.5 text-ink">TEAM</td>
+              <td className={TD}>{teamTotals.IP}</td>
+              <td className={TD}>{teamTotals.H}</td>
+              <td className={TD}>{teamTotals.R}</td>
+              <td className={TD}>{teamTotals.ER}</td>
+              <td className={TD}>{teamTotals.BB}</td>
+              <td className={TD}>{teamTotals.K}</td>
+              <td className={TD}>{teamTotals.HR}</td>
+              <td className={TD} />
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -459,6 +450,50 @@ function TeamDetailSection({
   );
 }
 
+/** Team section header with logo + "Team Name Hitting/Pitching". */
+function TeamSectionHeader({ teamName, section }: { teamName: string; section: string }) {
+  return (
+    <div className="flex items-center gap-2 pb-1">
+      <TeamLogo teamName={teamName} size={20} />
+      <h4 className="font-headline text-sm font-bold text-ink">
+        {teamName} {section}
+      </h4>
+    </div>
+  );
+}
+
+/** Game-level pitching decisions (WP, LP, SV) shown below pitching tables. */
+function PitchingDecisions({ lines }: { lines: readonly PitchingLine[] }) {
+  const wp = lines.find((l) => l.decision === 'W');
+  const lp = lines.find((l) => l.decision === 'L');
+  const sv = lines.find((l) => l.decision === 'SV');
+
+  if (!wp && !lp && !sv) return null;
+
+  return (
+    <div className="mt-2 border-t border-sandstone/30 pt-2">
+      <p className="font-stat text-[10px] font-bold uppercase tracking-wider text-muted">
+        Pitching
+      </p>
+      {wp && (
+        <p className="font-stat text-xs text-ink">
+          <span className="font-bold">WP:</span> {wp.playerName ?? wp.playerId}
+        </p>
+      )}
+      {lp && (
+        <p className="font-stat text-xs text-ink">
+          <span className="font-bold">LP:</span> {lp.playerName ?? lp.playerId}
+        </p>
+      )}
+      {sv && (
+        <p className="font-stat text-xs text-ink">
+          <span className="font-bold">SV:</span> {sv.playerName ?? sv.playerId}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function BoxScoreDisplay({
   boxScore,
   battingLines,
@@ -489,9 +524,7 @@ export function BoxScoreDisplay({
   }, [battingLines, pitchingLines, hasTeamSide]);
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-headline text-sm font-bold text-ballpark">Box Score</h3>
-
+    <div className="space-y-6">
       {boxScore && (() => {
         const maxInnings = Math.max(boxScore.lineScore.away.length, boxScore.lineScore.home.length);
         const innings: InningScore[] = Array.from({ length: maxInnings }, (_, i) => ({
@@ -521,46 +554,54 @@ export function BoxScoreDisplay({
 
       {hasTeamSide ? (
         <>
-          {/* Away team */}
-          <div className="space-y-3">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
-              {awayTeam}
-            </h4>
-            <div className="space-y-3">
-              <BattingTable lines={awayBatting} label="Batting" seasonStats={seasonStats} />
-              <PitchingTable lines={awayPitching} label="Pitching" />
+          {/* Hitting -- side by side */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Away hitting */}
+            <div>
+              <TeamSectionHeader teamName={awayTeam} section="Hitting" />
+              <BattingTable lines={awayBatting} seasonStats={seasonStats} />
+              {playByPlay && playByPlay.length > 0 && (
+                <TeamDetailSection
+                  battingLines={awayBatting}
+                  battingSide="top"
+                  playByPlay={playByPlay}
+                />
+              )}
             </div>
-            {playByPlay && playByPlay.length > 0 && (
-              <TeamDetailSection
-                battingLines={awayBatting}
-                battingSide="top"
-                playByPlay={playByPlay}
-              />
-            )}
+            {/* Home hitting */}
+            <div>
+              <TeamSectionHeader teamName={homeTeam} section="Hitting" />
+              <BattingTable lines={homeBatting} seasonStats={seasonStats} />
+              {playByPlay && playByPlay.length > 0 && (
+                <TeamDetailSection
+                  battingLines={homeBatting}
+                  battingSide="bottom"
+                  playByPlay={playByPlay}
+                />
+              )}
+            </div>
           </div>
-          {/* Home team */}
-          <div className="space-y-3">
-            <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
-              {homeTeam}
-            </h4>
-            <div className="space-y-3">
-              <BattingTable lines={homeBatting} label="Batting" seasonStats={seasonStats} />
-              <PitchingTable lines={homePitching} label="Pitching" />
+
+          {/* Pitching -- side by side */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Away pitching */}
+            <div>
+              <TeamSectionHeader teamName={awayTeam} section="Pitching" />
+              <PitchingTable lines={awayPitching} />
             </div>
-            {playByPlay && playByPlay.length > 0 && (
-              <TeamDetailSection
-                battingLines={homeBatting}
-                battingSide="bottom"
-                playByPlay={playByPlay}
-              />
-            )}
+            {/* Home pitching */}
+            <div>
+              <TeamSectionHeader teamName={homeTeam} section="Pitching" />
+              <PitchingTable lines={homePitching} />
+              <PitchingDecisions lines={pitchingLines} />
+            </div>
           </div>
         </>
       ) : (
         /* Legacy fallback: combined view when teamSide is unavailable */
         <div className="space-y-3">
-          <BattingTable lines={awayBatting} label="Batting" seasonStats={seasonStats} />
-          <PitchingTable lines={awayPitching} label="Pitching" />
+          <BattingTable lines={awayBatting} seasonStats={seasonStats} />
+          <PitchingTable lines={awayPitching} />
         </div>
       )}
     </div>

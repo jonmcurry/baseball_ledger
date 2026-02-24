@@ -16,9 +16,10 @@ describe('BoxScoreDisplay', () => {
     awayTeam: 'Boston Red Sox',
   };
 
-  it('renders heading', () => {
+  it('renders column headers', () => {
     render(<BoxScoreDisplay {...defaultProps} />);
-    expect(screen.getByText('Box Score')).toBeInTheDocument();
+    expect(screen.getByText('HITTERS')).toBeInTheDocument();
+    expect(screen.getByText('PITCHERS')).toBeInTheDocument();
   });
 
   it('displays team names in line score', () => {
@@ -27,9 +28,8 @@ describe('BoxScoreDisplay', () => {
     expect(screen.getByText('Boston Red Sox')).toBeInTheDocument();
   });
 
-  it('renders batting and pitching sections', () => {
+  it('renders batting and pitching tables', () => {
     render(<BoxScoreDisplay {...defaultProps} />);
-    expect(screen.getByText('Batting')).toBeInTheDocument();
-    expect(screen.getByText('Pitching')).toBeInTheDocument();
+    expect(screen.getAllByRole('table').length).toBeGreaterThanOrEqual(2);
   });
 });

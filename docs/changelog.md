@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-22 - ESPN side-by-side box score layout with team logo headers
+
+Restructured box score to match ESPN game summary layout. Away and home batting
+tables are now side-by-side in a 2-column grid, with pitching tables similarly
+paired below. Each table has a team logo + "Team Name Hitting/Pitching" header.
+
+- Batting tables: side-by-side with detail sections (BATTING/BASERUNNING/FIELDING)
+  below each team's table within the same column
+- Pitching tables: side-by-side with WP/LP/SV decisions section below
+- Column headers changed to uppercase (HITTERS, PITCHERS) per ESPN
+- Pitching TEAM row: ERA cell left blank (ESPN standard)
+- 0 IP pitchers show "---" instead of "-" for ERA
+- Responsive: stacks vertically on mobile (lg:grid-cols-2)
+- Removed top-level "Box Score" heading (tables speak for themselves)
+
+Files: BoxScoreDisplay.tsx (layout restructure + TeamLogo import),
+BoxScoreDisplay.test.tsx, GameViewerPage.test.tsx (updated assertions).
+TypeScript clean, 51 game-viewer tests passed.
+
 ## 2026-02-22 - Game viewer hero-score spacing and auto-generated team logos
 
 Fixed cramped scoreboard header layout. Team name and score were inline spans
