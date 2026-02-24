@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-02-22 - League config: update instead of recreate, fix baseball SVG
+
+Two fixes for the league config page:
+
+1. Clicking save on an existing league was calling createLeague (showing progress
+   indicator and attempting to create a new league). Added PATCH handler to the
+   league API endpoint, updateLeague service function, and branching logic in
+   handleSubmit. Existing leagues now update in-place; team count and year range
+   are disabled when editing. Button shows "Update Settings" vs "Create League".
+
+2. Baseball SVG in the progress indicator had seams extending outside the circle.
+   Recalculated bezier curve endpoints to stay within the circle boundary and
+   reduced seam stroke width from 1.5 to 1.
+
+Files: api/leagues/[id]/index.ts (PATCH handler), league-service.ts (updateLeague),
+LeagueConfigPage.tsx (handleSubmit branching + SVG fix), LeagueConfigForm.tsx
+(isEditing prop), LeagueConfigPage.test.tsx (updated button text).
+TypeScript clean, 350 feature tests passed.
+
 ## 2026-02-22 - Fix league config page and toggle contrast
 
 Two fixes:

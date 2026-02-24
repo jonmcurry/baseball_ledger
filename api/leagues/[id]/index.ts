@@ -1,5 +1,6 @@
 /**
  * GET    /api/leagues/:id -- Fetch league details
+ * PATCH  /api/leagues/:id -- Update league settings (commissioner only)
  * POST   /api/leagues/:id -- Join league via invite key
  * DELETE /api/leagues/:id -- Delete league (commissioner only)
  */
@@ -11,15 +12,21 @@ import { requireAuth } from '../../_lib/auth';
 import { validateBody } from '../../_lib/validate';
 import { ok, noContent } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
-import { snakeToCamel } from '../../_lib/transform';
+import { snakeToCamel, camelToSnake } from '../../_lib/transform';
 import { createServerClient } from '../../../src/lib/supabase/server';
 
 const JoinLeagueSchema = z.object({
   inviteKey: z.string().min(1),
 });
 
+const UpdateLeagueSchema = z.object({
+  name: z.string().min(3).max(100).optional(),
+  injuriesEnabled: z.boolean().optional(),
+  negroLeaguesEnabled: z.boolean().optional(),
+});
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (!checkMethod(req, res, ['GET', 'POST', 'DELETE'])) return;
+  if (!checkMethod(req, res, ['GET', 'PATCH', 'POST', 'DELETE'])) return;
 
   const requestId = crypto.randomUUID();
   try {
@@ -52,6 +59,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       ok(res, snakeToCamel(data), requestId);
+    } else if (req.method === 'PATCH') {
+      // UPDATE league settings (commissioner only)
+      const body = validateBody(req, UpdateLeagueSchema);
+
+      const { data: league, error: leagueError } = await supabase
+        .from('leagues')
+        .select('commissioner_id')
+        .eq('id', leagueId)
+        .single();
+
+      if (leagueError || !league) {
+        throw { category: 'NOT_FOUND', code: 'LEAGUE_NOT_FOUND', message: `League ${leagueId} not found` };
+      }
+
+      if (league.commissioner_id !== userId) {
+        throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can update league settings' };
+      }
+
+      const updates = camelToSnake(body);
+      const { data: updated, error: updateError } = await supabase
+        .from('leagues')
+        .update(updates)
+        .eq('id', leagueId)
+        .select('*')
+        .single();
+
+      if (updateError) {
+        throw { category: 'DATA', code: 'UPDATE_FAILED', message: updateError.message };
+      }
+
+      ok(res, snakeToCamel(updated), requestId);
     } else if (req.method === 'POST') {
       // JOIN league
       const body = validateBody(req, JoinLeagueSchema);

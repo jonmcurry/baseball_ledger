@@ -16,6 +16,7 @@ export interface LeagueConfigFormProps {
   onSubmit: (config: LeagueFormData) => void;
   isSubmitting: boolean;
   initialValues?: Partial<LeagueFormData>;
+  isEditing?: boolean;
 }
 
 export interface LeagueFormData {
@@ -33,7 +34,7 @@ const TEAM_COUNT_OPTIONS = [
   { value: '30', label: '30 Teams' },
 ] as const;
 
-export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues }: LeagueConfigFormProps) {
+export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues, isEditing = false }: LeagueConfigFormProps) {
   const [name, setName] = useState(initialValues?.name ?? '');
   const [teamCount, setTeamCount] = useState(String(initialValues?.teamCount ?? 18));
   const [yearStart, setYearStart] = useState(String(initialValues?.yearRangeStart ?? 1901));
@@ -93,6 +94,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues }: Leag
         options={TEAM_COUNT_OPTIONS}
         name="teamCount"
         label="Number of Teams"
+        disabled={isEditing}
       />
 
       <div className="grid grid-cols-2 gap-gutter">
@@ -104,6 +106,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues }: Leag
           type="number"
           placeholder="1901"
           error={errors.yearStart}
+          disabled={isEditing}
         />
         <Input
           value={yearEnd}
@@ -113,6 +116,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues }: Leag
           type="number"
           placeholder="2025"
           error={errors.yearEnd}
+          disabled={isEditing}
         />
       </div>
 
@@ -133,7 +137,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues }: Leag
         disabled={isSubmitting}
         className="rounded-button bg-ballpark px-6 py-2 font-medium text-old-lace hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? 'Saving...' : 'Save League'}
+        {isSubmitting ? 'Saving...' : isEditing ? 'Update Settings' : 'Create League'}
       </button>
     </form>
   );

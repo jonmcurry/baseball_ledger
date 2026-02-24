@@ -7,7 +7,7 @@
 import type { LeagueSummary, TeamSummary, DivisionStandings } from '@lib/types/league';
 import type { ScheduleDay, ScheduleGameSummary } from '@lib/types/schedule';
 import type { JoinLeagueResult } from '@lib/types/api';
-import { apiGet, apiPost, apiDelete } from './api-client';
+import { apiGet, apiPost, apiPatch, apiDelete } from './api-client';
 
 export async function fetchLeague(id: string): Promise<LeagueSummary> {
   const response = await apiGet<LeagueSummary>(`/api/leagues/${id}`);
@@ -23,6 +23,15 @@ export async function createLeague(data: {
   negroLeaguesEnabled?: boolean;
 }): Promise<LeagueSummary> {
   const response = await apiPost<LeagueSummary>('/api/leagues', data);
+  return response.data;
+}
+
+export async function updateLeague(id: string, data: {
+  name?: string;
+  injuriesEnabled?: boolean;
+  negroLeaguesEnabled?: boolean;
+}): Promise<LeagueSummary> {
+  const response = await apiPatch<LeagueSummary>(`/api/leagues/${id}`, data);
   return response.data;
 }
 

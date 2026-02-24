@@ -77,26 +77,36 @@ export function LeagueConfigPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const league = await leagueService.createLeague({
-        name: config.name,
-        teamCount: config.teamCount,
-        yearRangeStart: config.yearRangeStart,
-        yearRangeEnd: config.yearRangeEnd,
-        injuriesEnabled: config.injuriesEnabled,
-        negroLeaguesEnabled: config.negroLeaguesEnabled,
-      });
-      setProgress(100);
-      setCreatedInviteKey(league.inviteKey ?? null);
-      // Brief pause at 100% so user sees completion
-      await new Promise((r) => setTimeout(r, 400));
-      navigate(`/leagues/${league.id}/dashboard`);
+      if (isExistingLeague) {
+        // Update existing league settings
+        const updated = await leagueService.updateLeague(league.id, {
+          name: config.name,
+          injuriesEnabled: config.injuriesEnabled,
+          negroLeaguesEnabled: config.negroLeaguesEnabled,
+        });
+        useLeagueStore.getState().setActiveLeague(updated);
+      } else {
+        // Create new league
+        const newLeague = await leagueService.createLeague({
+          name: config.name,
+          teamCount: config.teamCount,
+          yearRangeStart: config.yearRangeStart,
+          yearRangeEnd: config.yearRangeEnd,
+          injuriesEnabled: config.injuriesEnabled,
+          negroLeaguesEnabled: config.negroLeaguesEnabled,
+        });
+        setProgress(100);
+        setCreatedInviteKey(newLeague.inviteKey ?? null);
+        await new Promise((r) => setTimeout(r, 400));
+        navigate(`/leagues/${newLeague.id}/dashboard`);
+      }
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
           : (err && typeof err === 'object' && 'message' in err)
             ? String((err as { message: unknown }).message)
-            : 'Failed to create league';
+            : isExistingLeague ? 'Failed to update league' : 'Failed to create league';
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -150,11 +160,11 @@ export function LeagueConfigPage() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.5"
+              strokeWidth="1"
             >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M8 2.5C9.5 6 9.5 10 8 14s-1.5 6.5 0 9.5" />
-              <path d="M16 2.5C14.5 6 14.5 10 16 14s1.5 6.5 0 9.5" />
+              <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+              <path d="M 9 2.5 C 5 7, 5 17, 9 21.5" />
+              <path d="M 15 2.5 C 19 7, 19 17, 15 21.5" />
             </svg>
           </div>
         </div>
@@ -163,6 +173,7 @@ export function LeagueConfigPage() {
           <LeagueConfigForm
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
+            isEditing={isExistingLeague}
             initialValues={isExistingLeague ? {
               name: league.name,
               teamCount: league.teamCount,
