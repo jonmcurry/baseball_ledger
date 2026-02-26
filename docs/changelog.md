@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-02-26 - Fix lineup save 400 error and improve error reporting
+
+Three fixes for lineup management:
+
+1. **Error message suppression fixed.** The rosterStore catch blocks used
+   `err instanceof Error` but the API client throws plain AppError objects (not
+   Error instances), so users always saw generic "Failed to save lineup" instead
+   of the actual Zod validation error details. Now extracts message and details
+   from AppError objects.
+
+2. **lineupOrder overflow fixed.** `handleBenchPlayerSelect` used
+   `Math.max(...orders) + 1` which could produce values > 9 after remove-then-add
+   operations (e.g., remove #5, add new = max(9)+1 = 10, fails Zod max(9) check).
+   Changed to find the lowest unused slot in 1-9.
+
+3. **Pitcher position leak fixed.** If a pitcher ended up on bench and was
+   selected for the lineup without DH eligibility, `targetPosition` stayed as
+   'SP'/'RP'/'CL' which is not in the lineup position enum. Now returns early
+   instead of setting an invalid position.
+
+- Modified `src/stores/rosterStore.ts` -- extractErrorMessage helper, used in
+  saveLineup and fetchRoster catch blocks
+- Modified `src/features/roster/RosterPage.tsx` -- lineupOrder gap-fill logic
+  and pitcher position guard
+
 ## 2026-02-26 - Fix AI draft valuation: defense metric and SB coefficient
 
 Two formula changes to fix systematic drafting holes where one-year wonders

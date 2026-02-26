@@ -14,6 +14,25 @@ import { createSafeStorage } from './storage-factory';
 import { createMigrationConfig } from './persist-migration';
 import { useStatsStore } from './statsStore';
 
+/**
+ * Extract a meaningful error message from API errors.
+ * The api-client throws plain AppError objects (not Error instances),
+ * so instanceof Error misses them. This handles both cases and includes
+ * validation details when available.
+ */
+function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const appErr = err as { message: string; details?: Array<{ field: string; message: string }> };
+    if (appErr.details && appErr.details.length > 0) {
+      const detail = appErr.details.map((d) => `${d.field}: ${d.message}`).join('; ');
+      return `${appErr.message} (${detail})`;
+    }
+    return appErr.message;
+  }
+  return fallback;
+}
+
 export interface RosterState {
   activeTeamId: string | null;
   roster: RosterEntry[];
@@ -175,7 +194,7 @@ export const useRosterStore = create<RosterStore>()(
           } catch (err) {
             set((state) => {
               state.isLoading = false;
-              state.error = err instanceof Error ? err.message : 'Failed to fetch roster';
+              state.error = extractErrorMessage(err, 'Failed to fetch roster');
             }, false, 'fetchRoster/error');
           }
         },
@@ -196,7 +215,7 @@ export const useRosterStore = create<RosterStore>()(
           } catch (err) {
             set((state) => {
               state.isLoading = false;
-              state.error = err instanceof Error ? err.message : 'Failed to save lineup';
+              state.error = extractErrorMessage(err, 'Failed to save lineup');
             }, false, 'saveLineup/error');
           }
         },

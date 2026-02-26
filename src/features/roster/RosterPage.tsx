@@ -68,9 +68,13 @@ export function RosterPage() {
   const handleBenchPlayerSelect = useCallback((entry: RosterEntry) => {
     let targetPosition = selectedPosition ?? entry.playerCard.primaryPosition;
 
-    // Two-way players: resolve pitcher position to DH when no specific position selected
-    if (['SP', 'RP', 'CL'].includes(targetPosition) && entry.playerCard.eligiblePositions.includes('DH')) {
-      targetPosition = 'DH';
+    // Resolve pitcher positions: DH if eligible, otherwise bail out
+    if (['SP', 'RP', 'CL'].includes(targetPosition)) {
+      if (entry.playerCard.eligiblePositions.includes('DH')) {
+        targetPosition = 'DH';
+      } else {
+        return; // Pitcher without DH eligibility cannot be placed in lineup
+      }
     }
 
     // Resolve generic 'OF' to first available outfield slot
@@ -87,7 +91,10 @@ export function RosterPage() {
       updateRosterSlot(currentStarter.id, 'bench', null, null);
       updateRosterSlot(entry.id, 'starter', lineupOrder, targetPosition);
     } else {
-      const lineupOrder = Math.max(0, ...starters.map((s) => s.lineupOrder ?? 0)) + 1;
+      // Find the lowest unused order slot (1-9) to avoid gaps and overflow
+      const usedOrders = new Set(starters.map((s) => s.lineupOrder));
+      let lineupOrder = 1;
+      while (usedOrders.has(lineupOrder) && lineupOrder <= 9) lineupOrder++;
       updateRosterSlot(entry.id, 'starter', lineupOrder, targetPosition);
     }
 
