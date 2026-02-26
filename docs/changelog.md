@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-02-26 - Fix baseball spinner SVG and draft roster header clipping
+
+1. League creation progress spinner SVG looked like a basketball (plain circle
+   with two vertical arcs). Replaced with a proper baseball: off-white ball with
+   red curved seams and 16 stitch marks. Increased size from h-8/w-8 to h-12/w-12
+   for better detail visibility.
+
+2. Draft board sidebar roster panel header ("Miami Huskies / 0 of 21 Drafted")
+   was clipped at the top. The negative top margin (-mt-[var(--gutter-xl)]) was
+   larger than the vintage-card top padding (var(--gutter)), pushing the header
+   above the card boundary. Changed to -mt-[var(--gutter)] to match.
+
+Files: LeagueConfigPage.tsx (baseball SVG), RosterPreviewPanel.tsx (header margin).
+
 ## 2026-02-22 - League config: update instead of recreate, fix baseball SVG
 
 Two fixes for the league config page:

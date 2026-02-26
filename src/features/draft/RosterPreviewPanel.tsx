@@ -108,7 +108,7 @@ export function RosterPreviewPanel({ picks, teamName, teamId }: RosterPreviewPan
   return (
     <div className="vintage-card overflow-hidden">
       {/* Header */}
-      <div className="relative -mx-[var(--gutter-lg)] -mt-[var(--gutter-xl)] mb-3 border-b border-[var(--border-default)] px-[var(--gutter-lg)] py-3">
+      <div className="relative -mx-[var(--gutter-lg)] -mt-[var(--gutter)] mb-3 border-b border-[var(--border-default)] px-[var(--gutter-lg)] py-3">
         <h3 className="font-headline text-sm font-bold text-[var(--text-primary)]">
           {teamName}
         </h3>

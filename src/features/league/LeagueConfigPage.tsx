@@ -156,15 +156,46 @@ export function LeagueConfigPage() {
           {/* Decorative baseball stitching animation */}
           <div className="flex justify-center">
             <svg
-              className="animate-spin-slow h-8 w-8 text-[var(--accent-primary)] opacity-40"
-              viewBox="0 0 24 24"
+              className="animate-spin-slow h-12 w-12 opacity-50"
+              viewBox="0 0 100 100"
               fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
             >
-              <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
-              <path d="M 9 2.5 C 5 7, 5 17, 9 21.5" />
-              <path d="M 15 2.5 C 19 7, 19 17, 15 21.5" />
+              {/* Ball */}
+              <circle cx="50" cy="50" r="46" fill="#f5f0e8" stroke="#c8b89a" strokeWidth="2" />
+              {/* Left seam */}
+              <path
+                d="M 38 6 C 28 20, 28 40, 38 50 C 28 60, 28 80, 38 94"
+                stroke="#c8372d"
+                strokeWidth="2"
+                strokeLinecap="round"
+                fill="none"
+              />
+              {/* Left stitch marks */}
+              <line x1="36" y1="14" x2="30" y2="16" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="32" y1="22" x2="26" y2="25" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="30" y1="31" x2="24" y2="34" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="29" y1="40" x2="23" y2="42" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="29" y1="60" x2="23" y2="58" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="30" y1="69" x2="24" y2="66" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="32" y1="78" x2="26" y2="75" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="36" y1="86" x2="30" y2="84" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Right seam */}
+              <path
+                d="M 62 6 C 72 20, 72 40, 62 50 C 72 60, 72 80, 62 94"
+                stroke="#c8372d"
+                strokeWidth="2"
+                strokeLinecap="round"
+                fill="none"
+              />
+              {/* Right stitch marks */}
+              <line x1="64" y1="14" x2="70" y2="16" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="68" y1="22" x2="74" y2="25" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="70" y1="31" x2="76" y2="34" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="71" y1="40" x2="77" y2="42" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="71" y1="60" x2="77" y2="58" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="70" y1="69" x2="76" y2="66" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="68" y1="78" x2="74" y2="75" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="64" y1="86" x2="70" y2="84" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </div>
         </div>
