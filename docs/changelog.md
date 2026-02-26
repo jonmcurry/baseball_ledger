@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-02-26 - Default both league toggles to off
+
+Changed "Include Negro League Players" form default from true to false so both
+toggles (injuries and Negro Leagues) are off for new leagues. Added migration
+00032 to update the database column default to match.
+
+Files: LeagueConfigForm.tsx, 00032_negro_leagues_default_false.sql, changelog.md.
+
 ## 2026-02-26 - Fix baseball spinner SVG and draft roster header clipping
 
 1. League creation progress spinner SVG looked like a basketball (plain circle

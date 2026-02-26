@@ -40,7 +40,7 @@ export function LeagueConfigForm({ onSubmit, isSubmitting, initialValues, isEdit
   const [yearStart, setYearStart] = useState(String(initialValues?.yearRangeStart ?? 1901));
   const [yearEnd, setYearEnd] = useState(String(initialValues?.yearRangeEnd ?? 2025));
   const [injuriesEnabled, setInjuriesEnabled] = useState(initialValues?.injuriesEnabled ?? false);
-  const [negroLeaguesEnabled, setNegroLeaguesEnabled] = useState(initialValues?.negroLeaguesEnabled ?? true);
+  const [negroLeaguesEnabled, setNegroLeaguesEnabled] = useState(initialValues?.negroLeaguesEnabled ?? false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function validate(): boolean {
