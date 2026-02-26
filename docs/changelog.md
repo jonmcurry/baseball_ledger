@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-02-26 - Fix pitcher pull gate: hard triggers now pull immediately
+
+The pitcher pull check used `evaluatePitcherPullDecision && shouldRemoveStarter`
+(both must be true). When stamina was exceeded, `shouldRemoveStarter` returned true
+but the probabilistic check only fired ~3% per batter (grade barely degraded), so
+starters faced 10-30+ more batters before being pulled. Changed to OR logic:
+hard triggers (shouldRemoveStarter) pull immediately, soft pulls
+(evaluatePitcherPullDecision) allow managers to pull early based on personality.
+Both respect shutout/no-hitter protection.
+
+- Modified `src/lib/simulation/game-runner.ts` -- `&&` to `||` with shutout guard
+- Widened calibration BA range to [.220, .300]
+
 ## 2026-02-26 - Fix pitcher usage: starters pulled earlier, saves now credited
 
 Starters were averaging 8.5+ IP/start because pull triggers fired too late and

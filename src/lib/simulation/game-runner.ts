@@ -424,8 +424,13 @@ export function runGame(config: RunGameConfig): GameResult {
       fieldingPitcherState.runDeficit = situation.scoreDiff;
 
       // 1. Pitcher pull check (fielding team manager)
-      if (evaluatePitcherPullDecision(fieldingProfile, situation, rng) &&
-          shouldRemoveStarter(fieldingPitcher, fieldingPitcherState)) {
+      // Hard triggers (shouldRemoveStarter) pull immediately; soft pulls
+      // (evaluatePitcherPullDecision) allow managers to pull earlier based
+      // on personality. Both respect shutout/no-hitter protection.
+      const hardTrigger = shouldRemoveStarter(fieldingPitcher, fieldingPitcherState);
+      const inSpecialGame = fieldingPitcherState.isShutout || fieldingPitcherState.isNoHitter;
+      const softPull = !inSpecialGame && evaluatePitcherPullDecision(fieldingProfile, situation, rng);
+      if (hardTrigger || softPull) {
         const runnersOn = countRunnersOnBase(state.bases);
 
         // Try closer first
