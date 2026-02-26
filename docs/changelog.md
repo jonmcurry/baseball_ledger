@@ -14,6 +14,14 @@
 
 Files: LeagueConfigPage.tsx (baseball SVG), RosterPreviewPanel.tsx (header margin).
 
+## 2026-02-26 - Fix TS2345 in league PATCH handler
+
+`camelToSnake(body)` returned `unknown`, which Supabase's typed `.update()`
+rejected. Added explicit generic `camelToSnake<LeagueUpdate>(body)` using the
+generated `Database['public']['Tables']['leagues']['Update']` type.
+
+Files: api/leagues/[id]/index.ts.
+
 ## 2026-02-22 - League config: update instead of recreate, fix baseball SVG
 
 Two fixes for the league config page:

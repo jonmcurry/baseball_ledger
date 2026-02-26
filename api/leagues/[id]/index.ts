@@ -14,6 +14,9 @@ import { ok, noContent } from '../../_lib/response';
 import { handleApiError } from '../../_lib/errors';
 import { snakeToCamel, camelToSnake } from '../../_lib/transform';
 import { createServerClient } from '../../../src/lib/supabase/server';
+import type { Database } from '../../../src/lib/types/database';
+
+type LeagueUpdate = Database['public']['Tables']['leagues']['Update'];
 
 const JoinLeagueSchema = z.object({
   inviteKey: z.string().min(1),
@@ -77,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can update league settings' };
       }
 
-      const updates = camelToSnake(body);
+      const updates = camelToSnake<LeagueUpdate>(body);
       const { data: updated, error: updateError } = await supabase
         .from('leagues')
         .update(updates)
