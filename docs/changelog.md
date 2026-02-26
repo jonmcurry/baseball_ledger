@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-02-26 - Fix AI draft valuation: defense metric and SB coefficient
+
+Two formula changes to fix systematic drafting holes where one-year wonders
+(Babe Herman, Norm Cash) were overdrafted while complete players (Hank Aaron,
+Willie Mays) were underdrafted:
+
+1. **Replaced fieldingPct with range+arm defense rating.** Fielding percentage
+   was essentially a constant (~.950-1.000 for all MLB players), producing only
+   ~1 point of spread. Changed to `defenseRating = (range + arm) / 2` with a
+   15x multiplier, giving 10+ points of spread between elite and poor defenders.
+   This naturally penalizes one-year wonders (who tend to be poor defenders) and
+   rewards complete players.
+
+2. **Increased SB coefficient from 0.1 to 0.3.** At 0.1, stolen bases were
+   negligible (50 SB = 5 pts). At 0.3, speed is meaningful but not dominant
+   (50 SB = 15 pts), differentiating players like Rickey Henderson from slow
+   sluggers without overwhelming OPS differences.
+
+New formula: `(OPS * 115) + (SB * 0.3) + (defenseRating * 15) + positionBonus`
+
+Files: ai-valuation.ts, ai-valuation.test.ts, plan-draft-valuation-formula-v2.md.
+
 ## 2026-02-26 - Fix pitcher IP tracking and HBP double-counting
 
 Two bugs causing inaccurate season stats for pitchers and batters:

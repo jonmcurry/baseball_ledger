@@ -4,8 +4,8 @@
  * REQ-DFT-007: AI player valuation score for ranking "best available"
  * during the draft.
  *
- * Batter formula:  ((OPS * 115) + (SB * 0.1) + (fieldingPct * 20) + positionBonus) * paScale
- *                  where paScale = min(1.0, PA / 400) when PA is available
+ * Batter formula:  ((OPS * 115) + (SB * 0.3) + (defenseRating * 15) + positionBonus) * paScale
+ *                  where defenseRating = (range + arm) / 2, paScale = min(1.0, PA / 400)
  * SP formula:      ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
  *                  then scaled by min(1.0, IP / 150) when IP is available
  * RP/CL formula:   ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
@@ -36,16 +36,16 @@ export function getPositionBonus(position: Position): number {
  * @param position - Primary defensive position
  * @param ops - On-base plus slugging
  * @param sb - Stolen bases count
- * @param fieldingPct - Fielding percentage (0-1)
+ * @param defenseRating - Combined defensive ability (0-1), computed as (range + arm) / 2
  * @returns Valuation score
  */
 export function calculateBatterValue(
   position: Position,
   ops: number,
   sb: number,
-  fieldingPct: number,
+  defenseRating: number,
 ): number {
-  return (ops * 115) + (sb * 0.1) + (fieldingPct * 20) + getPositionBonus(position);
+  return (ops * 115) + (sb * 0.3) + (defenseRating * 15) + getPositionBonus(position);
 }
 
 /** PA threshold for full batter credit. Below this, value is scaled proportionally. */
@@ -161,14 +161,15 @@ export function calculatePlayerValue(
     }
   }
 
-  // Ensure fieldingPct is valid (default to 0.95 for legacy cards)
-  const fieldingPct = card.fieldingPct ?? 0.95;
+  // Defense rating from range + arm (0-1 scale each, averaged)
+  // Provides real differentiation vs fieldingPct which is ~.950-1.000 for everyone
+  const defenseRating = ((card.range ?? 0.5) + (card.arm ?? 0.5)) / 2;
 
   let value = calculateBatterValue(
     card.primaryPosition,
     ops,
     sb,
-    fieldingPct,
+    defenseRating,
   );
 
   // Scale by PA to penalize short-season outliers (mirrors pitcher IP scaling)

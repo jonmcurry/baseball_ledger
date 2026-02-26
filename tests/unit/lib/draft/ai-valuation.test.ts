@@ -82,29 +82,38 @@ describe('getPositionBonus (REQ-DFT-007)', () => {
 // calculateBatterValue (REQ-DFT-007)
 // ---------------------------------------------------------------------------
 describe('calculateBatterValue (REQ-DFT-007)', () => {
-  it('applies formula: OPS*115 + SB*0.1 + fieldingPct*20 + positionBonus', () => {
-    // C with .850 OPS, 10 SB, .995 fielding
-    const value = calculateBatterValue('C', 0.850, 10, 0.995);
-    const expected = (0.850 * 115) + (10 * 0.1) + (0.995 * 20) + 8;
+  it('applies formula: OPS*115 + SB*0.3 + defenseRating*15 + positionBonus', () => {
+    // C with .850 OPS, 10 SB, 0.80 defense rating
+    const value = calculateBatterValue('C', 0.850, 10, 0.80);
+    const expected = (0.850 * 115) + (10 * 0.3) + (0.80 * 15) + 8;
     expect(value).toBeCloseTo(expected, 4);
   });
 
   it('values catcher higher than DH with same stats', () => {
-    const catcher = calculateBatterValue('C', 0.800, 5, 0.99);
-    const dh = calculateBatterValue('DH', 0.800, 5, 0.99);
+    const catcher = calculateBatterValue('C', 0.800, 5, 0.70);
+    const dh = calculateBatterValue('DH', 0.800, 5, 0.70);
     expect(catcher).toBeGreaterThan(dh);
     expect(catcher - dh).toBeCloseTo(8, 4); // position bonus difference
   });
 
   it('values speed contributors higher (more SB)', () => {
-    const fast = calculateBatterValue('CF', 0.780, 40, 0.98);
-    const slow = calculateBatterValue('CF', 0.780, 2, 0.98);
+    const fast = calculateBatterValue('CF', 0.780, 40, 0.70);
+    const slow = calculateBatterValue('CF', 0.780, 2, 0.70);
     expect(fast).toBeGreaterThan(slow);
+    // 38 SB difference * 0.3 = 11.4 pts
+    expect(fast - slow).toBeCloseTo(11.4, 1);
   });
 
   it('returns 0 for zero stats', () => {
     const value = calculateBatterValue('DH', 0, 0, 0);
     expect(value).toBe(0);
+  });
+
+  it('differentiates elite defenders from poor defenders', () => {
+    const elite = calculateBatterValue('SS', 0.800, 10, 0.90);
+    const poor = calculateBatterValue('SS', 0.800, 10, 0.20);
+    // Spread: (0.90 - 0.20) * 15 = 10.5 pts
+    expect(elite - poor).toBeCloseTo(10.5, 1);
   });
 });
 
@@ -160,11 +169,12 @@ describe('calculatePitcherValue (REQ-DFT-007)', () => {
 // ---------------------------------------------------------------------------
 describe('calculatePlayerValue', () => {
   it('calculates batter value when card is a position player', () => {
-    const card = makeCard({ primaryPosition: 'SS', fieldingPct: 0.97 });
+    const card = makeCard({ primaryPosition: 'SS', range: 0.70, arm: 0.60 });
     const value = calculatePlayerValue(card, { ops: 0.800, sb: 15 });
     expect(value).toBeGreaterThan(0);
+    // defenseRating = (0.70 + 0.60) / 2 = 0.65
     // Should include SS bonus (12)
-    const expected = (0.800 * 115) + (15 * 0.1) + (0.97 * 20) + 12;
+    const expected = (0.800 * 115) + (15 * 0.3) + (0.65 * 15) + 12;
     expect(value).toBeCloseTo(expected, 4);
   });
 
@@ -180,6 +190,21 @@ describe('calculatePlayerValue', () => {
     // Fallback derives value from card attributes (power, contactRate, discipline, speed)
     expect(value).toBeGreaterThan(0);
   });
+
+  it('uses range+arm for defense rating instead of fieldingPct', () => {
+    // Two cards with same stats but different range/arm vs fieldingPct
+    const goodDefense = makeCard({
+      primaryPosition: 'SS', range: 0.90, arm: 0.85, fieldingPct: 0.95,
+    });
+    const poorDefense = makeCard({
+      primaryPosition: 'SS', range: 0.20, arm: 0.25, fieldingPct: 0.99,
+    });
+    // goodDefense has lower fieldingPct but higher range+arm
+    // Under new formula, goodDefense should be worth more
+    const goodVal = calculatePlayerValue(goodDefense, { ops: 0.800, sb: 10 });
+    const poorVal = calculatePlayerValue(poorDefense, { ops: 0.800, sb: 10 });
+    expect(goodVal).toBeGreaterThan(poorVal);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -189,7 +214,7 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
   it('uses card.mlbBattingStats when no external stats provided', () => {
     const card = makeCard({
       primaryPosition: 'LF',
-      fieldingPct: 0.98,
+      range: 0.50, arm: 0.50,
       mlbBattingStats: {
         G: 150, AB: 500, R: 120, H: 180, doubles: 35, triples: 5,
         HR: 45, RBI: 120, SB: 6, CS: 2, BB: 100, SO: 85,
@@ -197,9 +222,10 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
       },
     });
     const value = calculatePlayerValue(card);
-    // Raw: (1.300 * 115) + (6 * 0.1) + (0.98 * 20) + 2 = 171.7
+    // defenseRating = (0.50 + 0.50) / 2 = 0.50
+    // Raw: (1.300 * 115) + (6 * 0.3) + (0.50 * 15) + 2 = 149.5 + 1.8 + 7.5 + 2 = 160.8
     // PA = 500 + 100 = 600 -> scale = 1.0
-    expect(value).toBeCloseTo(171.7, 0);
+    expect(value).toBeCloseTo(160.8, 0);
   });
 
   it('elite batter (1.300 OPS) outvalues average batter (0.700 OPS)', () => {
@@ -281,19 +307,21 @@ describe('ERA floor', () => {
 // ---------------------------------------------------------------------------
 describe('SB overweight regression', () => {
   it('all-time great (1.250+ OPS, low SB) outscores speed player (.992 OPS, 50 SB)', () => {
-    // Eric Davis 1987: .992 OPS, 50 SB, CF
-    const speedPlayer = calculateBatterValue('CF', 0.992, 50, 0.98);
-    // Ted Williams 1941: 1.287 OPS, 2 SB, LF
-    const allTimeGreat = calculateBatterValue('LF', 1.287, 2, 0.97);
+    // Eric Davis 1987: .992 OPS, 50 SB, CF, average defense
+    const speedPlayer = calculateBatterValue('CF', 0.992, 50, 0.70);
+    // Ted Williams 1941: 1.287 OPS, 2 SB, LF, average defense
+    const allTimeGreat = calculateBatterValue('LF', 1.287, 2, 0.70);
     expect(allTimeGreat).toBeGreaterThan(speedPlayer);
-    // At least 10 points of separation
+    // OPS gap (33.9) overcomes SB gap (14.4) and position gap (8)
     expect(allTimeGreat - speedPlayer).toBeGreaterThan(10);
   });
 
-  it('SB bonus for 50 steals is modest (under 10 points)', () => {
-    const withSB = calculateBatterValue('CF', 0.800, 50, 0.98);
-    const withoutSB = calculateBatterValue('CF', 0.800, 0, 0.98);
-    expect(withSB - withoutSB).toBeLessThan(10);
+  it('SB bonus for 50 steals is meaningful but not dominant (under 20 points)', () => {
+    const withSB = calculateBatterValue('CF', 0.800, 50, 0.70);
+    const withoutSB = calculateBatterValue('CF', 0.800, 0, 0.70);
+    // 50 * 0.3 = 15 pts
+    expect(withSB - withoutSB).toBeCloseTo(15, 1);
+    expect(withSB - withoutSB).toBeLessThan(20);
   });
 });
 
@@ -386,7 +414,7 @@ describe('pitcher overvaluation regression', () => {
 // ---------------------------------------------------------------------------
 describe('cross-position valuation regression', () => {
   it('HOF batter outscores average SP by 50+ points', () => {
-    const hofBatter = calculateBatterValue('LF', 1.200, 5, 0.97);
+    const hofBatter = calculateBatterValue('LF', 1.200, 5, 0.80);
     const avgSP = calculatePitcherValue({
       role: 'SP', grade: 10, stamina: 6.5, era: 3.50,
       whip: 1.20, k9: 8.0, bb9: 3.0, hr9: 1.0,
@@ -397,7 +425,7 @@ describe('cross-position valuation regression', () => {
   });
 
   it('good batter outscores elite closer', () => {
-    const goodBatter = calculateBatterValue('SS', 0.850, 10, 0.975);
+    const goodBatter = calculateBatterValue('SS', 0.850, 10, 0.75);
     const eliteCL = calculatePitcherValue({
       role: 'CL', grade: 12, stamina: 1.5, era: 2.00,
       whip: 0.90, k9: 12.0, bb9: 2.0, hr9: 0.4,
@@ -407,7 +435,7 @@ describe('cross-position valuation regression', () => {
   });
 
   it('average batter outscores average reliever', () => {
-    const avgBatter = calculateBatterValue('3B', 0.750, 5, 0.96);
+    const avgBatter = calculateBatterValue('3B', 0.750, 5, 0.60);
     const avgRP = calculatePitcherValue({
       role: 'RP', grade: 8, stamina: 2, era: 3.20,
       whip: 1.20, k9: 8.5, bb9: 2.5, hr9: 0.9,
@@ -495,8 +523,8 @@ describe('catcher bonus reduction', () => {
   });
 
   it('catcher bonus no longer dominates: C with same stats as SS valued lower', () => {
-    const catcher = calculateBatterValue('C', 0.800, 5, 0.99);
-    const shortstop = calculateBatterValue('SS', 0.800, 5, 0.99);
+    const catcher = calculateBatterValue('C', 0.800, 5, 0.70);
+    const shortstop = calculateBatterValue('SS', 0.800, 5, 0.70);
     // SS bonus (12) should exceed C bonus (8)
     expect(shortstop).toBeGreaterThan(catcher);
   });
@@ -509,7 +537,6 @@ describe('batter PA scaling in calculatePlayerValue', () => {
   it('full-season batter (500+ PA) outscores same-stats low-PA batter (150 PA)', () => {
     const fullSeason = makeCard({
       primaryPosition: 'LF',
-      fieldingPct: 0.98,
       mlbBattingStats: {
         G: 150, AB: 550, R: 90, H: 165, doubles: 30, triples: 3,
         HR: 25, RBI: 90, SB: 10, CS: 3, BB: 60, SO: 100,
@@ -518,7 +545,6 @@ describe('batter PA scaling in calculatePlayerValue', () => {
     });
     const callUp = makeCard({
       primaryPosition: 'LF',
-      fieldingPct: 0.98,
       mlbBattingStats: {
         G: 40, AB: 130, R: 25, H: 45, doubles: 8, triples: 1,
         HR: 8, RBI: 25, SB: 2, CS: 1, BB: 20, SO: 30,
@@ -533,7 +559,6 @@ describe('batter PA scaling in calculatePlayerValue', () => {
     // Don Padgett 1939: ~233 AB, ~280 PA, 1.049 OPS, C
     const padgett = makeCard({
       primaryPosition: 'C',
-      fieldingPct: 0.98,
       mlbBattingStats: {
         G: 92, AB: 233, R: 46, H: 85, doubles: 17, triples: 6,
         HR: 10, RBI: 59, SB: 1, CS: 0, BB: 47, SO: 20,
@@ -543,7 +568,6 @@ describe('batter PA scaling in calculatePlayerValue', () => {
     // Johnny Bench 1972: ~538 AB, ~620 PA, .837 OPS, C
     const bench = makeCard({
       primaryPosition: 'C',
-      fieldingPct: 0.99,
       mlbBattingStats: {
         G: 147, AB: 538, R: 87, H: 145, doubles: 22, triples: 2,
         HR: 40, RBI: 125, SB: 6, CS: 5, BB: 82, SO: 96,
@@ -556,14 +580,15 @@ describe('batter PA scaling in calculatePlayerValue', () => {
   it('applies PA scaling when mlbBattingStats available', () => {
     const card = makeCard({
       primaryPosition: '1B',
-      fieldingPct: 0.99,
+      range: 0.50, arm: 0.50,
       mlbBattingStats: {
         G: 40, AB: 100, R: 15, H: 30, doubles: 5, triples: 0,
         HR: 5, RBI: 15, SB: 0, CS: 0, BB: 10, SO: 25,
         BA: 0.300, OBP: 0.364, SLG: 0.500, OPS: 0.864,
       },
     });
-    const rawValue = calculateBatterValue('1B', 0.864, 0, 0.99);
+    // defenseRating = (0.50 + 0.50) / 2 = 0.50
+    const rawValue = calculateBatterValue('1B', 0.864, 0, 0.50);
     const scaledValue = calculatePlayerValue(card);
     // PA = 100 + 10 = 110 -> scale = 110/400 = 0.275
     const expectedScale = 110 / 400;
@@ -575,5 +600,44 @@ describe('batter PA scaling in calculatePlayerValue', () => {
     const value = calculatePlayerValue(card);
     // Should still return a positive fallback value, no PA scaling applied
     expect(value).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Complete player vs one-year wonder (draft hole regression)
+// ---------------------------------------------------------------------------
+describe('complete player vs one-year wonder regression', () => {
+  it('Hank Aaron (complete player) outscores Babe Herman (one-year wonder) via defense', () => {
+    // Aaron: 1.013 OPS peak, 30 SB, good defense, RF
+    const aaron = calculateBatterValue('RF', 1.013, 30, 0.75);
+    // Herman: 1.067 OPS peak, 16 SB, poor defense, RF
+    const herman = calculateBatterValue('RF', 1.067, 16, 0.30);
+    // Aaron's defense + speed overcome Herman's slight OPS advantage
+    expect(aaron).toBeGreaterThan(herman);
+  });
+
+  it('Willie Mays (elite defense + speed) ranks near the top', () => {
+    // Mays 1955: 1.002 OPS, 24 SB, elite defense, CF
+    const mays = calculateBatterValue('CF', 1.002, 24, 0.92);
+    // Norm Cash 1961: 1.149 OPS, 11 SB, average defense, 1B
+    const cash = calculateBatterValue('1B', 1.149, 11, 0.40);
+    // Mays should outrank Cash via defense + position + speed
+    expect(mays).toBeGreaterThan(cash);
+  });
+
+  it('defense rating creates 10+ point spread between elite and poor defenders', () => {
+    const elite = calculateBatterValue('SS', 0.800, 10, 0.90);
+    const poor = calculateBatterValue('SS', 0.800, 10, 0.20);
+    expect(elite - poor).toBeGreaterThan(10);
+  });
+
+  it('SB * 0.3 differentiates speed players meaningfully', () => {
+    // Henderson-type: 130 SB
+    const fast = calculateBatterValue('LF', 0.850, 130, 0.60);
+    // Slow slugger: 2 SB
+    const slow = calculateBatterValue('LF', 0.850, 2, 0.60);
+    // 128 * 0.3 = 38.4 pts difference
+    expect(fast - slow).toBeGreaterThan(35);
+    expect(fast - slow).toBeLessThan(45);
   });
 });
