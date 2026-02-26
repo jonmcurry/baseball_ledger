@@ -1,12 +1,11 @@
 # Changelog
 
-## 2026-02-26 - Redesign baseball spinner SVG to match MLB reference
+## 2026-02-26 - Fix baseball stitches to cross through seams
 
-Rebuilt baseball SVG to match reference MLB baseball images. Seam endpoints
-widened from x=42/58 to x=36/64 (28 units apart at poles). Control points
-pushed to viewBox edges (Q 0 50 / Q 100 50) for deep C-arcs that bow to
-x=18/82 at the equator. Stitch positions calculated from quadratic bezier
-formula with perpendicular angles, all verified inside ball boundary (r=46).
+Stitches were only on one side of the seam line. Repositioned each stitch to
+cross through the seam perpendicular to the curve, extending on both sides like
+real baseball thread. Also widened seam endpoints to x=36/64 with deep C-arcs
+(Q 0 50 / Q 100 50) bowing to x=18/82 at the equator.
 
 Files: LeagueConfigPage.tsx.
 
