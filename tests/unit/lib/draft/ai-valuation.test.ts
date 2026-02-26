@@ -5,6 +5,7 @@ import {
   calculatePlayerValue,
   selectBestSeason,
   computeIpScaleFactor,
+  computePaScaleFactor,
 } from '@lib/draft/ai-valuation';
 import type { PlayerCard, PitcherAttributes } from '@lib/types/player';
 
@@ -61,7 +62,7 @@ function makePitcherCard(overrides: Partial<PlayerCard> = {}): PlayerCard {
 // getPositionBonus (REQ-DFT-007)
 // ---------------------------------------------------------------------------
 describe('getPositionBonus (REQ-DFT-007)', () => {
-  it('C = 15', () => expect(getPositionBonus('C')).toBe(15));
+  it('C = 8', () => expect(getPositionBonus('C')).toBe(8));
   it('SS = 12', () => expect(getPositionBonus('SS')).toBe(12));
   it('CF = 10', () => expect(getPositionBonus('CF')).toBe(10));
   it('2B = 8', () => expect(getPositionBonus('2B')).toBe(8));
@@ -84,7 +85,7 @@ describe('calculateBatterValue (REQ-DFT-007)', () => {
   it('applies formula: OPS*115 + SB*0.1 + fieldingPct*20 + positionBonus', () => {
     // C with .850 OPS, 10 SB, .995 fielding
     const value = calculateBatterValue('C', 0.850, 10, 0.995);
-    const expected = (0.850 * 115) + (10 * 0.1) + (0.995 * 20) + 15;
+    const expected = (0.850 * 115) + (10 * 0.1) + (0.995 * 20) + 8;
     expect(value).toBeCloseTo(expected, 4);
   });
 
@@ -92,7 +93,7 @@ describe('calculateBatterValue (REQ-DFT-007)', () => {
     const catcher = calculateBatterValue('C', 0.800, 5, 0.99);
     const dh = calculateBatterValue('DH', 0.800, 5, 0.99);
     expect(catcher).toBeGreaterThan(dh);
-    expect(catcher - dh).toBeCloseTo(15, 4); // position bonus difference
+    expect(catcher - dh).toBeCloseTo(8, 4); // position bonus difference
   });
 
   it('values speed contributors higher (more SB)', () => {
@@ -196,7 +197,8 @@ describe('calculatePlayerValue with mlbBattingStats', () => {
       },
     });
     const value = calculatePlayerValue(card);
-    // (1.300 * 115) + (6 * 0.1) + (0.98 * 20) + 2 = 149.5 + 0.6 + 19.6 + 2 = 171.7
+    // Raw: (1.300 * 115) + (6 * 0.1) + (0.98 * 20) + 2 = 171.7
+    // PA = 500 + 100 = 600 -> scale = 1.0
     expect(value).toBeCloseTo(171.7, 0);
   });
 
@@ -461,5 +463,117 @@ describe('selectBestSeason (REQ-DFT-001a)', () => {
     const stats = new Map<string, { ops: number; sb: number }>();
     const best = selectBestSeason([card2018, card2021], stats);
     expect(best.seasonYear).toBe(2018);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computePaScaleFactor (PA scaling for batters)
+// ---------------------------------------------------------------------------
+describe('computePaScaleFactor', () => {
+  it('returns 1.0 for 400+ PA', () => {
+    expect(computePaScaleFactor(400)).toBe(1.0);
+    expect(computePaScaleFactor(600)).toBe(1.0);
+  });
+
+  it('returns proportional factor for under 400 PA', () => {
+    expect(computePaScaleFactor(200)).toBeCloseTo(0.5, 4);
+    expect(computePaScaleFactor(100)).toBeCloseTo(0.25, 4);
+    expect(computePaScaleFactor(300)).toBeCloseTo(0.75, 4);
+  });
+
+  it('returns 0 for 0 PA', () => {
+    expect(computePaScaleFactor(0)).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Catcher bonus reduction
+// ---------------------------------------------------------------------------
+describe('catcher bonus reduction', () => {
+  it('C position bonus is 8 (reduced from 15)', () => {
+    expect(getPositionBonus('C')).toBe(8);
+  });
+
+  it('catcher bonus no longer dominates: C with same stats as SS valued lower', () => {
+    const catcher = calculateBatterValue('C', 0.800, 5, 0.99);
+    const shortstop = calculateBatterValue('SS', 0.800, 5, 0.99);
+    // SS bonus (12) should exceed C bonus (8)
+    expect(shortstop).toBeGreaterThan(catcher);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PA scaling in calculatePlayerValue (batter equivalent of IP scaling)
+// ---------------------------------------------------------------------------
+describe('batter PA scaling in calculatePlayerValue', () => {
+  it('full-season batter (500+ PA) outscores same-stats low-PA batter (150 PA)', () => {
+    const fullSeason = makeCard({
+      primaryPosition: 'LF',
+      fieldingPct: 0.98,
+      mlbBattingStats: {
+        G: 150, AB: 550, R: 90, H: 165, doubles: 30, triples: 3,
+        HR: 25, RBI: 90, SB: 10, CS: 3, BB: 60, SO: 100,
+        BA: 0.300, OBP: 0.370, SLG: 0.500, OPS: 0.870,
+      },
+    });
+    const callUp = makeCard({
+      primaryPosition: 'LF',
+      fieldingPct: 0.98,
+      mlbBattingStats: {
+        G: 40, AB: 130, R: 25, H: 45, doubles: 8, triples: 1,
+        HR: 8, RBI: 25, SB: 2, CS: 1, BB: 20, SO: 30,
+        BA: 0.346, OBP: 0.427, SLG: 0.600, OPS: 1.027,
+      },
+    });
+    // Call-up has higher OPS but much less playing time
+    expect(calculatePlayerValue(fullSeason)).toBeGreaterThan(calculatePlayerValue(callUp));
+  });
+
+  it('Don Padgett (low PA, fluky OPS) does NOT outvalue Johnny Bench (full season HOF)', () => {
+    // Don Padgett 1939: ~233 AB, ~280 PA, 1.049 OPS, C
+    const padgett = makeCard({
+      primaryPosition: 'C',
+      fieldingPct: 0.98,
+      mlbBattingStats: {
+        G: 92, AB: 233, R: 46, H: 85, doubles: 17, triples: 6,
+        HR: 10, RBI: 59, SB: 1, CS: 0, BB: 47, SO: 20,
+        BA: 0.365, OBP: 0.449, SLG: 0.600, OPS: 1.049,
+      },
+    });
+    // Johnny Bench 1972: ~538 AB, ~620 PA, .837 OPS, C
+    const bench = makeCard({
+      primaryPosition: 'C',
+      fieldingPct: 0.99,
+      mlbBattingStats: {
+        G: 147, AB: 538, R: 87, H: 145, doubles: 22, triples: 2,
+        HR: 40, RBI: 125, SB: 6, CS: 5, BB: 82, SO: 96,
+        BA: 0.270, OBP: 0.367, SLG: 0.470, OPS: 0.837,
+      },
+    });
+    expect(calculatePlayerValue(bench)).toBeGreaterThan(calculatePlayerValue(padgett));
+  });
+
+  it('applies PA scaling when mlbBattingStats available', () => {
+    const card = makeCard({
+      primaryPosition: '1B',
+      fieldingPct: 0.99,
+      mlbBattingStats: {
+        G: 40, AB: 100, R: 15, H: 30, doubles: 5, triples: 0,
+        HR: 5, RBI: 15, SB: 0, CS: 0, BB: 10, SO: 25,
+        BA: 0.300, OBP: 0.364, SLG: 0.500, OPS: 0.864,
+      },
+    });
+    const rawValue = calculateBatterValue('1B', 0.864, 0, 0.99);
+    const scaledValue = calculatePlayerValue(card);
+    // PA = 100 + 10 = 110 -> scale = 110/400 = 0.275
+    const expectedScale = 110 / 400;
+    expect(scaledValue).toBeCloseTo(rawValue * expectedScale, 1);
+  });
+
+  it('does not apply PA scaling when no mlbBattingStats (fallback path)', () => {
+    const card = makeCard({ primaryPosition: '1B' });
+    const value = calculatePlayerValue(card);
+    // Should still return a positive fallback value, no PA scaling applied
+    expect(value).toBeGreaterThan(0);
   });
 });

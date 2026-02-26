@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-02-26 - Fix draft AI batter valuation: PA scaling and catcher bonus
+
+Three fixes to address AI draft overvaluing low-PA catchers (e.g., Don Padgett
+drafted round 2 while Johnny Bench fell to round 17):
+
+1. Added PA scaling for batters: value *= min(1.0, PA/400). Mirrors existing
+   pitcher IP scaling. September call-ups and injury-shortened seasons now get
+   proportionally reduced value instead of full credit for fluky rate stats.
+
+2. Reduced catcher position bonus from +15 to +8. Still rewards positional
+   scarcity but no longer dominates the formula enough to push mediocre
+   catchers into early rounds.
+
+3. PA is approximated as AB + BB from mlbBattingStats. Players without
+   mlbBattingStats (fallback/legacy path) are unaffected.
+
+Files: ai-valuation.ts, ai-valuation.test.ts, plan-draft-valuation-fixes.md.
+
 ## 2026-02-26 - Fix baseball stitches to cross through seams
 
 Stitches were only on one side of the seam line. Repositioned each stitch to

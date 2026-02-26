@@ -4,7 +4,8 @@
  * REQ-DFT-007: AI player valuation score for ranking "best available"
  * during the draft.
  *
- * Batter formula:  (OPS * 115) + (SB * 0.1) + (fieldingPct * 20) + positionBonus
+ * Batter formula:  ((OPS * 115) + (SB * 0.1) + (fieldingPct * 20) + positionBonus) * paScale
+ *                  where paScale = min(1.0, PA / 400) when PA is available
  * SP formula:      ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
  *                  then scaled by min(1.0, IP / 150) when IP is available
  * RP/CL formula:   ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
@@ -17,7 +18,7 @@ import type { PlayerCard, PitcherAttributes, Position } from '../types/player';
 
 /** Position bonus values per REQ-DFT-007. */
 const POSITION_BONUSES: Record<string, number> = {
-  C: 15, SS: 12, CF: 10, '2B': 8, '3B': 5,
+  C: 8, SS: 12, CF: 10, '2B': 8, '3B': 5,
   RF: 3, LF: 2, '1B': 1, DH: 0,
   SP: 0, RP: 0, CL: 0,
 };
@@ -45,6 +46,20 @@ export function calculateBatterValue(
   fieldingPct: number,
 ): number {
   return (ops * 115) + (sb * 0.1) + (fieldingPct * 20) + getPositionBonus(position);
+}
+
+/** PA threshold for full batter credit. Below this, value is scaled proportionally. */
+const BATTER_PA_THRESHOLD = 400;
+
+/**
+ * Compute PA scaling factor for batter valuation.
+ *
+ * Short-season outliers (September call-ups, injury-shortened seasons) get
+ * proportionally reduced value. Full-season batters (400+ PA) get full credit.
+ * PA is approximated as AB + BB when exact PA is unavailable.
+ */
+export function computePaScaleFactor(pa: number): number {
+  return Math.min(1.0, pa / BATTER_PA_THRESHOLD);
 }
 
 /** ERA floor: prevents dead-ball era sub-1.50 ERAs from dominating valuation. */
@@ -149,12 +164,20 @@ export function calculatePlayerValue(
   // Ensure fieldingPct is valid (default to 0.95 for legacy cards)
   const fieldingPct = card.fieldingPct ?? 0.95;
 
-  return calculateBatterValue(
+  let value = calculateBatterValue(
     card.primaryPosition,
     ops,
     sb,
     fieldingPct,
   );
+
+  // Scale by PA to penalize short-season outliers (mirrors pitcher IP scaling)
+  if (card.mlbBattingStats) {
+    const pa = card.mlbBattingStats.AB + card.mlbBattingStats.BB;
+    value *= computePaScaleFactor(pa);
+  }
+
+  return value;
 }
 
 /**
