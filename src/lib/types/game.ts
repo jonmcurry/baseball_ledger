@@ -102,6 +102,7 @@ export interface PitchingLine {
   BB: number;
   SO: number;
   HR: number;
+  HBP: number;
   BF: number;
   CG: number;
   SHO: number;

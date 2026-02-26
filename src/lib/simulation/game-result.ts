@@ -196,6 +196,7 @@ export function buildEmptyPitchingLine(playerId: string): PitchingLine {
     BB: 0,
     SO: 0,
     HR: 0,
+    HBP: 0,
     BF: 0,
     CG: 0,
     SHO: 0,

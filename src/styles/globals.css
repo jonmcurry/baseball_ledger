@@ -939,6 +939,7 @@
     gap: 0.5rem;
     padding: 0.5rem var(--gutter-lg);
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     background: var(--surface-dark);
   }

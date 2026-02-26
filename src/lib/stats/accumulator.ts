@@ -95,7 +95,7 @@ export function accumulatePitching(
     HR: season.HR + line.HR,
     BB: season.BB + line.BB,
     SO: season.SO + line.SO,
-    HBP: season.HBP,
+    HBP: season.HBP + (line.HBP ?? 0),
     BF: season.BF + line.BF,
     WP: season.WP,
     BK: season.BK,

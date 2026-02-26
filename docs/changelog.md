@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-02-26 - Fix pitcher IP tracking and HBP double-counting
+
+Two bugs causing inaccurate season stats for pitchers and batters:
+
+**Bug 1 (Critical): Per-pitcher IP tracking.** IP was only credited to the last
+pitcher per half-inning, always as exactly 1.0 IP. Starters pulled mid-inning
+got 0 IP for their outs; relievers got full 1.0 IP even for recording 1 out.
+Walkoff half-innings credited no IP to anyone. Fix: track outs per pitcher per
+half-inning via a Map, credit proper fractional IP (0.1, 0.2) at half-inning end.
+
+**Bug 2 (Moderate): HBP counted as BB.** isWalkOutcome() includes HIT_BY_PITCH,
+so every HBP incremented both battingLine.BB and battingLine.HBP (double-count).
+Pitcher BB also included HBP, and PitchingLine lacked an HBP field entirely.
+Fix: check HBP before isWalkOutcome in both batter and pitcher stat recording.
+Added HBP to PitchingLine type, buildEmptyPitchingLine, cleanPitchingLines, and
+accumulator.
+
+Files: game-runner.ts, game.ts, game-result.ts, accumulator.ts,
+game-runner.test.ts, accumulator.test.ts, plan-ip-tracking-hbp-fix.md.
+
 ## 2026-02-26 - Fix draft AI batter valuation: PA scaling and catcher bonus
 
 Three fixes to address AI draft overvaluing low-PA catchers (e.g., Don Padgett

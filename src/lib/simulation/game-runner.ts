@@ -62,6 +62,7 @@ import {
   buildEmptyPitchingLine,
 } from './game-result';
 import type { InningRuns, PitchingLineWithMeta } from './game-result';
+import { addIP } from '../stats/derived';
 
 /** Safety limit to prevent infinite loops */
 const MAX_PLATE_APPEARANCES = 500;
@@ -120,6 +121,7 @@ interface GameTracker {
   consecutiveHitsWalks: number;
   unearnedRunBudget: number;
   halfInningErrors: number; // BBW FUN_1058_6db5: >= 3 errors = all runs unearned
+  halfInningOutsByPitcher: Map<string, number>;
 }
 
 function countRunnersOnBase(bases: BaseState): number {
@@ -362,6 +364,7 @@ export function runGame(config: RunGameConfig): GameResult {
     consecutiveHitsWalks: 0,
     unearnedRunBudget: 0,
     halfInningErrors: 0,
+    halfInningOutsByPitcher: new Map(),
   };
 
   // Initialize pitching lines for starters
@@ -370,6 +373,13 @@ export function runGame(config: RunGameConfig): GameResult {
 
   const homeProfile = getManagerProfile(config.homeManagerStyle);
   const awayProfile = getManagerProfile(config.awayManagerStyle);
+
+  /** Track outs recorded by a specific pitcher this half-inning. */
+  function creditOuts(pitcherId: string, outs: number): void {
+    if (outs <= 0) return;
+    const prev = tracker.halfInningOutsByPitcher.get(pitcherId) ?? 0;
+    tracker.halfInningOutsByPitcher.set(pitcherId, prev + outs);
+  }
 
   let totalPAs = 0;
 
@@ -387,6 +397,7 @@ export function runGame(config: RunGameConfig): GameResult {
     tracker.consecutiveHitsWalks = 0;
     tracker.unearnedRunBudget = 0;
     tracker.halfInningErrors = 0;
+    tracker.halfInningOutsByPitcher.clear();
 
     const isTopHalf = state.halfInning === 'top';
     const batterCards = isTopHalf ? localAwayBatterCards : localHomeBatterCards;
@@ -483,6 +494,7 @@ export function runGame(config: RunGameConfig): GameResult {
               bases: { first: null, second: state.bases.second, third: state.bases.third },
               outs: state.outs + 1,
             };
+            creditOuts(currentPitcher.playerId, 1);
             if (state.outs >= 3) break;
           }
           continue; // Re-evaluate situation after SB attempt (no PA consumed)
@@ -587,6 +599,7 @@ export function runGame(config: RunGameConfig): GameResult {
           homeScore: isTopHalf ? state.homeScore : state.homeScore + buntResolution.runsScored,
           awayScore: isTopHalf ? state.awayScore + buntResolution.runsScored : state.awayScore,
         };
+        creditOuts(currentPitcher.playerId, buntResolution.outsAdded);
 
         tracker.consecutiveHitsWalks = 0;
         currentPitcherState.consecutiveHitsWalks = 0;
@@ -667,6 +680,7 @@ export function runGame(config: RunGameConfig): GameResult {
             bases: { first: null, second: state.bases.second, third: state.bases.third },
             outs: state.outs + 1,
           };
+          creditOuts(currentPitcher.playerId, 1);
         }
         // Convert double play to ground out advance (runner avoids DP)
         if (outcome === OutcomeCategory.DOUBLE_PLAY || outcome === OutcomeCategory.DOUBLE_PLAY_LINE) {
@@ -702,9 +716,12 @@ export function runGame(config: RunGameConfig): GameResult {
           tracker.consecutiveHitsWalks++;
           currentPitcherState.consecutiveHitsWalks++;
           currentPitcherState.isNoHitter = false;
+        } else if (outcome === OutcomeCategory.HIT_BY_PITCH) {
+          battingLine.HBP++;
+          tracker.consecutiveHitsWalks++;
+          currentPitcherState.consecutiveHitsWalks++;
         } else if (isWalkOutcome(outcome)) {
           battingLine.BB++;
-          if (outcome === OutcomeCategory.HIT_BY_PITCH) battingLine.HBP++;
           tracker.consecutiveHitsWalks++;
           currentPitcherState.consecutiveHitsWalks++;
         } else if (isStrikeout(outcome)) {
@@ -778,7 +795,11 @@ export function runGame(config: RunGameConfig): GameResult {
       );
       pitchingLine.BF++;
       if (isHitOutcome(outcome)) pitchingLine.H++;
-      if (isWalkOutcome(outcome)) pitchingLine.BB++;
+      if (outcome === OutcomeCategory.HIT_BY_PITCH) {
+        pitchingLine.HBP++;
+      } else if (isWalkOutcome(outcome)) {
+        pitchingLine.BB++;
+      }
       if (isStrikeout(outcome)) pitchingLine.SO++;
       if (outcome === OutcomeCategory.HOME_RUN || outcome === OutcomeCategory.HOME_RUN_VARIANT) {
         pitchingLine.HR++;
@@ -800,6 +821,7 @@ export function runGame(config: RunGameConfig): GameResult {
         homeScore: isTopHalf ? state.homeScore : state.homeScore + resolution.runsScored,
         awayScore: isTopHalf ? state.awayScore + resolution.runsScored : state.awayScore,
       };
+      creditOuts(currentPitcher.playerId, resolution.outsAdded);
 
       // Baserunner speed checks: extra-base advancement on singles/doubles
       // Replaces manager-AI aggressive baserunning with physics-based speed checks
@@ -898,19 +920,25 @@ export function runGame(config: RunGameConfig): GameResult {
       runs: tracker.currentHalfInningRuns,
     });
 
-    // Update pitcher IP for the half inning
-    const pitcherForIP = isTopHalf ? tracker.homeCurrentPitcher : tracker.awayCurrentPitcher;
+    // Credit IP to all pitchers who recorded outs this half-inning
     const pitcherStateForIP = isTopHalf ? tracker.homePitcherState : tracker.awayPitcherState;
+    for (const [pitcherId, outs] of tracker.halfInningOutsByPitcher) {
+      if (outs <= 0) continue;
+      const fullInnings = Math.floor(outs / 3);
+      const partial = outs % 3;
+      const ipToAdd = fullInnings + partial * 0.1;
+      const starterId = isTopHalf
+        ? config.homeStartingPitcher.playerId
+        : config.awayStartingPitcher.playerId;
+      const ipLine = getOrCreatePitchingLine(
+        tracker, pitcherId, pitcherId === starterId, fieldingSide,
+      );
+      ipLine.IP = addIP(ipLine.IP, ipToAdd);
+    }
+    // Update current pitcher's fatigue state
     if (state.outs >= 3) {
       pitcherStateForIP.inningsPitched++;
       pitcherStateForIP.currentInning = state.inning + 1;
-      const ipLine = getOrCreatePitchingLine(
-        tracker,
-        pitcherForIP.playerId,
-        pitcherForIP.playerId === (isTopHalf ? config.homeStartingPitcher.playerId : config.awayStartingPitcher.playerId),
-        fieldingSide,
-      );
-      ipLine.IP++;
     }
 
     // Check game end
@@ -984,6 +1012,7 @@ export function runGame(config: RunGameConfig): GameResult {
     BB: l.BB,
     SO: l.SO,
     HR: l.HR,
+    HBP: l.HBP,
     BF: l.BF,
     CG: l.CG,
     SHO: l.SHO,

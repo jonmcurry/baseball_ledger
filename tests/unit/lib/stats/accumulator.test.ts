@@ -30,8 +30,8 @@ function makeBattingLine(overrides: Partial<BattingLine> = {}): BattingLine {
 function makePitchingLine(overrides: Partial<PitchingLine> = {}): PitchingLine {
   return {
     playerId: 'pitcher01',
-    IP: 6.0, H: 5, R: 2, ER: 2, BB: 2, SO: 7, HR: 1, BF: 25,
-    decision: null,
+    IP: 6.0, H: 5, R: 2, ER: 2, BB: 2, SO: 7, HR: 1, HBP: 0, BF: 25,
+    CG: 0, SHO: 0, decision: null,
     ...overrides,
   };
 }
@@ -196,6 +196,29 @@ describe('accumulatePitching', () => {
     const season = createEmptyPitchingStats();
     accumulatePitching(season, makePitchingLine(), true);
     expect(season.G).toBe(0);
+  });
+
+  it('accumulates HBP from pitching line', () => {
+    const season = createEmptyPitchingStats();
+    const line = makePitchingLine({ HBP: 2 });
+    const result = accumulatePitching(season, line, true);
+    expect(result.HBP).toBe(2);
+  });
+
+  it('accumulates HBP across multiple games', () => {
+    let stats = createEmptyPitchingStats();
+    stats = accumulatePitching(stats, makePitchingLine({ HBP: 1 }), true);
+    stats = accumulatePitching(stats, makePitchingLine({ HBP: 3 }), true);
+    expect(stats.HBP).toBe(4);
+  });
+
+  it('handles missing HBP field gracefully (legacy lines)', () => {
+    const season = createEmptyPitchingStats();
+    // Simulate a legacy line without HBP field
+    const legacyLine = makePitchingLine();
+    delete (legacyLine as Record<string, unknown>)['HBP'];
+    const result = accumulatePitching(season, legacyLine, true);
+    expect(result.HBP).toBe(0);
   });
 });
 
