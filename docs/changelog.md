@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-02-26 - Redesign baseball spinner SVG with proper seam geometry
+
+Previous baseball SVG used shallow cubic bezier seams that looked like lips, not
+a baseball. Replaced with quadratic bezier arcs (Q 8 50 / Q 92 50) that create
+deep C-shaped curves matching real MLB baseball stitching. Stitches now radiate
+outward from seam toward ball edge, perpendicular to the curve at each point.
+
+Files: LeagueConfigPage.tsx.
+
 ## 2026-02-26 - Default both league toggles to off
 
 Changed "Include Negro League Players" form default from true to false so both

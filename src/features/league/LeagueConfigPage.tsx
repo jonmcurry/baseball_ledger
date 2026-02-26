@@ -162,40 +162,28 @@ export function LeagueConfigPage() {
             >
               {/* Ball */}
               <circle cx="50" cy="50" r="46" fill="#f5f0e8" stroke="#c8b89a" strokeWidth="2" />
-              {/* Left seam */}
-              <path
-                d="M 38 6 C 28 20, 28 40, 38 50 C 28 60, 28 80, 38 94"
-                stroke="#c8372d"
-                strokeWidth="2"
-                strokeLinecap="round"
-                fill="none"
-              />
-              {/* Left stitch marks */}
-              <line x1="36" y1="14" x2="30" y2="16" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="32" y1="22" x2="26" y2="25" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="30" y1="31" x2="24" y2="34" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="29" y1="40" x2="23" y2="42" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="29" y1="60" x2="23" y2="58" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="30" y1="69" x2="24" y2="66" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="32" y1="78" x2="26" y2="75" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="36" y1="86" x2="30" y2="84" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              {/* Right seam */}
-              <path
-                d="M 62 6 C 72 20, 72 40, 62 50 C 72 60, 72 80, 62 94"
-                stroke="#c8372d"
-                strokeWidth="2"
-                strokeLinecap="round"
-                fill="none"
-              />
-              {/* Right stitch marks */}
-              <line x1="64" y1="14" x2="70" y2="16" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="68" y1="22" x2="74" y2="25" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="70" y1="31" x2="76" y2="34" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="71" y1="40" x2="77" y2="42" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="71" y1="60" x2="77" y2="58" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="70" y1="69" x2="76" y2="66" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="68" y1="78" x2="74" y2="75" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="64" y1="86" x2="70" y2="84" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Left seam -- deep C-arc bowing left */}
+              <path d="M 42 6 Q 8 50 42 94" stroke="#c8372d" strokeWidth="2" strokeLinecap="round" fill="none" />
+              {/* Left stitches -- radiate outward from seam toward ball edge */}
+              <line x1="35" y1="15" x2="28" y2="11" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="30" y1="24" x2="22" y2="22" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="27" y1="33" x2="19" y2="32" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="25" y1="43" x2="17" y2="43" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="25" y1="57" x2="17" y2="57" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="27" y1="67" x2="19" y2="68" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="30" y1="76" x2="22" y2="78" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="35" y1="85" x2="28" y2="89" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Right seam -- deep C-arc bowing right */}
+              <path d="M 58 6 Q 92 50 58 94" stroke="#c8372d" strokeWidth="2" strokeLinecap="round" fill="none" />
+              {/* Right stitches -- radiate outward from seam toward ball edge */}
+              <line x1="65" y1="15" x2="72" y2="11" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="70" y1="24" x2="78" y2="22" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="73" y1="33" x2="81" y2="32" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="75" y1="43" x2="83" y2="43" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="75" y1="57" x2="83" y2="57" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="73" y1="67" x2="81" y2="68" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="70" y1="76" x2="78" y2="78" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="65" y1="85" x2="72" y2="89" stroke="#c8372d" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </div>
         </div>
