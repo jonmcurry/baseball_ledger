@@ -7,9 +7,10 @@ closers could only enter when starters failed. Saves were always 0 across a full
 season. Four fixes:
 
 1. **Stamina-exceeded auto-pull (Trigger #5).** When battersFaced exceeds
-   staminaPAs (stamina * 4), the starter is eligible for removal regardless of
-   performance -- even during a shutout/no-hitter. Starters should now average
-   6.5-7.5 IP/start instead of 8.5+.
+   staminaPAs (stamina * 4), the starter is eligible for removal. Shutout and
+   no-hitter protection still applies -- the pitcher stays in until a runner
+   reaches base, then the stamina trigger fires immediately. Starters should
+   now average 6.5-7.5 IP/start instead of 8.5+.
 
 2. **Proactive closer entry.** Independent of the general pull logic, the closer
    now enters automatically when the fielding team leads by 1-3 runs in the 9th+

@@ -245,8 +245,9 @@ describe('shouldRemoveStarter (REQ-SIM-011)', () => {
     expect(shouldRemoveStarter(pitcher, state)).toBe(false);
   });
 
-  it('triggers when stamina exceeded even during shutout (trigger #5)', () => {
-    // Stamina exceeded overrides shutout/no-hitter exception
+  it('does not trigger when stamina exceeded during shutout (trigger #5 deferred)', () => {
+    // Shutout/no-hitter protection holds even past stamina. Once a runner
+    // reaches base the flags clear and the stamina trigger fires immediately.
     const pitcher = makePitcher({ grade: 14, stamina: 7 });
     const state = makePitcherState({
       inningsPitched: 8,
@@ -254,16 +255,28 @@ describe('shouldRemoveStarter (REQ-SIM-011)', () => {
       isShutout: true,
       isNoHitter: true,
     });
-    expect(shouldRemoveStarter(pitcher, state)).toBe(true);
+    expect(shouldRemoveStarter(pitcher, state)).toBe(false);
   });
 
-  it('triggers when stamina exceeded even during no-hitter (trigger #5)', () => {
+  it('does not trigger when stamina exceeded during no-hitter (trigger #5 deferred)', () => {
     const pitcher = makePitcher({ grade: 14, stamina: 7 });
     const state = makePitcherState({
       inningsPitched: 8,
       battersFaced: 30, // staminaPAs=28, exceeded
       isShutout: false,
       isNoHitter: true,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(false);
+  });
+
+  it('triggers stamina exceeded once shutout/no-hitter is broken', () => {
+    // Runner got on -- flags cleared -- stamina trigger fires
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 8,
+      battersFaced: 29, // staminaPAs=28, exceeded
+      isShutout: false,
+      isNoHitter: false,
     });
     expect(shouldRemoveStarter(pitcher, state)).toBe(true);
   });

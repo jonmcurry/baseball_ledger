@@ -261,8 +261,9 @@ export function computeGameGrade(
  * 4. Losing by 5+ runs after the 6th inning
  * 5. Stamina exceeded (batters faced > stamina threshold)
  *
- * Per REQ-SIM-013 exception: do NOT pull if shutout or no-hitter in progress
- * AND the starter is still under their stamina limit.
+ * Per REQ-SIM-013 exception: do NOT pull if shutout or no-hitter in progress.
+ * The pitcher stays in until a runner reaches base (which clears the flags),
+ * then the stamina trigger fires immediately.
  */
 export function shouldRemoveStarter(
   pitcher: PlayerCard,
@@ -271,17 +272,17 @@ export function shouldRemoveStarter(
   const pitching = pitcher.pitching;
   if (!pitching) return false;
 
-  // Trigger 5: Stamina exceeded -- overrides shutout/no-hitter exception.
-  // In real baseball, managers pull starters after ~100 pitches regardless.
-  // This ensures starters don't pitch 8.5+ IP on average.
+  // REQ-SIM-013 exception: protect shutout/no-hitter in progress.
+  // Pitcher stays in until a runner gets on, which clears isNoHitter/isShutout.
+  if (state.isShutout || state.isNoHitter) {
+    return false;
+  }
+
+  // Trigger 5: Stamina exceeded.
+  // Once no-hitter/shutout is broken, this fires immediately.
   const staminaPAs = (pitching.stamina ?? 7) * PAS_PER_STAMINA_INNING;
   if (state.battersFaced > staminaPAs) {
     return true;
-  }
-
-  // REQ-SIM-013 exception: protect shutout/no-hitter (only when under stamina)
-  if (state.isShutout || state.isNoHitter) {
-    return false;
   }
 
   const effectiveGrade = computeEffectiveGrade(pitcher, state.battersFaced);
