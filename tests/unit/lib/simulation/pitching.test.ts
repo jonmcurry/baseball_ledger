@@ -318,20 +318,22 @@ describe('selectReliever (REQ-SIM-012)', () => {
     expect(selectReliever([])).toBeNull();
   });
 
-  it('excludes closer from reliever selection', () => {
+  it('includes extra closers in reliever selection (designated closer tracked separately)', () => {
     const bullpen = [
       makePitcher({ id: 'rp1', role: 'RP', grade: 8, isReliever: true }),
       makePitcher({ id: 'cl1', role: 'CL', grade: 13, isReliever: true }),
     ];
     const selected = selectReliever(bullpen);
-    expect(selected?.playerId).toBe('rp1');
+    // Extra CL in the bullpen has the highest grade, so it gets selected
+    expect(selected?.playerId).toBe('cl1');
   });
 
-  it('returns null when only closer remains in bullpen', () => {
+  it('selects closer as reliever when only closer remains in bullpen', () => {
     const bullpen = [
       makePitcher({ id: 'cl1', role: 'CL', grade: 13, isReliever: true }),
     ];
-    expect(selectReliever(bullpen)).toBeNull();
+    const selected = selectReliever(bullpen);
+    expect(selected?.playerId).toBe('cl1');
   });
 });
 

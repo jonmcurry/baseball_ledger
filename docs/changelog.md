@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-02-26 - Fix extra closers sitting unused in bullpen
+
+When a team has multiple closers, `loadTeamConfig` extracts only the first CL as
+the designated closer. Extra closers remained in the bullpen array but
+`selectReliever` filtered out all `role === 'CL'` pitchers, so they never pitched.
+Removed the CL exclusion filter -- the designated closer is tracked separately,
+so any CLs remaining in the bullpen are available as regular relievers.
+
+- Modified `src/lib/simulation/pitching.ts` -- removed `role !== 'CL'` filter
+- Updated tests in pitching.test.ts to expect CLs in bullpen to be selectable
+
 ## 2026-02-26 - Fix pitcher pull gate: hard triggers now pull immediately
 
 The pitcher pull check used `evaluatePitcherPullDecision && shouldRemoveStarter`

@@ -321,7 +321,8 @@ export function shouldRemoveStarter(
  * Select the best available reliever from the bullpen.
  *
  * Per REQ-SIM-012: select the reliever with the highest grade.
- * Excludes closers (they are reserved for save situations).
+ * The designated closer is tracked separately (not in the bullpen array),
+ * so any closers remaining here are extras available as regular relievers.
  *
  * @param bullpen - Available bullpen pitchers
  * @returns The best reliever, or null if none available
@@ -329,9 +330,7 @@ export function shouldRemoveStarter(
 export function selectReliever(
   bullpen: PlayerCard[],
 ): PlayerCard | null {
-  const relievers = bullpen.filter(
-    (p) => p.pitching && p.pitching.role !== 'CL',
-  );
+  const relievers = bullpen.filter((p) => p.pitching);
 
   if (relievers.length === 0) return null;
 
