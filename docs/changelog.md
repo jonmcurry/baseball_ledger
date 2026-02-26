@@ -1,11 +1,12 @@
 # Changelog
 
-## 2026-02-26 - Redesign baseball spinner SVG with proper seam geometry
+## 2026-02-26 - Redesign baseball spinner SVG to match MLB reference
 
-Previous baseball SVG used shallow cubic bezier seams that looked like lips, not
-a baseball. Replaced with quadratic bezier arcs (Q 8 50 / Q 92 50) that create
-deep C-shaped curves matching real MLB baseball stitching. Stitches now radiate
-outward from seam toward ball edge, perpendicular to the curve at each point.
+Rebuilt baseball SVG to match reference MLB baseball images. Seam endpoints
+widened from x=42/58 to x=36/64 (28 units apart at poles). Control points
+pushed to viewBox edges (Q 0 50 / Q 100 50) for deep C-arcs that bow to
+x=18/82 at the equator. Stitch positions calculated from quadratic bezier
+formula with perpendicular angles, all verified inside ball boundary (r=46).
 
 Files: LeagueConfigPage.tsx.
 
