@@ -222,27 +222,68 @@ describe('shouldRemoveStarter (REQ-SIM-011)', () => {
     expect(shouldRemoveStarter(pitcher, state)).toBe(false);
   });
 
-  it('does not trigger when shutout in progress regardless of fatigue', () => {
-    // Per REQ-SIM-013 exception: do not pull if shutout/no-hitter
-    const pitcher = makePitcher({ grade: 14, stamina: 4 });
+  it('does not trigger when shutout in progress AND under stamina', () => {
+    // Per REQ-SIM-013 exception: do not pull if shutout/no-hitter (under stamina)
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
     const state = makePitcherState({
-      inningsPitched: 9,
-      battersFaced: 36, // staminaPAs=16, fatigue=20, grade=1 (<7)
+      inningsPitched: 6,
+      battersFaced: 24, // staminaPAs=28, under stamina
       isShutout: true,
       isNoHitter: true,
     });
     expect(shouldRemoveStarter(pitcher, state)).toBe(false);
   });
 
-  it('does not trigger when no-hitter in progress regardless of fatigue', () => {
-    const pitcher = makePitcher({ grade: 14, stamina: 4 });
+  it('does not trigger when no-hitter in progress AND under stamina', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
     const state = makePitcherState({
-      inningsPitched: 9,
-      battersFaced: 36, // heavy fatigue
+      inningsPitched: 6,
+      battersFaced: 24, // staminaPAs=28, under stamina
       isShutout: false,
       isNoHitter: true,
     });
     expect(shouldRemoveStarter(pitcher, state)).toBe(false);
+  });
+
+  it('triggers when stamina exceeded even during shutout (trigger #5)', () => {
+    // Stamina exceeded overrides shutout/no-hitter exception
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 8,
+      battersFaced: 29, // staminaPAs=28, exceeded by 1
+      isShutout: true,
+      isNoHitter: true,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(true);
+  });
+
+  it('triggers when stamina exceeded even during no-hitter (trigger #5)', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 8,
+      battersFaced: 30, // staminaPAs=28, exceeded
+      isShutout: false,
+      isNoHitter: true,
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(true);
+  });
+
+  it('does not trigger at exactly stamina PAs (trigger #5 boundary)', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 7,
+      battersFaced: 28, // staminaPAs=28, exactly at boundary
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(false);
+  });
+
+  it('triggers when battersFaced just past stamina threshold (trigger #5)', () => {
+    const pitcher = makePitcher({ grade: 14, stamina: 7 });
+    const state = makePitcherState({
+      inningsPitched: 7,
+      battersFaced: 29, // staminaPAs=28, just past
+    });
+    expect(shouldRemoveStarter(pitcher, state)).toBe(true);
   });
 });
 

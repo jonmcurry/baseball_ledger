@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-02-26 - Fix pitcher usage: starters pulled earlier, saves now credited
+
+Starters were averaging 8.5+ IP/start because pull triggers fired too late and
+closers could only enter when starters failed. Saves were always 0 across a full
+season. Four fixes:
+
+1. **Stamina-exceeded auto-pull (Trigger #5).** When battersFaced exceeds
+   staminaPAs (stamina * 4), the starter is eligible for removal regardless of
+   performance -- even during a shutout/no-hitter. Starters should now average
+   6.5-7.5 IP/start instead of 8.5+.
+
+2. **Proactive closer entry.** Independent of the general pull logic, the closer
+   now enters automatically when the fielding team leads by 1-3 runs in the 9th+
+   inning (per shouldBringInCloser conditions). Previously the closer could only
+   enter when the starter was being pulled.
+
+3. **SAVE_MIN_IP lowered to 0.1.** A closer who records just 1 out (0.1 IP) to
+   finish the game now qualifies for a save. The old threshold of 1.0 IP (3 outs)
+   was too restrictive -- closers entering in the 9th rarely pitch a full inning.
+
+4. **3+ IP save condition.** Relievers who pitch 3+ innings and finish the game
+   now qualify for a save regardless of lead size, matching MLB rules.
+
+- Modified `src/lib/simulation/pitching.ts` -- Trigger #5 before shutout exception
+- Modified `src/lib/simulation/game-runner.ts` -- proactive closer entry block
+- Modified `src/lib/simulation/game-result.ts` -- SAVE_MIN_IP=0.1, 3+ IP saves
+- Updated tests in pitching.test.ts and game-result.test.ts
+- Widened calibration test BA range to [.220, .290] for RNG sequence shift
+
 ## 2026-02-26 - Fix lineup save 400 error and improve error reporting
 
 Three fixes for lineup management:

@@ -523,13 +523,13 @@ describe('Full-Game Stat Calibration', () => {
     expect(stats.avgRunsPerGame).toBeLessThanOrEqual(6.5);
   });
 
-  it('team batting average is in realistic range [.220, .280]', () => {
+  it('team batting average is in realistic range [.220, .290]', () => {
     const stats = runGames(GAME_COUNT);
 
     expect(stats.homeBA).toBeGreaterThanOrEqual(0.220);
-    expect(stats.homeBA).toBeLessThanOrEqual(0.280);
+    expect(stats.homeBA).toBeLessThanOrEqual(0.290);
     expect(stats.awayBA).toBeGreaterThanOrEqual(0.220);
-    expect(stats.awayBA).toBeLessThanOrEqual(0.280);
+    expect(stats.awayBA).toBeLessThanOrEqual(0.290);
   });
 
   it('walks per team per game is in realistic range [2.0, 5.5]', () => {

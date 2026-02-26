@@ -130,15 +130,50 @@ describe('assignPitcherDecisions (REQ-SIM-016)', () => {
     expect(closer?.decision).toBe('SV');
   });
 
-  it('does not assign SV when lead > 3', () => {
+  it('does not assign SV when lead > 3 and IP < 3', () => {
     const lines = [
       { ...makePitchingLine('sp-home', 6, true), teamSide: 'home' as const },
-      { ...makePitchingLine('cl-home', 3, false), teamSide: 'home' as const },
+      { ...makePitchingLine('cl-home', 1, false), teamSide: 'home' as const },
       { ...makePitchingLine('sp-away', 9, true), teamSide: 'away' as const },
     ];
     const result = assignPitcherDecisions(lines, 8, 3);
     const closer = result.find((l) => l.playerId === 'cl-home');
     expect(closer?.decision).toBeNull();
+  });
+
+  it('assigns SV when closer finishes with 0.1 IP and lead <= 3', () => {
+    const lines = [
+      { ...makePitchingLine('sp-home', 7, true), teamSide: 'home' as const },
+      { ...makePitchingLine('rp-home', 1.2, false), teamSide: 'home' as const },
+      { ...makePitchingLine('cl-home', 0.1, false), teamSide: 'home' as const },
+      { ...makePitchingLine('sp-away', 9, true), teamSide: 'away' as const },
+    ];
+    const result = assignPitcherDecisions(lines, 4, 3);
+    const closer = result.find((l) => l.playerId === 'cl-home');
+    expect(closer?.decision).toBe('SV');
+  });
+
+  it('does not assign SV when closer has 0 IP', () => {
+    const lines = [
+      { ...makePitchingLine('sp-home', 8, true), teamSide: 'home' as const },
+      { ...makePitchingLine('cl-home', 0, false), teamSide: 'home' as const },
+      { ...makePitchingLine('sp-away', 9, true), teamSide: 'away' as const },
+    ];
+    const result = assignPitcherDecisions(lines, 4, 3);
+    const closer = result.find((l) => l.playerId === 'cl-home');
+    expect(closer?.decision).toBeNull();
+  });
+
+  it('assigns SV when reliever pitches 3+ IP regardless of lead size', () => {
+    const lines = [
+      { ...makePitchingLine('sp-home', 5, true), teamSide: 'home' as const },
+      { ...makePitchingLine('rp-home', 4, false), teamSide: 'home' as const },
+      { ...makePitchingLine('sp-away', 9, true), teamSide: 'away' as const },
+    ];
+    // Lead is 7 (> 3), but reliever pitched 4 IP -- qualifies by length
+    const result = assignPitcherDecisions(lines, 10, 3);
+    const reliever = result.find((l) => l.playerId === 'rp-home');
+    expect(reliever?.decision).toBe('SV');
   });
 
   it('assigns W to reliever when starter pitched < 5 IP', () => {

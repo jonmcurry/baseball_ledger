@@ -464,6 +464,29 @@ export function runGame(config: RunGameConfig): GameResult {
         }
       }
 
+      // Proactive closer entry for save situations (independent of starter pull).
+      // Even if the starter hasn't triggered removal, bring in the closer when the
+      // fielding team leads by 1-3 runs in the 9th+ inning.
+      if (fieldingSide === 'home' && tracker.homeCloser) {
+        const runnersOn = countRunnersOnBase(state.bases);
+        if (shouldBringInCloser(state.homeScore, state.awayScore, state.inning, runnersOn)) {
+          tracker.homeCurrentPitcher = tracker.homeCloser;
+          tracker.homeCloser = null;
+          tracker.homePitcherState = initPitcherState();
+          state.homeTeam.pitchersUsed.push(tracker.homeCurrentPitcher);
+          getOrCreatePitchingLine(tracker, tracker.homeCurrentPitcher.playerId, false, 'home');
+        }
+      } else if (fieldingSide === 'away' && tracker.awayCloser) {
+        const runnersOn = countRunnersOnBase(state.bases);
+        if (shouldBringInCloser(state.awayScore, state.homeScore, state.inning, runnersOn)) {
+          tracker.awayCurrentPitcher = tracker.awayCloser;
+          tracker.awayCloser = null;
+          tracker.awayPitcherState = initPitcherState();
+          state.awayTeam.pitchersUsed.push(tracker.awayCurrentPitcher);
+          getOrCreatePitchingLine(tracker, tracker.awayCurrentPitcher.playerId, false, 'away');
+        }
+      }
+
       // Re-read current pitcher after potential change
       const currentPitcher = isTopHalf ? tracker.homeCurrentPitcher : tracker.awayCurrentPitcher;
       const currentPitcherState = isTopHalf ? tracker.homePitcherState : tracker.awayPitcherState;

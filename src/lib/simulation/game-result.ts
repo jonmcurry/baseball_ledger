@@ -21,7 +21,7 @@ const STARTER_WIN_MIN_IP = 5;
 const SAVE_MAX_LEAD = 3;
 
 /** Minimum innings pitched by closer/reliever for a save */
-const SAVE_MIN_IP = 1;
+const SAVE_MIN_IP = 0.1;
 
 /**
  * Per-half-inning run totals used to build the line score.
@@ -139,14 +139,19 @@ export function assignPitcherDecisions(
   }
 
   // Assign Save
+  // MLB save rules (simplified): non-winning finisher on the winning team qualifies if:
+  //   (a) Final lead <= 3 and pitched at least 0.1 IP, OR
+  //   (b) Pitched 3+ innings regardless of lead size
   const winnerWithDecision = result.find((l) => l.decision === 'W');
-  if (lead <= SAVE_MAX_LEAD) {
-    // Last pitcher on winning team who isn't the winner
-    const finisher = winningPitchers
-      .filter((l) => l !== winnerWithDecision && l.IP >= SAVE_MIN_IP)
-      .pop();
-    if (finisher) {
-      finisher.decision = 'SV';
+  const saveCandidate = winningPitchers
+    .filter((l) => l !== winnerWithDecision && l.IP >= SAVE_MIN_IP)
+    .pop(); // Last pitcher = finisher
+
+  if (saveCandidate) {
+    const qualifiesByLead = lead <= SAVE_MAX_LEAD;
+    const qualifiesByLength = saveCandidate.IP >= 3;
+    if (qualifiesByLead || qualifiesByLength) {
+      saveCandidate.decision = 'SV';
     }
   }
 
