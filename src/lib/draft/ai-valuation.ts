@@ -4,36 +4,68 @@
  * REQ-DFT-007: AI player valuation score for ranking "best available"
  * during the draft.
  *
- * Batter formula:  ((OPS * 115) + (SB * 0.3) + (defenseRating * 15) + positionBonus) * paScale
+ * Batter formula:  ((OPS * 115) + (SB * 0.3) + (defenseRating * 15)) * positionMultiplier * paScale
  *                  where defenseRating = (range + arm) / 2, paScale = min(1.0, PA / 400)
+ *                  positionMultiplier from best eligiblePosition scarcity (SS=1.15, C=1.12, DH=0.95)
  * SP formula:      ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
  *                  then scaled by min(1.0, IP / 150) when IP is available
  * RP/CL formula:   ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
- *                  then scaled by min(1.0, IP / 50) when IP is available
+ *                  then scaled by min(1.0, IP / 60) when IP is available
  *
  * Layer 1: Pure logic, no I/O, deterministic.
  */
 
 import type { PlayerCard, PitcherAttributes, Position } from '../types/player';
 
-/** Position bonus values per REQ-DFT-007. */
-const POSITION_BONUSES: Record<string, number> = {
-  C: 8, SS: 12, CF: 10, '2B': 8, '3B': 5,
-  RF: 3, LF: 2, '1B': 1, DH: 0,
-  SP: 0, RP: 0, CL: 0,
+/** Position scarcity multipliers per REQ-DFT-007.
+ * Multiplicative (not additive) so the bonus scales with player quality.
+ * SS/C are hardest to fill, DH easiest. */
+const POSITION_SCARCITY: Record<string, number> = {
+  C: 1.12, SS: 1.15, CF: 1.08, '2B': 1.06, '3B': 1.04,
+  RF: 1.03, LF: 1.02, '1B': 1.00, DH: 0.95,
+  SP: 1.00, RP: 1.00, CL: 1.00,
 };
 
 /**
- * Get the position bonus for a defensive position.
+ * Get the position scarcity multiplier for a defensive position.
  */
-export function getPositionBonus(position: Position): number {
-  return POSITION_BONUSES[position] ?? 0;
+export function getPositionMultiplier(position: Position): number {
+  return POSITION_SCARCITY[position] ?? 1.00;
+}
+
+/**
+ * Get the best (highest) scarcity multiplier from a list of eligible positions.
+ */
+export function getBestPositionMultiplier(positions: Position[]): number {
+  if (positions.length === 0) return 1.00;
+  return Math.max(...positions.map(pos => getPositionMultiplier(pos)));
+}
+
+/**
+ * Get the eligible position with the highest scarcity multiplier.
+ * Falls back to primaryPosition if eligiblePositions is empty.
+ */
+export function getBestEligiblePosition(
+  eligiblePositions: Position[],
+  primaryPosition: Position,
+): Position {
+  if (eligiblePositions.length === 0) return primaryPosition;
+  let bestPos = eligiblePositions[0];
+  let bestMult = getPositionMultiplier(bestPos);
+  for (let i = 1; i < eligiblePositions.length; i++) {
+    const mult = getPositionMultiplier(eligiblePositions[i]);
+    if (mult > bestMult) {
+      bestMult = mult;
+      bestPos = eligiblePositions[i];
+    }
+  }
+  return bestPos;
 }
 
 /**
  * Calculate batter value from raw stats.
  *
- * @param position - Primary defensive position
+ * @param position - Primary defensive position (used for scarcity multiplier)
  * @param ops - On-base plus slugging
  * @param sb - Stolen bases count
  * @param defenseRating - Combined defensive ability (0-1), computed as (range + arm) / 2
@@ -45,7 +77,8 @@ export function calculateBatterValue(
   sb: number,
   defenseRating: number,
 ): number {
-  return (ops * 115) + (sb * 0.3) + (defenseRating * 15) + getPositionBonus(position);
+  const baseValue = (ops * 115) + (sb * 0.3) + (defenseRating * 15);
+  return baseValue * getPositionMultiplier(position);
 }
 
 /** PA threshold for full batter credit. Below this, value is scaled proportionally. */
@@ -67,7 +100,7 @@ const ERA_FLOOR = 1.50;
 
 /** IP thresholds for full credit. Below this, value is scaled proportionally. */
 const SP_IP_THRESHOLD = 150;
-const RP_IP_THRESHOLD = 50;
+const RP_IP_THRESHOLD = 60;
 
 /**
  * Calculate pitcher value from pitching attributes.
@@ -165,8 +198,12 @@ export function calculatePlayerValue(
   // Provides real differentiation vs fieldingPct which is ~.950-1.000 for everyone
   const defenseRating = ((card.range ?? 0.5) + (card.arm ?? 0.5)) / 2;
 
+  // Use the best scarcity multiplier from all eligible positions.
+  // E.g., Vladimir Guerrero (1B/RF) gets RF's 1.03 instead of 1B's 1.00.
+  const bestPosition = getBestEligiblePosition(card.eligiblePositions, card.primaryPosition);
+
   let value = calculateBatterValue(
-    card.primaryPosition,
+    bestPosition,
     ops,
     sb,
     defenseRating,
