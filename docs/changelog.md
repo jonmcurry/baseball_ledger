@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-02-26 - Square root urgency curve to smooth SP concentration peaks
+
+Progressive urgency (linear formula) moved SP earlier but created concentration
+peaks: R3-4 (18 SP), R8 (15 SP), R11-13 (46 SP). The linear `fraction * scale`
+creates a sharp tipping point where SP adjusted value first exceeds batter adjusted
+value -- all 30 teams cross this threshold simultaneously.
+
+**Fix: Square root urgency curve.** Changed formula from
+`baseMult + fraction * urgencyScale` to `baseMult + sqrt(fraction) * urgencyScale`.
+The sqrt curve rises steeply at low fractions (SP becomes competitive earlier) and
+flattens at high fractions (reduced late-round dominance), eliminating the sharp
+tipping point. Adjusted urgency scales: rotation 2.0->1.3, bullpen 1.5->1.8,
+starter 0.5->0.4 to compensate for sqrt's earlier rise.
+
+- Modified `src/lib/draft/ai-strategy.ts` -- sqrt curve in `getNeedMultiplier()`,
+  adjusted urgency scale constants
+
 ## 2026-02-26 - Progressive urgency multipliers to break draft block patterns
 
 After Fixes 1-5 (unified need-weighted selection), a 630-pick draft still showed

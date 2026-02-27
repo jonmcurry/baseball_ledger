@@ -7,9 +7,10 @@
  *
  * Strategy: Unified need-weighted selection with progressive urgency.
  *  - Each candidate's raw valuation is multiplied by a dynamic need multiplier:
- *    dynamicMult = baseMult + (categoryNeeds / remainingPicks) * urgencyScale
- *  - As unfilled needs pile up relative to remaining picks, multipliers increase,
- *    causing different teams to draft positions at different times.
+ *    dynamicMult = baseMult + sqrt(categoryNeeds / remainingPicks) * urgencyScale
+ *  - The sqrt curve rises steeply at low fractions (earlier competitiveness) and
+ *    flattens at high fractions (reduced late-round dominance), spreading picks
+ *    more evenly instead of creating sharp tipping-point concentration peaks.
  *  - Round 1 excludes RP/CL (too early for relievers).
  *  - Hard guard forces mandatory positions when remaining picks are tight.
  *  - Multi-position eligibility: players fill needs via any eligible position.
@@ -68,15 +69,15 @@ const BASE_MULT_BENCH = 0.80;
  * Urgency scales: how aggressively the multiplier ramps as unfilled needs
  * pile up relative to remaining picks.
  *
- * Formula: dynamicMult = baseMult + (categoryNeeds / remainingPicks) * urgencyScale
+ * Formula: dynamicMult = baseMult + sqrt(categoryNeeds / remainingPicks) * urgencyScale
  *
- * Rotation (2.0) is highest because SP raw values (~50-100) must overcome
- * batter raw values (~90-160). Bullpen (1.5) is moderate. Starter (0.5) is
- * mild since batters already have high raw values.
+ * The sqrt curve eliminates sharp tipping points that cause SP concentration
+ * peaks. Scales are adjusted downward from linear equivalents because sqrt
+ * provides earlier urgency rise.
  */
-const URGENCY_SCALE_STARTER = 0.5;
-const URGENCY_SCALE_ROTATION = 2.0;
-const URGENCY_SCALE_BULLPEN = 1.5;
+const URGENCY_SCALE_STARTER = 0.4;
+const URGENCY_SCALE_ROTATION = 1.3;
+const URGENCY_SCALE_BULLPEN = 1.8;
 
 /** Outfield positions that count toward the generic OF starter pool. */
 const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
@@ -274,11 +275,12 @@ function bestAtPositions(
  * Get the dynamic need multiplier for a player based on current roster needs
  * and how many picks remain.
  *
- * Formula: baseMult + (categoryNeeds / remainingPicks) * urgencyScale
+ * Formula: baseMult + sqrt(categoryNeeds / remainingPicks) * urgencyScale
  *
- * As unfilled needs pile up relative to remaining picks, the multiplier
- * increases. Different teams fill categories at different rates (via weighted
- * random), creating cascading urgency differences that break block patterns.
+ * The sqrt curve rises steeply at low fractions (SP becomes competitive
+ * earlier) and flattens at high fractions (less late-round dominance).
+ * This eliminates the sharp linear tipping point that synchronized all
+ * 30 teams into drafting SP at the same round.
  *
  * Position players check eligiblePositions (not just primaryPosition) so a
  * player who can play SS and 2B fills either need.
@@ -295,12 +297,12 @@ function getNeedMultiplier(
     if (role === 'SP' && needs.some(n => n.position === 'SP')) {
       const rotationNeeds = needs.filter(n => n.slot === 'rotation').length;
       const fraction = rotationNeeds / remainingPicks;
-      return BASE_MULT_ROTATION + fraction * URGENCY_SCALE_ROTATION;
+      return BASE_MULT_ROTATION + Math.sqrt(fraction) * URGENCY_SCALE_ROTATION;
     }
     if ((role === 'RP' || role === 'CL') && needs.some(n => n.position === 'RP')) {
       const bullpenNeeds = needs.filter(n => n.slot === 'bullpen').length;
       const fraction = bullpenNeeds / remainingPicks;
-      return BASE_MULT_BULLPEN + fraction * URGENCY_SCALE_BULLPEN;
+      return BASE_MULT_BULLPEN + Math.sqrt(fraction) * URGENCY_SCALE_BULLPEN;
     }
     return BASE_MULT_BENCH;
   }
@@ -314,7 +316,7 @@ function getNeedMultiplier(
     );
     if (fillsNeed) {
       const fraction = starterNeeds.length / remainingPicks;
-      return BASE_MULT_STARTER + fraction * URGENCY_SCALE_STARTER;
+      return BASE_MULT_STARTER + Math.sqrt(fraction) * URGENCY_SCALE_STARTER;
     }
   }
 
