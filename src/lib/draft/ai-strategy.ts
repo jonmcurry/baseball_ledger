@@ -5,18 +5,13 @@
  * system. Early rounds favor elite players, mid rounds fill rotation and
  * premium positions, late rounds fill remaining starters and bullpen.
  *
- * Strategy:
- *  - Early (1-3): Best available SP or elite position player. No CL/RP.
- *  - Mid (4-8): Fill rotation to 4 SP, but with value-gap override --
- *    if best available batter significantly outvalues best SP, take the batter.
- *    Premium positions (C, SS) next.
- *  - Late (9+): Any unfilled starters first, then bullpen (RP/CL),
- *    then bench depth.
- *
- * Value-gap override: When the best available position player exceeds the
- * best positional-need pitcher by VALUE_GAP_THRESHOLD points, the AI takes
- * the batter instead of forcing a pitcher pick. The hard guard still ensures
- * valid composition by forcing mandatory picks when remaining rounds are tight.
+ * Strategy: Unified need-weighted selection.
+ *  - Each candidate's raw valuation is multiplied by a need multiplier
+ *    based on current roster composition (starter=1.20, rotation=1.15,
+ *    bullpen=1.05, bench=0.80).
+ *  - Round 1 excludes RP/CL (too early for relievers).
+ *  - Hard guard forces mandatory positions when remaining picks are tight.
+ *  - Multi-position eligibility: players fill needs via any eligible position.
  *
  * Roster composition: 1C, 1 1B, 1 2B, 1 SS, 1 3B, 3 OF, 1 DH, 4 bench,
  * 4 SP, 4 RP (RP and CL interchangeable). Total = 21.
@@ -59,13 +54,14 @@ const ROSTER_REQUIREMENTS: Array<{ position: Position; slot: string; count: numb
 ];
 
 const BENCH_SIZE = 4;
-const EARLY_ROUND_END = 3;
-const MID_ROUND_END = 8;
-const PREMIUM_POSITIONS: Position[] = ['C', 'SS'];
 /** Number of top candidates to consider for weighted random selection. */
 const TOP_CANDIDATE_COUNT = 3;
-/** When best-available exceeds best-at-need by this margin, take best-available. */
-const VALUE_GAP_THRESHOLD = 60;
+
+/** Need multipliers: how much to boost a player's value based on roster need. */
+const NEED_MULT_STARTER = 1.20;
+const NEED_MULT_ROTATION = 1.15;
+const NEED_MULT_BULLPEN = 1.05;
+const NEED_MULT_BENCH = 0.80;
 
 /** Outfield positions that count toward the generic OF starter pool. */
 const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
@@ -248,8 +244,11 @@ function bestAtPositions(
 ): DraftablePlayer | null {
   const expanded = expandPositions(positions);
   const candidates = available.filter((p) => {
-    const pos = getPlayerPosition(p);
-    return expanded.includes(pos as Position);
+    if (p.card.isPitcher && p.card.pitching) {
+      return expanded.includes(p.card.pitching.role as Position);
+    }
+    // Check ALL eligible positions, not just primaryPosition
+    return p.card.eligiblePositions.some(pos => expanded.includes(pos));
   });
   if (candidates.length === 0) return null;
   const sorted = sortByValue(candidates, rng);
@@ -257,39 +256,62 @@ function bestAtPositions(
 }
 
 /**
- * Get the best available non-pitcher at an unfilled starter position.
- * Prevents position hoarding: if C is already filled, catchers are excluded
- * from the comparison so the AI doesn't draft 4 catchers. Falls back to any
- * position player if no unfilled-position candidates remain.
+ * Get the need multiplier for a player based on current roster needs.
+ *
+ * Position players check eligiblePositions (not just primaryPosition) so a
+ * player who can play SS and 2B fills either need.
  */
-function bestAvailablePosition(
-  available: DraftablePlayer[],
-  needs: PositionNeed[],
-  rng: SeededRNG,
-): DraftablePlayer | null {
-  const posPlayers = available.filter((p) => !p.card.isPitcher);
-  if (posPlayers.length === 0) return null;
-
-  // Prefer players at unfilled starter positions
-  const starterNeeds = needs.filter((n) => n.slot === 'starter');
-  if (starterNeeds.length > 0) {
-    const neededPositions = expandPositions(starterNeeds.map((n) => n.position));
-    const neededPlayers = posPlayers.filter((p) =>
-      neededPositions.includes(p.card.primaryPosition as Position),
-    );
-    if (neededPlayers.length > 0) {
-      const sorted = sortByValue(neededPlayers, rng);
-      return pickFromTop(sorted, rng);
+function getNeedMultiplier(player: DraftablePlayer, needs: PositionNeed[]): number {
+  if (player.card.isPitcher && player.card.pitching) {
+    const role = player.card.pitching.role;
+    if (role === 'SP' && needs.some(n => n.position === 'SP')) {
+      return NEED_MULT_ROTATION;
     }
+    if ((role === 'RP' || role === 'CL') && needs.some(n => n.position === 'RP')) {
+      return NEED_MULT_BULLPEN;
+    }
+    return NEED_MULT_BENCH;
   }
 
-  // Fallback: any position player (bench candidate)
-  const sorted = sortByValue(posPlayers, rng);
-  return pickFromTop(sorted, rng);
+  // Position player: check if ANY eligible position fills a starter need
+  const starterNeeds = needs.filter(n => n.slot === 'starter');
+  if (starterNeeds.length > 0) {
+    const neededPositions = expandPositions(starterNeeds.map(n => n.position));
+    const fillsNeed = player.card.eligiblePositions.some(
+      pos => neededPositions.includes(pos),
+    );
+    if (fillsNeed) return NEED_MULT_STARTER;
+  }
+
+  return NEED_MULT_BENCH;
+}
+
+/**
+ * Pick from the top K candidates weighted by pre-computed adjusted values.
+ */
+function pickFromTopAdjusted(
+  adjusted: { player: DraftablePlayer; adjustedValue: number }[],
+  rng: SeededRNG,
+  k: number = TOP_CANDIDATE_COUNT,
+): DraftablePlayer {
+  if (adjusted.length <= 1) return adjusted[0].player;
+  const topK = adjusted.slice(0, Math.min(k, adjusted.length));
+  const values = topK.map(a => Math.max(a.adjustedValue, 0.01));
+  const total = values.reduce((s, v) => s + v, 0);
+  let roll = rng.nextFloat() * total;
+  for (let i = 0; i < topK.length; i++) {
+    roll -= values[i];
+    if (roll <= 0) return topK[i].player;
+  }
+  return topK[topK.length - 1].player;
 }
 
 /**
  * Select the AI's draft pick for a given round.
+ *
+ * Uses a unified need-weighted approach instead of rigid round tiers.
+ * Each candidate's raw value is multiplied by a need multiplier based on
+ * roster composition, creating natural interleaving of positions across rounds.
  *
  * @param round - Current draft round (1-based)
  * @param roster - Current team roster (picks made so far)
@@ -305,10 +327,9 @@ export function selectAIPick(
 ): DraftablePlayer {
   const available = filterAvailable(pool, roster);
   const needs = getRosterNeeds(roster);
-  const sorted = sortByValue(available, rng);
 
-  if (sorted.length === 0) {
-    return available[0];
+  if (available.length === 0) {
+    return pool[0];
   }
 
   // -----------------------------------------------------------------------
@@ -326,112 +347,42 @@ export function selectAIPick(
   }
 
   // -----------------------------------------------------------------------
-  // Early rounds (1-3): Best SP or elite position player, no CL/RP.
-  // Prefer players at unfilled starter positions to avoid position hoarding.
+  // Exclude capped pitching positions (5th SP / 5th RP)
   // -----------------------------------------------------------------------
-  if (round <= EARLY_ROUND_END) {
-    const eligible = excludeFullPitching(
-      sorted.filter((p) => {
-        const pos = getPlayerPosition(p);
-        return pos !== 'CL' && pos !== 'RP';
-      }),
-      needs,
-    );
-    if (eligible.length === 0) {
-      return pickFromTop(sorted, rng);
-    }
-
-    // Prefer players at unfilled starter positions (prevents drafting 4 catchers)
-    const starterNeeds = needs.filter((n) => n.slot === 'starter' || n.slot === 'rotation');
-    if (starterNeeds.length > 0) {
-      const neededPositions = expandPositions(starterNeeds.map((n) => n.position));
-      const neededCandidates = eligible.filter((p) =>
-        neededPositions.includes(getPlayerPosition(p) as Position),
-      );
-      if (neededCandidates.length > 0) {
-        return pickFromTop(sortByValue(neededCandidates, rng), rng);
-      }
-    }
-
-    return pickFromTop(eligible, rng);
+  const eligible = excludeFullPitching(available, needs);
+  if (eligible.length === 0) {
+    const sorted = sortByValue(available, rng);
+    return pickFromTop(sorted, rng);
   }
 
   // -----------------------------------------------------------------------
-  // Mid rounds (4-8): Fill rotation (with value-gap override), then
-  // premium positions, then best available
+  // Round 1: exclude RP/CL (too early for relievers)
   // -----------------------------------------------------------------------
-  if (round <= MID_ROUND_END) {
-    // Priority 1: Fill SP rotation if needed (value-gap override applies)
-    const spNeeds = needs.filter((n) => n.position === 'SP');
-    if (spNeeds.length > 0) {
-      const spCandidates = available.filter((p) => getPlayerPosition(p) === 'SP');
-      if (spCandidates.length > 0) {
-        // Use deterministic max values for gap comparison (not weighted random)
-        const topSpVal = Math.max(...spCandidates.map((p) => getPlayerValue(p)));
-        const posPlayers = available.filter((p) => !p.card.isPitcher);
-        const topPosVal = posPlayers.length > 0
-          ? Math.max(...posPlayers.map((p) => getPlayerValue(p)))
-          : 0;
-        if (topPosVal > topSpVal + VALUE_GAP_THRESHOLD) {
-          // Elite batter significantly outvalues best SP -- take the batter
-          const bestPos = bestAvailablePosition(available, needs, rng);
-          if (bestPos) return bestPos;
-        }
-        // SP is competitive -- fill rotation (weighted random for which SP)
-        return bestAtPositions(available, ['SP'], rng)!;
-      }
-    }
+  const candidates = round === 1
+    ? eligible.filter(p => {
+      const pos = getPlayerPosition(p);
+      return pos !== 'CL' && pos !== 'RP';
+    })
+    : eligible;
 
-    // Priority 2: Premium position gaps (C, SS)
-    const premiumNeeds = needs.filter(
-      (n) => PREMIUM_POSITIONS.includes(n.position) && n.slot === 'starter',
-    );
-    if (premiumNeeds.length > 0) {
-      const positions = premiumNeeds.map((n) => n.position);
-      const premium = bestAtPositions(available, positions, rng);
-      if (premium) return premium;
-    }
-
-    // Priority 3: Any unfilled starter position
-    const starterNeeds = needs.filter((n) => n.slot === 'starter');
-    if (starterNeeds.length > 0) {
-      const positions = starterNeeds.map((n) => n.position);
-      const starter = bestAtPositions(available, positions, rng);
-      if (starter) return starter;
-    }
-
-    // Fallback: best available (exclude capped pitching positions)
-    const midFallback = excludeFullPitching(sorted, needs);
-    return midFallback.length > 0 ? pickFromTop(midFallback, rng) : pickFromTop(sorted, rng);
+  if (candidates.length === 0) {
+    return pickFromTop(sortByValue(eligible, rng), rng);
   }
 
   // -----------------------------------------------------------------------
-  // Late rounds (9+): Starters first, then bullpen, then SP, then bench
+  // Unified need-weighted selection: value * needMultiplier
   // -----------------------------------------------------------------------
+  const adjusted = candidates.map(p => ({
+    player: p,
+    adjustedValue: getPlayerValue(p) * getNeedMultiplier(p, needs),
+  }));
 
-  // Priority 1: Any remaining unfilled starter positions
-  const starterNeeds = needs.filter((n) => n.slot === 'starter');
-  if (starterNeeds.length > 0) {
-    const positions = starterNeeds.map((n) => n.position);
-    const starter = bestAtPositions(available, positions, rng);
-    if (starter) return starter;
-  }
+  // Sort by adjusted value descending (RNG tiebreak for equal values)
+  adjusted.sort((a, b) => {
+    const diff = b.adjustedValue - a.adjustedValue;
+    if (Math.abs(diff) < 0.01) return rng.nextFloat() - 0.5;
+    return diff;
+  });
 
-  // Priority 2: Bullpen (RP and CL both qualify) if needed
-  const bullpenNeeds = needs.filter((n) => n.position === 'RP');
-  if (bullpenNeeds.length > 0) {
-    const rp = bestAtPositions(available, ['RP'], rng);
-    if (rp) return rp;
-  }
-
-  // Priority 3: SP if still needed
-  const spNeeds = needs.filter((n) => n.position === 'SP');
-  if (spNeeds.length > 0) {
-    const sp = bestAtPositions(available, ['SP'], rng);
-    if (sp) return sp;
-  }
-
-  // Fallback: best available (fills bench, exclude capped pitching positions)
-  const lateFallback = excludeFullPitching(sorted, needs);
-  return lateFallback.length > 0 ? pickFromTop(lateFallback, rng) : pickFromTop(sorted, rng);
+  return pickFromTopAdjusted(adjusted, rng);
 }

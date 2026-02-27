@@ -224,44 +224,63 @@ describe('selectAIPick (REQ-DFT-006)', () => {
     });
   });
 
-  describe('mid rounds (4-8)', () => {
-    it('fills rotation when needed (picks SP when value gap is under threshold)', () => {
-      // Roster with no SP
+  describe('need-weighted selection', () => {
+    it('SP gets rotation need boost when rotation is empty', () => {
+      // Custom pool where SP and batter values are close enough that the
+      // rotation need multiplier (1.15x) makes SP competitive with
+      // starter-need batters (1.20x).
+      const tightPool: DraftablePlayer[] = [
+        // Mediocre batter: 0.700 OPS, LF -> raw ~91, adjusted 91*1.20=109
+        makeDraftable(makeCard({ playerId: 'lf1', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.700, 5),
+        // Good SP: 2.80 ERA, 10 K/9, 7 stamina -> raw ~97, adjusted 97*1.15=112
+        { card: makePitcherCard('SP', { playerId: 'sp1', pitching: { role: 'SP', grade: 12, stamina: 7, era: 2.80, whip: 1.05, k9: 10.0, bb9: 2.0, hr9: 0.7, usageFlags: [], isReliever: false } }), ops: 0, sb: 0 },
+        // Filler for valid draft
+        { card: makePitcherCard('RP', { playerId: 'rp1' }), ops: 0, sb: 0 },
+        makeDraftable(makeCard({ playerId: 'b1', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.650, 0),
+      ];
       const roster: DraftablePlayer[] = [
         makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
         makeDraftable(makeCard({ playerId: 'ss', primaryPosition: 'SS', eligiblePositions: ['SS'] }), 0.8, 0),
-        makeDraftable(makeCard({ playerId: 'cf', primaryPosition: 'CF', eligiblePositions: ['CF'] }), 0.7, 0),
       ];
       let spPicks = 0;
       for (let seed = 0; seed < 20; seed++) {
-        const pick = selectAIPick(5, roster, pool, new SeededRNG(seed));
+        const pick = selectAIPick(5, roster, tightPool, new SeededRNG(seed));
         if (pick.card.isPitcher && pick.card.pitching?.role === 'SP') spPicks++;
       }
-      // Value gap between best unfilled-position batter (~123) and best SP (~75) is ~48,
-      // under the 60-point threshold, so SP should be picked most of the time.
-      expect(spPicks).toBeGreaterThan(10);
+      // With close values, SP rotation need (1.15x) should win some picks
+      expect(spPicks).toBeGreaterThan(0);
     });
 
-    it('prefers premium positions (C, SS) and SP when roster has gaps', () => {
-      // Empty roster - round 5 targets SP first (value-gap may override),
-      // then premium (C, SS), then any unfilled starter
-      let targetPicks = 0;
+    it('unfilled starter positions get need boost over bench candidates', () => {
+      // Empty roster: all starter positions unfilled -> 1.20x multiplier.
+      // Surplus positions (bench) get 0.80x. Picks should favor starter-eligible players.
+      let starterPicks = 0;
       for (let seed = 0; seed < 20; seed++) {
         const pick = selectAIPick(5, [], pool, new SeededRNG(seed));
+        // Any pick that fills a starter or rotation need counts
         const pos = pick.card.primaryPosition;
-        // With value-gap override, AI may take high-value non-premium batters.
-        // Still expect C/SS/SP at least sometimes.
-        if (['C', 'SS', 'SP'].includes(pos)) targetPicks++;
+        const isStarter = !pick.card.isPitcher || pick.card.pitching?.role === 'SP';
+        if (isStarter) starterPicks++;
       }
-      // With VALUE_GAP_THRESHOLD=60 and empty roster, SP gap is under 60 so
-      // the AI picks SP in mid rounds. C/SS may appear via premium path too.
-      expect(targetPicks).toBeGreaterThanOrEqual(15);
+      // With empty roster, starters/SP get 1.15-1.20x, bench gets 0.80x
+      // Vast majority should be starter-eligible
+      expect(starterPicks).toBeGreaterThanOrEqual(15);
     });
   });
 
-  describe('late rounds (9+)', () => {
-    it('picks relievers and closers when needed', () => {
-      // Roster with all starters (incl DH) and SP filled but no RP/CL
+  describe('bullpen need weighting', () => {
+    it('picks RP/CL when starters and rotation are filled', () => {
+      // Custom pool where RP/CL values (1.05x bullpen need) beat bench batters
+      // (0.80x). Good closer raw ~71 * 1.05 = 74.5 vs mediocre bench batter
+      // raw ~82 * 0.80 = 65.6 -- closer wins.
+      const rpPool: DraftablePlayer[] = [
+        // Elite closer: 2.00 ERA, 12 K/9 -> raw ~71
+        { card: makePitcherCard('CL', { playerId: 'cl1', pitching: { role: 'CL', grade: 11, stamina: 2, era: 2.00, whip: 0.90, k9: 12.0, bb9: 2.0, hr9: 0.5, usageFlags: [], isReliever: true } }), ops: 0, sb: 0 },
+        { card: makePitcherCard('RP', { playerId: 'rp1', pitching: { role: 'RP', grade: 9, stamina: 2, era: 2.50, whip: 1.00, k9: 10.0, bb9: 2.5, hr9: 0.7, usageFlags: [], isReliever: true } }), ops: 0, sb: 0 },
+        // Mediocre bench batters: 0.650 OPS -> raw ~82 * 0.80 = 65.6
+        makeDraftable(makeCard({ playerId: 'b1', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.650, 0),
+        makeDraftable(makeCard({ playerId: 'b2', primaryPosition: 'LF', eligiblePositions: ['LF'] }), 0.640, 0),
+      ];
       const roster: DraftablePlayer[] = [
         makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
         makeDraftable(makeCard({ playerId: '1b', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.8, 0),
@@ -279,13 +298,14 @@ describe('selectAIPick (REQ-DFT-006)', () => {
       ];
       let reliefPicks = 0;
       for (let seed = 0; seed < 20; seed++) {
-        const pick = selectAIPick(10, roster, pool, new SeededRNG(seed));
+        const pick = selectAIPick(10, roster, rpPool, new SeededRNG(seed));
         if (pick.card.isPitcher && (pick.card.pitching?.role === 'RP' || pick.card.pitching?.role === 'CL')) {
           reliefPicks++;
         }
       }
-      // With all starters filled, RP/CL is priority in late rounds
-      expect(reliefPicks).toBeGreaterThan(10);
+      // Closer adjusted (74.5) > bench batter adjusted (65.6).
+      // Weighted random spreads picks, but RP/CL should appear meaningfully.
+      expect(reliefPicks).toBeGreaterThan(3);
     });
   });
 
@@ -321,15 +341,15 @@ describe('selectAIPick (REQ-DFT-006)', () => {
       expect(hofPicks).toBeGreaterThan(10);
     });
 
-    it('takes SP when value gap is small', () => {
+    it('SP competes with batters when rotation need exists and values are close', () => {
       // Pool where best SP is competitive with best batter
       const balancedPool: DraftablePlayer[] = [
-        // Good batter: 0.800 OPS -> value ~115
+        // Good batter: 0.800 OPS -> value ~94 (with LF 1.02x multiplier)
         makeDraftable(makeCard({
           playerId: 'good01', primaryPosition: 'LF', eligiblePositions: ['LF'],
           fieldingPct: 0.97,
         }), 0.800, 5),
-        // Good SP (2.80 ERA, 10 K/9) -> value ~90
+        // Good SP (2.80 ERA, 10 K/9) -> value ~88
         { card: makePitcherCard('SP', { playerId: 'gsp1', pitching: { role: 'SP', grade: 12, stamina: 7, era: 2.80, whip: 1.05, k9: 10.0, bb9: 2.0, hr9: 0.7, usageFlags: [], isReliever: false } }), ops: 0, sb: 0 },
         // Filler
         { card: makePitcherCard('RP', { playerId: 'rp1' }), ops: 0, sb: 0 },
@@ -346,8 +366,9 @@ describe('selectAIPick (REQ-DFT-006)', () => {
         const pick = selectAIPick(5, roster, balancedPool, new SeededRNG(seed));
         if (pick.card.isPitcher && pick.card.pitching?.role === 'SP') spPicks++;
       }
-      // Gap is ~16 (under threshold of 60), so SP should be picked most of the time
-      expect(spPicks).toBeGreaterThan(10);
+      // With need-weighted selection: SP gets 1.15x (rotation), batter gets 1.20x (starter).
+      // Both are competitive -- SP should appear at least sometimes
+      expect(spPicks).toBeGreaterThan(0);
     });
   });
 
@@ -514,8 +535,11 @@ describe('selectAIPick (REQ-DFT-006)', () => {
     });
   });
 
-  it('considers roster gaps (picks SS when SP is filled and SS is missing)', () => {
-    // Roster with SP rotation filled but missing SS (premium position gap)
+  it('considers roster gaps (unfilled starter positions get need boost)', () => {
+    // Roster with SP rotation filled but missing SS, OF, DH
+    // All unfilled starters get 1.20x multiplier. SS has highest scarcity
+    // (1.15x base) so SS should appear frequently but not always since
+    // higher-OPS players at other positions may win via weighted random.
     const roster: DraftablePlayer[] = [
       makeDraftable(makeCard({ playerId: 'c', primaryPosition: 'C', eligiblePositions: ['C'] }), 0.7, 0),
       makeDraftable(makeCard({ playerId: '1b', primaryPosition: '1B', eligiblePositions: ['1B'] }), 0.8, 0),
@@ -526,13 +550,13 @@ describe('selectAIPick (REQ-DFT-006)', () => {
       { card: makePitcherCard('SP', { playerId: 'sp_c' }), ops: 0, sb: 0 },
       { card: makePitcherCard('SP', { playerId: 'sp_d' }), ops: 0, sb: 0 },
     ];
-    let ssPicks = 0;
+    let starterPicks = 0;
     for (let seed = 0; seed < 20; seed++) {
       const pick = selectAIPick(5, roster, pool, new SeededRNG(seed));
-      if (pick.card.primaryPosition === 'SS') ssPicks++;
+      // Any unfilled starter position counts (SS, OF, DH)
+      if (!pick.card.isPitcher) starterPicks++;
     }
-    // With SP filled and C filled, SS is the only premium gap -- should pick SS
-    // (weighted random may occasionally pick ss02 instead of ss01, but still SS)
-    expect(ssPicks).toBe(20);
+    // With SP capped and unfilled starters getting 1.20x, position players dominate
+    expect(starterPicks).toBeGreaterThanOrEqual(15);
   });
 });

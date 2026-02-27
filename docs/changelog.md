@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-02-26 - Fix draft valuation: block drafting, multi-position, weak differentiation
+
+After analyzing a full 630-pick draft (30 teams x 21 rounds), several systematic issues
+emerged: all SP drafted in rounds 4-7, all catchers in round 8, all RP/CL in rounds 13-16
+(block drafting); multi-position eligibility ignored (Vladimir Guerrero drafted as 1B
+despite being eligible at RF/OF); position bonuses too small to meaningfully influence
+pick order; and RP IP threshold too generous.
+
+1. **Multiplicative position scarcity.** Replaced additive position bonuses (C=+8, SS=+12)
+   with multiplicative scarcity multipliers (SS=1.15x, C=1.12x, CF=1.08x, DH=0.95x).
+   Bonuses now scale with player quality -- elite players get bigger boosts from scarcity.
+
+2. **Best eligible position in valuation.** `calculatePlayerValue` now uses the highest
+   scarcity multiplier from all `eligiblePositions`, not just `primaryPosition`. Vladimir
+   Guerrero (1B/RF) gets RF's 1.03x instead of 1B's 1.00x.
+
+3. **Multi-position matching in strategy.** `bestAtPositions()` and
+   `bestAvailablePosition()` now check all `eligiblePositions` when matching against
+   roster needs, not just `primaryPosition`.
+
+4. **Unified need-weighted selection.** Replaced rigid 3-tier round system (early/mid/late)
+   with a single need-weighted approach. Each candidate's raw value is multiplied by a
+   need multiplier (starter=1.20x, rotation=1.15x, bullpen=1.05x, bench=0.80x). Different
+   teams naturally draft different positions because weighted-random selection creates
+   cascading differences. Only Round 1 still excludes RP/CL. Hard guard for mandatory
+   composition preserved.
+
+5. **RP IP threshold raised.** `RP_IP_THRESHOLD` increased from 50 to 60 IP to penalize
+   low-usage relievers. Quality closers typically throw 60-70 IP.
+
+- Modified `src/lib/draft/ai-valuation.ts` -- multiplicative scarcity, eligiblePositions,
+  `getBestEligiblePosition()`, RP threshold
+- Modified `src/lib/draft/ai-strategy.ts` -- unified selection, multi-position matching,
+  `getNeedMultiplier()`, `pickFromTopAdjusted()`
+- Updated `tests/unit/lib/draft/ai-valuation.test.ts` -- 60 tests for new formulas
+- Updated `tests/unit/lib/draft/ai-strategy.test.ts` -- 22 tests for unified behavior
+
 ## 2026-02-26 - Fix extra closers sitting unused in bullpen
 
 When a team has multiple closers, `loadTeamConfig` extracts only the first CL as
