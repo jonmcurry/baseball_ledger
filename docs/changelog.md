@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-02-26 - Progressive urgency multipliers to break draft block patterns
+
+After Fixes 1-5 (unified need-weighted selection), a 630-pick draft still showed
+synchronized position blocks: batters rounds 1-8, SP rounds 9-12, RP/CL rounds
+17-20. The fixed need multipliers (starter=1.20x, rotation=1.15x, bullpen=1.05x)
+were too weak to overcome the raw value gap between batters (~90-160) and pitchers
+(SP ~50-100, RP ~20-55).
+
+**Fix: Dynamic urgency-scaled multipliers.** Replaced fixed `NEED_MULT_*` constants
+with a progressive formula: `dynamicMult = baseMult + (categoryNeeds / remainingPicks) * urgencyScale`.
+As unfilled needs pile up relative to remaining picks, the multiplier increases.
+Different teams fill categories at different rates via weighted random, creating
+cascading urgency differences that desynchronize position picks across teams.
+
+Category-specific urgency scales:
+- Starter: base 1.20, urgency 0.5 (mild -- already favored by high raw batter values)
+- Rotation: base 1.15, urgency 2.0 (aggressive -- SP must overcome batter value gap)
+- Bullpen: base 1.05, urgency 1.5 (moderate -- RP must beat bench batters)
+- Bench: fixed 0.80 (residual, not mandatory)
+
+- Modified `src/lib/draft/ai-strategy.ts` -- `getNeedMultiplier()` now accepts
+  `rosterSize` and computes dynamic multipliers per category
+
 ## 2026-02-26 - Fix draft valuation: block drafting, multi-position, weak differentiation
 
 After analyzing a full 630-pick draft (30 teams x 21 rounds), several systematic issues

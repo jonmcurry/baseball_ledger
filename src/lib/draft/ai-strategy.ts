@@ -5,10 +5,11 @@
  * system. Early rounds favor elite players, mid rounds fill rotation and
  * premium positions, late rounds fill remaining starters and bullpen.
  *
- * Strategy: Unified need-weighted selection.
- *  - Each candidate's raw valuation is multiplied by a need multiplier
- *    based on current roster composition (starter=1.20, rotation=1.15,
- *    bullpen=1.05, bench=0.80).
+ * Strategy: Unified need-weighted selection with progressive urgency.
+ *  - Each candidate's raw valuation is multiplied by a dynamic need multiplier:
+ *    dynamicMult = baseMult + (categoryNeeds / remainingPicks) * urgencyScale
+ *  - As unfilled needs pile up relative to remaining picks, multipliers increase,
+ *    causing different teams to draft positions at different times.
  *  - Round 1 excludes RP/CL (too early for relievers).
  *  - Hard guard forces mandatory positions when remaining picks are tight.
  *  - Multi-position eligibility: players fill needs via any eligible position.
@@ -57,11 +58,25 @@ const BENCH_SIZE = 4;
 /** Number of top candidates to consider for weighted random selection. */
 const TOP_CANDIDATE_COUNT = 3;
 
-/** Need multipliers: how much to boost a player's value based on roster need. */
-const NEED_MULT_STARTER = 1.20;
-const NEED_MULT_ROTATION = 1.15;
-const NEED_MULT_BULLPEN = 1.05;
-const NEED_MULT_BENCH = 0.80;
+/** Base need multipliers: starting boost for each roster category. */
+const BASE_MULT_STARTER = 1.20;
+const BASE_MULT_ROTATION = 1.15;
+const BASE_MULT_BULLPEN = 1.05;
+const BASE_MULT_BENCH = 0.80;
+
+/**
+ * Urgency scales: how aggressively the multiplier ramps as unfilled needs
+ * pile up relative to remaining picks.
+ *
+ * Formula: dynamicMult = baseMult + (categoryNeeds / remainingPicks) * urgencyScale
+ *
+ * Rotation (2.0) is highest because SP raw values (~50-100) must overcome
+ * batter raw values (~90-160). Bullpen (1.5) is moderate. Starter (0.5) is
+ * mild since batters already have high raw values.
+ */
+const URGENCY_SCALE_STARTER = 0.5;
+const URGENCY_SCALE_ROTATION = 2.0;
+const URGENCY_SCALE_BULLPEN = 1.5;
 
 /** Outfield positions that count toward the generic OF starter pool. */
 const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
@@ -256,21 +271,38 @@ function bestAtPositions(
 }
 
 /**
- * Get the need multiplier for a player based on current roster needs.
+ * Get the dynamic need multiplier for a player based on current roster needs
+ * and how many picks remain.
+ *
+ * Formula: baseMult + (categoryNeeds / remainingPicks) * urgencyScale
+ *
+ * As unfilled needs pile up relative to remaining picks, the multiplier
+ * increases. Different teams fill categories at different rates (via weighted
+ * random), creating cascading urgency differences that break block patterns.
  *
  * Position players check eligiblePositions (not just primaryPosition) so a
  * player who can play SS and 2B fills either need.
  */
-function getNeedMultiplier(player: DraftablePlayer, needs: PositionNeed[]): number {
+function getNeedMultiplier(
+  player: DraftablePlayer,
+  needs: PositionNeed[],
+  rosterSize: number,
+): number {
+  const remainingPicks = Math.max(1, 21 - rosterSize);
+
   if (player.card.isPitcher && player.card.pitching) {
     const role = player.card.pitching.role;
     if (role === 'SP' && needs.some(n => n.position === 'SP')) {
-      return NEED_MULT_ROTATION;
+      const rotationNeeds = needs.filter(n => n.slot === 'rotation').length;
+      const fraction = rotationNeeds / remainingPicks;
+      return BASE_MULT_ROTATION + fraction * URGENCY_SCALE_ROTATION;
     }
     if ((role === 'RP' || role === 'CL') && needs.some(n => n.position === 'RP')) {
-      return NEED_MULT_BULLPEN;
+      const bullpenNeeds = needs.filter(n => n.slot === 'bullpen').length;
+      const fraction = bullpenNeeds / remainingPicks;
+      return BASE_MULT_BULLPEN + fraction * URGENCY_SCALE_BULLPEN;
     }
-    return NEED_MULT_BENCH;
+    return BASE_MULT_BENCH;
   }
 
   // Position player: check if ANY eligible position fills a starter need
@@ -280,10 +312,13 @@ function getNeedMultiplier(player: DraftablePlayer, needs: PositionNeed[]): numb
     const fillsNeed = player.card.eligiblePositions.some(
       pos => neededPositions.includes(pos),
     );
-    if (fillsNeed) return NEED_MULT_STARTER;
+    if (fillsNeed) {
+      const fraction = starterNeeds.length / remainingPicks;
+      return BASE_MULT_STARTER + fraction * URGENCY_SCALE_STARTER;
+    }
   }
 
-  return NEED_MULT_BENCH;
+  return BASE_MULT_BENCH;
 }
 
 /**
@@ -309,9 +344,10 @@ function pickFromTopAdjusted(
 /**
  * Select the AI's draft pick for a given round.
  *
- * Uses a unified need-weighted approach instead of rigid round tiers.
- * Each candidate's raw value is multiplied by a need multiplier based on
- * roster composition, creating natural interleaving of positions across rounds.
+ * Uses a unified need-weighted approach with progressive urgency instead of
+ * rigid round tiers. Each candidate's raw value is multiplied by a dynamic
+ * need multiplier that increases as unfilled needs pile up, creating natural
+ * interleaving of positions across rounds and desynchronizing teams.
  *
  * @param round - Current draft round (1-based)
  * @param roster - Current team roster (picks made so far)
@@ -374,7 +410,7 @@ export function selectAIPick(
   // -----------------------------------------------------------------------
   const adjusted = candidates.map(p => ({
     player: p,
-    adjustedValue: getPlayerValue(p) * getNeedMultiplier(p, needs),
+    adjustedValue: getPlayerValue(p) * getNeedMultiplier(p, needs, roster.length),
   }));
 
   // Sort by adjusted value descending (RNG tiebreak for equal values)
