@@ -1,14 +1,14 @@
 /**
  * All-Star League Calibration Tests
  *
- * Validates that the SERD 5-column system produces realistic batting
+ * Validates that the BBW grade-check system produces realistic batting
  * averages when pitcher quality is uniformly high (grade 13-17),
  * as occurs in all-star/fantasy draft leagues.
  *
- * Previously, all elite pitchers mapped to Column B (0.72x singles),
- * depressing BA by ~25%. With widened Column C (grade 7-14) and
- * symmetric multipliers, a .300 hitter should produce ~.260-.320 BA
- * against an all-star pitching staff.
+ * With grade-check suppression, higher grades suppress more SINGLE_CLEAN
+ * and TRIPLE outcomes. Grade 14 suppresses 14/36 = 39% of those hits,
+ * so a .270 hitter against grade 14 pitching is expected to produce
+ * lower BA (~.220-.270) than their base rate.
  */
 
 import { SeededRNG } from '@lib/rng/seeded-rng';
@@ -148,13 +148,14 @@ describe('All-Star League Calibration', () => {
     expect(statsVs17.ba).toBeLessThan(statsVs14.ba);
   });
 
-  it('grade 14 (Column C) produces BA close to base rate', () => {
+  it('grade 14 suppresses singles, producing BA below base rate', () => {
     const card = buildSolidHitterCard();
     const stats = simulateAllStarLeague(card, [14], 30, 500);
 
-    // Column C is neutral -- BA should be close to .270 base rate
-    expect(stats.ba).toBeGreaterThanOrEqual(0.240);
-    expect(stats.ba).toBeLessThanOrEqual(0.310);
+    // Grade 14 suppresses 14/36 = 39% of SINGLE_CLEAN and TRIPLE.
+    // A .270 base rate hitter will produce ~.220-.270 BA.
+    expect(stats.ba).toBeGreaterThanOrEqual(0.190);
+    expect(stats.ba).toBeLessThanOrEqual(0.280);
   });
 
   it('grade 14 maps to Column C (not B)', () => {

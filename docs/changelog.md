@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-02-26 - BBW-faithful grade-check suppression for plate appearance resolution
+
+Simulated pitching stats showed heavily inflated ERAs: Jim Bunning 5.93, Walter
+Johnson 4.39, Cy Young 5.34. Root cause: the SERD 5-column system mapped pitcher
+grades 7-14 ALL to Column C (neutral outcome rates), so a grade-8 back-end starter
+produced identical batting outcomes as a grade-14 elite ace. The 30-level grade
+spectrum was collapsed into 5 discrete buckets, with the most common range (7-14)
+entirely flat.
+
+**Fix: BBW-faithful grade-check suppression.** Confirmed by Ghidra decompilation of
+FUN_1058_5f49, BBW does NOT use column-based resolution. Instead:
+- Batter's card (Column C) always determines the base outcome
+- Card values 7/8 (singles) and 11 (triples) go through a pitcher grade check:
+  `random(36) < effectiveGrade` -- if pitcher wins, hit is suppressed to an out
+- Card values 13 (walks), 14 (K), 0 (doubles), 1 (HR) resolve directly from the
+  batter's card -- pitcher grade has NO effect
+- This selective suppression means elite pitchers reduce contact hits while walks,
+  HRs, and strikeouts remain batter-determined
+
+Outcome mapping: SINGLE_CLEAN and TRIPLE are grade-checked (BBW values 7/8/11).
+SINGLE_ADVANCE (BBW value 9), WALK, HR, DOUBLE, STRIKEOUT, HBP are NOT
+grade-checked. Suppressed hits are converted to outs weighted as: 45% ground out,
+30% fly out, 15% line out, 10% pop out.
+
+Calibration at GRADE_CHECK_RANGE=36: grade 8 suppresses 22% of singles (average
+starter), grade 15 suppresses 42% (ace), grade 20 suppresses 56% (elite + fresh).
+Full simulation diagnostic: BA .235, R/team/game 4.72, HR/team/game 1.01.
+
+- Rewrote `src/lib/simulation/plate-appearance.ts` -- always use Column C, grade
+  check for SINGLE_CLEAN/TRIPLE, resolveGradeCheckOut() for suppressed hits
+- Rewrote `tests/unit/lib/simulation/plate-appearance.test.ts` -- 24 tests covering
+  grade-check suppression, non-suppressible outcomes, determinism, legacy constants
+- Updated `tests/unit/lib/simulation/allstar-league-calibration.test.ts` -- adjusted
+  BA bounds for grade-check behavior (grade 14 now actively suppresses 39% of singles)
+
 ## 2026-02-26 - Square root urgency curve to smooth SP concentration peaks
 
 Progressive urgency (linear formula) moved SP earlier but created concentration
