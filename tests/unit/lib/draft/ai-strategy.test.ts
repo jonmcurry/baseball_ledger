@@ -560,3 +560,180 @@ describe('selectAIPick (REQ-DFT-006)', () => {
     expect(starterPicks).toBeGreaterThanOrEqual(15);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Manager style draft influence
+// ---------------------------------------------------------------------------
+describe('manager style draft influence', () => {
+  // Build a pool where SP and batters have overlapping values so style bias
+  // can meaningfully shift which gets picked. The base pitcher value (25 for SP)
+  // ensures good SPs compete with batters. Batter OPS range 1.000-.700 and
+  // SP ERA range 2.80-4.30 create a zone where style bias tips the balance.
+  function buildStyleTestPool(): DraftablePlayer[] {
+    const positions = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'] as const;
+    const pool: DraftablePlayer[] = [];
+    let id = 0;
+
+    // Position players: 5 per position, OPS range 1.000-.880
+    for (const pos of positions) {
+      for (let i = 0; i < 5; i++) {
+        id++;
+        pool.push(makeDraftable(
+          makeCard({
+            playerId: `pos${id}`,
+            primaryPosition: pos,
+            eligiblePositions: [pos],
+          }),
+          1.000 - i * 0.03,
+          10 - i * 2,
+        ));
+      }
+    }
+
+    // 12 SP: ERA range 2.80-4.45 (competitive with batters via base value)
+    for (let i = 0; i < 12; i++) {
+      id++;
+      pool.push({
+        card: makePitcherCard('SP', {
+          playerId: `sp${id}`,
+          nameFirst: 'SP',
+          nameLast: `Pitcher${i}`,
+          pitching: {
+            role: 'SP', grade: 12 - i,
+            stamina: 7 - i * 0.2,
+            era: 2.80 + i * 0.15,
+            whip: 1.00 + i * 0.03,
+            k9: 10.5 - i * 0.3,
+            bb9: 1.8 + i * 0.1,
+            hr9: 0.6 + i * 0.03,
+            usageFlags: [], isReliever: false,
+          },
+        }),
+        ops: 0, sb: 0,
+      });
+    }
+
+    // 10 RP/CL: ERA range 2.00-3.80
+    for (let i = 0; i < 10; i++) {
+      id++;
+      const role = i < 4 ? 'CL' : 'RP' as const;
+      pool.push({
+        card: makePitcherCard(role, {
+          playerId: `rp${id}`,
+          nameFirst: role,
+          nameLast: `Reliever${i}`,
+          pitching: {
+            role, grade: 10 - i,
+            stamina: 2,
+            era: 2.00 + i * 0.18,
+            whip: 0.90 + i * 0.05,
+            k9: 12.0 - i * 0.3,
+            bb9: 2.0 + i * 0.15,
+            hr9: 0.5 + i * 0.04,
+            usageFlags: [], isReliever: true,
+          },
+        }),
+        ops: 0, sb: 0,
+      });
+    }
+
+    return pool;
+  }
+
+  it('conservative manager drafts SP earlier than aggressive manager (on average)', () => {
+    const pool = buildStyleTestPool();
+
+    function avgFirstSPRound(style: string, seeds: number): number {
+      let totalRound = 0;
+      for (let seed = 0; seed < seeds; seed++) {
+        const roster: DraftablePlayer[] = [];
+        const rng = new SeededRNG(seed);
+        let firstSPRound = 21;
+        for (let round = 1; round <= 21; round++) {
+          const pick = selectAIPick(round, roster, pool, rng, style as 'conservative');
+          roster.push(pick);
+          if (pick.card.isPitcher && pick.card.pitching?.role === 'SP') {
+            firstSPRound = round;
+            break;
+          }
+        }
+        totalRound += firstSPRound;
+      }
+      return totalRound / seeds;
+    }
+
+    // Conservative (rotationUrgency 1.25) should draft SP earlier
+    // Aggressive (rotationUrgency 0.85) should draft SP later
+    const conservativeAvg = avgFirstSPRound('conservative', 30);
+    const aggressiveAvg = avgFirstSPRound('aggressive', 30);
+    expect(conservativeAvg).toBeLessThan(aggressiveAvg);
+  });
+
+  it('aggressive manager drafts RP/CL earlier than conservative manager', () => {
+    const pool = buildStyleTestPool();
+
+    function avgFirstRPRound(style: string, seeds: number): number {
+      let totalRound = 0;
+      for (let seed = 0; seed < seeds; seed++) {
+        const roster: DraftablePlayer[] = [];
+        const rng = new SeededRNG(seed);
+        let firstRPRound = 21;
+        for (let round = 1; round <= 21; round++) {
+          const pick = selectAIPick(round, roster, pool, rng, style as 'aggressive');
+          roster.push(pick);
+          if (pick.card.isPitcher && (pick.card.pitching?.role === 'RP' || pick.card.pitching?.role === 'CL')) {
+            firstRPRound = round;
+            break;
+          }
+        }
+        totalRound += firstRPRound;
+      }
+      return totalRound / seeds;
+    }
+
+    // Aggressive (bullpenUrgency 1.35) should draft RP/CL earlier
+    const aggressiveAvg = avgFirstRPRound('aggressive', 30);
+    const conservativeAvg = avgFirstRPRound('conservative', 30);
+    expect(aggressiveAvg).toBeLessThan(conservativeAvg);
+  });
+
+  it('analytical manager with topK=5 produces more varied picks across seeds', () => {
+    const pool = buildStyleTestPool();
+    const analyticalPicks = new Set<string>();
+    const conservativePicks = new Set<string>();
+
+    for (let seed = 0; seed < 50; seed++) {
+      const aPick = selectAIPick(1, [], pool, new SeededRNG(seed), 'analytical');
+      analyticalPicks.add(aPick.card.playerId);
+      const cPick = selectAIPick(1, [], pool, new SeededRNG(seed), 'conservative');
+      conservativePicks.add(cPick.card.playerId);
+    }
+
+    // Analytical (topK=5) should produce at least as many unique picks as
+    // conservative (topK=3), and ideally more
+    expect(analyticalPicks.size).toBeGreaterThanOrEqual(conservativePicks.size);
+  });
+
+  it('manager style does not break composition guard (50 seeds per style)', () => {
+    const pool = buildStyleTestPool();
+    const styles = ['conservative', 'aggressive', 'analytical', 'balanced'] as const;
+
+    for (const style of styles) {
+      for (let seed = 0; seed < 50; seed++) {
+        const roster: DraftablePlayer[] = [];
+        const rng = new SeededRNG(seed);
+        for (let round = 1; round <= 21; round++) {
+          const pick = selectAIPick(round, roster, pool, rng, style);
+          roster.push(pick);
+        }
+
+        expect(roster).toHaveLength(21);
+        const needs = getRosterNeeds(roster);
+        if (needs.length > 0) {
+          const unfilled = needs.map((n) => `${n.position}(${n.slot})`).join(', ');
+          throw new Error(`Style ${style}, seed ${seed}: incomplete roster, unfilled: ${unfilled}`);
+        }
+      }
+    }
+  });
+});

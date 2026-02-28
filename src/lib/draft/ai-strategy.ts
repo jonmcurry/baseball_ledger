@@ -5,12 +5,15 @@
  * system. Early rounds favor elite players, mid rounds fill rotation and
  * premium positions, late rounds fill remaining starters and bullpen.
  *
- * Strategy: Unified need-weighted selection with progressive urgency.
+ * Strategy: Unified need-weighted selection with progressive urgency and
+ * manager style differentiation.
  *  - Each candidate's raw valuation is multiplied by a dynamic need multiplier:
- *    dynamicMult = baseMult + sqrt(categoryNeeds / remainingPicks) * urgencyScale
+ *    dynamicMult = baseMult + sqrt(categoryNeeds / remainingPicks) * urgencyScale * styleBias
  *  - The sqrt curve rises steeply at low fractions (earlier competitiveness) and
  *    flattens at high fractions (reduced late-round dominance), spreading picks
  *    more evenly instead of creating sharp tipping-point concentration peaks.
+ *  - Manager style biases urgency scales: conservative managers prioritize rotation,
+ *    aggressive managers prioritize bullpen, analytical managers use wider candidate pools.
  *  - Round 1 excludes RP/CL (too early for relievers).
  *  - Hard guard forces mandatory positions when remaining picks are tight.
  *  - Multi-position eligibility: players fill needs via any eligible position.
@@ -26,6 +29,7 @@
 
 import type { PlayerCard, Position } from '../types/player';
 import type { SeededRNG } from '../rng/seeded-rng';
+import type { ManagerStyle } from '../simulation/manager-profiles';
 import { calculatePlayerValue } from './ai-valuation';
 
 /** A player available for drafting, with raw stats for valuation. */
@@ -57,7 +61,7 @@ const ROSTER_REQUIREMENTS: Array<{ position: Position; slot: string; count: numb
 
 const BENCH_SIZE = 4;
 /** Number of top candidates to consider for weighted random selection. */
-const TOP_CANDIDATE_COUNT = 3;
+const TOP_CANDIDATE_COUNT = 4;
 
 /** Base need multipliers: starting boost for each roster category. */
 const BASE_MULT_STARTER = 1.20;
@@ -78,6 +82,26 @@ const BASE_MULT_BENCH = 0.80;
 const URGENCY_SCALE_STARTER = 0.4;
 const URGENCY_SCALE_ROTATION = 1.3;
 const URGENCY_SCALE_BULLPEN = 1.8;
+
+/**
+ * Manager style bias for draft urgency.
+ * Modifies the urgency scale multipliers to create team-to-team variation.
+ * Conservative managers prioritize rotation; aggressive managers prioritize
+ * bullpen; analytical managers use wider candidate pools.
+ */
+interface StyleDraftBias {
+  rotationUrgency: number;
+  bullpenUrgency: number;
+  starterUrgency: number;
+  topK: number;
+}
+
+const STYLE_DRAFT_BIAS: Record<ManagerStyle, StyleDraftBias> = {
+  conservative: { rotationUrgency: 1.25, bullpenUrgency: 1.10, starterUrgency: 1.10, topK: 3 },
+  aggressive:   { rotationUrgency: 0.85, bullpenUrgency: 1.35, starterUrgency: 0.90, topK: 4 },
+  analytical:   { rotationUrgency: 1.00, bullpenUrgency: 1.00, starterUrgency: 1.00, topK: 5 },
+  balanced:     { rotationUrgency: 1.00, bullpenUrgency: 1.00, starterUrgency: 1.00, topK: 4 },
+};
 
 /** Outfield positions that count toward the generic OF starter pool. */
 const OUTFIELD_POSITIONS: Position[] = ['LF', 'CF', 'RF', 'OF'];
@@ -289,6 +313,7 @@ function getNeedMultiplier(
   player: DraftablePlayer,
   needs: PositionNeed[],
   rosterSize: number,
+  styleBias?: StyleDraftBias,
 ): number {
   const remainingPicks = Math.max(1, 21 - rosterSize);
 
@@ -297,12 +322,14 @@ function getNeedMultiplier(
     if (role === 'SP' && needs.some(n => n.position === 'SP')) {
       const rotationNeeds = needs.filter(n => n.slot === 'rotation').length;
       const fraction = rotationNeeds / remainingPicks;
-      return BASE_MULT_ROTATION + Math.sqrt(fraction) * URGENCY_SCALE_ROTATION;
+      const urgencyScale = URGENCY_SCALE_ROTATION * (styleBias?.rotationUrgency ?? 1.0);
+      return BASE_MULT_ROTATION + Math.sqrt(fraction) * urgencyScale;
     }
     if ((role === 'RP' || role === 'CL') && needs.some(n => n.position === 'RP')) {
       const bullpenNeeds = needs.filter(n => n.slot === 'bullpen').length;
       const fraction = bullpenNeeds / remainingPicks;
-      return BASE_MULT_BULLPEN + Math.sqrt(fraction) * URGENCY_SCALE_BULLPEN;
+      const urgencyScale = URGENCY_SCALE_BULLPEN * (styleBias?.bullpenUrgency ?? 1.0);
+      return BASE_MULT_BULLPEN + Math.sqrt(fraction) * urgencyScale;
     }
     return BASE_MULT_BENCH;
   }
@@ -316,7 +343,8 @@ function getNeedMultiplier(
     );
     if (fillsNeed) {
       const fraction = starterNeeds.length / remainingPicks;
-      return BASE_MULT_STARTER + Math.sqrt(fraction) * URGENCY_SCALE_STARTER;
+      const urgencyScale = URGENCY_SCALE_STARTER * (styleBias?.starterUrgency ?? 1.0);
+      return BASE_MULT_STARTER + Math.sqrt(fraction) * urgencyScale;
     }
   }
 
@@ -355,6 +383,7 @@ function pickFromTopAdjusted(
  * @param roster - Current team roster (picks made so far)
  * @param pool - All available players
  * @param rng - Seeded RNG for weighted random selection
+ * @param managerStyle - Optional manager style for urgency bias
  * @returns The selected player
  */
 export function selectAIPick(
@@ -362,6 +391,7 @@ export function selectAIPick(
   roster: DraftablePlayer[],
   pool: DraftablePlayer[],
   rng: SeededRNG,
+  managerStyle?: ManagerStyle,
 ): DraftablePlayer {
   const available = filterAvailable(pool, roster);
   const needs = getRosterNeeds(roster);
@@ -409,10 +439,14 @@ export function selectAIPick(
 
   // -----------------------------------------------------------------------
   // Unified need-weighted selection: value * needMultiplier
+  // Manager style biases urgency scales and candidate pool size.
   // -----------------------------------------------------------------------
+  const styleBias = managerStyle ? STYLE_DRAFT_BIAS[managerStyle] : undefined;
+  const topK = styleBias?.topK ?? TOP_CANDIDATE_COUNT;
+
   const adjusted = candidates.map(p => ({
     player: p,
-    adjustedValue: getPlayerValue(p) * getNeedMultiplier(p, needs, roster.length),
+    adjustedValue: getPlayerValue(p) * getNeedMultiplier(p, needs, roster.length, styleBias),
   }));
 
   // Sort by adjusted value descending (RNG tiebreak for equal values)
@@ -422,5 +456,5 @@ export function selectAIPick(
     return diff;
   });
 
-  return pickFromTopAdjusted(adjusted, rng);
+  return pickFromTopAdjusted(adjusted, rng, topK);
 }

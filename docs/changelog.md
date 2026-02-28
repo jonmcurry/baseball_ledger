@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-02-27 - Fix AI draft block drafting: pitcher base values, manager style bias, wider selection
+
+30-team AI draft produced synchronized position blocks: rounds 1-8 all batters,
+9-12 all SP, 16-18 all RP/CL, 19-21 all SS/2B bench. Three root causes identified:
+(1) batter values (80-160) vastly outscored SP (30-110) and RP (15-70), so all
+teams drafted batters first; (2) all 30 teams computed identical need multipliers
+because `getNeedMultiplier()` used fixed constants; (3) manager style was ignored
+in pick selection (only used for reasoning text).
+
+**Fix 1: Pitcher base values.** Added BASE_SP_VALUE=25 and BASE_RP_VALUE=15 to
+pitcher valuation formulas, shifting SP into competitive range with batters
+(elite SP 130 vs elite batter 150) and RP into mid-round competitiveness
+(elite RP 86 vs average batter 93). Terrible pitchers still score near zero.
+
+**Fix 2: Manager style draft bias.** Added `StyleDraftBias` that modifies urgency
+scales per manager style: conservative managers get +25% rotation urgency (draft SP
+earlier), aggressive managers get +35% bullpen urgency (draft RP earlier), analytical
+managers use wider candidate pool (top-5 instead of top-3/4). With 30 teams split
+across 4 styles, natural position interleaving occurs.
+
+**Fix 3: Wider candidate pool.** Changed TOP_CANDIDATE_COUNT from 3 to 4 (with
+style-specific overrides: conservative=3, analytical=5). More candidates in weighted
+random selection creates more position diversity per pick.
+
+- Modified `src/lib/draft/ai-valuation.ts` -- BASE_SP_VALUE, BASE_RP_VALUE constants
+  in calculatePitcherValue()
+- Modified `src/lib/draft/ai-strategy.ts` -- StyleDraftBias interface, STYLE_DRAFT_BIAS
+  map, managerStyle param on selectAIPick()/getNeedMultiplier(), TOP_K 3->4
+- Modified `src/lib/draft/ai-drafter.ts` -- pass teamConfig.managerStyle to selectAIPick()
+- Updated `tests/unit/lib/draft/ai-valuation.test.ts` -- 4 exact-formula tests updated
+  for base values
+- Added `tests/unit/lib/draft/ai-strategy.test.ts` -- 4 new manager style tests
+  (conservative SP priority, aggressive RP priority, analytical diversity, composition guard)
+
 ## 2026-02-26 - BBW-faithful grade-check suppression for plate appearance resolution
 
 Simulated pitching stats showed heavily inflated ERAs: Jim Bunning 5.93, Walter

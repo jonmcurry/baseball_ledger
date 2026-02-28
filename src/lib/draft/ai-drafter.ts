@@ -70,12 +70,13 @@ export function makeAIPick(
   const roster = state.teamRosters.get(teamId) ?? [];
   const availablePool = getAvailablePool(state);
 
-  // Select the best pick using AI strategy
+  // Select the best pick using AI strategy (manager style biases urgency)
   const selectedPlayer = selectAIPick(
     state.currentRound,
     roster,
     availablePool,
     rng,
+    teamConfig.managerStyle,
   );
 
   // Build context for reasoning generation
