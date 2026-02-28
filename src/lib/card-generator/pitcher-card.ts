@@ -127,10 +127,9 @@ export function determinePitcherUsageFlags(stats: PitchingStats): string[] {
  */
 export function buildPitcherAttributes(
   stats: PitchingStats,
-  allPitcherERAs: number[],
 ): PitcherAttributes {
   const role = determinePitcherRole(stats);
-  const grade = computePitcherGrade(stats.ERA, allPitcherERAs);
+  const grade = computePitcherGrade(stats.ERA);
   const stamina = computeStamina(stats);
 
   // Convert IP to decimal for per-9 rates

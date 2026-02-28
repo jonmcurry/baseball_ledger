@@ -54,11 +54,6 @@ export function runBbwPipeline(
   pitchingStats: BbwPitchingStats[],
   seasonYear: number,
 ): { cards: PlayerCard[]; playerNameCache: Record<string, string> } {
-  // Compute all pitcher ERAs for grade percentile calculation
-  const allPitcherERAs = pitchingStats
-    .filter((p) => p.outs > 0)
-    .map((p) => (p.ER * 27) / p.outs);
-
   const cards: PlayerCard[] = [];
   const playerNameCache: Record<string, string> = {};
   let pstatIdx = 0;
@@ -73,7 +68,7 @@ export function runBbwPipeline(
       ? pitchingStats[pstatIdx++]
       : undefined;
 
-    const card = generateCardFromBbw(player, batting, pitching, seasonYear, allPitcherERAs);
+    const card = generateCardFromBbw(player, batting, pitching, seasonYear);
     cards.push(card);
 
     // Build name cache using the same format as CSV pipeline

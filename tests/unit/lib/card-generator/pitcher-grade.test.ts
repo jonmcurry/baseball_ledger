@@ -2,6 +2,7 @@ import {
   computeERAPercentile,
   percentileToGrade,
   computePitcherGrade,
+  eraToGrade,
 } from '@lib/card-generator/pitcher-grade';
 
 describe('computeERAPercentile', () => {
@@ -173,47 +174,92 @@ describe('percentileToGrade (REQ-DATA-005a) - 22 tier scale', () => {
   });
 });
 
-describe('computePitcherGrade', () => {
-  it('assigns grade 22 to best pitcher', () => {
-    // 50 pitchers, this one has the best ERA (1.50)
-    const allERAs = Array.from({ length: 50 }, (_, i) => 1.50 + i * 0.1);
-    expect(computePitcherGrade(1.50, allERAs)).toBe(22);
+describe('eraToGrade - absolute ERA-to-grade mapping', () => {
+  it('maps sub-1.50 ERA to grade 22 (historic)', () => {
+    expect(eraToGrade(1.12)).toBe(22); // Bob Gibson 1968
+    expect(eraToGrade(1.50)).toBe(22);
   });
 
-  it('assigns grade 9 to single pitcher (edge case)', () => {
-    expect(computePitcherGrade(3.50, [3.50])).toBe(9);
+  it('maps 1.51-1.80 ERA to grade 21 (dominant)', () => {
+    expect(eraToGrade(1.74)).toBe(21); // Pedro Martinez 2000
+    expect(eraToGrade(1.80)).toBe(21);
   });
 
-  it('assigns grade 9 to average pitcher', () => {
-    // 100 pitchers, this one is right at 45th percentile
-    const allERAs = Array.from({ length: 100 }, (_, i) => 1.0 + i * 0.05);
-    // Pitcher with ERA at index 45 -> 45 with lower ERA -> percentile 0.45
-    const targetERA = 1.0 + 45 * 0.05; // 3.25
-    const grade = computePitcherGrade(targetERA, allERAs);
-    expect(grade).toBe(9); // 0.45 falls in top 50% -> grade 9
+  it('maps 1.81-2.00 ERA to grade 20 (elite+)', () => {
+    expect(eraToGrade(1.82)).toBe(20); // Vida Blue 1971
+    expect(eraToGrade(2.00)).toBe(20);
   });
 
-  it('assigns lower grades to pitchers with higher ERAs', () => {
-    const allERAs = Array.from({ length: 100 }, (_, i) => 1.0 + i * 0.05);
-    // Pitcher near the bottom (90th percentile)
-    const badPitcher = 1.0 + 90 * 0.05; // 5.50
-    const grade = computePitcherGrade(badPitcher, allERAs);
-    expect(grade).toBeLessThanOrEqual(4);
+  it('maps 2.01-2.20 ERA to grade 19 (elite)', () => {
+    expect(eraToGrade(2.10)).toBe(19);
+    expect(eraToGrade(2.20)).toBe(19);
+  });
+
+  it('maps 2.41-2.60 ERA to grade 17 (ace+)', () => {
+    expect(eraToGrade(2.50)).toBe(17);
+  });
+
+  it('maps 2.81-3.00 ERA to grade 15 (strong ace) -> Column B', () => {
+    expect(eraToGrade(2.90)).toBe(15);
+    expect(eraToGrade(3.00)).toBe(15);
+  });
+
+  it('maps 3.21-3.50 ERA to grade 13 (#1 starter) -> Column C', () => {
+    expect(eraToGrade(3.25)).toBe(13);
+    expect(eraToGrade(3.50)).toBe(13);
+  });
+
+  it('maps 4.21-4.50 ERA to grade 9 (average) -> Column C', () => {
+    expect(eraToGrade(4.30)).toBe(9);
+    expect(eraToGrade(4.50)).toBe(9);
+  });
+
+  it('maps 5.01-5.20 ERA to grade 6 (spot starter) -> Column D', () => {
+    expect(eraToGrade(5.10)).toBe(6);
+  });
+
+  it('maps ERA > 7.00 to grade 1 (worst) -> Column E', () => {
+    expect(eraToGrade(7.50)).toBe(1);
+    expect(eraToGrade(10.00)).toBe(1);
   });
 
   it('grade is always between 1 and 22', () => {
-    const allERAs = Array.from({ length: 100 }, (_, i) => 2.0 + i * 0.1);
-    for (const era of allERAs) {
-      const grade = computePitcherGrade(era, allERAs);
+    for (let era = 0.50; era <= 12.0; era += 0.25) {
+      const grade = eraToGrade(era);
       expect(grade).toBeGreaterThanOrEqual(1);
       expect(grade).toBeLessThanOrEqual(22);
     }
   });
+});
 
-  it('Vida Blue 1971 (1.82 ERA) gets a high grade', () => {
-    // Simulate a pool of ~15 qualified pitchers from 1971
-    const allERAs = [1.82, 2.05, 2.28, 2.75, 2.89, 3.10, 3.25, 3.40, 3.55, 3.70, 3.85, 4.00, 4.25, 4.50, 5.00];
-    const grade = computePitcherGrade(1.82, allERAs);
-    expect(grade).toBeGreaterThanOrEqual(13); // Top 3 of 15 -> top 0% -> grade 22
+describe('computePitcherGrade - absolute ERA mapping (ignores pool)', () => {
+  it('uses absolute scale, ignoring allERAs parameter', () => {
+    // Same ERA should always produce the same grade regardless of pool
+    const grade1 = computePitcherGrade(2.50);
+    const grade2 = computePitcherGrade(2.50, [1.00, 2.00, 3.00]);
+    const grade3 = computePitcherGrade(2.50, [2.40, 2.45, 2.50, 2.55, 2.60]);
+    expect(grade1).toBe(grade2);
+    expect(grade2).toBe(grade3);
+    expect(grade1).toBe(17); // 2.50 ERA -> grade 17
+  });
+
+  it('Vida Blue 1971 (1.82 ERA) gets grade 20 (elite+)', () => {
+    expect(computePitcherGrade(1.82)).toBe(20);
+  });
+
+  it('Pedro Martinez 2000 (1.74 ERA) gets grade 21 (dominant)', () => {
+    expect(computePitcherGrade(1.74)).toBe(21);
+  });
+
+  it('average 4.50 ERA pitcher gets grade 9 (Column C)', () => {
+    expect(computePitcherGrade(4.50)).toBe(9);
+  });
+
+  it('poor 5.50 ERA pitcher gets grade 5 (Column D)', () => {
+    expect(computePitcherGrade(5.50)).toBe(5);
+  });
+
+  it('terrible 6.50 ERA pitcher gets grade 2 (Column E)', () => {
+    expect(computePitcherGrade(6.50)).toBe(2);
   });
 });

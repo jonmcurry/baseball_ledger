@@ -129,7 +129,7 @@ describe('generateCard (REQ-DATA-005)', () => {
 
     expect(card.pitching).toBeDefined();
     expect(card.pitching!.grade).toBeGreaterThanOrEqual(1);
-    expect(card.pitching!.grade).toBeLessThanOrEqual(15);
+    expect(card.pitching!.grade).toBeLessThanOrEqual(22);
     expect(card.pitching!.era).toBe(blue.pitchingStats!.ERA);
     expect(card.pitching!.role).toBe('SP');
   });
@@ -213,7 +213,7 @@ describe('generateCard with synthetic entries', () => {
     expect(card.archetype).toEqual({ byte33: 0, byte34: 6 }); // Pitcher
     expect(card.pitching).toBeDefined();
     expect(card.pitching!.role).toBe('SP');
-    expect(card.pitching!.grade).toBeGreaterThanOrEqual(13);
+    expect(card.pitching!.grade).toBe(17); // 2.52 ERA -> absolute grade 17
   });
 
   it('handles a two-way player', () => {

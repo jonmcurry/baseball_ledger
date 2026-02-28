@@ -8,6 +8,7 @@ import { determineArchetype, isEliteFielder } from './archetype';
 import { computeSlotAllocation, fillVariablePositions, applyGateValues } from './value-mapper';
 import { generatePitcherBattingCard, buildPitcherAttributes } from './pitcher-card';
 import { generateApbaCard, generatePitcherApbaCard } from './apba-card-generator';
+import { eraToGrade } from './pitcher-grade';
 
 /**
  * Determine primary position from fielding records.
@@ -187,7 +188,7 @@ function computeBABIP(entry: PlayerPoolEntry): number {
 export function generateCard(
   entry: PlayerPoolEntry,
   _leagueAverages: LeagueAverages,
-  allPitcherERAs: number[],
+  _allPitcherERAs?: number[],
 ): PlayerCard {
   const isPitcher = entry.qualifiesAsPitcher && !entry.qualifiesAsBatter;
   const primaryPosition = determinePrimaryPosition(entry);
@@ -268,7 +269,7 @@ export function generateCard(
   // Build pitcher attributes if this is a qualifying pitcher
   let pitching = undefined;
   if (entry.qualifiesAsPitcher && entry.pitchingStats) {
-    pitching = buildPitcherAttributes(entry.pitchingStats, allPitcherERAs);
+    pitching = buildPitcherAttributes(entry.pitchingStats);
   }
 
   // Build MLB stats from entry
@@ -349,12 +350,7 @@ export function generateAllCards(
   pool: PlayerPoolEntry[],
   leagueAverages: LeagueAverages,
 ): PlayerCard[] {
-  // Collect all qualifying pitcher ERAs for grade calculation
-  const allPitcherERAs = pool
-    .filter((e) => e.qualifiesAsPitcher && e.pitchingStats)
-    .map((e) => e.pitchingStats!.ERA);
-
-  return pool.map((entry) => generateCard(entry, leagueAverages, allPitcherERAs));
+  return pool.map((entry) => generateCard(entry, leagueAverages));
 }
 
 /**
@@ -421,14 +417,14 @@ function parseBbwPositionString(posStr: string): {
  * @param batting - Matching NSTAT.DAT record (same index)
  * @param pitching - Matching PSTAT.DAT record (if pitcher), or undefined
  * @param seasonYear - The season year for this data set
- * @param allPitcherERAs - All pitcher ERAs in the season for grade percentile calculation
+ * @param _allPitcherERAs - Deprecated, ignored. Kept for call-site compatibility.
  */
 export function generateCardFromBbw(
   player: BbwPlayerRecord,
   batting: BbwBattingStats,
   pitching: BbwPitchingStats | undefined,
   seasonYear: number,
-  allPitcherERAs: number[],
+  _allPitcherERAs?: number[],
 ): PlayerCard {
   const parsed = parseBbwPositionString(player.positionString);
 
@@ -465,14 +461,8 @@ export function generateCardFromBbw(
     const bb9 = pitching.IP > 0 ? (pitching.BB * 9) / pitching.IP : 0;
     const hr9 = pitching.IP > 0 ? (pitching.HRA * 9) / pitching.IP : 0;
 
-    // Use position string grade if available, otherwise compute from ERA rank
-    let grade = parsed.pitcherGrade ?? 8;
-    if (!parsed.pitcherGrade && allPitcherERAs.length > 0) {
-      const sorted = [...allPitcherERAs].sort((a, b) => a - b);
-      const rank = sorted.indexOf(era);
-      const pct = rank / sorted.length;
-      grade = Math.max(1, Math.min(15, Math.round(15 - pct * 14)));
-    }
+    // Use position string grade if available, otherwise compute from absolute ERA
+    const grade = parsed.pitcherGrade ?? eraToGrade(era);
 
     pitcherAttrs = {
       role: pitching.SV >= 10 ? 'CL' : (pitching.GS / pitching.G >= 0.5 ? 'SP' : 'RP'),

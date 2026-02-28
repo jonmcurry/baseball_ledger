@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-02-28 - Absolute ERA-to-grade mapping for pitcher grade generation
+
+Pitcher grades were computed relative to the draft pool (ERA percentile rank),
+which caused the "all-star pool problem": a 2.00 ERA pitcher in an elite pool
+might only be 50th percentile -> Grade 9 -> Column C (neutral). The pitcher's
+real-life elite ability was erased by the grading curve, so elite pitchers gave
+up .330 BA and 40 HRs because Column C applies 1.0x multipliers.
+
+Now pitcher grades use an absolute ERA scale:
+- ERA <= 1.50 -> Grade 22 (Gibson 1968, Pedro 2000)
+- ERA 1.81-2.00 -> Grade 20 (Vida Blue 1971)
+- ERA 2.81-3.00 -> Grade 15 -> Column B (strong suppression)
+- ERA 4.21-4.50 -> Grade 9 -> Column C (neutral, true average)
+- ERA 5.01-5.20 -> Grade 6 -> Column D (offense boost)
+- ERA > 7.00 -> Grade 1 -> Column E (heavy offense boost)
+
+A 2.00 ERA pitcher now always gets Grade 20 (Column A) regardless of pool
+composition. Combined with the SERD 5-column system activated in the prior
+commit, this means elite pitchers now properly suppress HRs, walks, and all
+hit types.
+
+- Modified `src/lib/card-generator/pitcher-grade.ts` -- added eraToGrade()
+  with absolute ERA thresholds; computePitcherGrade() now delegates to it
+  instead of pool-relative percentileToGrade(); legacy functions kept for
+  backwards compatibility
+- Modified `src/lib/card-generator/pitcher-card.ts` -- removed allPitcherERAs
+  parameter from buildPitcherAttributes()
+- Modified `src/lib/card-generator/generator.ts` -- removed allPitcherERAs
+  collection in generateAllCards(); made param optional in generateCard() and
+  generateCardFromBbw(); BBW grade fallback uses eraToGrade() instead of
+  pool-relative ranking
+- Modified `src/lib/bbw/bbw-pipeline.ts` -- removed allPitcherERAs collection
+- Updated `tests/unit/lib/card-generator/pitcher-grade.test.ts` -- added
+  eraToGrade tests, rewrote computePitcherGrade tests for absolute scale
+- Updated `tests/unit/lib/card-generator/generator.test.ts` -- grade range
+  adjusted to 1-22, synthetic pitcher grade assertion updated
+
 ## 2026-02-27 - Activate SERD 5-column system for plate appearance resolution
 
 Replaced the hardcoded Column C with dynamic column selection based on pitcher

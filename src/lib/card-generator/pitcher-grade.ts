@@ -1,38 +1,84 @@
 import { MAX_PITCHER_GRADE } from './calibration-coefficients';
 
 /**
- * Pitcher grade percentile thresholds (REQ-DATA-005a).
+ * Absolute ERA-to-Grade mapping (REQ-DATA-005a).
  *
- * 1-22 grade scale matching BBW's observed distribution.
- * Grade 22 = best (top 0.5%), Grade 1 = worst (bottom 1%).
- * Lower ERA = better pitcher = higher grade.
+ * Grades are assigned on an absolute ERA scale so that a 2.00 ERA pitcher
+ * always gets a high grade regardless of who else is in the draft pool.
+ * This prevents the "all-star pool problem" where elite pitchers get
+ * neutral grades because they're only average *within* an elite pool.
  *
- * ERA Percentile | Grade | Description
- * Top 0.5%       | 22    | Historic ace
- * Top 1.0%       | 21    | Dominant
- * Top 1.5%       | 20    | Elite+
- * Top 2.0%       | 19    | Elite
- * Top 2.5%       | 18    | Near-elite
- * Top 3.0%       | 17    | Ace+
- * Top 4.0%       | 16    | Ace
- * Top 7%         | 15    | Strong ace
- * Top 10%        | 14    | Elite starter
- * Top 15%        | 13    | #1 starter
- * Top 22%        | 12    | Strong starter
- * Top 30%        | 11    | Above average
- * Top 40%        | 10    | Solid starter
- * Top 50%        | 9     | Average starter
- * Top 60%        | 8     | Below average starter
- * Top 70%        | 7     | Back-end starter
- * Top 80%        | 6     | Spot starter/long relief
- * Top 87%        | 5     | Middle reliever
- * Top 93%        | 4     | Low-leverage relief
- * Top 97%        | 3     | Mop-up duty
- * Top 99%        | 2     | Emergency only
- * Bottom 1%      | 1     | Worst qualifier
+ * The grade determines which column (A-E) of the batter's SERD card is
+ * read during plate appearance resolution via gradeToColumn():
+ *   Grade 20+ -> Column A (elite suppression)
+ *   Grade 15-19 -> Column B (strong suppression)
+ *   Grade 7-14 -> Column C (neutral)
+ *   Grade 4-6 -> Column D (offense boost)
+ *   Grade 1-3 -> Column E (heavy offense boost)
+ *
+ * ERA thresholds are based on historical MLB norms:
+ *   - Sub-2.00 ERA seasons are historically elite (Pedro 2000, Gibson 1968)
+ *   - 2.50-3.20 ERA is a strong starter in most eras
+ *   - 3.20-4.50 ERA covers the broad middle of MLB pitchers
+ *   - Above 5.50 ERA is replacement level or worse
+ */
+const ERA_TO_GRADE_THRESHOLDS: readonly { maxERA: number; grade: number }[] = [
+  { maxERA: 1.50, grade: MAX_PITCHER_GRADE },  // 22 - Historic (Gibson 1968, Pedro 2000)
+  { maxERA: 1.80, grade: 21 },                  // Dominant
+  { maxERA: 2.00, grade: 20 },                  // Elite+
+  { maxERA: 2.20, grade: 19 },                  // Elite
+  { maxERA: 2.40, grade: 18 },                  // Near-elite
+  { maxERA: 2.60, grade: 17 },                  // Ace+
+  { maxERA: 2.80, grade: 16 },                  // Ace
+  { maxERA: 3.00, grade: 15 },                  // Strong ace
+  { maxERA: 3.20, grade: 14 },                  // Elite starter
+  { maxERA: 3.50, grade: 13 },                  // #1 starter
+  { maxERA: 3.80, grade: 12 },                  // Strong starter
+  { maxERA: 4.00, grade: 11 },                  // Above average
+  { maxERA: 4.20, grade: 10 },                  // Solid starter
+  { maxERA: 4.50, grade: 9 },                   // Average starter
+  { maxERA: 4.80, grade: 8 },                   // Below average
+  { maxERA: 5.00, grade: 7 },                   // Back-end starter
+  { maxERA: 5.20, grade: 6 },                   // Spot starter
+  { maxERA: 5.50, grade: 5 },                   // Middle reliever
+  { maxERA: 5.80, grade: 4 },                   // Low-leverage
+  { maxERA: 6.20, grade: 3 },                   // Mop-up duty
+  { maxERA: 7.00, grade: 2 },                   // Emergency only
+  { maxERA: Infinity, grade: 1 },                // Worst qualifier
+];
+
+/**
+ * Map an ERA value to the 1-22 grade scale using absolute thresholds.
+ * Lower ERA = higher grade. Grade determines SERD column selection.
+ */
+export function eraToGrade(era: number): number {
+  for (const threshold of ERA_TO_GRADE_THRESHOLDS) {
+    if (era <= threshold.maxERA) {
+      return threshold.grade;
+    }
+  }
+  return 1;
+}
+
+/**
+ * Compute a pitcher's grade from their ERA using the absolute scale.
+ *
+ * @param pitcherERA - The pitcher's ERA
+ * @param _allERAs - Deprecated, ignored. Kept for call-site compatibility during migration.
+ * @returns Grade 1-22 (22 = best)
+ */
+export function computePitcherGrade(pitcherERA: number, _allERAs?: number[]): number {
+  return eraToGrade(pitcherERA);
+}
+
+// --- Legacy functions kept for backwards compatibility with existing tests ---
+
+/**
+ * @deprecated Use eraToGrade() instead. Pool-relative grading causes the
+ * all-star pool problem where elite pitchers get neutral grades.
  */
 const GRADE_PERCENTILE_THRESHOLDS: readonly { maxPercentile: number; grade: number }[] = [
-  { maxPercentile: 0.005, grade: MAX_PITCHER_GRADE },  // 22
+  { maxPercentile: 0.005, grade: MAX_PITCHER_GRADE },
   { maxPercentile: 0.010, grade: 21 },
   { maxPercentile: 0.015, grade: 20 },
   { maxPercentile: 0.020, grade: 19 },
@@ -57,31 +103,22 @@ const GRADE_PERCENTILE_THRESHOLDS: readonly { maxPercentile: number; grade: numb
 ];
 
 /**
- * Compute a pitcher's ERA percentile rank among all qualifying pitchers.
- * Lower ERA = lower percentile (better).
- *
- * @param pitcherERA - The pitcher's ERA
- * @param allERAs - Array of all qualifying pitcher ERAs (unsorted is fine)
- * @returns Percentile rank in [0, 1] (0 = best ERA, 1 = worst)
+ * @deprecated Use eraToGrade() instead.
  */
 export function computeERAPercentile(pitcherERA: number, allERAs: number[]): number {
   if (allERAs.length === 0) return 0.49;
-  if (allERAs.length === 1) return 0.49; // Single pitcher -> average (grade 9)
-
-  // Count how many pitchers have a lower ERA (better)
+  if (allERAs.length === 1) return 0.49;
   let betterCount = 0;
   for (const era of allERAs) {
     if (era < pitcherERA) {
       betterCount++;
     }
   }
-
   return betterCount / allERAs.length;
 }
 
 /**
- * Map an ERA percentile to the 1-22 grade scale (REQ-DATA-005a).
- * Grade 22 = best, Grade 1 = worst.
+ * @deprecated Use eraToGrade() instead.
  */
 export function percentileToGrade(percentile: number): number {
   for (const threshold of GRADE_PERCENTILE_THRESHOLDS) {
@@ -90,16 +127,4 @@ export function percentileToGrade(percentile: number): number {
     }
   }
   return 1;
-}
-
-/**
- * Compute a pitcher's grade from their ERA relative to all qualifying pitchers.
- *
- * @param pitcherERA - The pitcher's ERA
- * @param allERAs - Array of all qualifying pitcher ERAs
- * @returns Grade 1-22 (22 = best)
- */
-export function computePitcherGrade(pitcherERA: number, allERAs: number[]): number {
-  const percentile = computeERAPercentile(pitcherERA, allERAs);
-  return percentileToGrade(percentile);
 }
