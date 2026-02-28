@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-02-27 - Activate SERD 5-column system for plate appearance resolution
+
+Replaced the hardcoded Column C with dynamic column selection based on pitcher
+grade, and removed the legacy grade check that only suppressed SINGLE_CLEAN and
+TRIPLE (2 of ~15 outcome types). The 5-column card system was already fully
+built in apba-card-generator.ts but was dead code -- pitcher quality had zero
+influence on HRs, walks, doubles, strikeouts, or any outcome except singles and
+triples.
+
+Now pitcher grade selects the batter card column via gradeToColumn():
+- Grade 20+ -> Column A: singles 0.70x, HRs 0.75x, walks 0.75x, Ks 1.40x
+- Grade 15-19 -> Column B: singles 0.85x, HRs 0.88x, walks 0.88x, Ks 1.20x
+- Grade 7-14 -> Column C: all 1.00x (neutral, actual MLB rates)
+- Grade 4-6 -> Column D: singles 1.15x, HRs 1.12x, walks 1.12x, Ks 0.80x
+- Grade 1-3 -> Column E: singles 1.30x, HRs 1.25x, walks 1.25x, Ks 0.60x
+
+All suppression/boosting is baked into the card columns at generation time, so
+PA resolution now uses exactly 1 RNG call (no grade check roll or out-type roll).
+
+- Modified `src/lib/simulation/plate-appearance.ts` -- gradeToColumn(effectiveGrade)
+  replaces hardcoded 'C'; removed grade check block, resolveGradeCheckOut(),
+  GRADE_CHECK_RANGE, GRADE_CHECK_OUT_WEIGHTS
+- Modified `tests/unit/lib/simulation/plate-appearance.test.ts` -- removed grade
+  check tests (6), added column selection and column-based pitcher influence tests
+- All calibration tests (allstar-league, realism-check, full-game) pass unchanged
+
 ## 2026-02-27 - Remove pitcher base values, reduce rotation urgency to fix SP-only drafting
 
 The prior fix (BASE_SP_VALUE=25, BASE_RP_VALUE=15) overcorrected: all 22 first-round

@@ -1,15 +1,14 @@
 /**
- * Tests for BBW-faithful plate appearance resolution.
+ * Tests for SERD 5-column plate appearance resolution.
  *
- * BBW grade-check mechanism: batter's card determines base outcomes (Column C),
- * then pitcher grade selectively suppresses SINGLE_CLEAN and TRIPLE via a
- * grade check (random(36) < effectiveGrade). All other outcomes (WALK, HR,
- * DOUBLE, STRIKEOUT, SINGLE_ADVANCE, etc.) are batter-determined and NOT
- * affected by pitcher grade.
+ * Pitcher grade selects which column (A-E) to read from the batter's card:
+ *   Grade 20+  -> Column A (elite: singles 0.70, HRs 0.75, Ks 1.40)
+ *   Grade 15-19 -> Column B (ace: singles 0.85, HRs 0.88, Ks 1.20)
+ *   Grade 7-14  -> Column C (neutral: all 1.00)
+ *   Grade 4-6   -> Column D (below avg: singles 1.15, HRs 1.12, Ks 0.80)
+ *   Grade 1-3   -> Column E (terrible: singles 1.30, HRs 1.25, Ks 0.60)
  *
- * Confirmed by Ghidra decompilation of FUN_1058_5f49:
- * - Card values 7/8 (singles) and 11 (triples) go through grade check
- * - Card values 13 (walks), 14 (K), 0 (doubles), 1 (HR) resolve directly
+ * One RNG roll -> one column lookup -> one outcome. No secondary grade check.
  */
 
 import { OutcomeCategory } from '@lib/types/game';
@@ -24,7 +23,7 @@ import {
 
 // --- Helpers ---
 
-/** Build a simple test card where each column has a single repeated outcome. */
+/** Build a card where each column has a distinct repeated outcome. */
 function makeUniformCard(outcomes: Record<ApbaColumn, OutcomeCategory>): ApbaCard {
   return {
     A: Array(36).fill(outcomes.A),
@@ -47,21 +46,21 @@ function makeTestCard(columnCOutcomes: OutcomeCategory[]): ApbaCard {
   };
 }
 
-/** All-one-outcome card for Column C. */
-function makeAllColumnC(outcome: OutcomeCategory): ApbaCard {
+/** Build a card with distinct outcomes per column to verify column selection. */
+function makeColumnTestCard(): ApbaCard {
   return makeUniformCard({
-    A: OutcomeCategory.GROUND_OUT,
-    B: OutcomeCategory.GROUND_OUT,
-    C: outcome,
-    D: OutcomeCategory.GROUND_OUT,
-    E: OutcomeCategory.GROUND_OUT,
+    A: OutcomeCategory.STRIKEOUT_SWINGING,
+    B: OutcomeCategory.FLY_OUT,
+    C: OutcomeCategory.SINGLE_CLEAN,
+    D: OutcomeCategory.DOUBLE,
+    E: OutcomeCategory.HOME_RUN,
   });
 }
 
 // --- Tests ---
 
-describe('BBW Plate Appearance Resolution', () => {
-  describe('gradeToColumn() (legacy, backwards compatibility)', () => {
+describe('SERD 5-Column Plate Appearance Resolution', () => {
+  describe('gradeToColumn() mapping', () => {
     it('maps grade 1-3 to E (terrible)', () => {
       expect(gradeToColumn(1)).toBe('E');
       expect(gradeToColumn(3)).toBe('E');
@@ -90,7 +89,11 @@ describe('BBW Plate Appearance Resolution', () => {
 
   describe('resolvePlateAppearance() structure', () => {
     it('returns a valid PlateAppearanceResult', () => {
-      const card = makeAllColumnC(OutcomeCategory.WALK);
+      const card = makeUniformCard({
+        A: OutcomeCategory.WALK, B: OutcomeCategory.WALK,
+        C: OutcomeCategory.WALK, D: OutcomeCategory.WALK,
+        E: OutcomeCategory.WALK,
+      });
       const rng = new SeededRNG(42);
       const result = resolvePlateAppearance(card, 10, rng);
 
@@ -104,17 +107,32 @@ describe('BBW Plate Appearance Resolution', () => {
       expect(result.usedFallback).toBe(false);
     });
 
-    it('always uses column C regardless of grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.WALK);
-      for (const grade of [1, 5, 10, 15, 20, 25, 30]) {
-        const rng = new SeededRNG(42);
-        const result = resolvePlateAppearance(card, grade, rng);
-        expect(result.column).toBe('C');
-      }
+    it('selects column dynamically based on pitcher grade', () => {
+      const card = makeColumnTestCard();
+
+      // Grade 10 -> Column C -> SINGLE_CLEAN
+      expect(resolvePlateAppearance(card, 10, new SeededRNG(42)).column).toBe('C');
+      expect(resolvePlateAppearance(card, 10, new SeededRNG(42)).outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
+
+      // Grade 20 -> Column A -> STRIKEOUT_SWINGING
+      expect(resolvePlateAppearance(card, 20, new SeededRNG(42)).column).toBe('A');
+      expect(resolvePlateAppearance(card, 20, new SeededRNG(42)).outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
+
+      // Grade 3 -> Column E -> HOME_RUN
+      expect(resolvePlateAppearance(card, 3, new SeededRNG(42)).column).toBe('E');
+      expect(resolvePlateAppearance(card, 3, new SeededRNG(42)).outcome).toBe(OutcomeCategory.HOME_RUN);
+
+      // Grade 15 -> Column B -> FLY_OUT
+      expect(resolvePlateAppearance(card, 15, new SeededRNG(42)).column).toBe('B');
+      expect(resolvePlateAppearance(card, 15, new SeededRNG(42)).outcome).toBe(OutcomeCategory.FLY_OUT);
+
+      // Grade 5 -> Column D -> DOUBLE
+      expect(resolvePlateAppearance(card, 5, new SeededRNG(42)).column).toBe('D');
+      expect(resolvePlateAppearance(card, 5, new SeededRNG(42)).outcome).toBe(OutcomeCategory.DOUBLE);
     });
 
     it('roll index is always in [0, 35]', () => {
-      const card = makeAllColumnC(OutcomeCategory.GROUND_OUT);
+      const card = makeColumnTestCard();
       for (let seed = 1; seed <= 200; seed++) {
         const rng = new SeededRNG(seed);
         const result = resolvePlateAppearance(card, 10, rng);
@@ -124,7 +142,7 @@ describe('BBW Plate Appearance Resolution', () => {
     });
 
     it('pitcherGradeEffect.r2Roll equals the effective grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.GROUND_OUT);
+      const card = makeColumnTestCard();
       const rng = new SeededRNG(42);
       const result = resolvePlateAppearance(card, 20, rng);
       expect(result.pitcherGradeEffect.r2Roll).toBe(20);
@@ -168,174 +186,88 @@ describe('BBW Plate Appearance Resolution', () => {
     });
   });
 
-  describe('BBW grade check -- SINGLE_CLEAN suppression', () => {
-    it('grade 25 suppresses most SINGLE_CLEAN outcomes to outs', () => {
-      const card = makeAllColumnC(OutcomeCategory.SINGLE_CLEAN);
-      let hits = 0;
-      const trials = 1000;
+  describe('column-based pitcher influence', () => {
+    it('Column A (elite pitcher) produces fewer hits than Column C (average)', () => {
+      // Card where Column C has 18/36 singles, Column A has 13/36 singles
+      const neutral = [
+        ...Array(18).fill(OutcomeCategory.SINGLE_CLEAN),
+        ...Array(18).fill(OutcomeCategory.GROUND_OUT),
+      ];
+      const colA = [
+        ...Array(13).fill(OutcomeCategory.SINGLE_CLEAN),
+        ...Array(23).fill(OutcomeCategory.GROUND_OUT),
+      ];
+      const card: ApbaCard = {
+        A: colA, B: neutral, C: neutral, D: neutral, E: neutral,
+      };
 
-      for (let seed = 1; seed <= trials; seed++) {
-        const rng = new SeededRNG(seed);
-        const result = resolvePlateAppearance(card, 25, rng);
-        if (result.outcome === OutcomeCategory.SINGLE_CLEAN) hits++;
-      }
-
-      // Grade 25/36 = ~69% suppression -> ~31% should survive as hits
-      expect(hits).toBeGreaterThan(200);     // At least 20% survive
-      expect(hits).toBeLessThan(450);        // At most 45% survive
-    });
-
-    it('grade 1 barely suppresses SINGLE_CLEAN outcomes', () => {
-      const card = makeAllColumnC(OutcomeCategory.SINGLE_CLEAN);
-      let hits = 0;
-      const trials = 1000;
-
-      for (let seed = 1; seed <= trials; seed++) {
-        const rng = new SeededRNG(seed);
-        const result = resolvePlateAppearance(card, 1, rng);
-        if (result.outcome === OutcomeCategory.SINGLE_CLEAN) hits++;
-      }
-
-      // Grade 1/36 = ~2.8% suppression -> ~97% should survive
-      expect(hits).toBeGreaterThan(900);
-    });
-
-    it('higher grade suppresses more SINGLE_CLEAN than lower grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.SINGLE_CLEAN);
-
-      let hitsLow = 0;
-      let hitsHigh = 0;
+      let hitsGrade20 = 0; // Column A
+      let hitsGrade10 = 0; // Column C
       const trials = 500;
 
       for (let seed = 1; seed <= trials; seed++) {
-        const rngLow = new SeededRNG(seed);
-        const rngHigh = new SeededRNG(seed);
-        if (resolvePlateAppearance(card, 5, rngLow).outcome === OutcomeCategory.SINGLE_CLEAN) hitsLow++;
-        if (resolvePlateAppearance(card, 20, rngHigh).outcome === OutcomeCategory.SINGLE_CLEAN) hitsHigh++;
+        if (resolvePlateAppearance(card, 20, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade20++;
+        if (resolvePlateAppearance(card, 10, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade10++;
       }
 
-      expect(hitsLow).toBeGreaterThan(hitsHigh);
+      expect(hitsGrade20).toBeLessThan(hitsGrade10);
     });
 
-    it('suppressed SINGLE_CLEAN becomes an out type', () => {
-      const card = makeAllColumnC(OutcomeCategory.SINGLE_CLEAN);
-      const outTypes = new Set([
-        OutcomeCategory.GROUND_OUT,
-        OutcomeCategory.FLY_OUT,
-        OutcomeCategory.LINE_OUT,
-        OutcomeCategory.POP_OUT,
-      ]);
+    it('Column E (terrible pitcher) produces more hits than Column C (average)', () => {
+      const neutral = [
+        ...Array(18).fill(OutcomeCategory.SINGLE_CLEAN),
+        ...Array(18).fill(OutcomeCategory.GROUND_OUT),
+      ];
+      const colE = [
+        ...Array(23).fill(OutcomeCategory.SINGLE_CLEAN),
+        ...Array(13).fill(OutcomeCategory.GROUND_OUT),
+      ];
+      const card: ApbaCard = {
+        A: neutral, B: neutral, C: neutral, D: neutral, E: colE,
+      };
 
-      for (let seed = 1; seed <= 500; seed++) {
-        const rng = new SeededRNG(seed);
-        const result = resolvePlateAppearance(card, 30, rng);
-        if (result.outcome !== OutcomeCategory.SINGLE_CLEAN) {
-          expect(outTypes.has(result.outcome)).toBe(true);
-        }
-      }
-    });
-  });
-
-  describe('BBW grade check -- TRIPLE suppression', () => {
-    it('grade 20 suppresses TRIPLE outcomes', () => {
-      const card = makeAllColumnC(OutcomeCategory.TRIPLE);
-      let triples = 0;
+      let hitsGrade3 = 0;  // Column E
+      let hitsGrade10 = 0; // Column C
       const trials = 500;
 
       for (let seed = 1; seed <= trials; seed++) {
-        const rng = new SeededRNG(seed);
-        const result = resolvePlateAppearance(card, 20, rng);
-        if (result.outcome === OutcomeCategory.TRIPLE) triples++;
+        if (resolvePlateAppearance(card, 3, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade3++;
+        if (resolvePlateAppearance(card, 10, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade10++;
       }
 
-      // Grade 20/36 = ~56% suppression -> ~44% should survive
-      expect(triples).toBeLessThan(trials * 0.60);
-      expect(triples).toBeGreaterThan(trials * 0.25);
-    });
-  });
-
-  describe('BBW grade check -- non-suppressible outcomes', () => {
-    it('SINGLE_ADVANCE is NOT affected by grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.SINGLE_ADVANCE);
-
-      let hitsGrade1 = 0;
-      let hitsGrade30 = 0;
-      const trials = 500;
-
-      for (let seed = 1; seed <= trials; seed++) {
-        const rng1 = new SeededRNG(seed);
-        const rng30 = new SeededRNG(seed);
-        if (resolvePlateAppearance(card, 1, rng1).outcome === OutcomeCategory.SINGLE_ADVANCE) hitsGrade1++;
-        if (resolvePlateAppearance(card, 30, rng30).outcome === OutcomeCategory.SINGLE_ADVANCE) hitsGrade30++;
-      }
-
-      // Both should be 100% -- grade does NOT affect SINGLE_ADVANCE
-      expect(hitsGrade1).toBe(trials);
-      expect(hitsGrade30).toBe(trials);
+      expect(hitsGrade3).toBeGreaterThan(hitsGrade10);
     });
 
-    it('WALK is NOT affected by grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.WALK);
+    it('all outcome types vary by column (not just singles/triples)', () => {
+      const card: ApbaCard = {
+        A: Array(36).fill(OutcomeCategory.STRIKEOUT_SWINGING),
+        B: Array(36).fill(OutcomeCategory.FLY_OUT),
+        C: Array(36).fill(OutcomeCategory.HOME_RUN),
+        D: Array(36).fill(OutcomeCategory.WALK),
+        E: Array(36).fill(OutcomeCategory.DOUBLE),
+      };
 
-      for (const grade of [1, 15, 30]) {
-        let walks = 0;
-        for (let seed = 1; seed <= 200; seed++) {
-          const rng = new SeededRNG(seed);
-          if (resolvePlateAppearance(card, grade, rng).outcome === OutcomeCategory.WALK) walks++;
-        }
-        expect(walks).toBe(200);
-      }
+      // Grade 20 -> Column A -> strikeout
+      expect(resolvePlateAppearance(card, 20, new SeededRNG(1)).outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
+      // Grade 10 -> Column C -> home run
+      expect(resolvePlateAppearance(card, 10, new SeededRNG(1)).outcome).toBe(OutcomeCategory.HOME_RUN);
+      // Grade 2 -> Column E -> double
+      expect(resolvePlateAppearance(card, 2, new SeededRNG(1)).outcome).toBe(OutcomeCategory.DOUBLE);
     });
 
-    it('HOME_RUN is NOT affected by grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.HOME_RUN);
+    it('no grade check: outcome is read directly from column without suppression', () => {
+      // All columns have SINGLE_CLEAN. With legacy grade check, high grade would
+      // suppress some singles. With column system, outcome is always the card value.
+      const card = makeUniformCard({
+        A: OutcomeCategory.SINGLE_CLEAN, B: OutcomeCategory.SINGLE_CLEAN,
+        C: OutcomeCategory.SINGLE_CLEAN, D: OutcomeCategory.SINGLE_CLEAN,
+        E: OutcomeCategory.SINGLE_CLEAN,
+      });
 
-      for (const grade of [1, 15, 30]) {
-        let hrs = 0;
-        for (let seed = 1; seed <= 200; seed++) {
-          const rng = new SeededRNG(seed);
-          if (resolvePlateAppearance(card, grade, rng).outcome === OutcomeCategory.HOME_RUN) hrs++;
-        }
-        expect(hrs).toBe(200);
-      }
-    });
-
-    it('DOUBLE is NOT affected by grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.DOUBLE);
-
-      for (const grade of [1, 15, 30]) {
-        let doubles = 0;
-        for (let seed = 1; seed <= 200; seed++) {
-          const rng = new SeededRNG(seed);
-          if (resolvePlateAppearance(card, grade, rng).outcome === OutcomeCategory.DOUBLE) doubles++;
-        }
-        expect(doubles).toBe(200);
-      }
-    });
-
-    it('STRIKEOUT_SWINGING is NOT affected by grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.STRIKEOUT_SWINGING);
-
-      for (const grade of [1, 15, 30]) {
-        let ks = 0;
-        for (let seed = 1; seed <= 200; seed++) {
-          const rng = new SeededRNG(seed);
-          if (resolvePlateAppearance(card, grade, rng).outcome === OutcomeCategory.STRIKEOUT_SWINGING) ks++;
-        }
-        expect(ks).toBe(200);
-      }
-    });
-
-    it('HIT_BY_PITCH is NOT affected by grade', () => {
-      const card = makeAllColumnC(OutcomeCategory.HIT_BY_PITCH);
-
-      for (const grade of [1, 15, 30]) {
-        let hbps = 0;
-        for (let seed = 1; seed <= 200; seed++) {
-          const rng = new SeededRNG(seed);
-          if (resolvePlateAppearance(card, grade, rng).outcome === OutcomeCategory.HIT_BY_PITCH) hbps++;
-        }
-        expect(hbps).toBe(200);
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(card, 30, new SeededRNG(seed));
+        expect(result.outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
       }
     });
   });
