@@ -155,22 +155,22 @@ describe('calculateBatterValue (REQ-DFT-007)', () => {
 // calculatePitcherValue (REQ-DFT-007)
 // ---------------------------------------------------------------------------
 describe('calculatePitcherValue (REQ-DFT-007)', () => {
-  it('SP formula: 25 + (4.50-ERA)*25 + K9*5 - BB9*8 + stamina*3', () => {
+  it('SP formula: (4.50-ERA)*25 + K9*5 - BB9*8 + stamina*3', () => {
     const pitching: PitcherAttributes = {
       role: 'SP', grade: 10, stamina: 6.5, era: 3.20, whip: 1.15,
       k9: 8.5, bb9: 2.5, hr9: 0.9, usageFlags: [], isReliever: false,
     };
-    const expected = 25 + ((4.50 - 3.20) * 25) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
+    const expected = ((4.50 - 3.20) * 25) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
     const value = calculatePitcherValue(pitching);
     expect(value).toBeCloseTo(expected, 4);
   });
 
-  it('RP formula: 15 + (3.50-ERA)*18 + K9*5 - BB9*8', () => {
+  it('RP formula: (3.50-ERA)*18 + K9*5 - BB9*8', () => {
     const pitching: PitcherAttributes = {
       role: 'RP', grade: 8, stamina: 2, era: 2.80, whip: 1.05,
       k9: 10.0, bb9: 3.0, hr9: 0.7, usageFlags: [], isReliever: true,
     };
-    const expected = 15 + ((3.50 - 2.80) * 18) + (10.0 * 5) - (3.0 * 8);
+    const expected = ((3.50 - 2.80) * 18) + (10.0 * 5) - (3.0 * 8);
     const value = calculatePitcherValue(pitching);
     expect(value).toBeCloseTo(expected, 4);
   });
@@ -180,7 +180,7 @@ describe('calculatePitcherValue (REQ-DFT-007)', () => {
       role: 'CL', grade: 9, stamina: 1.5, era: 2.50, whip: 1.00,
       k9: 11.0, bb9: 2.5, hr9: 0.6, usageFlags: [], isReliever: true,
     };
-    const expected = 15 + ((3.50 - 2.50) * 18) + (11.0 * 5) - (2.5 * 8);
+    const expected = ((3.50 - 2.50) * 18) + (11.0 * 5) - (2.5 * 8);
     const value = calculatePitcherValue(pitching);
     expect(value).toBeCloseTo(expected, 4);
   });
@@ -362,7 +362,7 @@ describe('ERA floor', () => {
       k9: 8.5, bb9: 2.5, hr9: 0.9, usageFlags: [], isReliever: false,
     };
     // Formula should use actual ERA, not the floor
-    const expected = 25 + ((4.50 - 3.20) * 25) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
+    const expected = ((4.50 - 3.20) * 25) + (8.5 * 5) - (2.5 * 8) + (6.5 * 3);
     expect(calculatePitcherValue(normal)).toBeCloseTo(expected, 4);
   });
 });

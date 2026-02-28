@@ -1,36 +1,39 @@
 # Changelog
 
-## 2026-02-27 - Fix AI draft block drafting: pitcher base values, manager style bias, wider selection
+## 2026-02-27 - Remove pitcher base values, reduce rotation urgency to fix SP-only drafting
+
+The prior fix (BASE_SP_VALUE=25, BASE_RP_VALUE=15) overcorrected: all 22 first-round
+picks were SP because the base values plus sqrt urgency (URGENCY_SCALE_ROTATION=1.3)
+compounded multiplicatively. Pedro Martinez adjusted value: (136+25)*1.72=277 vs best
+batter 150*1.46=219. Removed both base values and reduced URGENCY_SCALE_ROTATION from
+1.3 to 0.9 so elite SP compete in rounds 1-3 via urgency alone (not flat boosts) while
+batters retain first-pick competitiveness.
+
+- Modified `src/lib/draft/ai-valuation.ts` -- removed BASE_SP_VALUE/BASE_RP_VALUE
+  constants, pitcher formulas are now pure performance-based
+- Modified `src/lib/draft/ai-strategy.ts` -- URGENCY_SCALE_ROTATION 1.3 -> 0.9
+- Updated `tests/unit/lib/draft/ai-valuation.test.ts` -- 4 exact-formula tests updated
+
+## 2026-02-27 - Fix AI draft block drafting: manager style bias, wider selection
 
 30-team AI draft produced synchronized position blocks: rounds 1-8 all batters,
-9-12 all SP, 16-18 all RP/CL, 19-21 all SS/2B bench. Three root causes identified:
-(1) batter values (80-160) vastly outscored SP (30-110) and RP (15-70), so all
-teams drafted batters first; (2) all 30 teams computed identical need multipliers
-because `getNeedMultiplier()` used fixed constants; (3) manager style was ignored
-in pick selection (only used for reasoning text).
+9-12 all SP, 16-18 all RP/CL, 19-21 all SS/2B bench. Root causes: all 30 teams
+computed identical need multipliers because `getNeedMultiplier()` used fixed constants,
+and manager style was ignored in pick selection (only used for reasoning text).
 
-**Fix 1: Pitcher base values.** Added BASE_SP_VALUE=25 and BASE_RP_VALUE=15 to
-pitcher valuation formulas, shifting SP into competitive range with batters
-(elite SP 130 vs elite batter 150) and RP into mid-round competitiveness
-(elite RP 86 vs average batter 93). Terrible pitchers still score near zero.
-
-**Fix 2: Manager style draft bias.** Added `StyleDraftBias` that modifies urgency
+**Fix 1: Manager style draft bias.** Added `StyleDraftBias` that modifies urgency
 scales per manager style: conservative managers get +25% rotation urgency (draft SP
 earlier), aggressive managers get +35% bullpen urgency (draft RP earlier), analytical
 managers use wider candidate pool (top-5 instead of top-3/4). With 30 teams split
 across 4 styles, natural position interleaving occurs.
 
-**Fix 3: Wider candidate pool.** Changed TOP_CANDIDATE_COUNT from 3 to 4 (with
+**Fix 2: Wider candidate pool.** Changed TOP_CANDIDATE_COUNT from 3 to 4 (with
 style-specific overrides: conservative=3, analytical=5). More candidates in weighted
 random selection creates more position diversity per pick.
 
-- Modified `src/lib/draft/ai-valuation.ts` -- BASE_SP_VALUE, BASE_RP_VALUE constants
-  in calculatePitcherValue()
 - Modified `src/lib/draft/ai-strategy.ts` -- StyleDraftBias interface, STYLE_DRAFT_BIAS
   map, managerStyle param on selectAIPick()/getNeedMultiplier(), TOP_K 3->4
 - Modified `src/lib/draft/ai-drafter.ts` -- pass teamConfig.managerStyle to selectAIPick()
-- Updated `tests/unit/lib/draft/ai-valuation.test.ts` -- 4 exact-formula tests updated
-  for base values
 - Added `tests/unit/lib/draft/ai-strategy.test.ts` -- 4 new manager style tests
   (conservative SP priority, aggressive RP priority, analytical diversity, composition guard)
 

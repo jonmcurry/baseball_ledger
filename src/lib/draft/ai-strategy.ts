@@ -80,7 +80,7 @@ const BASE_MULT_BENCH = 0.80;
  * provides earlier urgency rise.
  */
 const URGENCY_SCALE_STARTER = 0.4;
-const URGENCY_SCALE_ROTATION = 1.3;
+const URGENCY_SCALE_ROTATION = 0.9;
 const URGENCY_SCALE_BULLPEN = 1.8;
 
 /**

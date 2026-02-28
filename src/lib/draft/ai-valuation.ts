@@ -7,9 +7,9 @@
  * Batter formula:  ((OPS * 115) + (SB * 0.3) + (defenseRating * 15)) * positionMultiplier * paScale
  *                  where defenseRating = (range + arm) / 2, paScale = min(1.0, PA / 400)
  *                  positionMultiplier from best eligiblePosition scarcity (SS=1.15, C=1.12, DH=0.95)
- * SP formula:      25 + ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
+ * SP formula:      ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
  *                  then scaled by min(1.0, IP / 150) when IP is available
- * RP/CL formula:   15 + ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
+ * RP/CL formula:   ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
  *                  then scaled by min(1.0, IP / 60) when IP is available
  *
  * Layer 1: Pure logic, no I/O, deterministic.
@@ -98,15 +98,6 @@ export function computePaScaleFactor(pa: number): number {
 /** ERA floor: prevents dead-ball era sub-1.50 ERAs from dominating valuation. */
 const ERA_FLOOR = 1.50;
 
-/**
- * Base floor values for pitcher valuation.
- * Shifts pitcher value ranges upward to compete with batters in draft ordering.
- * Without these, average batters (value ~93) outscore elite SP (value ~105),
- * causing all 30 teams to draft batters first and pitchers in synchronized blocks.
- */
-const BASE_SP_VALUE = 25;
-const BASE_RP_VALUE = 15;
-
 /** IP thresholds for full credit. Below this, value is scaled proportionally. */
 const SP_IP_THRESHOLD = 150;
 const RP_IP_THRESHOLD = 60;
@@ -114,25 +105,23 @@ const RP_IP_THRESHOLD = 60;
 /**
  * Calculate pitcher value from pitching attributes.
  *
- * SP:     25 + ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
- * RP/CL:  15 + ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
+ * SP:     ((4.50 - max(ERA,1.50)) * 25) + (K9 * 5) - (BB9 * 8) + (stamina * 3)
+ * RP/CL:  ((3.50 - max(ERA,1.50)) * 18) + (K9 * 5) - (BB9 * 8)
  *
- * Base values (25 SP, 15 RP) shift pitcher ranges into competitive overlap
- * with batter values, preventing synchronized block drafting.
+ * No flat base values -- pitcher/batter interleaving is handled by the
+ * urgency system in ai-strategy.ts (need multipliers + manager style bias).
  * ERA is floored at 1.50 to prevent dead-ball era distortion.
  */
 export function calculatePitcherValue(pitching: PitcherAttributes): number {
   const era = Math.max(ERA_FLOOR, pitching.era);
   if (pitching.role === 'SP') {
-    return BASE_SP_VALUE
-      + ((4.50 - era) * 25)
+    return ((4.50 - era) * 25)
       + (pitching.k9 * 5)
       - (pitching.bb9 * 8)
       + (pitching.stamina * 3);
   }
   // RP and CL use the same formula
-  return BASE_RP_VALUE
-    + ((3.50 - era) * 18)
+  return ((3.50 - era) * 18)
     + (pitching.k9 * 5)
     - (pitching.bb9 * 8);
 }
