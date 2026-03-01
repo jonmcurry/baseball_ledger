@@ -1,5 +1,50 @@
 # Changelog
 
+## 2026-02-28 - BBW fidelity audit: 4 discrepancy fixes
+
+Comprehensive 5-agent audit compared every BBW mechanic (Ghidra decompilation)
+against Baseball Ledger implementation. Core PA resolution, 6-layer grade
+adjustment, IDT lookup, and game runner are all faithful. Four discrepancies
+found and fixed:
+
+Fix 1 (HIGH): Power rating expansion to full BBW range
+- POWER_TIERS expanded from 4 values {18,19,20,21} to 8 values
+  {13,15,16,17,18,19,20,21} matching BBW 828-card distribution
+- Value 14 intentionally skipped per BBW data
+- Value 13 (no power) maps to WALK via card-value-fallback -- correct BBW
+  behavior where low-power batters get a walk when position 24 is drawn
+- ISO thresholds calibrated from BBW percentile distribution
+- Deleted dead CALIBRATED_POWER_TIERS constant from calibration-coefficients.ts
+
+Fix 2 (MODERATE): Position 15 gate conditional logic activated
+- Both branches of ISO check previously assigned POWER_GATE (33) -- dead code
+- BBW data: position 15 is value 33 in 75% of cards, value 13 in ~15%,
+  value 14 in ~10%
+- Now: ISO < 0.150 -> power gate (33), else walk (13) or K (14) based on
+  walk/strikeout rate ratio
+
+Fix 3 (LOW-MODERATE): Card value 30 mapping corrected
+- Changed from GROUND_OUT_ADVANCE to GROUND_OUT
+- BBW correlation (r=-0.484 BB) indicates generic out, not runner-advancing
+- Runner advancement is a post-resolution mechanic in BBW, not encoded in
+  card values
+
+Fix 4 (COSMETIC): r2Roll renamed to effectiveGrade
+- GradeGateResult.r2Roll stored the effective grade, not the random roll
+- Renamed to effectiveGrade for clarity
+
+Files modified:
+- `src/lib/card-generator/power-rating.ts` -- 8-tier BBW power range
+- `src/lib/card-generator/calibration-coefficients.ts` -- removed dead code
+- `src/lib/card-generator/value-mapper.ts` -- position 15 conditional logic
+- `src/lib/simulation/card-value-fallback.ts` -- value 30 mapping
+- `src/lib/simulation/plate-appearance.ts` -- effectiveGrade rename
+- `tests/unit/lib/card-generator/power-rating.test.ts` -- new tier expectations
+- `tests/unit/lib/card-generator/value-mapper.test.ts` -- position 15 + power tests
+- `tests/unit/lib/simulation/card-value-fallback.test.ts` -- value 30 expectations
+- `tests/unit/lib/simulation/plate-appearance.test.ts` -- effectiveGrade reference
+- `docs/bbw-audit-report.md` -- full audit report
+
 ## 2026-02-28 - Fix grade check range and pitcher batting card composition
 
 Two critical bugs combined to make pitchers ~80% less effective than BBW intends:

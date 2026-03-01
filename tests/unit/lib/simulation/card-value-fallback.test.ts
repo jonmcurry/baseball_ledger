@@ -68,8 +68,8 @@ describe('REQ-SIM-004a: Direct Card Value Fallback Mapping', () => {
       expect(CARD_VALUE_TO_OUTCOME.get(26)).toBe(OutcomeCategory.GROUND_OUT);
     });
 
-    it('maps card value 30 to GROUND_OUT_ADVANCE', () => {
-      expect(CARD_VALUE_TO_OUTCOME.get(30)).toBe(OutcomeCategory.GROUND_OUT_ADVANCE);
+    it('maps card value 30 to GROUND_OUT', () => {
+      expect(CARD_VALUE_TO_OUTCOME.get(30)).toBe(OutcomeCategory.GROUND_OUT);
     });
 
     it('maps card value 31 to FLY_OUT', () => {
@@ -161,7 +161,7 @@ describe('REQ-SIM-004a: Direct Card Value Fallback Mapping', () => {
       [23, OutcomeCategory.STOLEN_BASE_OPP],
       [24, OutcomeCategory.LINE_OUT],
       [26, OutcomeCategory.GROUND_OUT],
-      [30, OutcomeCategory.GROUND_OUT_ADVANCE],
+      [30, OutcomeCategory.GROUND_OUT],
       [31, OutcomeCategory.FLY_OUT],
       [36, OutcomeCategory.STOLEN_BASE_OPP],
       [37, OutcomeCategory.HOME_RUN_VARIANT],

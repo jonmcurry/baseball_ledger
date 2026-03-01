@@ -282,11 +282,16 @@ export function applyGateValues(
     gateKCount++;
   }
 
-  // Position 15: power gate -- 33 for low-power, otherwise use walk/K
+  // Position 15: power gate for low-power, walk/K for high-power.
+  // BBW data (828 cards): 75% value 33, ~15% value 13 (walk), ~10% value 14 (K).
   if (iso < 0.150) {
-    card[15] = CARD_VALUES.POWER_GATE; // value 33 -> ground out
+    card[15] = CARD_VALUES.POWER_GATE; // value 33 -> ground out (low-power)
+  } else if (walkRate > strikeoutRate) {
+    card[15] = CARD_VALUES.WALK;       // value 13 -> walk (high-power, walk-heavy)
+    gateWalkCount++;
   } else {
-    card[15] = CARD_VALUES.POWER_GATE; // still 33 for consistency
+    card[15] = CARD_VALUES.STRIKEOUT;  // value 14 -> strikeout (high-power, K-heavy)
+    gateKCount++;
   }
 
   // Position 20: strikeout gate -- always 14 (94% in BBW)
@@ -362,7 +367,7 @@ export function fillVariablePositions(
   //   OUT_CONTACT (26) = GROUND_OUT:         37.5%
   //   OUT_NONWALK (31) = FLY_OUT:            25%
   //   SPECIAL_FLAG (34) = GROUND_OUT:        12.5%
-  //   OUT_GROUND (30) = GROUND_OUT_ADVANCE:  12.5%  (productive out)
+  //   OUT_GROUND (30) = GROUND_OUT:           12.5%  (BBW: generic out)
   //   OUT_FLY (24) = LINE_OUT:               12.5%
   // Prior mix had 37.5% GROUND_OUT_ADVANCE -- ~2x the real BBW rate.
   const outMixValues = [

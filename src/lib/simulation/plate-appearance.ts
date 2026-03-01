@@ -45,7 +45,7 @@ export interface GradeGateResult {
   /** True if grade check fired AND pitcher won the roll */
   pitcherWon: boolean;
   /** The effective grade used for the check */
-  r2Roll: number;
+  effectiveGrade: number;
 }
 
 /**
@@ -136,7 +136,7 @@ export function resolvePlateAppearance(
       originalValue: cardValue,
       finalValue,
       pitcherWon,
-      r2Roll: effectiveGrade,
+      effectiveGrade,
     },
     column: undefined,
     outcomeTableRow,

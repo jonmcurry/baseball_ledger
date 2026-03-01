@@ -270,7 +270,7 @@ describe('fillVariablePositions', () => {
 describe('applyGateValues (BBW gate positions)', () => {
   it('sets position 0 to WALK when walkRate > strikeoutRate', () => {
     const card = new Array(CARD_LENGTH).fill(0);
-    const { gateWalkCount, gateKCount } = applyGateValues(card, 0.12, 0.08, 0.150);
+    const { gateWalkCount, gateKCount } = applyGateValues(card, 0.12, 0.08, 0.100);
     expect(card[0]).toBe(CARD_VALUES.WALK);
     expect(gateWalkCount).toBe(1);
     expect(gateKCount).toBe(1); // Position 20 K gate
@@ -278,16 +278,30 @@ describe('applyGateValues (BBW gate positions)', () => {
 
   it('sets position 0 to STRIKEOUT when strikeoutRate >= walkRate', () => {
     const card = new Array(CARD_LENGTH).fill(0);
-    const { gateWalkCount, gateKCount } = applyGateValues(card, 0.08, 0.15, 0.150);
+    const { gateWalkCount, gateKCount } = applyGateValues(card, 0.08, 0.15, 0.100);
     expect(card[0]).toBe(CARD_VALUES.STRIKEOUT);
     expect(gateWalkCount).toBe(0);
     expect(gateKCount).toBe(2); // Position 0 K + Position 20 K
   });
 
-  it('sets position 15 to POWER_GATE (33)', () => {
+  it('sets position 15 to POWER_GATE (33) for low-ISO batters', () => {
     const card = new Array(CARD_LENGTH).fill(0);
-    applyGateValues(card, 0.09, 0.15, 0.150);
+    applyGateValues(card, 0.09, 0.15, 0.100);
     expect(card[15]).toBe(CARD_VALUES.POWER_GATE);
+  });
+
+  it('sets position 15 to WALK (13) for high-ISO walk-heavy batters', () => {
+    const card = new Array(CARD_LENGTH).fill(0);
+    const { gateWalkCount } = applyGateValues(card, 0.12, 0.08, 0.200);
+    expect(card[15]).toBe(CARD_VALUES.WALK);
+    expect(gateWalkCount).toBe(2); // Position 0 + Position 15
+  });
+
+  it('sets position 15 to STRIKEOUT (14) for high-ISO K-heavy batters', () => {
+    const card = new Array(CARD_LENGTH).fill(0);
+    const { gateKCount } = applyGateValues(card, 0.08, 0.15, 0.200);
+    expect(card[15]).toBe(CARD_VALUES.STRIKEOUT);
+    expect(gateKCount).toBe(3); // Position 0 + Position 15 + Position 20
   });
 
   it('sets position 20 to STRIKEOUT always', () => {
@@ -330,12 +344,12 @@ describe('full card pipeline (gates + power + fill)', () => {
 
   it('card[24] equals power rating for ISO 0.170', () => {
     const card = buildFullCard({ iso: 0.170 });
-    expect(card[POWER_POSITION]).toBe(20); // Above average (0.150-0.189)
+    expect(card[POWER_POSITION]).toBe(19); // Good power (0.170-0.209)
   });
 
   it('card[24] equals power rating for ISO 0.050', () => {
     const card = buildFullCard({ iso: 0.050 });
-    expect(card[POWER_POSITION]).toBe(18); // Minimal power (0.050-0.079)
+    expect(card[POWER_POSITION]).toBe(15); // Minimal power (0.040-0.069)
   });
 
   it('card[24] equals power rating for ISO 0.280+', () => {
@@ -360,8 +374,14 @@ describe('full card pipeline (gates + power + fill)', () => {
     expect(card[20]).toBe(14);
   });
 
-  it('position 15 is always 33 (power gate)', () => {
+  it('position 15 is 14 (K gate) for high-ISO K-heavy default batter', () => {
+    // Default: ISO=0.170 >= 0.150, walkRate=0.09 < strikeoutRate=0.15 -> K
     const card = buildFullCard();
+    expect(card[15]).toBe(14);
+  });
+
+  it('position 15 is 33 (power gate) for low-ISO batter', () => {
+    const card = buildFullCard({ iso: 0.100 });
     expect(card[15]).toBe(33);
   });
 

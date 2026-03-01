@@ -86,28 +86,6 @@ export function getArchetypeHitContributions(
 }
 
 /**
- * Calibrated power rating tiers from BBW card[24] vs Lahman ISO analysis.
- *
- * BBW power ratings show weak linear correlation with ISO (r=-0.17), suggesting
- * BBW uses era-relative power assignment or a different metric. The mode-based
- * tiers below are derived from the most common BBW power value in each ISO bucket.
- *
- * Values are IDT-active [13-21] per APBA specification:
- *   13 = none, 15 = minimal, 16 = below avg, 17 = average,
- *   18 = above avg, 19 = good, 20 = very good, 21 = excellent
- */
-export const CALIBRATED_POWER_TIERS: readonly { maxISO: number; cardValue: number; label: string }[] = [
-  { maxISO: 0.050, cardValue: 18, label: 'No power (BBW mode: 18)' },
-  { maxISO: 0.080, cardValue: 18, label: 'Minimal (BBW mode: 18)' },
-  { maxISO: 0.110, cardValue: 18, label: 'Below average (BBW mode: 18)' },
-  { maxISO: 0.150, cardValue: 20, label: 'Average (BBW mode: 20)' },
-  { maxISO: 0.190, cardValue: 20, label: 'Above average (BBW mode: 20)' },
-  { maxISO: 0.230, cardValue: 20, label: 'Good (BBW mode: 20)' },
-  { maxISO: 0.280, cardValue: 20, label: 'Very good (BBW mode: 20)' },
-  { maxISO: Infinity, cardValue: 21, label: 'Excellent' },
-];
-
-/**
  * Calibrated archetype thresholds from BBW distribution analysis.
  *
  * Best F1 for power archetype detection: HR >= 18 OR ISO >= 0.170 (F1 = 0.805).

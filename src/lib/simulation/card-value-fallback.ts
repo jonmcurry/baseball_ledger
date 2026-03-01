@@ -39,7 +39,7 @@ export const CARD_VALUE_TO_OUTCOME: ReadonlyMap<number, OutcomeCategory> = new M
   [23, OutcomeCategory.STOLEN_BASE_OPP],
   [24, OutcomeCategory.LINE_OUT],
   [26, OutcomeCategory.GROUND_OUT],
-  [30, OutcomeCategory.GROUND_OUT_ADVANCE],
+  [30, OutcomeCategory.GROUND_OUT],
   [31, OutcomeCategory.FLY_OUT],
   [36, OutcomeCategory.STOLEN_BASE_OPP],
   [37, OutcomeCategory.HOME_RUN_VARIANT],

@@ -12,38 +12,40 @@ export interface PowerTier {
 /**
  * BBW-calibrated power scale mapped from ISO (REQ-DATA-005 Step 4).
  *
- * All card values MUST be IDT-active [15-21] so they go through the pitcher
- * grade gate when position 24 is drawn.
+ * Uses the full BBW 8-value range {13, 15, 16, 17, 18, 19, 20, 21} at
+ * card position 24. Value 14 is never used per BBW analysis.
  *
- * Calibrated from BBW binary card analysis (535 batters across 3 seasons).
- * BBW power ratings cluster around 18-20 for most batters, with the modal
- * value determined by ISO bucket:
+ * Values 15-21 are IDT-active and go through bitmap-gated IDT lookup when
+ * position 24 is drawn. Value 13 maps directly to WALK (not IDT-active),
+ * which is correct BBW behavior for no-power pitchers/slap hitters.
  *
- * ISO Range     | Card[24] | BBW Mode | Description
- * < 0.050       | 18       | 18       | No power (slap hitters)
- * 0.050 - 0.079 | 18       | 18       | Minimal power
- * 0.080 - 0.109 | 18       | 18       | Below average
- * 0.110 - 0.149 | 19       | 20       | Average power
- * 0.150 - 0.189 | 20       | 20       | Above average
- * 0.190 - 0.229 | 20       | 20       | Good power
- * 0.230 - 0.279 | 20       | 20       | Very good (20+ HR pace)
- * >= 0.280      | 21       | n/a      | Excellent power
+ * Calibrated from BBW binary card analysis (828 players, 1971 season):
+ *
+ * ISO Range     | Card[24] | BBW Count | Description
+ * < 0.040       | 13       | 222 (27%) | No power (pitchers, slap hitters)
+ * 0.040 - 0.069 | 15       | 40  (5%)  | Minimal power
+ * 0.070 - 0.099 | 16       | 62  (8%)  | Below average
+ * 0.100 - 0.129 | 17       | 82  (10%) | Average power
+ * 0.130 - 0.169 | 18       | 118 (14%) | Above average
+ * 0.170 - 0.209 | 19       | 60  (7%)  | Good power
+ * 0.210 - 0.259 | 20       | 105 (13%) | Very good (20+ HR pace)
+ * >= 0.260      | 21       | 138 (17%) | Excellent power
  */
 export const POWER_TIERS: readonly PowerTier[] = [
-  { maxISO: 0.050, cardValue: 18, label: 'No power' },
-  { maxISO: 0.080, cardValue: 18, label: 'Minimal power' },
-  { maxISO: 0.110, cardValue: 18, label: 'Below average' },
-  { maxISO: 0.150, cardValue: 19, label: 'Average power' },
-  { maxISO: 0.190, cardValue: 20, label: 'Above average' },
-  { maxISO: 0.230, cardValue: 20, label: 'Good power' },
-  { maxISO: 0.280, cardValue: 20, label: 'Very good' },
+  { maxISO: 0.040, cardValue: 13, label: 'No power' },
+  { maxISO: 0.070, cardValue: 15, label: 'Minimal power' },
+  { maxISO: 0.100, cardValue: 16, label: 'Below average' },
+  { maxISO: 0.130, cardValue: 17, label: 'Average power' },
+  { maxISO: 0.170, cardValue: 18, label: 'Above average' },
+  { maxISO: 0.210, cardValue: 19, label: 'Good power' },
+  { maxISO: 0.260, cardValue: 20, label: 'Very good' },
   { maxISO: Infinity, cardValue: 21, label: 'Excellent power' },
 ];
 
 /**
  * Map ISO (Isolated Power = SLG - BA) to the APBA 8-tier power rating.
- * Returns the CardValue (15-21) for card position 24. All values are
- * IDT-active so position 24 draws always go through the grade gate.
+ * Returns the CardValue for card position 24. Values 15-21 are IDT-active;
+ * value 13 (no power) maps directly to WALK per BBW.
  */
 export function computePowerRating(iso: number): CardValue {
   for (const tier of POWER_TIERS) {

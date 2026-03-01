@@ -301,12 +301,12 @@ describe('BBW Plate Appearance Resolution', () => {
       expect(result.column).toBeUndefined();
     });
 
-    it('pitcherGradeEffect.r2Roll equals the effective grade', () => {
+    it('pitcherGradeEffect.effectiveGrade equals the effective grade', () => {
       const card = makeUniformCard(13);
       const pitcherCard = makePitcherCard();
       const result = resolvePlateAppearance(card, pitcherCard, 20, new SeededRNG(42));
 
-      expect(result.pitcherGradeEffect.r2Roll).toBe(20);
+      expect(result.pitcherGradeEffect.effectiveGrade).toBe(20);
     });
   });
 
