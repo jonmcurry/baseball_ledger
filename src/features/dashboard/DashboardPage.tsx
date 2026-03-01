@@ -131,14 +131,17 @@ export function DashboardPage() {
   const [isRepairing, setIsRepairing] = useState(false);
   useEffect(() => {
     if (!league?.id || isRepairing || isLoading) return;
-    if (leagueStatus === 'regular_season' && schedule.length === 0 && currentDay === 0) {
+    if (leagueStatus === 'regular_season' && schedule.length === 0) {
       setIsRepairing(true);
       apiPost(`/api/leagues/${league.id}/schedule`)
         .then(() => useLeagueStore.getState().fetchLeagueData(league.id))
-        .catch(() => { /* error reflected in league store */ })
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : 'Failed to generate schedule';
+          useLeagueStore.getState().setError(msg);
+        })
         .finally(() => setIsRepairing(false));
     }
-  }, [league?.id, leagueStatus, schedule.length, currentDay, isLoading, isRepairing]);
+  }, [league?.id, leagueStatus, schedule.length, isLoading, isRepairing]);
 
   // REQ-SCH-007: Typewriter results notification
   const [showNotification, setShowNotification] = useState(false);
@@ -157,8 +160,8 @@ export function DashboardPage() {
     runSimulation(league.id, days);
   };
 
-  if (isLoading) {
-    return <LoadingLedger message="Loading league data..." />;
+  if (isLoading || isRepairing) {
+    return <LoadingLedger message={isRepairing ? "Generating season schedule..." : "Loading league data..."} />;
   }
 
   // Build ticker results from the most recent completed games

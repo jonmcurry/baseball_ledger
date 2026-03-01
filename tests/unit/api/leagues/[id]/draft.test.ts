@@ -1180,9 +1180,9 @@ describe('POST /api/leagues/:id/draft (pick marks player_pool)', () => {
   });
 });
 
-// ---------- POST action=pick: Draft completion + schedule generation ----------
+// ---------- POST action=pick: Draft completion (status-only) ----------
 
-describe('POST /api/leagues/:id/draft (draft completion generates schedule)', () => {
+describe('POST /api/leagues/:id/draft (draft completion)', () => {
   // 2 teams, draft_order = ['team-2', 'team-1'], TOTAL_ROUNDS = 21
   // Final pick: round 21, pick 2 (team-1, the user's team)
   // Before insert: 41 picks already. After insert: 42 picks total.
@@ -1225,7 +1225,27 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
     return { mockFrom, leaguesBuilder };
   }
 
-  it('calls generateAndInsertSchedule when draft completes', async () => {
+  it('updates league status to regular_season with current_day=1 when draft completes', async () => {
+    const { leaguesBuilder } = setupDraftCompletionMocks();
+
+    const req = createMockRequest({
+      method: 'POST',
+      query: { id: 'league-1' },
+      body: validPickBody,
+      headers: { authorization: 'Bearer token' },
+    });
+    const res = createMockResponse();
+
+    await handler(req as any, res as any);
+
+    expect(res._status).toBe(201);
+    expect(res._body.data.isComplete).toBe(true);
+    expect(leaguesBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'regular_season', current_day: 1 }),
+    );
+  });
+
+  it('does not call generateAndInsertSchedule or generateAndInsertLineups on completion', async () => {
     setupDraftCompletionMocks();
 
     const req = createMockRequest({
@@ -1240,91 +1260,9 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
 
     expect(res._status).toBe(201);
     expect(res._body.data.isComplete).toBe(true);
-    expect(mockGenerateSchedule).toHaveBeenCalledWith(
-      expect.anything(),
-      'league-1',
-    );
-  });
-
-  it('still completes draft when schedule generation fails (resilient completion)', async () => {
-    const { leaguesBuilder } = setupDraftCompletionMocks();
-    mockGenerateSchedule.mockRejectedValue({
-      category: 'DATA',
-      code: 'INSERT_FAILED',
-      message: 'Schedule insert failed',
-    });
-
-    const req = createMockRequest({
-      method: 'POST',
-      query: { id: 'league-1' },
-      body: validPickBody,
-      headers: { authorization: 'Bearer token' },
-    });
-    const res = createMockResponse();
-
-    await handler(req as any, res as any);
-
-    // Draft completes despite schedule failure (schedule can be regenerated later)
-    expect(res._status).toBe(201);
-    expect(res._body.data.isComplete).toBe(true);
-    // Status should still transition to regular_season
-    expect(leaguesBuilder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'regular_season' }),
-    );
-  });
-
-  it('calls generateAndInsertLineups before schedule when draft completes', async () => {
-    setupDraftCompletionMocks();
-
-    const req = createMockRequest({
-      method: 'POST',
-      query: { id: 'league-1' },
-      body: validPickBody,
-      headers: { authorization: 'Bearer token' },
-    });
-    const res = createMockResponse();
-
-    await handler(req as any, res as any);
-
-    expect(res._status).toBe(201);
-    expect(res._body.data.isComplete).toBe(true);
-    expect(mockGenerateLineups).toHaveBeenCalledWith(
-      expect.anything(),
-      'league-1',
-    );
-    // Lineup generation should be called before schedule generation
-    const lineupsOrder = mockGenerateLineups.mock.invocationCallOrder[0];
-    const scheduleOrder = mockGenerateSchedule.mock.invocationCallOrder[0];
-    expect(lineupsOrder).toBeLessThan(scheduleOrder);
-  });
-
-  it('still completes draft and generates schedule when lineup generation fails', async () => {
-    const { leaguesBuilder } = setupDraftCompletionMocks();
-    mockGenerateLineups.mockRejectedValue({
-      category: 'DATA',
-      code: 'INSERT_FAILED',
-      message: 'Lineup generation failed',
-    });
-
-    const req = createMockRequest({
-      method: 'POST',
-      query: { id: 'league-1' },
-      body: validPickBody,
-      headers: { authorization: 'Bearer token' },
-    });
-    const res = createMockResponse();
-
-    await handler(req as any, res as any);
-
-    // Draft completes despite lineup failure (lineups can be regenerated later)
-    expect(res._status).toBe(201);
-    expect(res._body.data.isComplete).toBe(true);
-    // Schedule generation should still run
-    expect(mockGenerateSchedule).toHaveBeenCalled();
-    // Status should still transition
-    expect(leaguesBuilder.update).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'regular_season' }),
-    );
+    // Schedule and lineup generation are deferred to POST /schedule (auto-repair)
+    expect(mockGenerateSchedule).not.toHaveBeenCalled();
+    expect(mockGenerateLineups).not.toHaveBeenCalled();
   });
 });
 

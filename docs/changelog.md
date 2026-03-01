@@ -1,26 +1,27 @@
 # Changelog
 
-## 2026-03-01 - Fix missing schedule after draft completion timeout
+## 2026-03-01 - Fix schedule generation after draft (3 stacked failures)
 
-When draft completion timed out on Vercel, the league transitioned to
-`regular_season` but lineup/schedule generation never ran, leaving the
-season page showing "No schedule available".
+Root cause: `completeDraft` tried to generate lineups + schedule at the end
+of a 600+ pick CPU processing loop, exceeding Vercel's timeout. The repair
+path had no error resilience and required commissioner auth. Frontend
+silently swallowed all errors.
 
-### GET self-healing lightened
-- handleGetState self-healing now only updates league status (fast)
-- No longer attempts heavy lineup/schedule generation in a GET handler
-- Prevents Vercel timeout during read-only polling
+### completeDraft simplified to status-only
+- Removed lineup and schedule generation from `completeDraft` in draft.ts
+- Now only updates league status to `regular_season` and sets `current_day=1`
+- Lineup/schedule generation deferred to POST /schedule (fresh request, full timeout)
 
-### POST /schedule repair mode
-- `POST /api/leagues/:id/schedule` now handles `regular_season` leagues
-  with missing schedule data (commissioner-only)
-- Checks if schedule already exists before generating (idempotent)
-- Generates lineups + schedule, same as normal season start
+### POST /schedule repair path hardened
+- Moved repair path above commissioner check so any authenticated user can trigger it
+- Wrapped lineup generation in try/catch (failure no longer blocks schedule gen)
+- Added `console.error` logging for lineup generation failures
+- Sets `current_day=1` after successful schedule generation
 
-### Frontend auto-repair
-- DashboardPage detects `regular_season` + empty schedule + day 0
-- Automatically triggers `POST /schedule` to generate missing data
-- One-shot repair: won't re-trigger once schedule exists
+### Frontend auto-repair improved
+- Removed unreliable `currentDay === 0` condition from repair trigger
+- Errors now surfaced to user via `setError()` instead of silently swallowed
+- Shows "Generating season schedule..." loading screen during repair
 
 ### simulate.ts TS fix
 - Added `unknown` intermediate cast for schedule query result to fix

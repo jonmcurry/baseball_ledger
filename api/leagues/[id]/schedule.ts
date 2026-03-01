@@ -80,13 +80,10 @@ async function handleStartSeason(
     throw { category: 'NOT_FOUND', code: 'LEAGUE_NOT_FOUND', message: 'League not found' };
   }
 
-  // 2. Commissioner check
-  if (league.commissioner_id !== userId) {
-    throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can start a new season' };
-  }
-
   // Repair mode: league already in regular_season but missing schedule/lineups
   // (can happen when draft completion times out on Vercel)
+  // Any authenticated league member can trigger this -- the path is safe because
+  // it only runs when status is already regular_season AND schedule count is 0.
   if (league.status === 'regular_season') {
     const { count: schedCount } = await supabase
       .from('schedule')
@@ -95,13 +92,27 @@ async function handleStartSeason(
     if (schedCount && schedCount > 0) {
       throw { category: 'VALIDATION', code: 'SCHEDULE_EXISTS', message: 'Schedule already exists' };
     }
-    await generateAndInsertLineups(supabase, leagueId);
+    try {
+      await generateAndInsertLineups(supabase, leagueId);
+    } catch (err) {
+      console.error('[schedule repair] lineup generation failed, continuing:', err);
+    }
     const scheduleResult = await generateAndInsertSchedule(supabase, leagueId);
+    // Ensure current_day is set (completeDraft may not have set it in older versions)
+    await supabase
+      .from('leagues')
+      .update({ current_day: 1 })
+      .eq('id', leagueId);
     created(res, {
       totalDays: scheduleResult.totalDays,
       totalGames: scheduleResult.totalGames,
     }, requestId, `/api/leagues/${leagueId}/schedule`);
     return;
+  }
+
+  // 2. Commissioner check
+  if (league.commissioner_id !== userId) {
+    throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can start a new season' };
   }
 
   // 3. Count rosters per team to find minimum roster size

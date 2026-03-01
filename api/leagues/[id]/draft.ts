@@ -25,8 +25,6 @@ import { selectAIPick, getRosterNeeds, type DraftablePlayer } from '../../../src
 import { wouldViolateComposition } from '../../../src/lib/draft/composition-guard';
 import type { PlayerCard, MlbBattingStats } from '../../../src/lib/types/player';
 import { SeededRNG } from '../../../src/lib/rng/seeded-rng';
-import { generateAndInsertSchedule } from '../../_lib/generate-schedule-rows';
-import { generateAndInsertLineups } from '../../_lib/generate-lineup-rows';
 
 // ---------- Schemas ----------
 
@@ -46,36 +44,21 @@ const DraftStartSchema = z.object({
 // ---------- Draft completion helper ----------
 
 /**
- * Complete the draft: generate lineups, schedule, and update league status.
- * Idempotent -- safe to call multiple times.
- * Each step is independently fault-tolerant; the status update always runs.
+ * Complete the draft: update league status to regular_season.
+ *
+ * Lineup and schedule generation are intentionally deferred to POST /schedule
+ * (triggered by the frontend auto-repair) so they run in a fresh Vercel
+ * request with full timeout budget, rather than at the tail of a 600+ pick
+ * CPU processing loop that's already consumed most of the timeout.
  */
 async function completeDraft(
   supabase: ReturnType<typeof createServerClient>,
   leagueId: string,
 ): Promise<void> {
-  // Generate lineups (updates existing roster rows -- safe to re-run)
-  try {
-    await generateAndInsertLineups(supabase, leagueId);
-  } catch {
-    // Non-fatal: lineups can be regenerated later
-  }
-
-  // Generate schedule (inserts rows -- skip if schedule already exists)
-  try {
-    const { count } = await supabase
-      .from('schedule')
-      .select('*', { count: 'exact', head: true })
-      .eq('league_id', leagueId);
-    if (!count || count === 0) {
-      await generateAndInsertSchedule(supabase, leagueId);
-    }
-  } catch {
-    // Non-fatal: schedule can be generated later
-  }
-
-  // Critical: update league status (must succeed for draft to complete)
-  await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
+  await supabase
+    .from('leagues')
+    .update({ status: 'regular_season', current_day: 1 })
+    .eq('id', leagueId);
 }
 
 // ---------- CPU auto-pick helper ----------
