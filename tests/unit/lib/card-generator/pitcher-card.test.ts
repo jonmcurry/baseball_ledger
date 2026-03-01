@@ -37,22 +37,22 @@ describe('generatePitcherBattingCard (REQ-DATA-005 Step 6)', () => {
     expect(card[32]).toBe(35);
   });
 
-  it('floods variable positions with walks (14-18 of 26)', () => {
+  it('places walks on variable positions (3-5 of 24)', () => {
     const card = generatePitcherBattingCard();
     const walkCount = card.filter((v, i) =>
       v === CARD_VALUES.WALK && !STRUCTURAL_POSITIONS.includes(i),
     ).length;
-    expect(walkCount).toBeGreaterThanOrEqual(14);
-    expect(walkCount).toBeLessThanOrEqual(18);
+    expect(walkCount).toBeGreaterThanOrEqual(3);
+    expect(walkCount).toBeLessThanOrEqual(5);
   });
 
-  it('includes strikeout values (3-5 of 26)', () => {
+  it('includes strikeout values (9-11 of 24)', () => {
     const card = generatePitcherBattingCard();
     const kCount = card.filter((v, i) =>
       v === CARD_VALUES.STRIKEOUT && !STRUCTURAL_POSITIONS.includes(i),
     ).length;
-    expect(kCount).toBeGreaterThanOrEqual(3);
-    expect(kCount).toBeLessThanOrEqual(5);
+    expect(kCount).toBeGreaterThanOrEqual(9);
+    expect(kCount).toBeLessThanOrEqual(11);
   });
 
   it('fills remaining with out values', () => {

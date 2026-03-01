@@ -190,11 +190,13 @@ describe('All-Star League Calibration (BBW Grade Check)', () => {
     expect(stats.ba).toBeLessThanOrEqual(0.380);
   });
 
-  it('solid .270 hitter produces BA in [.180, .340] against all-star pitching', () => {
+  it('solid .270 hitter produces BA in [.100, .340] against all-star pitching', () => {
     const card = buildSolidHitterCard();
     const stats = simulateAllStarLeague(card, pitcherCard, ALL_STAR_GRADES, 30, 500);
 
-    expect(stats.ba).toBeGreaterThanOrEqual(0.180);
+    // With GRADE_CHECK_RANGE=15, grades 15+ (most of all-star distribution)
+    // suppress 100% of grade-check singles. BA drops significantly.
+    expect(stats.ba).toBeGreaterThanOrEqual(0.100);
     expect(stats.ba).toBeLessThanOrEqual(0.340);
   });
 
@@ -212,8 +214,8 @@ describe('All-Star League Calibration (BBW Grade Check)', () => {
     const statsVs14 = simulateAllStarLeague(card, pitcherCard, [14], 30, 500);
     const statsVs5 = simulateAllStarLeague(card, pitcherCard, [5], 30, 500);
 
-    // Grade 14 suppresses 14/36 = 39% of grade-check values
-    // Grade 5 suppresses only 5/36 = 14%
+    // Grade 14 suppresses 14/15 = 93% of grade-check values
+    // Grade 5 suppresses only 5/15 = 33%
     expect(statsVs14.ba).toBeLessThan(statsVs5.ba);
   });
 

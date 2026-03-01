@@ -8,9 +8,9 @@ import { computePitcherGrade } from './pitcher-grade';
 /**
  * Generate a pitcher's batting card (REQ-DATA-005 Step 6).
  *
- * Pitchers' batting cards are flooded with value 13 (walk).
- * Per SRD: 14-18 of 26 variable positions get value 13,
- * 3-5 get value 14 (strikeout), remaining get out types.
+ * Pitchers' batting cards are flooded with strikeouts and outs.
+ * Per BBW PLAYERS.DAT analysis: ~4 walks, ~10 strikeouts,
+ * ~10 out values across the 24 fillable variable positions.
  * Power rating at position 24 = 13 (no power).
  *
  * Values are distributed evenly across positions (not sequential fill)
@@ -24,8 +24,8 @@ export function generatePitcherBattingCard(): CardValue[] {
   applyStructuralConstants(card);
 
   const fillablePositions = getFillablePositions();
-  const WALK_COUNT = 14;      // lower end of 14-18 range (24 fillable positions)
-  const STRIKEOUT_COUNT = 4;  // middle of 3-5 range
+  const WALK_COUNT = 4;       // ~4 walks per BBW pitcher batting card analysis
+  const STRIKEOUT_COUNT = 10; // ~10 Ks per BBW pitcher batting card analysis
   const outValues = [CARD_VALUES.OUT_GROUND, CARD_VALUES.OUT_CONTACT, CARD_VALUES.OUT_NONWALK, CARD_VALUES.OUT_FLY];
 
   // Distribute evenly using stride pattern: place every Nth value to spread

@@ -7,7 +7,7 @@
  * Ghidra decompilation of FUN_1058_5f49:
  * 1. Draw random position (0-34) from batter's 35-byte card
  * 2. Grade check for card values 7, 8, 11:
- *    - Roll 0-35; if < effectiveGrade, pitcher wins -> draw from pitcher's card
+ *    - Roll 0-14; if < effectiveGrade, pitcher wins -> draw from pitcher's card
  *    - Otherwise: batter wins, original card value stands
  * 3. IDT lookup for card values 15-23 (bitmap-gated weighted random)
  * 4. Direct mapping for all other card values
@@ -25,8 +25,8 @@ import { lookupIdtOutcome } from './outcome-table';
 /** Grade check fires for these card values (singles/triples in BBW). */
 const GRADE_CHECK_VALUES: ReadonlySet<number> = new Set([7, 8, 11]);
 
-/** Grade check roll range: 0 to GRADE_CHECK_RANGE-1 (BBW uses 36). */
-export const GRADE_CHECK_RANGE = 36;
+/** Grade check roll range: 0 to GRADE_CHECK_RANGE-1 (BBW uses [1,15] per SRD/Ghidra). */
+export const GRADE_CHECK_RANGE = 15;
 
 /** IDT active range lower bound (BBW bitmap gating). */
 export const IDT_ACTIVE_LOW = 15;
@@ -75,7 +75,7 @@ export interface PlateAppearanceResult {
  * 1. Draw random position (0-34) from batter's 35-byte card
  * 2. Read card value at that position
  * 3. If card value is 7, 8, or 11 (grade-check values):
- *    - Roll 0-35; if < effectiveGrade, pitcher wins
+ *    - Roll 0-14; if < effectiveGrade, pitcher wins
  *    - Pitcher wins: draw from pitcher's card, map via getDirectOutcome()
  *    - Batter wins: original value stands, map via getDirectOutcome()
  * 4. If card value is in [15, 23] (IDT active range):

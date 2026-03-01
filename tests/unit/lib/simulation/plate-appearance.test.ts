@@ -103,13 +103,13 @@ describe('BBW Plate Appearance Resolution', () => {
       const trials = 500;
 
       for (let seed = 1; seed <= trials; seed++) {
-        const result = resolvePlateAppearance(card, pitcherCard, 18, new SeededRNG(seed));
+        const result = resolvePlateAppearance(card, pitcherCard, 8, new SeededRNG(seed));
         if (result.pitcherGradeEffect.pitcherWon) pitcherWonCount++;
       }
 
-      // With grade 18 and GRADE_CHECK_RANGE 36, pitcher wins ~50% of the time
-      expect(pitcherWonCount).toBeGreaterThan(trials * 0.35);
-      expect(pitcherWonCount).toBeLessThan(trials * 0.65);
+      // With grade 8 and GRADE_CHECK_RANGE 15, pitcher wins ~53% (8/15)
+      expect(pitcherWonCount).toBeGreaterThan(trials * 0.38);
+      expect(pitcherWonCount).toBeLessThan(trials * 0.68);
     });
 
     it('grade check fires for card value 8', () => {
@@ -118,11 +118,11 @@ describe('BBW Plate Appearance Resolution', () => {
       let pitcherWonCount = 0;
 
       for (let seed = 1; seed <= 200; seed++) {
-        const result = resolvePlateAppearance(card, pitcherCard, 18, new SeededRNG(seed));
+        const result = resolvePlateAppearance(card, pitcherCard, 8, new SeededRNG(seed));
         if (result.pitcherGradeEffect.pitcherWon) pitcherWonCount++;
       }
 
-      // Should have some pitcher wins (grade check fires)
+      // Grade 8 with GRADE_CHECK_RANGE 15: pitcher wins ~53% (8/15)
       expect(pitcherWonCount).toBeGreaterThan(0);
     });
 
@@ -132,7 +132,7 @@ describe('BBW Plate Appearance Resolution', () => {
       let pitcherWonCount = 0;
 
       for (let seed = 1; seed <= 200; seed++) {
-        const result = resolvePlateAppearance(card, pitcherCard, 18, new SeededRNG(seed));
+        const result = resolvePlateAppearance(card, pitcherCard, 8, new SeededRNG(seed));
         if (result.pitcherGradeEffect.pitcherWon) pitcherWonCount++;
       }
 
@@ -213,8 +213,8 @@ describe('BBW Plate Appearance Resolution', () => {
         }
       }
 
-      // Grade 30 out of 36: pitcher should win ~83% of the time
-      expect(strikeoutCount).toBeGreaterThan(trials * 0.70);
+      // Grade 30 with GRADE_CHECK_RANGE 15: pitcher always wins (30 > 14)
+      expect(strikeoutCount).toBe(trials);
     });
 
     it('higher grade means more pitcher wins', () => {
@@ -364,10 +364,10 @@ describe('BBW Plate Appearance Resolution', () => {
 
       // Higher grade should suppress more singles
       expect(singlesHighGrade).toBeLessThan(singlesLowGrade);
-      // Low grade (5/36 = ~14% suppression) should allow most singles through
-      expect(singlesLowGrade).toBeGreaterThan(trials * 0.70);
-      // High grade (25/36 = ~69% suppression) should block most singles
-      expect(singlesHighGrade).toBeLessThan(trials * 0.40);
+      // Low grade (5/15 = ~33% suppression) should allow most singles through
+      expect(singlesLowGrade).toBeGreaterThan(trials * 0.55);
+      // High grade (25/15 -> 100% suppression) should block ALL singles
+      expect(singlesHighGrade).toBe(0);
     });
 
     it('non-grade-check values are not affected by pitcher grade', () => {
@@ -391,8 +391,8 @@ describe('BBW Plate Appearance Resolution', () => {
   });
 
   describe('constants', () => {
-    it('GRADE_CHECK_RANGE is 36', () => {
-      expect(GRADE_CHECK_RANGE).toBe(36);
+    it('GRADE_CHECK_RANGE is 15', () => {
+      expect(GRADE_CHECK_RANGE).toBe(15);
     });
 
     it('IDT_ACTIVE_LOW is 15', () => {

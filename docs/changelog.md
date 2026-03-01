@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-02-28 - Fix grade check range and pitcher batting card composition
+
+Two critical bugs combined to make pitchers ~80% less effective than BBW intends:
+
+Bug 1: GRADE_CHECK_RANGE was 36, should be 15
+- `plate-appearance.ts` used roll range [0, 35] for grade check
+- All authoritative sources (SRD line 1301, Ghidra findings, winbb-analysis-findings,
+  calibration-coefficients.ts) specify R2 in [1, 15]
+- Grade 8 pitcher was winning 8/36 = 22% of grade checks instead of 8/15 = 53%
+- The suppression compensation formula in value-mapper.ts already used `grade / 15`,
+  so card generation was correct -- only PA resolution had the wrong range
+
+Bug 2: Pitcher batting card was 58% walks (14 of 24 fillable positions)
+- When pitcher wins grade check, batter draws from pitcher's batting card
+- With 58% walks, "suppressed" hits became walks (still on-base events)
+- Real BBW pitcher cards (PLAYERS.DAT analysis) are mostly strikeouts and outs
+- Changed from WALK_COUNT=14/STRIKEOUT_COUNT=4 to WALK_COUNT=4/STRIKEOUT_COUNT=10
+
+Combined impact:
+- Old: 22% win rate * 25% out rate = 5.5% effective suppression per encounter
+- New: 53% win rate * 50% out rate = 26.5% effective suppression (4.8x improvement)
+
+Files modified:
+- `src/lib/simulation/plate-appearance.ts` -- GRADE_CHECK_RANGE 36 -> 15
+- `src/lib/card-generator/pitcher-card.ts` -- WALK_COUNT 14->4, STRIKEOUT_COUNT 4->10
+- `tests/unit/lib/simulation/plate-appearance.test.ts` -- updated grade check expectations
+- `tests/unit/lib/card-generator/pitcher-card.test.ts` -- updated walk/K count assertions
+- `tests/unit/lib/simulation/allstar-league-calibration.test.ts` -- widened BA lower bounds
+- `tests/unit/lib/simulation/full-game-calibration.test.ts` -- widened R/game, BA ranges
+- `tests/unit/lib/simulation/stat-inflation-diagnostic.test.ts` -- widened R/game, OBP, H/game
+
 ## 2026-02-28 - Restore 100% BBW plate appearance resolution
 
 Replaced the SERD 5-column card system with authentic BBW plate appearance
@@ -9,7 +40,7 @@ deviated from how BBW actually works:
 
 BBW-authentic flow (now implemented):
 1. Draw random position (0-34) from batter's 35-byte card
-2. Grade check for card values 7, 8, 11: roll 0-35, if < effectiveGrade,
+2. Grade check for card values 7, 8, 11: roll 0-14, if < effectiveGrade,
    pitcher wins and draws from pitcher's card instead
 3. IDT lookup for card values 15-23: bitmap-gated weighted random selection
    via lookupIdtOutcome() (already correctly implemented)
