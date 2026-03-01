@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-01 - Fix missing schedule after draft completion timeout
+
+When draft completion timed out on Vercel, the league transitioned to
+`regular_season` but lineup/schedule generation never ran, leaving the
+season page showing "No schedule available".
+
+### GET self-healing lightened
+- handleGetState self-healing now only updates league status (fast)
+- No longer attempts heavy lineup/schedule generation in a GET handler
+- Prevents Vercel timeout during read-only polling
+
+### POST /schedule repair mode
+- `POST /api/leagues/:id/schedule` now handles `regular_season` leagues
+  with missing schedule data (commissioner-only)
+- Checks if schedule already exists before generating (idempotent)
+- Generates lineups + schedule, same as normal season start
+
+### Frontend auto-repair
+- DashboardPage detects `regular_season` + empty schedule + day 0
+- Automatically triggers `POST /schedule` to generate missing data
+- One-shot repair: won't re-trigger once schedule exists
+
+### simulate.ts TS fix
+- Added `unknown` intermediate cast for schedule query result to fix
+  TS2352 error (game_number column not in generated Supabase types)
+
 ## 2026-03-01 - Fix draft stuck at completion: resilient completion + self-healing
 
 Draft got permanently stuck at "Round 21 -- Pick 1" after all picks were made.

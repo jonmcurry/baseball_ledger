@@ -377,14 +377,16 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
   const currentRound = Math.floor(totalPicks / league.team_count) + 1;
   const currentPick = (totalPicks % league.team_count) + 1;
 
-  // Self-healing: all picks done but league still in 'drafting' -- complete it
+  // Self-healing: all picks done but league still in 'drafting' -- transition status.
+  // Only updates status (fast). Lineup/schedule generation is triggered separately
+  // by the frontend via POST /schedule when it detects missing data.
   const allPicksDone = currentRound > totalRounds;
   if (allPicksDone && league.status === 'drafting') {
     try {
-      await completeDraft(supabase, leagueId);
+      await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
       league.status = 'regular_season' as typeof league.status;
     } catch {
-      // Completion failed; still report completed below so UI isn't stuck
+      // If status update fails, still report completed below so UI isn't stuck
     }
   }
 

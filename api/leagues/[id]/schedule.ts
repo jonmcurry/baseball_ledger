@@ -85,6 +85,25 @@ async function handleStartSeason(
     throw { category: 'AUTHORIZATION', code: 'NOT_COMMISSIONER', message: 'Only the commissioner can start a new season' };
   }
 
+  // Repair mode: league already in regular_season but missing schedule/lineups
+  // (can happen when draft completion times out on Vercel)
+  if (league.status === 'regular_season') {
+    const { count: schedCount } = await supabase
+      .from('schedule')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', leagueId);
+    if (schedCount && schedCount > 0) {
+      throw { category: 'VALIDATION', code: 'SCHEDULE_EXISTS', message: 'Schedule already exists' };
+    }
+    await generateAndInsertLineups(supabase, leagueId);
+    const scheduleResult = await generateAndInsertSchedule(supabase, leagueId);
+    created(res, {
+      totalDays: scheduleResult.totalDays,
+      totalGames: scheduleResult.totalGames,
+    }, requestId, `/api/leagues/${leagueId}/schedule`);
+    return;
+  }
+
   // 3. Count rosters per team to find minimum roster size
   const { data: rosterCounts } = await supabase
     .from('rosters')

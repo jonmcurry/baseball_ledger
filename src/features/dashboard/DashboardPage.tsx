@@ -127,6 +127,19 @@ export function DashboardPage() {
     }
   };
 
+  // Repair: auto-generate missing schedule/lineups after draft completion timeout
+  const [isRepairing, setIsRepairing] = useState(false);
+  useEffect(() => {
+    if (!league?.id || isRepairing || isLoading) return;
+    if (leagueStatus === 'regular_season' && schedule.length === 0 && currentDay === 0) {
+      setIsRepairing(true);
+      apiPost(`/api/leagues/${league.id}/schedule`)
+        .then(() => useLeagueStore.getState().fetchLeagueData(league.id))
+        .catch(() => { /* error reflected in league store */ })
+        .finally(() => setIsRepairing(false));
+    }
+  }, [league?.id, leagueStatus, schedule.length, currentDay, isLoading, isRepairing]);
+
   // REQ-SCH-007: Typewriter results notification
   const [showNotification, setShowNotification] = useState(false);
 
