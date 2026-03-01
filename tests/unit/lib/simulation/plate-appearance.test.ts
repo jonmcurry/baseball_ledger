@@ -1,283 +1,405 @@
 /**
- * Tests for SERD 5-column plate appearance resolution.
+ * Tests for BBW-authentic plate appearance resolution.
  *
- * Pitcher grade selects which column (A-E) to read from the batter's card:
- *   Grade 20+  -> Column A (elite: singles 0.70, HRs 0.75, Ks 1.40)
- *   Grade 15-19 -> Column B (ace: singles 0.85, HRs 0.88, Ks 1.20)
- *   Grade 7-14  -> Column C (neutral: all 1.00)
- *   Grade 4-6   -> Column D (below avg: singles 1.15, HRs 1.12, Ks 0.80)
- *   Grade 1-3   -> Column E (terrible: singles 1.30, HRs 1.25, Ks 0.60)
- *
- * One RNG roll -> one column lookup -> one outcome. No secondary grade check.
+ * Ghidra-confirmed flow (FUN_1058_5f49):
+ * 1. Draw position (0-34) from batter's 35-byte card
+ * 2. Grade check for card values 7, 8, 11 (pitcher wins -> pitcher card draw)
+ * 3. IDT lookup for card values 15-23 (bitmap-gated weighted random)
+ * 4. Direct mapping for all other card values via getDirectOutcome()
  */
 
 import { OutcomeCategory } from '@lib/types/game';
-import type { ApbaCard, ApbaColumn } from '@lib/types/player';
+import type { CardValue } from '@lib/types/player';
 import { SeededRNG } from '@lib/rng/seeded-rng';
+import { CARD_LENGTH } from '@lib/card-generator/structural';
 import {
   resolvePlateAppearance,
-  gradeToColumn,
+  GRADE_CHECK_RANGE,
   IDT_ACTIVE_LOW,
   IDT_ACTIVE_HIGH,
 } from '@lib/simulation/plate-appearance';
 
 // --- Helpers ---
 
-/** Build a card where each column has a distinct repeated outcome. */
-function makeUniformCard(outcomes: Record<ApbaColumn, OutcomeCategory>): ApbaCard {
-  return {
-    A: Array(36).fill(outcomes.A),
-    B: Array(36).fill(outcomes.B),
-    C: Array(36).fill(outcomes.C),
-    D: Array(36).fill(outcomes.D),
-    E: Array(36).fill(outcomes.E),
-  };
+/** Build a 35-byte batter card filled with a single value. */
+function makeUniformCard(value: CardValue): CardValue[] {
+  return new Array(CARD_LENGTH).fill(value);
 }
 
-/** Build a card where column C has a specific pattern and others are all outs. */
-function makeTestCard(columnCOutcomes: OutcomeCategory[]): ApbaCard {
-  const outs = Array(36).fill(OutcomeCategory.GROUND_OUT);
-  return {
-    A: [...outs],
-    B: [...outs],
-    C: columnCOutcomes.length === 36 ? columnCOutcomes : [...columnCOutcomes, ...outs].slice(0, 36),
-    D: [...outs],
-    E: [...outs],
-  };
+/** Build a pitcher card: mostly strikeouts (14) and walks (13). */
+function makePitcherCard(): CardValue[] {
+  const card = new Array(CARD_LENGTH).fill(14); // strikeouts
+  card[0] = 13;  // walk
+  card[2] = 13;  // walk
+  card[4] = 26;  // ground out
+  card[5] = 26;  // ground out
+  return card;
 }
 
-/** Build a card with distinct outcomes per column to verify column selection. */
-function makeColumnTestCard(): ApbaCard {
-  return makeUniformCard({
-    A: OutcomeCategory.STRIKEOUT_SWINGING,
-    B: OutcomeCategory.FLY_OUT,
-    C: OutcomeCategory.SINGLE_CLEAN,
-    D: OutcomeCategory.DOUBLE,
-    E: OutcomeCategory.HOME_RUN,
-  });
+/** Build a batter card with specific values at positions, default fill elsewhere. */
+function makeBatterCard(overrides: Partial<Record<number, CardValue>> = {}, fill: CardValue = 0): CardValue[] {
+  const card = new Array(CARD_LENGTH).fill(fill);
+  for (const [pos, val] of Object.entries(overrides)) {
+    card[Number(pos)] = val;
+  }
+  return card;
 }
 
 // --- Tests ---
 
-describe('SERD 5-Column Plate Appearance Resolution', () => {
-  describe('gradeToColumn() mapping', () => {
-    it('maps grade 1-3 to E (terrible)', () => {
-      expect(gradeToColumn(1)).toBe('E');
-      expect(gradeToColumn(3)).toBe('E');
+describe('BBW Plate Appearance Resolution', () => {
+  describe('basic draw and direct mapping', () => {
+    it('draws from batter card and maps via getDirectOutcome()', () => {
+      // Card filled with 13 (WALK). Every draw should produce WALK.
+      const batterCard = makeUniformCard(13);
+      const pitcherCard = makePitcherCard();
+      const rng = new SeededRNG(42);
+
+      const result = resolvePlateAppearance(batterCard, pitcherCard, 10, rng);
+      expect(result.outcome).toBe(OutcomeCategory.WALK);
+      expect(result.cardValue).toBe(13);
     });
 
-    it('maps grade 4-6 to D (below average)', () => {
-      expect(gradeToColumn(4)).toBe('D');
-      expect(gradeToColumn(6)).toBe('D');
+    it('maps value 0 to DOUBLE', () => {
+      const card = makeUniformCard(0); // 0 -> DOUBLE
+      const result = resolvePlateAppearance(card, makePitcherCard(), 10, new SeededRNG(1));
+      expect(result.outcome).toBe(OutcomeCategory.DOUBLE);
     });
 
-    it('maps grade 7-14 to C (average through #1 starter)', () => {
-      expect(gradeToColumn(7)).toBe('C');
-      expect(gradeToColumn(14)).toBe('C');
+    it('maps value 1 to HOME_RUN', () => {
+      const card = makeUniformCard(1); // 1 -> HOME_RUN
+      const result = resolvePlateAppearance(card, makePitcherCard(), 10, new SeededRNG(1));
+      expect(result.outcome).toBe(OutcomeCategory.HOME_RUN);
     });
 
-    it('maps grade 15-19 to B (strong ace, near-elite)', () => {
-      expect(gradeToColumn(15)).toBe('B');
-      expect(gradeToColumn(19)).toBe('B');
+    it('maps value 14 to STRIKEOUT_SWINGING', () => {
+      const card = makeUniformCard(14); // 14 -> STRIKEOUT_SWINGING
+      const result = resolvePlateAppearance(card, makePitcherCard(), 10, new SeededRNG(1));
+      expect(result.outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
     });
 
-    it('maps grade 20-30 to A (elite/historic)', () => {
-      expect(gradeToColumn(20)).toBe('A');
-      expect(gradeToColumn(30)).toBe('A');
+    it('maps unmapped value to GROUND_OUT (default)', () => {
+      const card = makeUniformCard(2); // 2 -> not in map -> GROUND_OUT
+      const result = resolvePlateAppearance(card, makePitcherCard(), 10, new SeededRNG(1));
+      expect(result.outcome).toBe(OutcomeCategory.GROUND_OUT);
+    });
+
+    it('card position is always in [0, 34]', () => {
+      const card = makeUniformCard(13);
+      const pitcherCard = makePitcherCard();
+      for (let seed = 1; seed <= 200; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 10, new SeededRNG(seed));
+        expect(result.cardPosition).toBeGreaterThanOrEqual(0);
+        expect(result.cardPosition).toBeLessThanOrEqual(CARD_LENGTH - 1);
+      }
     });
   });
 
-  describe('resolvePlateAppearance() structure', () => {
-    it('returns a valid PlateAppearanceResult', () => {
-      const card = makeUniformCard({
-        A: OutcomeCategory.WALK, B: OutcomeCategory.WALK,
-        C: OutcomeCategory.WALK, D: OutcomeCategory.WALK,
-        E: OutcomeCategory.WALK,
-      });
+  describe('grade check (card values 7, 8, 11)', () => {
+    it('grade check fires for card value 7', () => {
+      const card = makeUniformCard(7); // SINGLE_CLEAN, triggers grade check
+      const pitcherCard = makeUniformCard(14); // All strikeouts
+      let pitcherWonCount = 0;
+      const trials = 500;
+
+      for (let seed = 1; seed <= trials; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 18, new SeededRNG(seed));
+        if (result.pitcherGradeEffect.pitcherWon) pitcherWonCount++;
+      }
+
+      // With grade 18 and GRADE_CHECK_RANGE 36, pitcher wins ~50% of the time
+      expect(pitcherWonCount).toBeGreaterThan(trials * 0.35);
+      expect(pitcherWonCount).toBeLessThan(trials * 0.65);
+    });
+
+    it('grade check fires for card value 8', () => {
+      const card = makeUniformCard(8);
+      const pitcherCard = makeUniformCard(14);
+      let pitcherWonCount = 0;
+
+      for (let seed = 1; seed <= 200; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 18, new SeededRNG(seed));
+        if (result.pitcherGradeEffect.pitcherWon) pitcherWonCount++;
+      }
+
+      // Should have some pitcher wins (grade check fires)
+      expect(pitcherWonCount).toBeGreaterThan(0);
+    });
+
+    it('grade check fires for card value 11', () => {
+      const card = makeUniformCard(11); // TRIPLE, triggers grade check
+      const pitcherCard = makeUniformCard(14);
+      let pitcherWonCount = 0;
+
+      for (let seed = 1; seed <= 200; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 18, new SeededRNG(seed));
+        if (result.pitcherGradeEffect.pitcherWon) pitcherWonCount++;
+      }
+
+      expect(pitcherWonCount).toBeGreaterThan(0);
+    });
+
+    it('grade check does NOT fire for value 0 (DOUBLE)', () => {
+      const card = makeUniformCard(0);
+      const pitcherCard = makePitcherCard();
+
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 30, new SeededRNG(seed));
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
+        expect(result.outcome).toBe(OutcomeCategory.DOUBLE);
+      }
+    });
+
+    it('grade check does NOT fire for value 1 (HOME_RUN)', () => {
+      const card = makeUniformCard(1);
+      const pitcherCard = makePitcherCard();
+
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 30, new SeededRNG(seed));
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
+      }
+    });
+
+    it('grade check does NOT fire for value 9 (SINGLE_ADVANCE)', () => {
+      const card = makeUniformCard(9);
+      const pitcherCard = makePitcherCard();
+
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 30, new SeededRNG(seed));
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
+      }
+    });
+
+    it('grade check does NOT fire for value 13 (WALK)', () => {
+      const card = makeUniformCard(13);
+      const pitcherCard = makePitcherCard();
+
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 30, new SeededRNG(seed));
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
+      }
+    });
+
+    it('grade check does NOT fire for value 14 (STRIKEOUT)', () => {
+      const card = makeUniformCard(14);
+      const pitcherCard = makePitcherCard();
+
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 30, new SeededRNG(seed));
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
+      }
+    });
+
+    it('when pitcher wins, draws from pitcher card', () => {
+      // Batter card: all 7s (SINGLE_CLEAN, grade check value)
+      // Pitcher card: all 14s (STRIKEOUT_SWINGING)
+      const batterCard = makeUniformCard(7);
+      const pitcherCard = makeUniformCard(14);
+
+      // Very high grade = pitcher almost always wins
+      let strikeoutCount = 0;
+      const trials = 300;
+
+      for (let seed = 1; seed <= trials; seed++) {
+        const result = resolvePlateAppearance(batterCard, pitcherCard, 30, new SeededRNG(seed));
+        if (result.pitcherGradeEffect.pitcherWon) {
+          // When pitcher wins, outcome should come from pitcher's card (strikeout)
+          expect(result.outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
+          expect(result.pitcherGradeEffect.finalValue).toBe(14);
+          strikeoutCount++;
+        } else {
+          // When batter wins, outcome comes from batter's card (single)
+          expect(result.outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
+        }
+      }
+
+      // Grade 30 out of 36: pitcher should win ~83% of the time
+      expect(strikeoutCount).toBeGreaterThan(trials * 0.70);
+    });
+
+    it('higher grade means more pitcher wins', () => {
+      const batterCard = makeUniformCard(7); // grade check triggers
+      const pitcherCard = makeUniformCard(14); // strikeouts
+      const trials = 500;
+
+      let winsLowGrade = 0;
+      let winsHighGrade = 0;
+
+      for (let seed = 1; seed <= trials; seed++) {
+        if (resolvePlateAppearance(batterCard, pitcherCard, 5, new SeededRNG(seed)).pitcherGradeEffect.pitcherWon) winsLowGrade++;
+        if (resolvePlateAppearance(batterCard, pitcherCard, 30, new SeededRNG(seed)).pitcherGradeEffect.pitcherWon) winsHighGrade++;
+      }
+
+      expect(winsHighGrade).toBeGreaterThan(winsLowGrade);
+    });
+
+    it('grade 0 means pitcher never wins', () => {
+      const batterCard = makeUniformCard(7);
+      const pitcherCard = makeUniformCard(14);
+
+      for (let seed = 1; seed <= 100; seed++) {
+        const result = resolvePlateAppearance(batterCard, pitcherCard, 0, new SeededRNG(seed));
+        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
+        expect(result.outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
+      }
+    });
+  });
+
+  describe('IDT lookup (card values 15-23)', () => {
+    it('IDT fires for card values in [15, 23]', () => {
+      for (let cv = IDT_ACTIVE_LOW; cv <= IDT_ACTIVE_HIGH; cv++) {
+        const card = makeUniformCard(cv);
+        const pitcherCard = makePitcherCard();
+        const result = resolvePlateAppearance(card, pitcherCard, 10, new SeededRNG(42));
+
+        // IDT always succeeds and returns a valid outcome
+        expect(result.outcomeTableRow).toBeDefined();
+        expect(result.outcomeTableRow).toBeGreaterThanOrEqual(15);
+        expect(result.outcomeTableRow).toBeLessThanOrEqual(23);
+      }
+    });
+
+    it('IDT does NOT fire for values outside [15, 23]', () => {
+      for (const cv of [0, 1, 5, 7, 8, 9, 10, 13, 14, 24, 26, 30, 42]) {
+        const card = makeUniformCard(cv);
+        const pitcherCard = makePitcherCard();
+        const result = resolvePlateAppearance(card, pitcherCard, 10, new SeededRNG(42));
+
+        expect(result.outcomeTableRow).toBeUndefined();
+      }
+    });
+
+    it('IDT produces valid OutcomeCategory values', () => {
+      const card = makeUniformCard(18); // IDT range
+      const pitcherCard = makePitcherCard();
+      const outcomes = new Set<OutcomeCategory>();
+
+      for (let seed = 1; seed <= 200; seed++) {
+        const result = resolvePlateAppearance(card, pitcherCard, 10, new SeededRNG(seed));
+        outcomes.add(result.outcome);
+      }
+
+      // IDT should produce multiple distinct outcomes
+      expect(outcomes.size).toBeGreaterThan(1);
+    });
+  });
+
+  describe('result structure', () => {
+    it('returns all required PlateAppearanceResult fields', () => {
+      const card = makeUniformCard(13); // WALK
+      const pitcherCard = makePitcherCard();
       const rng = new SeededRNG(42);
-      const result = resolvePlateAppearance(card, 10, rng);
+
+      const result = resolvePlateAppearance(card, pitcherCard, 10, rng);
 
       expect(result).toHaveProperty('cardPosition');
       expect(result).toHaveProperty('cardValue');
       expect(result).toHaveProperty('outcome');
       expect(result).toHaveProperty('usedFallback');
       expect(result).toHaveProperty('pitcherGradeEffect');
-      expect(result).toHaveProperty('column');
-      expect(result.outcomeTableRow).toBeUndefined();
       expect(result.usedFallback).toBe(false);
-    });
-
-    it('selects column dynamically based on pitcher grade', () => {
-      const card = makeColumnTestCard();
-
-      // Grade 10 -> Column C -> SINGLE_CLEAN
-      expect(resolvePlateAppearance(card, 10, new SeededRNG(42)).column).toBe('C');
-      expect(resolvePlateAppearance(card, 10, new SeededRNG(42)).outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
-
-      // Grade 20 -> Column A -> STRIKEOUT_SWINGING
-      expect(resolvePlateAppearance(card, 20, new SeededRNG(42)).column).toBe('A');
-      expect(resolvePlateAppearance(card, 20, new SeededRNG(42)).outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
-
-      // Grade 3 -> Column E -> HOME_RUN
-      expect(resolvePlateAppearance(card, 3, new SeededRNG(42)).column).toBe('E');
-      expect(resolvePlateAppearance(card, 3, new SeededRNG(42)).outcome).toBe(OutcomeCategory.HOME_RUN);
-
-      // Grade 15 -> Column B -> FLY_OUT
-      expect(resolvePlateAppearance(card, 15, new SeededRNG(42)).column).toBe('B');
-      expect(resolvePlateAppearance(card, 15, new SeededRNG(42)).outcome).toBe(OutcomeCategory.FLY_OUT);
-
-      // Grade 5 -> Column D -> DOUBLE
-      expect(resolvePlateAppearance(card, 5, new SeededRNG(42)).column).toBe('D');
-      expect(resolvePlateAppearance(card, 5, new SeededRNG(42)).outcome).toBe(OutcomeCategory.DOUBLE);
-    });
-
-    it('roll index is always in [0, 35]', () => {
-      const card = makeColumnTestCard();
-      for (let seed = 1; seed <= 200; seed++) {
-        const rng = new SeededRNG(seed);
-        const result = resolvePlateAppearance(card, 10, rng);
-        expect(result.cardPosition).toBeGreaterThanOrEqual(0);
-        expect(result.cardPosition).toBeLessThanOrEqual(35);
-      }
+      expect(result.column).toBeUndefined();
     });
 
     it('pitcherGradeEffect.r2Roll equals the effective grade', () => {
-      const card = makeColumnTestCard();
-      const rng = new SeededRNG(42);
-      const result = resolvePlateAppearance(card, 20, rng);
+      const card = makeUniformCard(13);
+      const pitcherCard = makePitcherCard();
+      const result = resolvePlateAppearance(card, pitcherCard, 20, new SeededRNG(42));
+
       expect(result.pitcherGradeEffect.r2Roll).toBe(20);
     });
+  });
 
-    it('same seed produces same outcome (determinism)', () => {
-      const card = makeTestCard([
-        OutcomeCategory.SINGLE_CLEAN, OutcomeCategory.DOUBLE, OutcomeCategory.HOME_RUN,
-        OutcomeCategory.WALK, OutcomeCategory.STRIKEOUT_SWINGING, OutcomeCategory.FLY_OUT,
-        OutcomeCategory.GROUND_OUT, OutcomeCategory.SINGLE_ADVANCE, OutcomeCategory.TRIPLE,
-        ...Array(27).fill(OutcomeCategory.GROUND_OUT),
-      ]);
+  describe('determinism', () => {
+    it('same seed produces same outcome', () => {
+      const card = makeBatterCard({
+        0: 7, 2: 13, 4: 1, 7: 14, 9: 0, 10: 9
+      }, 26);
+      const pitcherCard = makePitcherCard();
 
       const results1: OutcomeCategory[] = [];
       const results2: OutcomeCategory[] = [];
 
-      for (let i = 0; i < 10; i++) {
-        const rng1 = new SeededRNG(100 + i);
-        const rng2 = new SeededRNG(100 + i);
-        results1.push(resolvePlateAppearance(card, 10, rng1).outcome);
-        results2.push(resolvePlateAppearance(card, 10, rng2).outcome);
+      for (let i = 0; i < 20; i++) {
+        results1.push(resolvePlateAppearance(card, pitcherCard, 12, new SeededRNG(100 + i)).outcome);
+        results2.push(resolvePlateAppearance(card, pitcherCard, 12, new SeededRNG(100 + i)).outcome);
       }
 
       expect(results1).toEqual(results2);
     });
 
     it('different seeds produce different outcomes', () => {
-      const card = makeTestCard([
-        OutcomeCategory.SINGLE_CLEAN, OutcomeCategory.DOUBLE, OutcomeCategory.HOME_RUN,
-        OutcomeCategory.WALK, OutcomeCategory.STRIKEOUT_SWINGING, OutcomeCategory.FLY_OUT,
-        OutcomeCategory.GROUND_OUT, OutcomeCategory.SINGLE_ADVANCE, OutcomeCategory.TRIPLE,
-        ...Array(27).fill(OutcomeCategory.GROUND_OUT),
-      ]);
+      const card = makeBatterCard({
+        0: 7, 2: 13, 4: 1, 7: 14, 9: 0, 10: 9
+      }, 26);
+      const pitcherCard = makePitcherCard();
 
       const outcomes = new Set<OutcomeCategory>();
       for (let seed = 1; seed <= 100; seed++) {
-        const rng = new SeededRNG(seed);
-        outcomes.add(resolvePlateAppearance(card, 10, rng).outcome);
+        outcomes.add(resolvePlateAppearance(card, pitcherCard, 10, new SeededRNG(seed)).outcome);
       }
+
       expect(outcomes.size).toBeGreaterThan(1);
     });
   });
 
-  describe('column-based pitcher influence', () => {
-    it('Column A (elite pitcher) produces fewer hits than Column C (average)', () => {
-      // Card where Column C has 18/36 singles, Column A has 13/36 singles
-      const neutral = [
-        ...Array(18).fill(OutcomeCategory.SINGLE_CLEAN),
-        ...Array(18).fill(OutcomeCategory.GROUND_OUT),
-      ];
-      const colA = [
-        ...Array(13).fill(OutcomeCategory.SINGLE_CLEAN),
-        ...Array(23).fill(OutcomeCategory.GROUND_OUT),
-      ];
-      const card: ApbaCard = {
-        A: colA, B: neutral, C: neutral, D: neutral, E: neutral,
-      };
+  describe('statistical behavior', () => {
+    it('higher grade = more suppression on grade-check values', () => {
+      // Card with many grade-check values (7 = single clean)
+      const batterCard = makeUniformCard(7);
+      // Pitcher card produces outs/Ks when drawn
+      const pitcherCard = makeUniformCard(26); // GROUND_OUT
+      const trials = 1000;
 
-      let hitsGrade20 = 0; // Column A
-      let hitsGrade10 = 0; // Column C
-      const trials = 500;
+      let singlesLowGrade = 0;
+      let singlesHighGrade = 0;
 
       for (let seed = 1; seed <= trials; seed++) {
-        if (resolvePlateAppearance(card, 20, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade20++;
-        if (resolvePlateAppearance(card, 10, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade10++;
+        const resultLow = resolvePlateAppearance(batterCard, pitcherCard, 5, new SeededRNG(seed));
+        const resultHigh = resolvePlateAppearance(batterCard, pitcherCard, 25, new SeededRNG(seed));
+
+        if (resultLow.outcome === OutcomeCategory.SINGLE_CLEAN) singlesLowGrade++;
+        if (resultHigh.outcome === OutcomeCategory.SINGLE_CLEAN) singlesHighGrade++;
       }
 
-      expect(hitsGrade20).toBeLessThan(hitsGrade10);
+      // Higher grade should suppress more singles
+      expect(singlesHighGrade).toBeLessThan(singlesLowGrade);
+      // Low grade (5/36 = ~14% suppression) should allow most singles through
+      expect(singlesLowGrade).toBeGreaterThan(trials * 0.70);
+      // High grade (25/36 = ~69% suppression) should block most singles
+      expect(singlesHighGrade).toBeLessThan(trials * 0.40);
     });
 
-    it('Column E (terrible pitcher) produces more hits than Column C (average)', () => {
-      const neutral = [
-        ...Array(18).fill(OutcomeCategory.SINGLE_CLEAN),
-        ...Array(18).fill(OutcomeCategory.GROUND_OUT),
-      ];
-      const colE = [
-        ...Array(23).fill(OutcomeCategory.SINGLE_CLEAN),
-        ...Array(13).fill(OutcomeCategory.GROUND_OUT),
-      ];
-      const card: ApbaCard = {
-        A: neutral, B: neutral, C: neutral, D: neutral, E: colE,
-      };
+    it('non-grade-check values are not affected by pitcher grade', () => {
+      // Card with value 1 (HOME_RUN) -- not a grade check value
+      const batterCard = makeUniformCard(1);
+      const pitcherCard = makePitcherCard();
 
-      let hitsGrade3 = 0;  // Column E
-      let hitsGrade10 = 0; // Column C
-      const trials = 500;
+      let hrsLowGrade = 0;
+      let hrsHighGrade = 0;
+      const trials = 200;
 
       for (let seed = 1; seed <= trials; seed++) {
-        if (resolvePlateAppearance(card, 3, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade3++;
-        if (resolvePlateAppearance(card, 10, new SeededRNG(seed)).outcome === OutcomeCategory.SINGLE_CLEAN) hitsGrade10++;
+        if (resolvePlateAppearance(batterCard, pitcherCard, 3, new SeededRNG(seed)).outcome === OutcomeCategory.HOME_RUN) hrsLowGrade++;
+        if (resolvePlateAppearance(batterCard, pitcherCard, 30, new SeededRNG(seed)).outcome === OutcomeCategory.HOME_RUN) hrsHighGrade++;
       }
 
-      expect(hitsGrade3).toBeGreaterThan(hitsGrade10);
-    });
-
-    it('all outcome types vary by column (not just singles/triples)', () => {
-      const card: ApbaCard = {
-        A: Array(36).fill(OutcomeCategory.STRIKEOUT_SWINGING),
-        B: Array(36).fill(OutcomeCategory.FLY_OUT),
-        C: Array(36).fill(OutcomeCategory.HOME_RUN),
-        D: Array(36).fill(OutcomeCategory.WALK),
-        E: Array(36).fill(OutcomeCategory.DOUBLE),
-      };
-
-      // Grade 20 -> Column A -> strikeout
-      expect(resolvePlateAppearance(card, 20, new SeededRNG(1)).outcome).toBe(OutcomeCategory.STRIKEOUT_SWINGING);
-      // Grade 10 -> Column C -> home run
-      expect(resolvePlateAppearance(card, 10, new SeededRNG(1)).outcome).toBe(OutcomeCategory.HOME_RUN);
-      // Grade 2 -> Column E -> double
-      expect(resolvePlateAppearance(card, 2, new SeededRNG(1)).outcome).toBe(OutcomeCategory.DOUBLE);
-    });
-
-    it('no grade check: outcome is read directly from column without suppression', () => {
-      // All columns have SINGLE_CLEAN. With legacy grade check, high grade would
-      // suppress some singles. With column system, outcome is always the card value.
-      const card = makeUniformCard({
-        A: OutcomeCategory.SINGLE_CLEAN, B: OutcomeCategory.SINGLE_CLEAN,
-        C: OutcomeCategory.SINGLE_CLEAN, D: OutcomeCategory.SINGLE_CLEAN,
-        E: OutcomeCategory.SINGLE_CLEAN,
-      });
-
-      for (let seed = 1; seed <= 100; seed++) {
-        const result = resolvePlateAppearance(card, 30, new SeededRNG(seed));
-        expect(result.outcome).toBe(OutcomeCategory.SINGLE_CLEAN);
-        expect(result.pitcherGradeEffect.pitcherWon).toBe(false);
-      }
+      // Both should be 100% HR since value 1 is direct mapped
+      expect(hrsLowGrade).toBe(trials);
+      expect(hrsHighGrade).toBe(trials);
     });
   });
 
-  describe('legacy constants', () => {
-    it('IDT_ACTIVE_LOW is 15 (backwards compatibility)', () => {
+  describe('constants', () => {
+    it('GRADE_CHECK_RANGE is 36', () => {
+      expect(GRADE_CHECK_RANGE).toBe(36);
+    });
+
+    it('IDT_ACTIVE_LOW is 15', () => {
       expect(IDT_ACTIVE_LOW).toBe(15);
     });
 
-    it('IDT_ACTIVE_HIGH is 23 (backwards compatibility)', () => {
+    it('IDT_ACTIVE_HIGH is 23', () => {
       expect(IDT_ACTIVE_HIGH).toBe(23);
     });
   });

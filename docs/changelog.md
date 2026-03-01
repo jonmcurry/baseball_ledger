@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-02-28 - Restore 100% BBW plate appearance resolution
+
+Replaced the SERD 5-column card system with authentic BBW plate appearance
+resolution as confirmed by Ghidra decompilation of FUN_1058_5f49. The 5-column
+system pre-encoded pitcher influence into the card at generation time, which
+deviated from how BBW actually works:
+
+BBW-authentic flow (now implemented):
+1. Draw random position (0-34) from batter's 35-byte card
+2. Grade check for card values 7, 8, 11: roll 0-35, if < effectiveGrade,
+   pitcher wins and draws from pitcher's card instead
+3. IDT lookup for card values 15-23: bitmap-gated weighted random selection
+   via lookupIdtOutcome() (already correctly implemented)
+4. Direct mapping for all other values via getDirectOutcome()
+
+Key behavioral differences from the SERD system:
+- Only singles (7, 8) and triples (11) are subject to grade-based suppression
+  (BBW authentic). SERD applied column multipliers to ALL outcome types.
+- When pitcher wins grade check, outcome comes from pitcher's batting card
+  (mostly strikeouts and outs). SERD used pre-baked column distributions.
+- HRs, walks, doubles, and strikeouts are NOT affected by pitcher grade
+  (BBW authentic -- grade only gates the specific values 7/8/11).
+
+Files modified:
+- Rewrote `src/lib/simulation/plate-appearance.ts` -- BBW resolution using
+  grade check (values 7/8/11), IDT lookup (values 15-23), direct mapping
+- Modified `src/lib/simulation/game-runner.ts` -- call site passes
+  batterCard.card and currentPitcher.card (was batterCard.apbaCard)
+- Rewrote `tests/unit/lib/simulation/plate-appearance.test.ts` -- 29 BBW tests
+- Rewrote `tests/unit/lib/simulation/allstar-league-calibration.test.ts` --
+  uses CardValue[] cards with grade-check suppression
+- Rewrote `tests/unit/lib/simulation/realism-check.test.ts` -- uses
+  CardValue[] cards with BBW resolution
+- Marked `src/lib/card-generator/apba-card-generator.ts` as @deprecated
+- Updated `src/lib/simulation/card-value-fallback.ts` -- no longer deprecated,
+  actively used for BBW direct mapping
+- Updated `src/lib/simulation/outcome-table.ts` -- no longer deprecated,
+  lookupIdtOutcome() actively used for IDT resolution
+- Updated `src/lib/types/player.ts` -- card field is now primary, apbaCard
+  is deprecated
+
 ## 2026-02-28 - Absolute ERA-to-grade mapping for pitcher grade generation
 
 Pitcher grades were computed relative to the draft pool (ERA percentile rank),

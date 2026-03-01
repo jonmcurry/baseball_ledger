@@ -1,4 +1,9 @@
 /**
+ * @deprecated Replaced by BBW-authentic PA resolution in plate-appearance.ts.
+ * The 5-column system is no longer used for runtime PA resolution. PA now uses
+ * the batter's 35-byte card (PlayerCard.card) with grade check + IDT lookup.
+ * Kept for backwards compatibility with existing tests and the PlayerCard.apbaCard field.
+ *
  * SERD 5-Column APBA Card Generator
  *
  * Generates cards per the Simulation Engine Reference Document (SERD) approach:

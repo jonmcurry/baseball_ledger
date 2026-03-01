@@ -105,11 +105,12 @@ export interface PlayerCard {
   eligiblePositions: Position[];
   isPitcher: boolean;
 
-  // SERD 5-column card: each column has 36 OutcomeCategory outcomes.
-  // Pitcher grade selects column (A=best, E=worst). One roll -> one lookup -> one outcome.
+  // @deprecated SERD 5-column card. No longer used for PA resolution.
+  // Kept for backwards compatibility with existing tests.
   apbaCard: ApbaCard;
 
-  // Legacy 35-byte card (deprecated, kept for backwards compatibility during transition)
+  // BBW 35-byte card: primary card used for PA resolution.
+  // Card values 0-42 map to outcomes via grade check, IDT, or direct mapping.
   card: CardValue[];         // length = 35
 
   // Position 24: Extra-base power rating (7-tier scale)

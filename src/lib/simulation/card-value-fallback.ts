@@ -1,11 +1,11 @@
 /**
- * @deprecated Replaced by SERD 5-column ApbaCard system (apba-card-generator.ts).
- * Direct mapping is no longer used for PA resolution. Kept for reference.
+ * Direct Card Value Mapping (BBW-Authentic)
  *
- * Direct Card Value Fallback Mapping
+ * REQ-SIM-004a: Maps card values (0-42) to OutcomeCategory outcomes.
+ * Used by BBW plate appearance resolution for direct-mapped values
+ * (all values except grade-check values 7/8/11 and IDT range 15-23).
  *
- * REQ-SIM-004a: Direct card value to outcome fallback mapping.
- * Used when OutcomeTable lookup fails after 3 attempts.
+ * Based on APBA card value correlations confirmed by Ghidra decompilation.
  *
  * This is a Layer 1 module: pure logic with no I/O, runs in any JS runtime.
  */
