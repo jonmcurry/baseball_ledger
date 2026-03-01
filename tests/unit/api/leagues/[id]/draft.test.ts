@@ -1246,7 +1246,7 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
     );
   });
 
-  it('does not transition to regular_season if schedule generation fails', async () => {
+  it('still completes draft when schedule generation fails (resilient completion)', async () => {
     const { leaguesBuilder } = setupDraftCompletionMocks();
     mockGenerateSchedule.mockRejectedValue({
       category: 'DATA',
@@ -1264,10 +1264,11 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
 
     await handler(req as any, res as any);
 
-    // Should return an error, not 201
-    expect(res._status).toBe(500);
-    // leagues.update should NOT have been called with regular_season
-    expect(leaguesBuilder.update).not.toHaveBeenCalledWith(
+    // Draft completes despite schedule failure (schedule can be regenerated later)
+    expect(res._status).toBe(201);
+    expect(res._body.data.isComplete).toBe(true);
+    // Status should still transition to regular_season
+    expect(leaguesBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'regular_season' }),
     );
   });
@@ -1297,7 +1298,7 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
     expect(lineupsOrder).toBeLessThan(scheduleOrder);
   });
 
-  it('does not call schedule generation if lineup generation fails', async () => {
+  it('still completes draft and generates schedule when lineup generation fails', async () => {
     const { leaguesBuilder } = setupDraftCompletionMocks();
     mockGenerateLineups.mockRejectedValue({
       category: 'DATA',
@@ -1315,9 +1316,13 @@ describe('POST /api/leagues/:id/draft (draft completion generates schedule)', ()
 
     await handler(req as any, res as any);
 
-    expect(res._status).toBe(500);
-    expect(mockGenerateSchedule).not.toHaveBeenCalled();
-    expect(leaguesBuilder.update).not.toHaveBeenCalledWith(
+    // Draft completes despite lineup failure (lineups can be regenerated later)
+    expect(res._status).toBe(201);
+    expect(res._body.data.isComplete).toBe(true);
+    // Schedule generation should still run
+    expect(mockGenerateSchedule).toHaveBeenCalled();
+    // Status should still transition
+    expect(leaguesBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'regular_season' }),
     );
   });

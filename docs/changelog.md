@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-03-01 - Fix draft stuck at completion: resilient completion + self-healing
+
+Draft got permanently stuck at "Round 21 -- Pick 1" after all picks were made.
+Root cause: the completion code (lineup generation, schedule insertion, status
+update) failed or timed out, leaving the league in 'drafting' status. The GET
+endpoint clamped currentRound from 22 back to 21, making it appear the draft
+was still in progress. Since the phantom pick position didn't match the user's
+team, isMyPick was false and no auto-draft or completion mechanism could fire.
+
+### Resilient completeDraft helper
+- Extracted shared `completeDraft()` function used by processCpuPicks,
+  handlePick, and handleGetState
+- Each step (lineups, schedule, status update) wrapped in independent try/catch
+- Lineup generation failure is non-fatal (can be regenerated later)
+- Schedule generation checks for existing rows before inserting (idempotent)
+- Status update to 'regular_season' always runs regardless of prior failures
+
+### Self-healing in handleGetState
+- Detects when all picks are done (currentRound > totalRounds) but league
+  status is still 'drafting'
+- Triggers completeDraft to fix the stuck state
+- Returns `status: 'completed'` based on pick count, not just league status
+- Any subsequent GET poll from the frontend will self-heal the draft
+
+### Test updates
+- Updated 2 draft completion tests to match new resilient behavior:
+  schedule/lineup failures no longer block draft completion
+
 ## 2026-02-28 - Fix 162-game schedule + rain delay/doubleheader mechanics
 
 Three root causes prevented teams from playing 162 games:

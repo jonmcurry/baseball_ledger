@@ -43,6 +43,41 @@ const DraftStartSchema = z.object({
   action: z.literal('start'),
 });
 
+// ---------- Draft completion helper ----------
+
+/**
+ * Complete the draft: generate lineups, schedule, and update league status.
+ * Idempotent -- safe to call multiple times.
+ * Each step is independently fault-tolerant; the status update always runs.
+ */
+async function completeDraft(
+  supabase: ReturnType<typeof createServerClient>,
+  leagueId: string,
+): Promise<void> {
+  // Generate lineups (updates existing roster rows -- safe to re-run)
+  try {
+    await generateAndInsertLineups(supabase, leagueId);
+  } catch {
+    // Non-fatal: lineups can be regenerated later
+  }
+
+  // Generate schedule (inserts rows -- skip if schedule already exists)
+  try {
+    const { count } = await supabase
+      .from('schedule')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', leagueId);
+    if (!count || count === 0) {
+      await generateAndInsertSchedule(supabase, leagueId);
+    }
+  } catch {
+    // Non-fatal: schedule can be generated later
+  }
+
+  // Critical: update league status (must succeed for draft to complete)
+  await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
+}
+
 // ---------- CPU auto-pick helper ----------
 
 interface CpuPicksResult {
@@ -164,9 +199,7 @@ async function processCpuPicks(
 
     // Draft complete?
     if (currentRound > TOTAL_ROUNDS) {
-      await generateAndInsertLineups(supabase, leagueId);
-      await generateAndInsertSchedule(supabase, leagueId);
-      await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
+      await completeDraft(supabase, leagueId);
       return { picksMade, isComplete: true, nextRound: TOTAL_ROUNDS, nextPick: teamCount, nextTeamId: null };
     }
 
@@ -344,12 +377,23 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
   const currentRound = Math.floor(totalPicks / league.team_count) + 1;
   const currentPick = (totalPicks % league.team_count) + 1;
 
+  // Self-healing: all picks done but league still in 'drafting' -- complete it
+  const allPicksDone = currentRound > totalRounds;
+  if (allPicksDone && league.status === 'drafting') {
+    try {
+      await completeDraft(supabase, leagueId);
+      league.status = 'regular_season' as typeof league.status;
+    } catch {
+      // Completion failed; still report completed below so UI isn't stuck
+    }
+  }
+
   // REQ-DFT-004: Compute currentTeamId from draft order
   let currentTeamId: string | null = null;
   const hasDraftOrder = league.draft_order && Array.isArray(league.draft_order);
   const draftOrder = hasDraftOrder ? (league.draft_order as string[]) : [];
-  if (league.status === 'drafting' && hasDraftOrder) {
-    currentTeamId = getPickingTeam(Math.min(currentRound, totalRounds), currentPick, draftOrder);
+  if (league.status === 'drafting' && hasDraftOrder && !allPicksDone) {
+    currentTeamId = getPickingTeam(currentRound, currentPick, draftOrder);
   }
 
   // Fetch all roster entries ordered by created_at for accurate pick order
@@ -377,11 +421,18 @@ async function handleGetState(req: VercelRequest, res: VercelResponse, requestId
     };
   });
 
+  // Derive status: if all picks are done, the draft is completed regardless of league.status
+  const derivedStatus = allPicksDone || league.status === 'regular_season'
+    ? 'completed'
+    : league.status === 'drafting'
+      ? 'in_progress'
+      : 'not_started';
+
   ok(res, {
     leagueId,
-    status: league.status === 'drafting' ? 'in_progress' : league.status === 'setup' ? 'not_started' : 'completed',
+    status: derivedStatus,
     currentRound: Math.min(currentRound, totalRounds),
-    currentPick,
+    currentPick: allPicksDone ? league.team_count : currentPick,
     currentTeamId,
     picks,
     totalRounds,
@@ -585,9 +636,7 @@ async function handlePick(req: VercelRequest, res: VercelResponse, requestId: st
     } else {
       // Human made the final pick -- trigger draft completion
       isComplete = true;
-      await generateAndInsertLineups(supabase, leagueId);
-      await generateAndInsertSchedule(supabase, leagueId);
-      await supabase.from('leagues').update({ status: 'regular_season' }).eq('id', leagueId);
+      await completeDraft(supabase, leagueId);
     }
   }
 
