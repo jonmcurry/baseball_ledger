@@ -90,7 +90,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .select('*')
       .eq('league_id', leagueId)
       .eq('day_number', nextDay)
-      .eq('is_complete', false);
+      .eq('is_complete', false)
+      .eq('is_rainout', false)
+      .order('game_number', { ascending: true });
 
     if (!scheduledGames || scheduledGames.length === 0) {
       // Check for season-to-playoffs transition
@@ -127,33 +129,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       gamesPlayedMap.set(t.id, (t.wins ?? 0) + (t.losses ?? 0));
     }
 
-    // Build DayGameConfig array
-    const dayGames: DayGameConfig[] = scheduledGames.map(
-      (g: { id: string; home_team_id: string; away_team_id: string }) => {
-        const homeConfig = teamConfigs.get(g.home_team_id)!;
-        const awayConfig = teamConfigs.get(g.away_team_id)!;
-        const homeGamesPlayed = gamesPlayedMap.get(g.home_team_id) ?? 0;
-        const awayGamesPlayed = gamesPlayedMap.get(g.away_team_id) ?? 0;
+    // Build DayGameConfig array (sorted by game_number for DH pitcher rotation)
+    const dayGames: DayGameConfig[] = [];
+    for (const g of scheduledGames as Array<{ id: string; home_team_id: string; away_team_id: string; game_number: number }>) {
+      const homeConfig = teamConfigs.get(g.home_team_id)!;
+      const awayConfig = teamConfigs.get(g.away_team_id)!;
+      const homeGamesPlayed = gamesPlayedMap.get(g.home_team_id) ?? 0;
+      const awayGamesPlayed = gamesPlayedMap.get(g.away_team_id) ?? 0;
 
-        return {
-          gameId: g.id,
-          homeTeamId: g.home_team_id,
-          awayTeamId: g.away_team_id,
-          homeLineup: homeConfig.lineup,
-          awayLineup: awayConfig.lineup,
-          homeBatterCards: homeConfig.batterCards,
-          awayBatterCards: awayConfig.batterCards,
-          homeStartingPitcher: selectStartingPitcher(homeConfig.rotation, homeGamesPlayed),
-          awayStartingPitcher: selectStartingPitcher(awayConfig.rotation, awayGamesPlayed),
-          homeBullpen: homeConfig.bullpen,
-          awayBullpen: awayConfig.bullpen,
-          homeCloser: homeConfig.closer,
-          awayCloser: awayConfig.closer,
-          homeManagerStyle: homeConfig.managerStyle,
-          awayManagerStyle: awayConfig.managerStyle,
-        };
-      },
-    );
+      dayGames.push({
+        gameId: g.id,
+        homeTeamId: g.home_team_id,
+        awayTeamId: g.away_team_id,
+        homeLineup: homeConfig.lineup,
+        awayLineup: awayConfig.lineup,
+        homeBatterCards: homeConfig.batterCards,
+        awayBatterCards: awayConfig.batterCards,
+        homeStartingPitcher: selectStartingPitcher(homeConfig.rotation, homeGamesPlayed),
+        awayStartingPitcher: selectStartingPitcher(awayConfig.rotation, awayGamesPlayed),
+        homeBullpen: homeConfig.bullpen,
+        awayBullpen: awayConfig.bullpen,
+        homeCloser: homeConfig.closer,
+        awayCloser: awayConfig.closer,
+        homeManagerStyle: homeConfig.managerStyle,
+        awayManagerStyle: awayConfig.managerStyle,
+      });
+
+      // Increment games played for doubleheader game 2 pitcher rotation
+      if (g.game_number === 1) {
+        gamesPlayedMap.set(g.home_team_id, homeGamesPlayed + 1);
+        gamesPlayedMap.set(g.away_team_id, awayGamesPlayed + 1);
+      }
+    }
 
     // Run simulation (atomic: game_logs + standings + current_day advance)
     const dayResult = await simulateDayOnServer(supabase, leagueId, nextDay, dayGames, baseSeed);

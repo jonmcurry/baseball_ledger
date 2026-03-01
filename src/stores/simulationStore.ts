@@ -107,7 +107,7 @@ export const useSimulationStore = create<SimulationStore>()(
       reset: () => set(initialState, false, 'reset'),
 
       runSimulation: async (leagueId, days) => {
-        const maxDays = days === 'season' ? 162 : (days as number);
+        const maxDays = days === 'season' ? 300 : (days as number);
         set({
           status: 'running', totalDays: maxDays, currentDay: 0,
           completedGames: 0, totalGames: 0, results: [], error: null,

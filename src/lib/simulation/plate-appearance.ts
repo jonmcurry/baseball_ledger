@@ -25,8 +25,8 @@ import { lookupIdtOutcome } from './outcome-table';
 /** Grade check fires for these card values (singles/triples in BBW). */
 const GRADE_CHECK_VALUES: ReadonlySet<number> = new Set([7, 8, 11]);
 
-/** Grade check roll range: 0 to GRADE_CHECK_RANGE-1 (BBW uses [1,15] per SRD/Ghidra). */
-export const GRADE_CHECK_RANGE = 15;
+/** Grade check roll range: 0 to GRADE_CHECK_RANGE-1 (BBW uses [1,36] for dice rolls). */
+export const GRADE_CHECK_RANGE = 36;
 
 /** IDT active range lower bound (BBW bitmap gating). */
 export const IDT_ACTIVE_LOW = 15;

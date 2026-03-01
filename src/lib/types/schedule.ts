@@ -2,6 +2,12 @@ export interface ScheduleGameSummary {
   readonly id: string;
   readonly homeTeamId: string;
   readonly awayTeamId: string;
+  /** 1 = regular game, 2 = doubleheader game 2. */
+  readonly gameNumber: 1 | 2;
+  /** True if this game was rained out and not played. */
+  readonly isRainout: boolean;
+  /** If this is a makeup game, references the original rained-out game ID. */
+  readonly makeupOfId: string | null;
   homeScore: number | null;
   awayScore: number | null;
   isComplete: boolean;

@@ -60,6 +60,9 @@ interface ScheduleRow {
   dayNumber: number;
   homeTeamId: string;
   awayTeamId: string;
+  gameNumber: 1 | 2;
+  isRainout: boolean;
+  makeupOfId: string | null;
   homeScore: number | null;
   awayScore: number | null;
   isComplete: boolean;
@@ -82,6 +85,9 @@ export async function fetchSchedule(leagueId: string, day?: number): Promise<Sch
       id: row.id,
       homeTeamId: row.homeTeamId,
       awayTeamId: row.awayTeamId,
+      gameNumber: row.gameNumber ?? 1,
+      isRainout: row.isRainout ?? false,
+      makeupOfId: row.makeupOfId ?? null,
       homeScore: row.homeScore,
       awayScore: row.awayScore,
       isComplete: row.isComplete,

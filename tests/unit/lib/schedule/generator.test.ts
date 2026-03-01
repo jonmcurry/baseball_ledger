@@ -166,13 +166,13 @@ describe('computeMatchupTargets', () => {
     const targets = computeMatchupTargets(2, 2, 4, 162, 2.0);
     expect(targets.intraDivGames).toBeGreaterThan(0);
     expect(targets.interDivGames).toBeGreaterThan(0);
-    // Total should add up to target
+    // Base + extra should add up to target
     const intraOpponents = 2 - 1; // 1 other team in division
     const interOpponents = 4 - 2; // 2 teams in other division
-    const totalGames =
+    const baseGames =
       intraOpponents * targets.intraDivGames +
       interOpponents * targets.interDivGames;
-    expect(totalGames).toBe(162);
+    expect(baseGames + targets.extraGames).toBe(162);
   });
 
   it('intra-division games > inter-division games when weight > 1', () => {
@@ -222,12 +222,13 @@ describe('generateSchedule', () => {
     }
   });
 
-  it('games start unplayed', () => {
+  it('non-rainout games start unplayed', () => {
     const teams = makeStandardLeague();
     const rng = new SeededRNG(42);
     const schedule = generateSchedule(teams, rng);
     for (const day of schedule) {
       for (const game of day.games) {
+        if (game.isRainout) continue; // rained-out games are marked complete
         expect(game.isComplete).toBe(false);
         expect(game.homeScore).toBeNull();
         expect(game.awayScore).toBeNull();
@@ -316,18 +317,19 @@ describe('generateSchedule', () => {
       makeTeam('nl-e2', 'NL', 'East'),
     ];
     const rng = new SeededRNG(42);
-    const config: ScheduleConfig = { targetGamesPerTeam: 20 };
+    const config: ScheduleConfig = { targetGamesPerTeam: 20, rainoutChance: 0 };
     const schedule = generateSchedule(teams, rng, config);
     expect(schedule.length).toBeGreaterThan(0);
 
-    // For AL days: only 1 game (2 of 3 teams play), 1 team gets bye
+    // For AL: at most 1 regular (gameNumber=1) game per day (3 teams, 1 bye)
+    // Doubleheaders from compression may add more
     const alTeamIds = new Set(['al-e1', 'al-e2', 'al-w1']);
     for (const day of schedule) {
-      const alGames = day.games.filter(
-        (g) => alTeamIds.has(g.homeTeamId) || alTeamIds.has(g.awayTeamId),
+      const alRegularGames = day.games.filter(
+        (g) => g.gameNumber === 1 &&
+          (alTeamIds.has(g.homeTeamId) || alTeamIds.has(g.awayTeamId)),
       );
-      // At most 1 AL game per day (3 teams, 1 bye)
-      expect(alGames.length).toBeLessThanOrEqual(1);
+      expect(alRegularGames.length).toBeLessThanOrEqual(1);
     }
   });
 
@@ -409,18 +411,182 @@ describe('generateSchedule', () => {
     }
   });
 
-  it('no team plays more than once per day', () => {
+  it('no team plays more than once per day (excluding doubleheaders)', () => {
     const teams = makeStandardLeague();
     const rng = new SeededRNG(42);
     const schedule = generateSchedule(teams, rng);
     for (const day of schedule) {
       const seen = new Set<string>();
       for (const game of day.games) {
+        if (game.gameNumber === 2) continue; // doubleheader game 2 is OK
         expect(seen.has(game.homeTeamId)).toBe(false);
         expect(seen.has(game.awayTeamId)).toBe(false);
         seen.add(game.homeTeamId);
         seen.add(game.awayTeamId);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers for realistic league configurations
+// ---------------------------------------------------------------------------
+
+/** Create an 18-team league: 9 AL (3 East, 3 Central, 3 West), 9 NL same. */
+function make18TeamLeague(): TeamSummary[] {
+  const teams: TeamSummary[] = [];
+  for (const league of ['AL', 'NL'] as const) {
+    for (const div of ['East', 'Central', 'West']) {
+      for (let i = 1; i <= 3; i++) {
+        teams.push(makeTeam(`${league.toLowerCase()}-${div[0].toLowerCase()}${i}`, league, div));
+      }
+    }
+  }
+  return teams;
+}
+
+/** Create a 24-team league: 12 AL (4 East, 4 Central, 4 West), 12 NL same. */
+function make24TeamLeague(): TeamSummary[] {
+  const teams: TeamSummary[] = [];
+  for (const league of ['AL', 'NL'] as const) {
+    for (const div of ['East', 'Central', 'West']) {
+      for (let i = 1; i <= 4; i++) {
+        teams.push(makeTeam(`${league.toLowerCase()}-${div[0].toLowerCase()}${i}`, league, div));
+      }
+    }
+  }
+  return teams;
+}
+
+/** Create a 30-team league: 15 AL (5 East, 5 Central, 5 West), 15 NL same. */
+function make30TeamLeague(): TeamSummary[] {
+  const teams: TeamSummary[] = [];
+  for (const league of ['AL', 'NL'] as const) {
+    for (const div of ['East', 'Central', 'West']) {
+      for (let i = 1; i <= 5; i++) {
+        teams.push(makeTeam(`${league.toLowerCase()}-${div[0].toLowerCase()}${i}`, league, div));
+      }
+    }
+  }
+  return teams;
+}
+
+/** Count total games per team across a schedule. */
+function countGamesPerTeam(schedule: ScheduleDay[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const day of schedule) {
+    for (const game of day.games) {
+      if (game.isRainout) continue; // rained out games don't count
+      counts.set(game.homeTeamId, (counts.get(game.homeTeamId) ?? 0) + 1);
+      counts.set(game.awayTeamId, (counts.get(game.awayTeamId) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+// ---------------------------------------------------------------------------
+// Exact 162 games per team (TDD for schedule math fix)
+// ---------------------------------------------------------------------------
+
+describe('Exact 162 games per team', () => {
+  it('18-team league: every team plays exactly 162 games', () => {
+    const teams = make18TeamLeague();
+    const rng = new SeededRNG(42);
+    const schedule = generateSchedule(teams, rng);
+    const counts = countGamesPerTeam(schedule);
+    for (const team of teams) {
+      expect(counts.get(team.id)).toBe(162);
+    }
+  });
+
+  it('24-team league: every team plays exactly 162 games', () => {
+    const teams = make24TeamLeague();
+    const rng = new SeededRNG(42);
+    const schedule = generateSchedule(teams, rng);
+    const counts = countGamesPerTeam(schedule);
+    for (const team of teams) {
+      expect(counts.get(team.id)).toBe(162);
+    }
+  });
+
+  it('30-team league: every team plays exactly 162 games', () => {
+    const teams = make30TeamLeague();
+    const rng = new SeededRNG(42);
+    const schedule = generateSchedule(teams, rng);
+    const counts = countGamesPerTeam(schedule);
+    for (const team of teams) {
+      expect(counts.get(team.id)).toBe(162);
+    }
+  });
+
+  it('8-team league: every team plays exactly 162 games', () => {
+    const teams = makeStandardLeague();
+    const rng = new SeededRNG(42);
+    const schedule = generateSchedule(teams, rng);
+    const counts = countGamesPerTeam(schedule);
+    for (const team of teams) {
+      expect(counts.get(team.id)).toBe(162);
+    }
+  });
+
+  it('schedule fits within 162 calendar days', () => {
+    const teams = make30TeamLeague();
+    const rng = new SeededRNG(42);
+    const schedule = generateSchedule(teams, rng);
+    expect(schedule.length).toBeLessThanOrEqual(162);
+  });
+
+  it('doubleheader games have gameNumber 2', () => {
+    // 30-team league with 15 per league (odd) needs doubleheaders
+    const teams = make30TeamLeague();
+    const rng = new SeededRNG(42);
+    const schedule = generateSchedule(teams, rng);
+    for (const day of schedule) {
+      for (const game of day.games) {
+        expect(game.gameNumber === 1 || game.gameNumber === 2).toBe(true);
+      }
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeMatchupTargets exact total (TDD)
+// ---------------------------------------------------------------------------
+
+describe('computeMatchupTargets exact totals', () => {
+  it('5 teams/div, 3 divs, 15 total: exactly 162', () => {
+    const targets = computeMatchupTargets(5, 3, 15, 162, 2.0);
+    const intraOpp = 4; // 5-1
+    const interOpp = 10; // 15-5
+    const base = intraOpp * targets.intraDivGames + interOpp * targets.interDivGames;
+    const extra = targets.extraGames ?? 0;
+    expect(base + extra).toBe(162);
+  });
+
+  it('4 teams/div, 3 divs, 12 total: exactly 162', () => {
+    const targets = computeMatchupTargets(4, 3, 12, 162, 2.0);
+    const intraOpp = 3;
+    const interOpp = 8;
+    const base = intraOpp * targets.intraDivGames + interOpp * targets.interDivGames;
+    const extra = targets.extraGames ?? 0;
+    expect(base + extra).toBe(162);
+  });
+
+  it('3 teams/div, 3 divs, 9 total: exactly 162', () => {
+    const targets = computeMatchupTargets(3, 3, 9, 162, 2.0);
+    const intraOpp = 2;
+    const interOpp = 6;
+    const base = intraOpp * targets.intraDivGames + interOpp * targets.interDivGames;
+    const extra = targets.extraGames ?? 0;
+    expect(base + extra).toBe(162);
+  });
+
+  it('2 teams/div, 2 divs, 4 total: exactly 162', () => {
+    const targets = computeMatchupTargets(2, 2, 4, 162, 2.0);
+    const intraOpp = 1;
+    const interOpp = 2;
+    const base = intraOpp * targets.intraDivGames + interOpp * targets.interDivGames;
+    const extra = targets.extraGames ?? 0;
+    expect(base + extra).toBe(162);
   });
 });

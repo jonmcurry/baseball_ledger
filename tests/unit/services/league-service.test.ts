@@ -98,8 +98,8 @@ describe('league-service', () => {
   it('fetchSchedule calls apiGet without day param when day is omitted', async () => {
     // API returns flat game rows; fetchSchedule groups them into ScheduleDay[]
     const flatRows = [
-      { id: 'g-1', dayNumber: 1, homeTeamId: 't-1', awayTeamId: 't-2', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
-      { id: 'g-2', dayNumber: 1, homeTeamId: 't-3', awayTeamId: 't-4', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+      { id: 'g-1', dayNumber: 1, homeTeamId: 't-1', awayTeamId: 't-2', gameNumber: 1, isRainout: false, makeupOfId: null, homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+      { id: 'g-2', dayNumber: 1, homeTeamId: 't-3', awayTeamId: 't-4', gameNumber: 1, isRainout: false, makeupOfId: null, homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
     ];
     mockApiGet.mockResolvedValue({ data: flatRows, meta: defaultMeta });
 
@@ -108,15 +108,15 @@ describe('league-service', () => {
     expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/schedule');
     expect(result).toEqual([
       { dayNumber: 1, games: [
-        { id: 'g-1', homeTeamId: 't-1', awayTeamId: 't-2', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
-        { id: 'g-2', homeTeamId: 't-3', awayTeamId: 't-4', homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+        { id: 'g-1', homeTeamId: 't-1', awayTeamId: 't-2', gameNumber: 1, isRainout: false, makeupOfId: null, homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
+        { id: 'g-2', homeTeamId: 't-3', awayTeamId: 't-4', gameNumber: 1, isRainout: false, makeupOfId: null, homeScore: null, awayScore: null, isComplete: false, gameLogId: null },
       ] },
     ]);
   });
 
   it('fetchSchedule calls apiGet with day query param when day is provided', async () => {
     const flatRows = [
-      { id: 'g-5', dayNumber: 5, homeTeamId: 't-1', awayTeamId: 't-2', homeScore: 3, awayScore: 1, isComplete: true, gameLogId: 'gl-5' },
+      { id: 'g-5', dayNumber: 5, homeTeamId: 't-1', awayTeamId: 't-2', gameNumber: 1, isRainout: false, makeupOfId: null, homeScore: 3, awayScore: 1, isComplete: true, gameLogId: 'gl-5' },
     ];
     mockApiGet.mockResolvedValue({ data: flatRows, meta: defaultMeta });
 
@@ -125,7 +125,7 @@ describe('league-service', () => {
     expect(mockApiGet).toHaveBeenCalledWith('/api/leagues/lg-1/schedule?day=5');
     expect(result).toEqual([
       { dayNumber: 5, games: [
-        { id: 'g-5', homeTeamId: 't-1', awayTeamId: 't-2', homeScore: 3, awayScore: 1, isComplete: true, gameLogId: 'gl-5' },
+        { id: 'g-5', homeTeamId: 't-1', awayTeamId: 't-2', gameNumber: 1, isRainout: false, makeupOfId: null, homeScore: 3, awayScore: 1, isComplete: true, gameLogId: 'gl-5' },
       ] },
     ]);
   });

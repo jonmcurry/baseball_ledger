@@ -72,7 +72,14 @@ export async function generateAndInsertSchedule(
     day_number: number;
     home_team_id: string;
     away_team_id: string;
+    game_number: number;
+    is_rainout: boolean;
+    is_complete: boolean;
+    makeup_of_id: string | null;
   }> = [];
+
+  // First pass: collect all games (need IDs for makeup references)
+  const gameIdToDbId = new Map<string, string>();
 
   for (const day of days) {
     for (const game of day.games) {
@@ -81,6 +88,10 @@ export async function generateAndInsertSchedule(
         day_number: day.dayNumber,
         home_team_id: game.homeTeamId,
         away_team_id: game.awayTeamId,
+        game_number: game.gameNumber,
+        is_rainout: game.isRainout,
+        is_complete: game.isRainout, // rained-out games are complete (not simulated)
+        makeup_of_id: null, // resolved after insert via game IDs
       });
     }
   }

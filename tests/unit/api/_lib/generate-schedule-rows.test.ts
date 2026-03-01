@@ -73,6 +73,9 @@ const mockScheduleDays: ScheduleDay[] = [
         id: 'g-1-0-1',
         homeTeamId: 'team-1',
         awayTeamId: 'team-2',
+        gameNumber: 1,
+        isRainout: false,
+        makeupOfId: null,
         homeScore: null,
         awayScore: null,
         isComplete: false,
@@ -87,6 +90,9 @@ const mockScheduleDays: ScheduleDay[] = [
         id: 'g-2-0-2',
         homeTeamId: 'team-2',
         awayTeamId: 'team-1',
+        gameNumber: 1,
+        isRainout: false,
+        makeupOfId: null,
         homeScore: null,
         awayScore: null,
         isComplete: false,
@@ -214,12 +220,20 @@ describe('generateAndInsertSchedule', () => {
         day_number: 1,
         home_team_id: 'team-1',
         away_team_id: 'team-2',
+        game_number: 1,
+        is_rainout: false,
+        is_complete: false,
+        makeup_of_id: null,
       },
       {
         league_id: 'league-1',
         day_number: 2,
         home_team_id: 'team-2',
         away_team_id: 'team-1',
+        game_number: 1,
+        is_rainout: false,
+        is_complete: false,
+        makeup_of_id: null,
       },
     ]);
   });
@@ -233,7 +247,6 @@ describe('generateAndInsertSchedule', () => {
     for (const row of rows) {
       expect(row).not.toHaveProperty('id');
       expect(row).not.toHaveProperty('game_log_id');
-      expect(row).not.toHaveProperty('is_complete');
     }
   });
 

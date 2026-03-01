@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-02-28 - Fix 162-game schedule + rain delay/doubleheader mechanics
+
+Three root causes prevented teams from playing 162 games:
+1. `computeMatchupTargets()` used `Math.round()` causing rounding errors
+2. Simulation store capped at 162 iterations (odd-team leagues need more days)
+3. No doubleheader support for schedule compression
+
+### Schedule Math Fix
+- `computeMatchupTargets()` now uses `Math.floor()` + explicit remainder
+  distribution via `extraGames` field (guarantees exact 162 per team)
+- New `distributeExtraGames()` adds remainder games per-team using
+  intra-division pairs first, inter-division as fallback
+- `generateEvenMatchups()` (single-division) also uses floor + remainder
+- All league sizes (8, 18, 24, 30 teams) verified to produce exact 162
+
+### Schedule Compression (Doubleheaders)
+- New `compressToTargetDays()` packs overflow days into 162 calendar days
+- Overflow games become `gameNumber: 2` doubleheader entries
+- Placed on earliest day where both teams play at most 1 game
+
+### Rain Cancellation + Makeup Games
+- `applyRainoutsAndMakeups()` with configurable `rainoutChance` (default 3%)
+- Deterministic via SeededRNG at schedule generation time
+- Rained-out games: `isRainout: true`, `isComplete: true`
+- Makeup games: `gameNumber: 2`, `makeupOfId` references original game
+
+### Type + Schema Changes
+- `ScheduleGameSummary`: added `gameNumber`, `isRainout`, `makeupOfId`
+- `ScheduleConfig`: added `rainoutChance`, `maxCalendarDays`
+- Migration `00033_schedule_doubleheader_rainout.sql`: 3 new columns
+- `generate-schedule-rows.ts`: includes new columns in DB inserts
+- `league-service.ts`: `ScheduleRow` updated for new fields
+
+### Simulation Fixes
+- `simulationStore.ts`: maxDays 162 -> 300 (safety cap, not semantic limit)
+- `simulate.ts`: filters `is_rainout = false` from schedule query
+- `simulate.ts`: sorts by `game_number` ascending for DH pitcher rotation
+- DH game 2 increments `gamesPlayedMap` so next rotation pitcher is used
+
+### Tests
+- 6 new TDD tests: exact 162 games for 8/18/24/30-team leagues,
+  schedule fits in 162 days, doubleheader gameNumber validation
+- 4 new `computeMatchupTargets` exact-total tests with `extraGames`
+- Updated existing tests for new fields (schedule rows, league service)
+- Migration count tests updated to 33
+
 ## 2026-02-28 - BBW fidelity audit: 4 discrepancy fixes
 
 Comprehensive 5-agent audit compared every BBW mechanic (Ghidra decompilation)
