@@ -131,7 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Build DayGameConfig array (sorted by game_number for DH pitcher rotation)
     const dayGames: DayGameConfig[] = [];
-    for (const g of scheduledGames as Array<{ id: string; home_team_id: string; away_team_id: string; game_number: number }>) {
+    for (const g of scheduledGames as unknown as Array<{ id: string; home_team_id: string; away_team_id: string; game_number: number }>) {
       const homeConfig = teamConfigs.get(g.home_team_id)!;
       const awayConfig = teamConfigs.get(g.away_team_id)!;
       const homeGamesPlayed = gamesPlayedMap.get(g.home_team_id) ?? 0;
