@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-03-01 - Push missing DB migrations + add API error logging
+
+- Applied migrations 00032 and 00033 to production Supabase (schedule
+  `game_number`, `is_rainout`, `makeup_of_id` columns were missing)
+- Added `console.error` logging to `handleApiError` for 500-level errors
+  so they appear in Vercel function logs
+
 ## 2026-03-01 - Fix schedule generation after draft (3 stacked failures)
 
 Root cause: `completeDraft` tried to generate lineups + schedule at the end

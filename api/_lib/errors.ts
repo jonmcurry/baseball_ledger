@@ -52,6 +52,9 @@ export function handleApiError(
 
   if (isAppError(error)) {
     const statusCode = STATUS_MAP[error.category] ?? 500;
+    if (statusCode >= 500) {
+      console.error(`[API ${requestId}] ${error.category}/${error.code}: ${error.message}`);
+    }
     const body: ApiErrorBody = {
       error: {
         code: error.code ?? error.category,
@@ -67,6 +70,7 @@ export function handleApiError(
   }
 
   // Generic/unknown errors -> 500
+  console.error(`[API ${requestId}] Unhandled error:`, error);
   const message = error instanceof Error ? error.message : 'Internal server error';
   const body: ApiErrorBody = {
     error: {
